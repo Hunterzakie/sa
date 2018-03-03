@@ -165,6 +165,9 @@ vlcSetContribEnvironment() {
 
     echo "Setting contrib environment with minimum macOS version $MINIMAL_OSX_VERSION and SDK $SDK_VERSION at $SDKROOT"
 
+    # Select avcodec flavor to compile contribs with
+    export USE_FFMPEG=1
+
     # Usually, VLCs contrib libraries do not support partial availability at runtime.
     # Forcing those errors has two reasons:
     # - Some custom configure scripts include the right header for testing availability.
