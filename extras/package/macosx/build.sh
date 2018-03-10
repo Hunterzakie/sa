@@ -193,12 +193,6 @@ spopd
 
 vlcUnsetContribEnvironment
 
-# Enable debug symbols by default
-export CFLAGS="-g -arch $ACTUAL_ARCH"
-export CXXFLAGS="-g -arch $ACTUAL_ARCH"
-export OBJCFLAGS="-g -arch $ACTUAL_ARCH"
-export LDFLAGS="-arch $ACTUAL_ARCH"
-
 #
 # vlc/bootstrap
 #

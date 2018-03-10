@@ -185,7 +185,7 @@ vlcSetContribEnvironment() {
 }
 
 vlcUnsetContribEnvironment() {
-    echo "Unsetting contrib flags"
+    echo "Unsetting contrib flags, prepare VLC flags"
 
     unset CFLAGS
     unset CXXFLAGS
