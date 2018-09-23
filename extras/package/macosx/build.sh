@@ -11,9 +11,6 @@ info()
 SCRIPTDIR=$(dirname "$0")
 source "$SCRIPTDIR/env.build.sh" "none"
 
-
-ARCH="x86_64"
-MINIMAL_OSX_VERSION="10.7"
 OSX_KERNELVERSION=`uname -r | cut -d. -f1`
 SDKROOT=$(xcrun --show-sdk-path)
 VLCBUILDDIR=""
