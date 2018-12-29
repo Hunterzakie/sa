@@ -161,11 +161,14 @@ fi
 
 info "Building contribs"
 spushd "${vlcroot}/contrib"
+
+if [ "$REBUILD" = "yes" ]; then
+    rm -rf contrib-$TRIPLET
+    rm -rf $TRIPLET
+fi
 mkdir -p contrib-$HOST_TRIPLET && cd contrib-$HOST_TRIPLET
 ../bootstrap --build=$BUILD_TRIPLET --host=$HOST_TRIPLET $CONTRIBFLAGS > $out
-if [ "$REBUILD" = "yes" ]; then
-    make clean
-fi
+
 make list
 if [ "$CONTRIBFROMSOURCE" = "yes" ]; then
     make fetch
