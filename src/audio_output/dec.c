@@ -122,6 +122,21 @@ static inline audio_output_t *aout_stream_aout(vlc_aout_stream *stream)
     return &stream->instance->output;
 }
 
+static bool aout_FormatEquals(const audio_sample_format_t *f1,
+                              const audio_sample_format_t *f2)
+{
+    return f1->i_format == f2->i_format
+        && f1->i_rate == f2->i_rate
+        && f1->i_physical_channels == f2->i_physical_channels
+        && f1->i_chan_mode == f2->i_chan_mode
+        && f1->channel_type == f2->channel_type
+        && f1->i_bytes_per_frame == f2->i_bytes_per_frame
+        && f1->i_frame_length == f2->i_frame_length
+        && f1->i_bitspersample == f2->i_bitspersample
+        && f1->i_blockalign == f2->i_blockalign
+        && f1->i_channels == f2->i_channels;
+}
+
 static inline struct vlc_tracer *aout_stream_tracer(vlc_aout_stream *stream)
 {
     return stream->str_id == NULL ? NULL :
