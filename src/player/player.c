@@ -64,32 +64,31 @@ vlc_player_OpenNextMedia(vlc_player_t *player)
     player->video_string_ids = player->audio_string_ids =
     player->sub_string_ids = NULL;
 
-    int ret = VLC_SUCCESS;
     if (player->releasing_media)
     {
         assert(player->media);
         input_item_Release(player->media);
         player->media = NULL;
         player->releasing_media = false;
+        vlc_player_SendEvent(player, on_current_media_changed, NULL);
+        return VLC_SUCCESS;
     }
-    else
+
+    int ret = VLC_SUCCESS;
+    if (!player->next_media)
+        return VLC_EGENERIC;
+
+    if (player->media)
+        input_item_Release(player->media);
+    player->media = player->next_media;
+    player->next_media = NULL;
+
+    player->input = vlc_player_input_New(player, player->media);
+    if (!player->input)
     {
-        if (!player->next_media)
-            return VLC_EGENERIC;
-
-        if (player->media)
-            input_item_Release(player->media);
-        player->media = player->next_media;
-        player->next_media = NULL;
-
-        struct vlc_player_input *input = player->input =
-            vlc_player_input_New(player, player->media);
-        if (!input)
-        {
-            input_item_Release(player->media);
-            player->media = NULL;
-            ret = VLC_ENOMEM;
-        }
+        input_item_Release(player->media);
+        player->media = NULL;
+        ret = VLC_ENOMEM;
     }
     vlc_player_SendEvent(player, on_current_media_changed, player->media);
     if (player->input && player->input->ml.delay_restore)
