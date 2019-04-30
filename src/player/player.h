@@ -60,9 +60,12 @@ struct vlc_player_input
     vlc_player_t *player;
     bool started;
     bool gapless;
+    /* A parked successor can request its own preload before promotion. */
+    bool gapless_preload_pending;
 
     /* Monitor the OPENING_S -> PLAYING_S transition. */
     bool playing;
+    input_item_node_t *subitems; /* subitems saved during gapless transition */
 
     enum vlc_player_state state;
     enum vlc_player_error error;
@@ -267,6 +270,11 @@ struct vlc_player_t
 
     bool pause_on_cork;
     bool corked;
+    bool gapless_enabled;
+    bool gapless_failed;
+    /* Seam carried by the gapless handoff, or VLC_TICK_INVALID until it arms.
+     * Consumed once at the promote. */
+    vlc_tick_t gapless_seam_date;
 
     struct vlc_list listeners;
     struct vlc_list metadata_listeners;
@@ -278,6 +286,7 @@ struct vlc_player_t
 
     input_item_t *media;
     struct vlc_player_input *input;
+    struct vlc_player_input *next_input;
 
     bool releasing_media;
     input_item_t *next_media;
@@ -378,7 +387,13 @@ vlc_object_t *
 vlc_player_GetObject(vlc_player_t *player);
 
 int
-vlc_player_OpenNextMedia(vlc_player_t *player);
+vlc_player_SwitchNextMedia(vlc_player_t *player);
+
+void
+vlc_player_CancelGapless(vlc_player_t *player);
+
+void
+vlc_player_TryPreloadGapless(vlc_player_t *player);
 
 void
 vlc_player_destructor_AddStoppingInput(vlc_player_t *player,
@@ -457,7 +472,7 @@ vlc_player_input_FindTrackById(struct vlc_player_input *input, vlc_es_id_t *id,
                                size_t *idx);
 
 struct vlc_player_input *
-vlc_player_input_New(vlc_player_t *player, input_item_t *item);
+vlc_player_input_New(vlc_player_t *player, input_item_t *item, bool gapless);
 
 void
 vlc_player_input_Delete(struct vlc_player_input *input);
@@ -480,7 +495,7 @@ vlc_player_input_GetPos(struct vlc_player_input *input, bool seeking,
                         vlc_tick_t system_now);
 
 int
-vlc_player_input_Start(struct vlc_player_input *input);
+vlc_player_input_Start(struct vlc_player_input *input, vlc_tick_t seam);
 
 void
 vlc_player_input_SeekByPos(struct vlc_player_input *input, double position,

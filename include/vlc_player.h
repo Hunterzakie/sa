@@ -437,6 +437,18 @@ vlc_player_HoldCurrentMedia(vlc_player_t *player)
 }
 
 /**
+ * Enable or disable gapless playback
+ *
+ * @warning Enabling gapless playback will cause the player to open 2 media
+ * simultaneously.
+ *
+ * @param player locked player instance
+ * @param enabled true to enable gapless playback
+ */
+VLC_API void
+vlc_player_SetGaplessEnabled(vlc_player_t *player, bool enabled);
+
+/**
  * Start the playback of the current media.
  *
  * @param player locked player instance

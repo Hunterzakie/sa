@@ -96,13 +96,23 @@ vlc_player_input_HandleAtoBLoop(struct vlc_player_input *input, bool forced)
 }
 
 int
-vlc_player_input_Start(struct vlc_player_input *input)
+vlc_player_input_Start(struct vlc_player_input *input, vlc_tick_t seam)
 {
-    int ret = input_Start(input->thread);
-    if (ret != VLC_SUCCESS)
-        return ret;
-    input->started = true;
-    return ret;
+    if (input->gapless)
+    {
+        assert(input->started);
+        input_WakeGapless(input->thread, seam);
+        return VLC_SUCCESS;
+    }
+    else
+    {
+        assert(!input->started);
+        int ret = input_Start(input->thread);
+        if (ret != VLC_SUCCESS)
+            return ret;
+        input->started = true;
+        return VLC_SUCCESS;
+    }
 }
 
 static inline void
@@ -218,6 +228,114 @@ vlc_player_WaitRetryDelay(vlc_player_t *player)
     return true;
 }
 
+static void
+vlc_player_SendNewEvents(vlc_player_t *player,
+                         struct vlc_player_input *input,
+                         struct vlc_player_input *old_input)
+{
+    vlc_player_SendEvent(player, on_rate_changed, input->rate);
+
+    vlc_player_SendEvent(player, on_capabilities_changed,
+                         old_input->capabilities, input->capabilities);
+
+    /* Length is unknown until the first TIMES; don't report it as a change. */
+    if (input->length != VLC_TICK_INVALID)
+        vlc_player_SendEvent(player, on_length_changed,
+                             input->length);
+
+    vlc_player_SendEvent(player, on_position_changed, input->time,
+                         input->position);
+
+    vlc_player_SendEvent(player, on_statistics_changed,
+                         &input->stats);
+
+    vlc_player_SendEvent(player, on_buffering_changed, 0.0f);
+    vlc_player_SendEvent(player, on_buffering_changed, input->cache);
+
+    if (old_input->signal_quality != input->signal_quality
+     || old_input->signal_strength != input->signal_strength)
+        vlc_player_SendEvent(player, on_signal_changed,
+                             input->signal_quality,
+                             input->signal_strength);
+
+    vlc_player_SendEvent(player, on_media_meta_changed,
+                         input_GetItem(input->thread));
+
+    if (old_input->teletext_page != input->teletext_page)
+        vlc_player_SendEvent(player, on_teletext_page_changed,
+                             input->teletext_page);
+
+    if (old_input->teletext_transparent != input->teletext_transparent)
+        vlc_player_SendEvent(player, on_teletext_transparency_changed,
+                             input->teletext_transparent);
+
+    {
+        vlc_player_program_vector *vec = &input->program_vector;
+        struct vlc_player_program *prgm;
+        vlc_vector_foreach(prgm, vec)
+        {
+            vlc_player_SendEvent(player, on_program_list_changed,
+                                 VLC_PLAYER_LIST_ADDED, prgm);
+            if (prgm->selected)
+                vlc_player_SendEvent(player, on_program_selection_changed,
+                                     -1, prgm->group_id);
+        }
+    }
+
+    enum es_format_category_e cats[] = { VIDEO_ES, AUDIO_ES, SPU_ES };
+    for (size_t i = 0; i < ARRAY_SIZE(cats); ++i)
+    {
+        enum es_format_category_e cat = cats[i];
+        vlc_player_track_vector *vec =
+            vlc_player_input_GetTrackVector(input, cat);
+        struct vlc_player_track_priv *trackpriv;
+        vlc_vector_foreach(trackpriv, vec)
+        {
+            vlc_player_SendEvent(player, on_track_list_changed,
+                                 VLC_PLAYER_LIST_ADDED, &trackpriv->t);
+            if (trackpriv->t.selected)
+                vlc_player_SendEvent(player, on_track_selection_changed,
+                                     NULL, trackpriv->t.es_id);
+        }
+    }
+
+    if (input->teletext_source)
+    {
+        vlc_player_SendEvent(player, on_teletext_menu_changed, true);
+        if (input->teletext_enabled)
+            vlc_player_SendEvent(player, on_teletext_enabled_changed,
+                                 input->teletext_enabled);
+    }
+
+    if (input->titles)
+    {
+        const struct vlc_player_title *title =
+            &input->titles->array[input->title_selected];
+
+        vlc_player_SendEvent(player, on_titles_changed, input->titles);
+
+        vlc_player_SendEvent(player, on_title_selection_changed, title,
+                             input->title_selected);
+
+        if (title->chapter_count != 0)
+        {
+            const struct vlc_player_chapter *chapter =
+                &title->chapters[input->chapter_selected];
+            vlc_player_SendEvent(player, on_chapter_selection_changed, title,
+                                 input->title_selected, chapter,
+                                 input->chapter_selected);
+        }
+    }
+
+    if (input->subitems)
+    {
+        vlc_player_SendEvent(player, on_media_subitems_changed,
+                             input_GetItem(input->thread), input->subitems);
+        input_item_node_Delete(input->subitems);
+        input->subitems = NULL;
+    }
+}
+
 void
 vlc_player_input_HandleState(struct vlc_player_input *input,
                              enum vlc_player_state state, vlc_tick_t state_date)
@@ -240,7 +358,6 @@ vlc_player_input_HandleState(struct vlc_player_input *input,
     {
         case VLC_PLAYER_STATE_STOPPED:
             assert(!input->started);
-            assert(input != player->input);
 
             if (input->titles)
             {
@@ -249,6 +366,11 @@ vlc_player_input_HandleState(struct vlc_player_input *input,
                 if (!input->gapless)
                     vlc_player_SendEvent(player, on_titles_changed, NULL);
             }
+
+            if (input->gapless)
+                return;
+
+            assert(input != player->input);
 
             vlc_player_ResetTimer(player);
 
@@ -269,10 +391,40 @@ vlc_player_input_HandleState(struct vlc_player_input *input,
 
             if (!player->deleting)
             {
-                vlc_player_OpenNextMedia(player);
+                bool gapless = player->next_input != NULL;
+                vlc_tick_t seam = player->gapless_seam_date;
+                player->gapless_seam_date = VLC_TICK_INVALID;
+                vlc_player_SwitchNextMedia(player);
                 /* It is possible to open several medias in a stopped state */
                 if (player->input && player->started)
-                    vlc_player_input_Start(player->input);
+                {
+                    if (!gapless)
+                        vlc_player_input_Start(player->input, VLC_TICK_INVALID);
+                    else
+                    {
+                        struct vlc_player_input *successor = player->input;
+                        /* These callbacks can stop playback or replace the
+                         * successor. */
+                        vlc_player_SendNewEvents(player, successor, input);
+                        if (player->input == successor && player->started)
+                        {
+                            /* The handoff never armed: the successor is still
+                             * parked in its preload and nothing will start it
+                             * now. Start it without a seam, as a normal
+                             * playback. */
+                            if (seam == VLC_TICK_INVALID)
+                            {
+                                msg_Warn(player, "gapless: next input not ready "
+                                         "on time");
+                                input_WakeGapless(successor->thread,
+                                                  VLC_TICK_INVALID);
+                            }
+                            /* The predecessor is stopped: hand its outputs over
+                             * to the successor. */
+                            input_GaplessPromoted(successor->thread);
+                        }
+                    }
+                }
             }
             if (!player->input)
                 player->started = false;
@@ -282,6 +434,16 @@ vlc_player_input_HandleState(struct vlc_player_input *input,
             break;
         case VLC_PLAYER_STATE_STOPPING:
             input->started = false;
+
+            if (input->gapless)
+            {
+                if (input == player->next_input)
+                {
+                    player->next_input = NULL;
+                    player->gapless_failed = true;
+                }
+                break;
+            }
 
             /* Note: no need to hold the media here, as it is already protected
                by the player lock. User can hold the input_item, if they want
@@ -308,9 +470,11 @@ vlc_player_input_HandleState(struct vlc_player_input *input,
         case VLC_PLAYER_STATE_PLAYING:
             input->pause_date = VLC_TICK_INVALID;
             vlc_player_SignalAtoBLoop(player);
-            vlc_player_UpdateTimerEvent(player, NULL,
-                                        VLC_PLAYER_TIMER_EVENT_PLAYING,
-                                        state_date);
+            /* Only the current input drives the timer. */
+            if (!input->gapless)
+                vlc_player_UpdateTimerEvent(player, NULL,
+                                            VLC_PLAYER_TIMER_EVENT_PLAYING,
+                                            state_date);
             /* fall through */
         case VLC_PLAYER_STATE_STARTED:
             if (player->started &&
@@ -326,9 +490,11 @@ vlc_player_input_HandleState(struct vlc_player_input *input,
             input->pause_date = state_date;
 
             vlc_player_SignalAtoBLoop(player);
-            vlc_player_UpdateTimerEvent(player, NULL,
-                                        VLC_PLAYER_TIMER_EVENT_PAUSED,
-                                        input->pause_date);
+            /* Only the current input drives the timer. */
+            if (!input->gapless)
+                vlc_player_UpdateTimerEvent(player, NULL,
+                                            VLC_PLAYER_TIMER_EVENT_PAUSED,
+                                            input->pause_date);
             break;
         default:
             vlc_assert_unreachable();
@@ -1142,6 +1308,47 @@ input_thread_Events(input_thread_t *input_thread,
             }
             break;
         }
+        /* es_out reports that this input is nearing its end and is eligible for
+         * a gapless handoff, or that it no longer is. */
+        case INPUT_EVENT_GAPLESS_PRELOAD_REQUEST:
+            if (!player->gapless_enabled || player->renderer)
+                break;
+            if (input != player->input && input != player->next_input)
+                break;
+            if (event->gapless_preload.next)
+            {
+                input->gapless_preload_pending = true;
+                vlc_player_TryPreloadGapless(player);
+            }
+            else
+            {
+                input->gapless_preload_pending = false;
+                if (input == player->input)
+                    vlc_player_CancelGapless(player);
+            }
+            break;
+        /* The predecessor's audio output armed the handoff and reported the
+         * seam: start the preloaded successor on it. */
+        case INPUT_EVENT_GAPLESS_HANDOFF_READY:
+        {
+            if (!event->gapless_handoff.ready)
+            {
+                vlc_player_CancelGapless(player);
+                break;
+            }
+            if (player->deleting || !player->started
+             || player->next_input == NULL)
+                break;
+            assert(player->next_input->gapless);
+            assert(player->next_media != NULL);
+
+            player->gapless_seam_date = event->gapless_handoff.seam_date;
+            int ret = vlc_player_input_Start(player->next_input,
+                                             event->gapless_handoff.seam_date);
+            assert(ret == VLC_SUCCESS); /* always true if gapless */
+            (void) ret;
+            break;
+        }
         case INPUT_EVENT_PROGRAM:
             vlc_player_input_HandleProgramEvent(input, &event->program);
             break;
@@ -1206,9 +1413,19 @@ input_thread_Events(input_thread_t *input_thread,
             break;
         case INPUT_EVENT_SUBITEMS:
             if (!input->gapless)
+            {
                 vlc_player_SendEvent(player, on_media_subitems_changed,
                                      input_GetItem(input->thread), event->subitems);
-            input_item_node_Delete(event->subitems);
+                input_item_node_Delete(event->subitems);
+            }
+            else
+            {
+                /* Save subitems in order to send them when the input is
+                 * current */
+                if (input->subitems)
+                    input_item_node_Delete(input->subitems);
+                input->subitems = event->subitems;
+            }
             break;
         case INPUT_EVENT_DEAD:
             if (input->started) /* Can happen with early input_thread fails */
@@ -1302,7 +1519,7 @@ vlc_player_input_GetSelectedTrackStringIds(struct vlc_player_input *input,
 }
 
 struct vlc_player_input *
-vlc_player_input_New(vlc_player_t *player, input_item_t *item)
+vlc_player_input_New(vlc_player_t *player, input_item_t *item, bool gapless)
 {
     struct vlc_player_input *input = malloc(sizeof(*input));
     if (!input)
@@ -1311,7 +1528,9 @@ vlc_player_input_New(vlc_player_t *player, input_item_t *item)
     input->player = player;
     input->started = false;
     input->playing = false;
-    input->gapless = false;
+    input->gapless = gapless;
+    input->gapless_preload_pending = false;
+    input->subitems = NULL;
 
     input->state = VLC_PLAYER_STATE_STOPPED;
     input->error = VLC_PLAYER_ERROR_NONE;
@@ -1363,7 +1582,7 @@ vlc_player_input_New(vlc_player_t *player, input_item_t *item)
     };
 
     const struct vlc_input_thread_cfg cfg = {
-        .type = INPUT_TYPE_PLAYBACK,
+        .type = gapless ? INPUT_TYPE_GAPLESS : INPUT_TYPE_PLAYBACK,
         .hw_dec = INPUT_CFG_HW_DEC_DEFAULT,
         .resource = player->resource,
         .renderer = player->renderer,
@@ -1392,6 +1611,18 @@ vlc_player_input_New(vlc_player_t *player, input_item_t *item)
     if (player->sub_string_ids)
         vlc_player_input_SelectTracksByStringIds(input, SPU_ES,
                                                  player->sub_string_ids);
+
+    if (gapless)
+    {
+        assert(player->input);
+        assert(!player->renderer);
+        if (input_Start(input->thread) != VLC_SUCCESS)
+        {
+            vlc_player_input_Delete(input);
+            return NULL;
+        }
+        input->started = true;
+    }
 
     /* Initial sub/audio delay */
     const vlc_tick_t cat_delays[DATA_ES] = {
@@ -1429,6 +1660,9 @@ vlc_player_input_Delete(struct vlc_player_input *input)
     vlc_vector_destroy(&input->video_track_vector);
     vlc_vector_destroy(&input->audio_track_vector);
     vlc_vector_destroy(&input->spu_track_vector);
+
+    if (input->subitems)
+        input_item_node_Delete(input->subitems);
 
     input_Close(input->thread);
     free(input);
