@@ -468,6 +468,7 @@ PlaylistConfigureFromVariables(vlc_playlist_t *playlist, vlc_object_t *obj)
     bool playlist_cork = var_InheritBool(obj, "playlist-cork");
     bool play_and_pause = var_InheritBool(obj, "play-and-pause");
     unsigned repeat_count = var_InheritInteger(obj, "input-repeat");
+    bool gapless = var_InheritBool(obj, "gapless");
 
     vlc_playlist_Lock(playlist);
     vlc_playlist_SetPlaybackOrder(playlist, order);
@@ -482,6 +483,7 @@ PlaylistConfigureFromVariables(vlc_playlist_t *playlist, vlc_object_t *obj)
     vlc_player_SetPauseOnCork(player, playlist_cork);
     vlc_player_SetPlayAndPause(player, play_and_pause);
     vlc_player_SetRepeatCount(player, repeat_count);
+    vlc_player_SetGaplessEnabled(player, gapless);
 
     vlc_playlist_Unlock(playlist);
 }

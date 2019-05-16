@@ -1280,6 +1280,11 @@ static const char *const psz_recursive_list_text[] = {
     "If pending audio communication is detected, playback will be paused " \
     "automatically." )
 
+#define GAPLESS_TEXT N_("Gapless playback")
+#define GAPLESS_LONGTEXT N_( \
+    "Preload the next media from the playlist in order to have uninterrupted " \
+    "playback of consecutive audio tracks.")
+
 #define ML_TEXT N_("Use media library")
 #define ML_LONGTEXT N_( \
     "The media library is automatically saved and reloaded each time you " \
@@ -2148,6 +2153,7 @@ vlc_module_begin ()
     add_bool( "playlist-autostart", true,
               AUTOSTART_TEXT, AUTOSTART_LONGTEXT )
     add_bool( "playlist-cork", true, CORK_TEXT, CORK_LONGTEXT )
+    add_bool( "gapless", true, GAPLESS_TEXT, GAPLESS_LONGTEXT )
 #if defined(_WIN32) || defined(HAVE_DBUS) || defined(__OS2__)
     add_bool( "one-instance", false, ONEINSTANCE_TEXT,
               ONEINSTANCE_LONGTEXT )
