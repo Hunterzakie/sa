@@ -1,5 +1,8 @@
 #!/bin/sh
 
+SCRIPTDIR=$(dirname "$0")
+. "$SCRIPTDIR/env.build.sh" "none"
+
 CFLAGS=${CFLAGS}
 LDFLAGS=${LDFLAGS}
 
@@ -27,5 +30,7 @@ OPTIONS="
 
 export CFLAGS
 export LDFLAGS
+
+vlcSetSymbolEnvironment
 
 sh "$(dirname $0)"/../../../configure ${OPTIONS} "$@"
