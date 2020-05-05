@@ -1,6 +1,6 @@
 <?xml version='1.0'?>
 <Include>
-    <?define ShortProductName = "VLC" ?>
+    <?define ShortProductName = "@PACKAGE_NAME@" ?>
     <?define ProductName = "VLC media player" ?>
     <?define Manufacturer = "VideoLAN" ?>
     <?define AboutURL = "https://www.videolan.org/vlc/" ?>
@@ -41,7 +41,7 @@
         <?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
     <?endif ?>
 
-    <?define AppFolder = "VLC" ?>
+    <?define AppFolder = "@PACKAGE_NAME@" ?>
 
 
     <?define BaseGuid = "d2e0205b-0d3a-46e2-adf7-0504ff48cf" ?>

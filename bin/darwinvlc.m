@@ -151,7 +151,7 @@ int main(int i_argc, const char *ppsz_argv[])
 #ifndef ALLOW_RUN_AS_ROOT
     if (geteuid() == 0)
     {
-        fprintf(stderr, "VLC is not supposed to be run as root. Sorry.\n"
+        fprintf(stderr, PACKAGE_NAME " is not supposed to be run as root. Sorry.\n"
         "If you need to use real-time priorities and/or privileged TCP ports\n"
         "you can use %s-wrapper (make sure it is Set-UID root and\n"
         "cannot be run by non-trusted users first).\n", ppsz_argv[0]);
@@ -288,12 +288,12 @@ int main(int i_argc, const char *ppsz_argv[])
         }
 
         libvlc_SetExitHandler(vlc->p_libvlc_int, vlc_terminate, &context);
-        libvlc_set_app_id(vlc, "org.VideoLAN.VLC", PACKAGE_VERSION, PACKAGE);
+        libvlc_set_app_id(vlc, "org.VideoLAN." PACKAGE_NAME, PACKAGE_VERSION, PACKAGE);
         libvlc_set_user_agent(vlc, "VLC media player", "VLC/"PACKAGE_VERSION);
 
 
         if (libvlc_InternalAddIntf(vlc->p_libvlc_int, NULL)) {
-            fprintf(stderr, "VLC cannot start any interface. Exiting.\n");
+            fprintf(stderr, PACKAGE_NAME " cannot start any interface. Exiting.\n");
             libvlc_SetExitHandler(vlc->p_libvlc_int, NULL, NULL);
             dispatch_sync(dispatch_get_main_queue(), ^{
                 intf_started = false;

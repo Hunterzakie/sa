@@ -9,7 +9,7 @@ pkgdatadir=${datadir}/@PACKAGE@
 pkglibdir=${libdir}/@PACKAGE@
 pluginsdir=${pkglibdir}/plugins
 
-Name: VLC plugin API
+Name: @PACKAGE_NAME@ plugin API
 Description: VLC media player plugin interface
 Version: @VERSION@
 Cflags: -I${includedir} -I${pkgincludedir}/plugins \

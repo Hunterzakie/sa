@@ -256,7 +256,7 @@ int libvlc_InternalInit( libvlc_int_t *p_libvlc, int i_argc,
     var_Create( p_libvlc, "app-icon-name", VLC_VAR_STRING );
     var_SetString( p_libvlc, "app-icon-name", PACKAGE );
     var_Create( p_libvlc, "app-id", VLC_VAR_STRING );
-    var_SetString( p_libvlc, "app-id", "org.VideoLAN.VLC" );
+    var_SetString( p_libvlc, "app-id", "org.VideoLAN."PACKAGE_NAME );
     var_Create( p_libvlc, "app-version", VLC_VAR_STRING );
     var_SetString( p_libvlc, "app-version", PACKAGE_VERSION );
 

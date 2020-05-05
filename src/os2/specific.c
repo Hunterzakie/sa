@@ -31,7 +31,7 @@
 #include <fcntl.h>
 #include <io.h>
 
-#define VLC_IPC_PIPE "\\PIPE\\VLC\\IPC\\"VERSION
+#define VLC_IPC_PIPE "\\PIPE\\" PACKAGE_NAME "\\IPC\\"VERSION
 
 #define IPC_CMD_GO      0x00
 #define IPC_CMD_ENQUEUE 0x01

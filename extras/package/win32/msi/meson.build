@@ -36,6 +36,7 @@ wix_conf.set('BUILD_SKINS_TRUE', skins2_feasible ? '' : '#')
 wix_conf.set('HAVE_NLS_TRUE', wix_conf.get('ENABLE_NLS', 0) == 1 ? '' : '#')
 wix_conf.set('WINDOWS_ARCH', WIX_WINDOWS_ARCH)
 wix_conf.set('PREFIX_PATH', W_PREFIX)
+wix_conf.set('PACKAGE_NAME', meson.project_name())
 
 vlc_wix = configure_file(
     input: 'config.wxi.in',
