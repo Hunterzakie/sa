@@ -7,10 +7,10 @@
 !define PRODUCT_CODENAME "@PACKAGE_NAME@"
 !define VERSION @VERSION@
 !define PRODUCT_VERSION @VERSION@
-!define PRODUCT_GROUP "VideoLAN"
-!define PRODUCT_PUBLISHER "VideoLAN"
+!define PRODUCT_GROUP "@PACKAGE_VENDOR@"
+!define PRODUCT_PUBLISHER "@PACKAGE_VENDOR@"
 !define PRODUCT_WEB_SITE "https://www.videolan.org/"
-!define PRODUCT_DIR_REGKEY "Software\VideoLAN\@PACKAGE_NAME@"
+!define PRODUCT_DIR_REGKEY "Software\@PACKAGE_VENDOR@\@PACKAGE_NAME@"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 !define PRODUCT_ID "{ea92ef52-afe4-4212-bacb-dfe9fca94cd6}"
@@ -865,7 +865,7 @@ Section "un.$(Name_Section91)" SEC91
   Call un.RemoveEmptyDirs
   RMDir "$INSTDIR"
 
-  DeleteRegKey HKLM Software\VideoLAN
+  DeleteRegKey HKLM Software\@PACKAGE_VENDOR@
 
   DeleteRegKey HKCR Applications\vlc.exe
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\vlc.exe"

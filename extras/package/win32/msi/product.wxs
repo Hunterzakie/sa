@@ -63,7 +63,7 @@
         <Property Id="ApplicationFolderName" Value="$(var.Manufacturer)\$(var.AppFolder)" />
         <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
         <Property Id="APPLICATIONFOLDER">
-            <RegistrySearch Id="FindInstallRegDir" Type="raw" Root="HKLM" Win64="$(var.Win64)" Key="Software\VideoLAN\$(var.ShortProductName)" Name="InstallDir" />
+            <RegistrySearch Id="FindInstallRegDir" Type="raw" Root="HKLM" Win64="$(var.Win64)" Key="Software\$(var.Manufacturer)\$(var.ShortProductName)" Name="InstallDir" />
         </Property>
 
         <WixVariable Id="WixUISupportPerUser" Value="1" />
@@ -89,7 +89,7 @@
                     <Directory Id='APPLICATIONFOLDER' Name='$(var.AppFolder)' FileSource="$(var.SourceDir)">
 
                         <Component Id="InstallRegDir" Guid="$(var.CompInstallRegDir)" DiskId="1" Win64="$(var.Win64)">
-                            <RegistryKey Id='RegInstallDir' Root='HKLM' Key='Software\VideoLAN\$(var.ShortProductName)' Action='createAndRemoveOnUninstall' >
+                            <RegistryKey Id='RegInstallDir' Root='HKLM' Key='Software\$(var.Manufacturer)\$(var.ShortProductName)' Action='createAndRemoveOnUninstall' >
                                 <RegistryValue Name='InstallDir' Type='string' Value='[APPLICATIONFOLDER]' />
                             </RegistryKey>
                         </Component>
@@ -279,7 +279,7 @@
                 <util:InternetShortcut Id="DocumentationShortcut" Name="Documentation" Target="https://www.videolan.org/doc/"/>
                 <!-- RegistryValue which serves as KeyPath -->
                 <RegistryValue Root="HKCU"
-                               Key="Software\VideoLAN\$(var.ShortProductName)"
+                               Key="Software\$(var.Manufacturer)\$(var.ShortProductName)"
                                Name="StartMenuShortcuts"
                                Type="integer"
                                Value="1"

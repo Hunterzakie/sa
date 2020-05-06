@@ -13,7 +13,7 @@ BEGIN
   BEGIN
     BLOCK "040904E4"
     BEGIN
-      VALUE "CompanyName", "VideoLAN"
+      VALUE "CompanyName", "@PACKAGE_VENDOR@"
       VALUE "ProductName", "VLC media player"
       VALUE "ProductVersion", VERSION_NUMBER_STR
       VALUE "FileVersion", "@VERSION@"

@@ -2,7 +2,7 @@
 <Include>
     <?define ShortProductName = "@PACKAGE_NAME@" ?>
     <?define ProductName = "VLC media player" ?>
-    <?define Manufacturer = "VideoLAN" ?>
+    <?define Manufacturer = "@PACKAGE_VENDOR@" ?>
     <?define ExeName = "@PACKAGE_TARNAME@" ?>
     <?define AboutURL = "https://www.videolan.org/vlc/" ?>
     <?define SupportURL = "https://www.videolan.org/support/" ?>

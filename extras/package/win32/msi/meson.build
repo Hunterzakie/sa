@@ -38,6 +38,7 @@ wix_conf.set('WINDOWS_ARCH', WIX_WINDOWS_ARCH)
 wix_conf.set('PREFIX_PATH', W_PREFIX)
 wix_conf.set('PACKAGE_NAME', meson.project_name())
 wix_conf.set('PACKAGE_TARNAME', vlc_package_name)
+wix_conf.set('PACKAGE_VENDOR',  vlc_package_vendor)
 
 vlc_wix = configure_file(
     input: 'config.wxi.in',

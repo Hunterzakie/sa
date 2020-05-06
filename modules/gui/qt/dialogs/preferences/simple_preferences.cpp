@@ -709,7 +709,7 @@ SPrefsPanel::SPrefsPanel( qt_intf_t *_p_intf, QWidget *_parent,
 
             HKEY h_key;
             char *langReg = NULL;
-            if( RegOpenKeyEx( HKEY_CURRENT_USER, TEXT("Software\\VideoLAN\\") TEXT(PACKAGE_NAME) TEXT("\\"), 0, KEY_READ, &h_key )
+            if( RegOpenKeyEx( HKEY_CURRENT_USER, TEXT("Software\\") TEXT(PACKAGE_VENDOR) TEXT("\\") TEXT(PACKAGE_NAME) TEXT("\\"), 0, KEY_READ, &h_key )
                     == ERROR_SUCCESS )
             {
                 WCHAR szData[256];
@@ -1378,9 +1378,9 @@ void SPrefsPanel::configML()
 
 void SPrefsPanel::cleanLang() {
     QVLCRegistry qvReg( HKEY_CURRENT_USER );
-    qvReg.DeleteValue( "Software\\VideoLAN\\" PACKAGE_NAME "\\", "Lang" );
-    qvReg.DeleteKey( "Software\\VideoLAN\\", PACKAGE_NAME );
-    qvReg.DeleteKey( "Software\\", "VideoLAN" );
+    qvReg.DeleteValue( "Software\\" PACKAGE_VENDOR "\\" PACKAGE_NAME "\\", "Lang" );
+    qvReg.DeleteKey( "Software\\" PACKAGE_VENDOR "\\", PACKAGE_NAME );
+    qvReg.DeleteKey( "Software\\", PACKAGE_VENDOR );
 }
 
 void SPrefsPanel::saveLang() {
@@ -1392,7 +1392,7 @@ void SPrefsPanel::saveLang() {
     else
     {
         QVLCRegistry qvReg( HKEY_CURRENT_USER );
-        qvReg.WriteRegistry( "Software\\VideoLAN\\" PACKAGE_NAME "\\", "Lang", lang );
+        qvReg.WriteRegistry( "Software\\" PACKAGE_VENDOR "\\" PACKAGE_NAME "\\", "Lang", lang );
     }
 }
 
@@ -1602,7 +1602,7 @@ void addAsso( QVLCRegistry *qvReg, const char *psz_ext )
 
         /* Get the installer path */
         QVLCRegistry qvReg2( HKEY_LOCAL_MACHINE );
-        QString str_temp = qvReg2.ReadRegistry( "Software\\VideoLAN\\" PACKAGE_NAME, "", "" );
+        QString str_temp = qvReg2.ReadRegistry( "Software\\" PACKAGE_VENDOR "\\" PACKAGE_NAME, "", "" );
 
         if( str_temp.size() )
         {

@@ -190,7 +190,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
     if (!lang)
     {
         HKEY h_key;
-        if( RegOpenKeyEx( HKEY_CURRENT_USER, TEXT("Software\\VideoLAN\\") TEXT(PACKAGE_NAME) TEXT("\\"), 0, KEY_READ, &h_key )
+        if( RegOpenKeyEx( HKEY_CURRENT_USER, TEXT("Software\\") TEXT(PACKAGE_VENDOR) TEXT("\\") TEXT(PACKAGE_NAME) TEXT("\\"), 0, KEY_READ, &h_key )
                 == ERROR_SUCCESS )
         {
             WCHAR szData[256];
@@ -216,7 +216,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
         HANDLE sem = CreateSemaphore(NULL, 0, 1, NULL);
 
         libvlc_SetExitHandler(vlc->p_libvlc_int, vlc_kill, &sem);
-        libvlc_set_app_id (vlc, "org.VideoLAN." PACKAGE_NAME, PACKAGE_VERSION, PACKAGE);
+        libvlc_set_app_id (vlc, "org." PACKAGE_VENDOR "." PACKAGE_NAME, PACKAGE_VERSION, PACKAGE);
         libvlc_set_user_agent (vlc, "VLC media player", "VLC/"PACKAGE_VERSION);
         libvlc_InternalAddIntf (vlc->p_libvlc_int, NULL);
         libvlc_InternalPlay (vlc->p_libvlc_int);
