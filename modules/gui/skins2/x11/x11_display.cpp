@@ -234,7 +234,7 @@ X11Display::X11Display( intf_thread_t *pIntf ): SkinObject( pIntf ),
                          sizeof( motifWmHints ) / sizeof( long ) );
 
         // Change the window title
-        XStoreName( m_pDisplay, m_mainWindow, "VLC Media Player" );
+        XStoreName( m_pDisplay, m_mainWindow, PACKAGE_FULL_NAME );
 
         // Add an icon
         Pixmap icon_pixmap, shape_pixmap;

@@ -1,7 +1,7 @@
 <?xml version='1.0'?>
 <Include>
     <?define ShortProductName = "@PACKAGE_NAME@" ?>
-    <?define ProductName = "VLC media player" ?>
+    <?define ProductName = "@PACKAGE_FULL_NAME@" ?>
     <?define Manufacturer = "@PACKAGE_VENDOR@" ?>
     <?define ExeName = "@PACKAGE_TARNAME@" ?>
     <?define AboutURL = "https://www.videolan.org/vlc/" ?>

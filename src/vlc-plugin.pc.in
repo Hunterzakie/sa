@@ -10,7 +10,7 @@ pkglibdir=${libdir}/@PACKAGE@
 pluginsdir=${pkglibdir}/plugins
 
 Name: @PACKAGE_NAME@ plugin API
-Description: VLC media player plugin interface
+Description: @PACKAGE_FULL_NAME@ plugin interface
 Version: @VERSION@
 Cflags: -I${includedir} -I${pkgincludedir}/plugins \
 	-DVLC_DYNAMIC_PLUGIN \

@@ -6,7 +6,7 @@
     <launchable type="desktop-id">vlc.desktop</launchable>
     <metadata_license>CC0-1.0</metadata_license>
     <name>@PACKAGE_NAME@</name>
-    <summary>VLC media player, the open-source multimedia player</summary>
+    <summary>@PACKAGE_FULL_NAME@, the open-source multimedia player</summary>
     <description>
         <p>
             @PACKAGE_NAME@ is a free and open source cross-platform multimedia player and

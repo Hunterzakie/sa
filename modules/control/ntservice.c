@@ -35,7 +35,7 @@
 #include <vlc_charset.h>
 #include <vlc_memstream.h>
 
-#define VLCSERVICENAME "VLC media player"
+#define VLCSERVICENAME PACKAGE_FULL_NAME
 
 /*****************************************************************************
  * Module descriptor

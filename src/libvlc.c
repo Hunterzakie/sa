@@ -248,8 +248,7 @@ int libvlc_InternalInit( libvlc_int_t *p_libvlc, int i_argc,
      * must be created (in place of libvlc_new()) and set to VLC defaults
      * (in place of VLC main()) *here*. */
     var_Create( p_libvlc, "user-agent", VLC_VAR_STRING );
-    var_SetString( p_libvlc, "user-agent",
-                   "VLC media player (LibVLC "VERSION")" );
+    var_SetString( p_libvlc, "user-agent", PACKAGE_FULL_NAME " (LibVLC "VERSION")" );
     var_Create( p_libvlc, "http-user-agent", VLC_VAR_STRING );
     var_SetString( p_libvlc, "http-user-agent",
                    "VLC/"PACKAGE_VERSION" LibVLC/"PACKAGE_VERSION );

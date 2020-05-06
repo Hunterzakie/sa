@@ -149,7 +149,7 @@ Win32Factory::Win32Factory( intf_thread_t *pIntf ):
 
 bool Win32Factory::init()
 {
-    LPCTSTR vlc_name = TEXT("VLC Media Player");
+    LPCTSTR vlc_name = TEXT(PACKAGE_FULL_NAME);
     LPCTSTR vlc_icon = TEXT("VLC_ICON");
     LPCTSTR vlc_class = TEXT("SkinWindowClass");
 

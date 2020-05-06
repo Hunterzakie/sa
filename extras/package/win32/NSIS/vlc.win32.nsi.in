@@ -3,7 +3,7 @@
 ; (http://nsis.sourceforge.net) ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-!define PRODUCT_NAME "VLC media player"
+!define PRODUCT_NAME "@PACKAGE_FULL_NAME@"
 !define PRODUCT_CODENAME "@PACKAGE_NAME@"
 !define VERSION @VERSION@
 !define PRODUCT_VERSION @VERSION@
