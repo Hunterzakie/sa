@@ -11,13 +11,11 @@ info()
 SCRIPTDIR=$(dirname "$0")
 source "$SCRIPTDIR/env.build.sh" "none"
 
-OSX_KERNELVERSION=`uname -r | cut -d. -f1`
 SDKROOT=$(xcrun --show-sdk-path)
 VLCBUILDDIR=""
 
 CORE_COUNT=`getconf NPROCESSORS_ONLN 2>&1`
 let JOBS=$CORE_COUNT+1
-
 
 usage()
 {
@@ -35,7 +33,7 @@ OPTIONS:
    -p            Build packages for all artifacts
    -i <n|u>      Create an installable package (n: nightly, u: unsigned stripped release archive)
    -k <sdk>      Use the specified sdk (default: $SDKROOT)
-   -a <arch>     Use the specified arch (default: $ARCH)
+   -a <arch>     Use the specified arch (default: $HOST_ARCH)
    -C            Use the specified VLC build dir
    -b <url>      Enable breakpad support and send crash reports to this URL
 EOF
@@ -76,7 +74,7 @@ do
              PACKAGETYPE=$OPTARG
          ;;
          a)
-             ARCH=$OPTARG
+             HOST_ARCH=$OPTARG
          ;;
          k)
              SDKROOT=$OPTARG
@@ -115,12 +113,13 @@ if [ "$QUIET" = "yes" ]; then
     out="/dev/null"
 fi
 
-ACTUAL_ARCH=`get_actual_arch $ARCH`
+ACTUAL_HOST_ARCH=`get_actual_arch $HOST_ARCH`
 BUILD_ARCH=`get_buildsystem_arch $BUILD_ARCH`
-BUILD_TRIPLET=$BUILD_ARCH-apple-darwin$OSX_KERNELVERSION
-HOST_TRIPLET=$ARCH-apple-darwin$OSX_KERNELVERSION
 
-info "Building VLC for macOS, architecture ${ACTUAL_ARCH} on a ${BUILD_ARCH} device"
+info "Building VLC for macOS, architecture ${ACTUAL_HOST_ARCH} on a ${BUILD_ARCH} device"
+
+BUILD_TRIPLET=$(vlcGetBuildTriplet)
+HOST_TRIPLET=$(vlcGetHostTriplet)
 export SDKROOT
 vlcSetBaseEnvironment
 vlcroot="$(vlcGetRootDir)"
@@ -163,8 +162,8 @@ info "Building contribs"
 spushd "${vlcroot}/contrib"
 
 if [ "$REBUILD" = "yes" ]; then
-    rm -rf contrib-$TRIPLET
-    rm -rf $TRIPLET
+    rm -rf contrib-$HOST_TRIPLET
+    rm -rf $HOST_TRIPLET
 fi
 mkdir -p contrib-$HOST_TRIPLET && cd contrib-$HOST_TRIPLET
 ../bootstrap --build=$BUILD_TRIPLET --host=$HOST_TRIPLET $CONTRIBFLAGS > $out
@@ -192,6 +191,7 @@ spopd
 
 
 vlcUnsetContribEnvironment
+vlcSetLibVLCEnvironment
 
 #
 # vlc/bootstrap
@@ -250,9 +250,8 @@ make -j$JOBS
 
 info "Preparing VLC.app"
 make VLC.app
-
 # Workaround for macOS 10.7: CFNetwork only exists as part of CoreServices framework
-if [ "$ARCH" = "x86_64" ]; then
+if [ "$ACTUAL_HOST_ARCH" = "x86_64" ]; then
     install_name_tool -change /System/Library/Frameworks/CFNetwork.framework/Versions/A/CFNetwork /System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices VLC.app/Contents/MacOS/lib/libvlccore.dylib
 fi
 
@@ -265,7 +264,6 @@ if [ "$PACKAGETYPE" = "u" ]; then
     # Symbols must be uploaded for libvlc(core).dylib, not libvlc(core).x.dylib
     (cd VLC-debug.app/Contents/MacOS/lib/ && rm libvlccore.dylib && mv libvlccore.*.dylib libvlccore.dylib)
     (cd VLC-debug.app/Contents/MacOS/lib/ && rm libvlc.dylib && mv libvlc.*.dylib libvlc.dylib)
-
 
     find VLC.app/ -name "*.dylib" -exec strip -x {} \;
     find VLC.app/ -type f -name "VLC" -exec strip -x {} \;
