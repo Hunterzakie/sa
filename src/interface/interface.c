@@ -101,6 +101,8 @@ int intf_Create( libvlc_int_t *libvlc, const char *chain )
     val.psz_string = (char *)"gestures,none";
     var_Change( p_intf, "intf-add", VLC_VAR_ADDCHOICE, val,
                 _("Mouse Gestures") );
+    val.psz_string = (char *)"mpd,none";
+    var_Change( p_intf, "intf-add", VLC_VAR_ADDCHOICE, val, _("MPD Server") );
 
     var_AddCallback( p_intf, "intf-add", AddIntfCallback, NULL );
 
