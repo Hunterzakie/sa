@@ -1012,6 +1012,37 @@ bool vlc_aout_stream_IsDrained(vlc_aout_stream *stream)
     return stream_IsDrained(stream);
 }
 
+static void stream_Drain(vlc_aout_stream *stream)
+{
+    audio_output_t *aout = aout_stream_aout(stream);
+
+    if (aout->drain)
+    {
+        assert(!atomic_load_explicit(&stream->drained, memory_order_relaxed));
+
+        aout->drain(aout);
+    }
+    else
+    {
+        assert(atomic_load_explicit(&stream->drain_deadline,
+                                    memory_order_relaxed) == VLC_TICK_INVALID);
+
+        vlc_tick_t drain_deadline = vlc_tick_now();
+
+        vlc_tick_t delay;
+        vlc_mutex_lock(&stream->timing.lock);
+        if (stream_GetDelay(stream, &delay) == 0)
+            drain_deadline += delay;
+        vlc_mutex_unlock(&stream->timing.lock);
+
+        /* else the deadline is now, and vlc_aout_stream_IsDrained() will
+         * return true on the first call. */
+
+        atomic_store_explicit(&stream->drain_deadline, drain_deadline,
+                              memory_order_relaxed);
+    }
+}
+
 void vlc_aout_stream_Drain(vlc_aout_stream *stream)
 {
     audio_output_t *aout = aout_stream_aout(stream);
@@ -1049,29 +1080,5 @@ void vlc_aout_stream_Drain(vlc_aout_stream *stream)
         }
     }
 
-    if (aout->drain)
-    {
-        assert(!atomic_load_explicit(&stream->drained, memory_order_relaxed));
-
-        aout->drain(aout);
-    }
-    else
-    {
-        assert(atomic_load_explicit(&stream->drain_deadline,
-                                    memory_order_relaxed) == VLC_TICK_INVALID);
-
-        vlc_tick_t drain_deadline = vlc_tick_now();
-
-        vlc_tick_t delay;
-        vlc_mutex_lock(&stream->timing.lock);
-        if (stream_GetDelay(stream, &delay) == 0)
-            drain_deadline += delay;
-        vlc_mutex_unlock(&stream->timing.lock);
-
-        /* else the deadline is now, and vlc_aout_stream_IsDrained() will
-         * return true on the first call. */
-
-        atomic_store_explicit(&stream->drain_deadline, drain_deadline,
-                              memory_order_relaxed);
-    }
+    stream_Drain(stream);
 }
