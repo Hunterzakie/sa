@@ -688,6 +688,7 @@ static int ModuleThread_UpdateAudioFormat( decoder_t *p_dec )
                 .clock = p_owner->p_clock,
                 .str_id = p_owner->psz_id,
                 .replay_gain = &p_dec->fmt_out.audio_replay_gain,
+                .gapless = false,
             };
             p_astream = vlc_aout_stream_New( p_aout, &cfg );
             if( p_astream == NULL )
@@ -2094,7 +2095,7 @@ static void *DecoderThread( void *p_data )
                         /* Draining: the decoder is drained and all decoded
                          * buffers are queued to the output at this point.
                          * Now drain the output. */
-                        vlc_aout_stream_Drain( p_owner->audio.stream );
+                        vlc_aout_stream_Drain( p_owner->audio.stream, NULL );
                         p_owner->audio.drained = true;
                     }
                     break;

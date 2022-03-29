@@ -210,6 +210,8 @@ static int aout_GainNotify (audio_output_t *aout, float gain)
 
     if (stream != NULL)
         vlc_aout_stream_NotifyGain(stream, gain);
+    if (owner->gapless_stream != NULL)
+        vlc_aout_stream_NotifyGain(owner->gapless_stream, gain);
     return 0;
 }
 
@@ -305,6 +307,7 @@ audio_output_t *aout_New (vlc_object_t *parent)
     vlc_audio_meter_Init(&owner->meter, aout);
 
     atomic_init(&owner->main_stream, NULL);
+    owner->gapless_stream = NULL;
 
     /* Audio output module callbacks */
     var_Create (aout, "volume", VLC_VAR_FLOAT);
@@ -802,7 +805,9 @@ int aout_OutputNew(audio_output_t *aout, vlc_aout_stream *stream,
 
     vlc_mutex_lock(&owner->lock);
     /* XXX: Remove when aout/stream support is complete (in all modules) */
-    assert(atomic_load(&owner->main_stream) == NULL);
+    vlc_aout_stream *main_stream = atomic_load(&owner->main_stream);
+    /* A promoted successor remains published while recreating a failed output. */
+    assert(main_stream == NULL || main_stream == stream);
 
     int ret = VLC_EGENERIC;
     for (size_t i = 0; formats[i] != 0 && ret != VLC_SUCCESS; ++i)

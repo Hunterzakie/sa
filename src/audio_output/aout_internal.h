@@ -54,6 +54,7 @@ typedef struct
     bool bitexact;
 
     vlc_aout_stream *_Atomic main_stream;
+    vlc_aout_stream *gapless_stream;
 
     struct
     {
@@ -160,18 +161,22 @@ struct vlc_aout_stream_cfg
     struct vlc_clock_t *clock;
     const char *str_id;
     const audio_replay_gain_t *replay_gain;
+    bool gapless;
 };
 
 vlc_aout_stream *vlc_aout_stream_New(audio_output_t *p_aout,
                                      const struct vlc_aout_stream_cfg *cfg);
 void vlc_aout_stream_Delete(vlc_aout_stream *);
 int vlc_aout_stream_Play(vlc_aout_stream *stream, block_t *block);
+bool vlc_aout_stream_TryGaplessHandoff(vlc_aout_stream *stream,
+                                       const block_t *block);
+
 void vlc_aout_stream_GetResetStats(vlc_aout_stream *stream, unsigned *, unsigned *);
 void vlc_aout_stream_ChangePause(vlc_aout_stream *stream, bool b_paused, vlc_tick_t i_date);
 void vlc_aout_stream_ChangeRate(vlc_aout_stream *stream, float rate);
 void vlc_aout_stream_ChangeDelay(vlc_aout_stream *stream, vlc_tick_t delay);
 void vlc_aout_stream_Flush(vlc_aout_stream *stream);
-void vlc_aout_stream_Drain(vlc_aout_stream *stream);
+bool vlc_aout_stream_Drain(vlc_aout_stream *stream, vlc_tick_t *gapless_seam);
 /* Contrary to other vlc_aout_stream_*() functions, this function can be called from
  * any threads */
 bool vlc_aout_stream_IsDrained(vlc_aout_stream *stream);
