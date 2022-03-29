@@ -107,7 +107,9 @@ enum es_out_query_private_e
     ES_OUT_PRIV_SET_VBI_PAGE,                       /* arg1=unsigned res=can fail */
 
     /* Set VBI/Teletext menu transparent */
-    ES_OUT_PRIV_SET_VBI_TRANSPARENCY                /* arg1=bool res=can fail */
+    ES_OUT_PRIV_SET_VBI_TRANSPARENCY,               /* arg1=bool res=can fail */
+
+    ES_OUT_PRIV_WAKE_GAPLESS,                       /* arg1=vlc_tick_t (seam) res=can't fail */
 };
 
 struct vlc_input_es_out;

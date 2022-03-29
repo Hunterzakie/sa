@@ -180,6 +180,9 @@ typedef struct
     input_thread_t *p_input;
     enum input_type input_type;
 
+    /* Kept to re-anchor the clock origin on the seam. */
+    vlc_tick_t gapless_buffering_duration;
+
     input_source_t *main_source;
 
     /* */
@@ -609,6 +612,22 @@ decoder_get_attachments(vlc_input_decoder_t *decoder,
     return input_GetAttachments(p_sys->p_input, ppp_attachment);
 }
 
+static int
+decoder_wait_gapless_status(vlc_input_decoder_t *decoder,
+                            enum input_gapless_status wait_for, void *userdata)
+{
+    (void) decoder;
+
+    es_out_id_t *id = userdata;
+    struct vlc_input_es_out *out = id->out;
+    es_out_sys_t *p_sys = PRIV(&out->out);
+
+    if (!p_sys->p_input)
+        return 0;
+
+    return input_WaitGaplessStatus(p_sys->p_input, wait_for);
+}
+
 static const struct vlc_input_decoder_callbacks decoder_cbs = {
     .on_vout_started = decoder_on_vout_started,
     .on_vout_stopped = decoder_on_vout_stopped,
@@ -621,6 +640,7 @@ static const struct vlc_input_decoder_callbacks decoder_cbs = {
     .frame_previous_status = decoder_frame_previous_status,
     .frame_previous_seek = decoder_frame_previous_seek,
     .get_attachments = decoder_get_attachments,
+    .wait_gapless_status = decoder_wait_gapless_status,
 };
 
 /*****************************************************************************
@@ -1260,6 +1280,8 @@ static void EsOutDecodersStopBuffering(es_out_sys_t *p_sys, bool b_forced)
 
     /* */
     const vlc_tick_t i_current_date = p_sys->b_paused ? p_sys->i_pause_date : vlc_tick_now();
+
+    p_sys->gapless_buffering_duration = i_buffering_duration;
 
     const vlc_tick_t update = i_current_date - i_buffering_duration;
 
@@ -4295,6 +4317,24 @@ static int EsOutVaPrivControlLocked(es_out_sys_t *p_sys, input_source_t *source,
                 input_SendEventVbiTransparency( p_sys->p_input, transp );
         }
         return ret;
+    }
+    case ES_OUT_PRIV_WAKE_GAPLESS:
+    {
+        vlc_tick_t seam = va_arg( args, vlc_tick_t );
+
+        p_sys->input_type = INPUT_TYPE_PLAYBACK;
+
+        /* Re-anchor the clock origin on the seam now, before any sample is
+         * heard, so pacing matches real playback. Arming the handoff requires
+         * buffering to be done, so b_buffering is always false here when seam
+         * is valid. */
+        if (!p_sys->b_buffering && seam != VLC_TICK_INVALID
+          && p_sys->p_pgrm != NULL)
+        {
+            vlc_tick_t update = seam - p_sys->gapless_buffering_duration;
+            input_clock_ChangeSystemOrigin(p_sys->p_pgrm->p_input_clock, update);
+        }
+        return VLC_SUCCESS;
     }
     default: vlc_assert_unreachable();
     }

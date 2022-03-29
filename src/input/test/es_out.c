@@ -246,6 +246,12 @@ void vlc_input_decoder_StopFrameNext(vlc_input_decoder_t *p_dec)
     (void)p_dec;
 }
 
+int input_WaitGaplessStatus(input_thread_t *input, enum input_gapless_status wait_for)
+{
+    (void) input; (void) wait_for;
+    return 0;
+}
+
 vlc_input_decoder_t *
 vlc_input_decoder_CreateSubDec(vlc_input_decoder_t *dec,
                                const struct vlc_input_decoder_cfg *cfg)
