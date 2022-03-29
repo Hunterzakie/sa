@@ -48,7 +48,7 @@ audio_output_t *input_resource_HoldAout( input_resource_t * );
 /**
  * This function creates or recycles an audio output.
  */
-audio_output_t *input_resource_GetAout( input_resource_t * );
+audio_output_t *input_resource_GetAout( input_resource_t *, bool gapless );
 
 /**
  * This function retains or destroys an audio output.

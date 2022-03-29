@@ -679,7 +679,7 @@ static int ModuleThread_UpdateAudioFormat( decoder_t *p_dec )
         audio_output_t *p_aout;
         vlc_aout_stream *p_astream;
 
-        p_aout = input_resource_GetAout( p_owner->p_resource );
+        p_aout = input_resource_GetAout(p_owner->p_resource, false);
         if( p_aout )
         {
             const struct vlc_aout_stream_cfg cfg = {

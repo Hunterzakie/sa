@@ -223,7 +223,7 @@ vlc_player_aout_DelCallbacks(vlc_player_t *player)
 audio_output_t *
 vlc_player_aout_Init(vlc_player_t *player)
 {
-    audio_output_t *aout = input_resource_GetAout(player->resource);
+    audio_output_t *aout = input_resource_GetAout(player->resource, false);
     if (aout != NULL)
     {
         vlc_player_aout_AddCallbacks(player);
