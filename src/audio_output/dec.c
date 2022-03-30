@@ -158,15 +158,11 @@ static int stream_GetDelay(vlc_aout_stream *stream, vlc_tick_t *delay)
 
 static bool stream_IsDrained(vlc_aout_stream *stream)
 {
-    audio_output_t *aout = aout_stream_aout(stream);
+    vlc_tick_t drain_deadline =
+        atomic_load_explicit(&stream->drain_deadline, memory_order_relaxed);
 
-    if (aout->drain == NULL)
-    {
-        vlc_tick_t drain_deadline =
-            atomic_load_explicit(&stream->drain_deadline, memory_order_relaxed);
-        return drain_deadline != VLC_TICK_INVALID
-            && vlc_tick_now() >= drain_deadline;
-    }
+    if (drain_deadline != VLC_TICK_INVALID)
+        return vlc_tick_now() >= drain_deadline;
     else
         return atomic_load_explicit(&stream->drained, memory_order_relaxed);
 }
