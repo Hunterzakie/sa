@@ -1696,9 +1696,8 @@ static vlc_tick_t DisplayPicture(vout_thread_sys_t *vout)
         * So it will be done later.
         */
         if (date_refresh > system_now) {
-            // nothing changed, wait until the next deadline or a control
-            vlc_tick_t max_deadline = system_now + VOUT_REDISPLAY_DELAY;
-            return __MIN(date_refresh, max_deadline);
+            // too early to redisplay, wait until the proper deadline
+            return date_refresh;
         }
         RenderPicture(vout, RENDER_PICTURE_FORCED);
     }
