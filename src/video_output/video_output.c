@@ -1134,6 +1134,13 @@ static picture_t *PreparePicture(vout_thread_sys_t *vout, bool reuse_decoded,
         vout_chrono_Start(&sys->chrono.static_filter);
         picture = filter_chain_VideoFilter(sys->filter.chain_static, sys->displayed.decoded);
         vout_chrono_Stop(&sys->chrono.static_filter);
+
+        if (picture && drop_policy && drop_policy(opaque, picture))
+        {
+            picture_Release(picture);
+            picture = NULL;
+            vout_statistic_AddLate(&sys->statistic, 1);
+        }
     }
 
     vlc_mutex_unlock(&sys->filter.lock);
