@@ -1659,6 +1659,12 @@ void* MediaLibrary::Get( int query, va_list args )
             auto folder = m_ml->folder( id );
             return CreateAndConvert<vlc_ml_folder_t>( folder.get() );
         }
+        case VLC_ML_GET_FOLDER_BY_MRL:
+        {
+            auto mrl = va_arg( args, const char *);
+            auto folder = m_ml->folder( mrl );
+            return CreateAndConvert<vlc_ml_folder_t>( folder.get() );
+        }
         case VLC_ML_GET_MEDIA_BY_MRL:
         {
             auto mrl = va_arg( args, const char* );
