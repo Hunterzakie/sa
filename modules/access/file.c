@@ -352,9 +352,13 @@ static int FileControl( stream_t *p_access, int i_query, va_list args )
     switch( i_query )
     {
         case STREAM_CAN_SEEK:
-        case STREAM_CAN_FASTSEEK:
             pb_bool = va_arg( args, bool * );
             *pb_bool = (p_access->pf_seek != NULL);
+            break;
+
+        case STREAM_CAN_FASTSEEK:
+            pb_bool = va_arg( args, bool * );
+            *pb_bool = (!p_sys->is_remote && (p_access->pf_seek != NULL));
             break;
 
         case STREAM_CAN_PAUSE:
