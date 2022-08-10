@@ -251,6 +251,10 @@ int strcasecmp (const char *, const char *);
 char *strcasestr (const char *, const char *);
 #endif
 
+#ifndef HAVE_STRCHRNUL
+char *strchrnul (const char *, int);
+#endif
+
 #ifndef HAVE_STRDUP
 char *strdup (const char *);
 #endif
