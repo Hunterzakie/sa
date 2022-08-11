@@ -64,3 +64,23 @@ if HAVE_WIN32_DESKTOP
 control_PLUGINS += libntservice_plugin.la
 control_PLUGINS += libwin_hotkeys_plugin.la libwin_msg_plugin.la
 endif
+
+libmpd_plugin_la_SOURCES = \
+	control/mpd/mpd.c control/mpd/mpd.h \
+	control/mpd/protocol.c control/mpd/protocol.h \
+	control/mpd/command.c control/mpd/command.h \
+	control/mpd/playlist.c control/mpd/playlist.h \
+	control/mpd/medialibrary.c control/mpd/medialibrary.h \
+	control/mpd/filter.c control/mpd/filter.h
+libmpd_plugin_la_CFLAGS = $(AM_CFLAGS)
+libmpd_plugin_la_LIBADD = $(AM_LIBADD) $(SOCKET_LIBS) $(LIBM)
+if !HAVE_WIN32
+control_LTLIBRARIES += libmpd_plugin.la
+endif
+
+mpd_protocol_test_CFLAGS = $(libmpd_plugin_la_CFLAGS) -DPROTOCOL_TEST
+mpd_filter_test_CFLAGS = $(libmpd_plugin_la_CFLAGS) -DFILTER_TEST
+mpd_protocol_test_SOURCES = $(libmpd_plugin_la_SOURCES)
+mpd_filter_test_SOURCES = $(libmpd_plugin_la_SOURCES)
+check_PROGRAMS += mpd_protocol_test mpd_filter_test
+TESTS += mpd_protocol_test mpd_filter_test
