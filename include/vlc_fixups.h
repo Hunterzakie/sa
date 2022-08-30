@@ -239,6 +239,10 @@ int vasprintf (char **, const char *, va_list);
 #endif
 
 /* string.h */
+#ifndef HAVE_MEMMEM
+void *memmem(const void *, size_t, const void *, size_t);
+#endif
+
 #ifndef HAVE_MEMRCHR
 void *memrchr(const void *, int, size_t);
 #endif
