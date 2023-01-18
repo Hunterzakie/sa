@@ -385,7 +385,7 @@ void libvlc_InternalCleanup( libvlc_int_t *p_libvlc )
         vlc_tracer_Destroy(priv->tracer);
     /* Free module bank. It is refcounted, so we call this each time  */
     module_EndBank (true);
-#if defined(_WIN32) || defined(__OS2__)
+#if defined(_WIN32) || defined(__OS2__) || defined(__ANDROID__)
     system_End( );
 #endif
 }
