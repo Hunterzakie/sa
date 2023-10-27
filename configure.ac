@@ -3102,6 +3102,11 @@ dnl
 PKG_ENABLE_MODULES_VLC([DAV1D], [], [dav1d >= 0.5.0], [AV1 decoder (default auto)])
 
 dnl
+dnl  Whisper.cpp
+dnl
+PKG_HAVE_WITH_MODULES([WHISPER], [whisper], [Whisper Speech To Text (default auto)])
+
+dnl
 dnl libvpx decoder plugin
 dnl
 AC_ARG_ENABLE([vpx],

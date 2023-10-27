@@ -1,0 +1,83 @@
+From: Gabriel Lafond-Thenaille <gabriel@videolabs.io>
+Subject: [PATCH 1/2] whisper: add whisper_vad_set_context to set vad_context
+ in the state
+
+ * whisper_vad_set_context set the vad_context of the current state and
+   set external_vad to true.
+
+ * whisper_vad_set_context_to_state set the vad_context of any state
+   and set external_vad to true.
+
+If a vad_context is set and external_vad is set to false then the
+existing vad_context is set.
+
+Co-authored-by: Thomas Guillem <thomas@gllm.fr>
+---
+ include/whisper.h |  6 ++++++
+ src/whisper.cpp   | 19 ++++++++++++++++++-
+ 2 files changed, 24 insertions(+), 1 deletion(-)
+
+diff --git a/include/whisper.h b/include/whisper.h
+index f4cc6bf7..765837ed 100644
+--- a/include/whisper.h
++++ b/include/whisper.h
+@@ -718,6 +718,12 @@ extern "C" {
+     WHISPER_API void whisper_vad_free_segments(struct whisper_vad_segments * segments);
+     WHISPER_API void whisper_vad_free         (struct whisper_vad_context  * ctx);
+ 
++    // Inject external VAD context for use with params.vad = true.
++    // The caller retains ownership - whisper will not free this context.
++    // Frees any previously set internal VAD context.
++    WHISPER_API void whisper_vad_set_context_to_state(struct whisper_state * state, struct whisper_vad_context * vctx);
++    WHISPER_API void whisper_vad_set_context         (struct whisper_context * ctx, struct whisper_vad_context * vctx);
++
+     ////////////////////////////////////////////////////////////////////////////
+ 
+     // Temporary helpers needed for exposing ggml interface
+diff --git a/src/whisper.cpp b/src/whisper.cpp
+index 796bccfb..70cd4a7f 100644
+--- a/src/whisper.cpp
++++ b/src/whisper.cpp
+@@ -921,6 +921,7 @@ struct whisper_state {
+     int32_t exp_n_audio_ctx = 0; // 0 - use default
+ 
+     whisper_vad_context * vad_context = nullptr;
++    bool external_vad = false;
+ 
+     struct vad_segment_info {
+         int64_t orig_start;
+@@ -3835,7 +3836,7 @@ void whisper_free_state(struct whisper_state * state) {
+         // [EXPERIMENTAL] Token-level timestamps with DTW
+         aheads_masks_free(state->aheads_masks);
+ 
+-        if (state->vad_context != nullptr) {
++        if (state->vad_context != nullptr && !state->external_vad) {
+             whisper_vad_free(state->vad_context);
+             state->vad_context = nullptr;
+         }
+@@ -5467,6 +5468,22 @@ void whisper_vad_free_segments(whisper_vad_segments * segments) {
+     }
+ }
+ 
++void whisper_vad_set_context_to_state(
++        struct whisper_state * state,
++        struct whisper_vad_context * vctx) {
++    if (state->vad_context != nullptr && !state->external_vad) {
++        whisper_vad_free(state->vad_context);
++    }
++    state->vad_context = vctx;
++    state->external_vad = (vctx != nullptr);
++}
++
++void whisper_vad_set_context(
++        struct whisper_context * ctx,
++        struct whisper_vad_context * vctx) {
++    whisper_vad_set_context_to_state(ctx->state, vctx);
++}
++
+ //////////////////////////////////
+ // Grammar - ported from llama.cpp
+ //////////////////////////////////
+-- 
+2.52.0
+

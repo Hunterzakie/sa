@@ -1,0 +1,82 @@
+From: Gabriel Lafond-Thenaille <gabriel@videolabs.io>
+Subject: [PATCH] cmake: fix linking problems
+
+---
+ CMakeLists.txt      | 49 +++++++++++++++++++++++++++++++++++++++++++++
+ cmake/whisper.pc.in |  2 +-
+ 2 files changed, 50 insertions(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 06577bf1..6fc6ad43 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -203,6 +203,55 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/whisper-config.cmake
+               ${CMAKE_CURRENT_BINARY_DIR}/whisper-version.cmake
+         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/whisper)
+ 
++if(GGML_AVAILABLE_BACKENDS)
++    foreach(_backend ${GGML_AVAILABLE_BACKENDS})
++        list(APPEND LIBLIST "-l${_backend}")
++    endforeach()
++endif()
++
++if(APPLE AND GGML_ACCELERATE)
++    list(APPEND LIBLIST "-framework Accelerate")
++endif()
++
++if(GGML_METAL)
++    list(APPEND LIBLIST "-framework Foundation" "-framework Metal" "-framework MetalKit")
++endif()
++
++if(GGML_OPENCL)
++    list(APPEND LIBLIST "-lOpenCL")
++endif()
++
++if(WHISPER_COREML)
++    list(APPEND LIBLIST "-lwhisper.coreml")
++    if(APPLE)
++        list(APPEND LIBLIST "-framework Foundation" "-framework CoreML")
++    endif()
++endif()
++
++# Note: whisper.openvino is an OBJECT library, so it's compiled directly into
++# the main whisper library and doesn't need to be listed separately
++
++# Capture implicit link libraries
++foreach(LIB ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
++    if(IS_ABSOLUTE ${LIB} AND EXISTS ${LIB})
++        list(APPEND LIBLIST "${LIB}")
++    elseif(${LIB} MATCHES "-l:libunwind.a") # android toolchain
++        list(APPEND LIBLIST "-lunwind")
++    else()
++        list(APPEND LIBLIST "-l${LIB}")
++    endif()
++endforeach()
++
++if(LIBLIST)
++    # Remove standard libraries
++    list(REMOVE_ITEM LIBLIST "-lc" "-lpthread" "-lmingwex" "-lmingwthrd"
++        "-lmingw32" "-lmoldname" "-lmsvcrt" "-ladvapi32" "-lshell32"
++        "-luser32" "-lkernel32")
++    string(REPLACE ";" " " PRIVATE_LIBS "${LIBLIST}")
++else()
++    set(PRIVATE_LIBS "")
++endif(LIBLIST)
++
+ configure_file(cmake/whisper.pc.in
+         "${CMAKE_CURRENT_BINARY_DIR}/whisper.pc"
+         @ONLY)
+diff --git a/cmake/whisper.pc.in b/cmake/whisper.pc.in
+index 00ec7912..476a1c8b 100644
+--- a/cmake/whisper.pc.in
++++ b/cmake/whisper.pc.in
+@@ -6,5 +6,5 @@ includedir=${prefix}/include
+ Name: whisper
+ Description: Port of OpenAI's Whisper model in C/C++
+ Version: @PROJECT_VERSION@
+-Libs: -L${libdir} -lggml  -lggml-base -lwhisper
++Libs: -L${libdir} -lwhisper -lggml -lggml-base @PRIVATE_LIBS@
+ Cflags: -I${includedir}
+-- 
+2.52.0
+
