@@ -2401,7 +2401,7 @@ VLC_MALLOC static char *EsOutCreateStrId( es_out_id_t *es, bool stable, const ch
 static es_out_id_t *EsOutAddLocked(es_out_sys_t *p_sys,
                                    input_source_t *source,
                                    const es_format_t *fmt,
-                                   es_out_id_t *p_master)
+                                   es_out_id_t *p_master, bool autoselect)
 {
     input_thread_t    *p_input = p_sys->p_input;
     assert( source ); /* == p_sys->main_source if the given source is NULL */
@@ -2535,7 +2535,10 @@ static es_out_id_t *EsOutAddLocked(es_out_sys_t *p_sys,
         EsOutSendEsEvent(p_sys, es, VLC_INPUT_ES_ADDED, false, VLC_VOUT_ORDER_PRIMARY);
 
     EsOutUpdateInfo(p_sys, es, NULL);
-    EsOutSelect(p_sys, es, false);
+    if (autoselect)
+    {
+        EsOutSelect(p_sys, es, false);
+    }
 
     return es;
 }
@@ -2551,7 +2554,7 @@ static es_out_id_t *EsOutAdd(es_out_t *out, input_source_t *source, const es_for
         source = p_sys->main_source;
 
     vlc_mutex_lock( &p_sys->lock );
-    es_out_id_t *es = EsOutAddLocked(p_sys, source, fmt, NULL);
+    es_out_id_t *es = EsOutAddLocked(p_sys, source, fmt, NULL, true);
     vlc_mutex_unlock( &p_sys->lock );
     return es;
 }
@@ -3168,7 +3171,7 @@ static void EsOutCreateSubESes(es_out_sys_t *sys,
         if (es != NULL)
             continue; /* XXX: Update or Del/Add the new FMT (if same codec) */
 
-        es = EsOutAddLocked(sys, parent->p_pgrm->source, fmt, parent);
+        es = EsOutAddLocked(sys, parent->p_pgrm->source, fmt, parent, true);
         if (es == NULL)
         {
             parent->sub_es_vec.size = i;
