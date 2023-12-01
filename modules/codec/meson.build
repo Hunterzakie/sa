@@ -980,6 +980,34 @@ vlc_modules += {
     'enabled' : dav1d_dep.found(),
 }
 
+# whisper decoder
+llama_dep = dependency('llama', required: get_option('llama'))
+whisper_dep = dependency('whisper', required: get_option('whisper'))
+
+whisper_enabled = get_option('whisper').require(
+  whisper_dep.found() and llama_dep.found(),
+  error_message: 'whisper support requires both whisper and llama dependencies'
+).allowed()
+
+vlc_modules += {
+    'name' : 'whisper',
+    'sources' : files(
+      'whisper/whisper_internal.h',
+      'whisper/whisper_protocol.h',
+      'whisper/whisper_translation.h',
+      'whisper/loader.c',
+      'whisper/backend_thread.c',
+      'whisper/backend_process.c',
+      'whisper/run.c',
+      'whisper/protocol.c',
+      'whisper/init.c',
+      'whisper/translate.c',
+
+    ),
+    'dependencies' : [whisper_dep, llama_dep, m_lib, gcrypt_dep],
+    'enabled' : whisper_enabled,
+}
+
 # tests
 vlc_modules += {
     'name': 'hxxxhelper_testdec',
