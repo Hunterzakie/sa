@@ -186,6 +186,38 @@ vlc_player_SetRepeatCount(vlc_player_t *player, unsigned repeat_count);
 VLC_API void
 vlc_player_SetPauseOnCork(vlc_player_t *player, bool enabled);
 
+struct vlc_stt_ctx_callbacks;
+
+/**
+ * Preload the speech-to-text model into the player's input resource.
+ *
+ * Triggers the speech-to-text loader ahead of playback, on the resource a later
+ * playback will reuse. The loader runs asynchronously and reports through
+ * @p cbs. The caller must call vlc_player_DetachSttCtx() with the same @p data
+ * before @p cbs or @p data become invalid.
+ *
+ * @note Must be called without the player lock held.
+ *
+ * @param player unlocked player instance
+ * @param cbs speech-to-text context callbacks (must not be NULL)
+ * @param data opaque data passed back to @p cbs
+ * @return VLC_SUCCESS if a context exists or started loading, an error code otherwise
+ */
+VLC_API int
+vlc_player_PreloadSttCtx(vlc_player_t *player,
+                         const struct vlc_stt_ctx_callbacks *cbs, void *data);
+
+/**
+ * Detach callbacks registered via vlc_player_PreloadSttCtx().
+ *
+ * @note Must be called without the player lock held.
+ *
+ * @param player unlocked player instance
+ * @param data the same opaque data passed to vlc_player_PreloadSttCtx()
+ */
+VLC_API void
+vlc_player_DetachSttCtx(vlc_player_t *player, void *data);
+
 /** @} vlc_player__instance */
 
 /**
@@ -1877,6 +1909,15 @@ vlc_player_SetTrackCategoryEnabled(vlc_player_t *player,
 VLC_API bool
 vlc_player_IsTrackCategoryEnabled(vlc_player_t *player,
                                   enum es_format_category_e cat);
+
+/**
+ * Enable or Disable the Speech To Text capability
+ *
+ * @param player locked player instance
+ * @param enabled the stt status
+ */
+VLC_API void vlc_player_SetSpeechToTextEnabled(vlc_player_t *player,
+                                               bool enabled);
 
 /**
  * Helper to enable or disable video tracks
