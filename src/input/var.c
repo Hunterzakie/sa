@@ -65,6 +65,7 @@ void vlc_object_InitInputConfig(vlc_object_t *obj,
                     VLC_VAR_STRING|inherit_flag);
         var_Create(obj, "sub-track-id",
                     VLC_VAR_STRING|inherit_flag);
+        var_Create(obj, "stt", VLC_VAR_BOOL|inherit_flag);
 
         var_Create(obj, "sub-file", VLC_VAR_STRING | inherit_flag);
         var_Create(obj, "sub-autodetect-file", VLC_VAR_BOOL |
