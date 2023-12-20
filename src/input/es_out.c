@@ -1210,6 +1210,21 @@ static void EsOutStopFreeVout(es_out_sys_t *p_sys)
         input_resource_StopFreeVout( input_priv(p_sys->p_input)->p_resource );
 }
 
+static inline void EsOutStopWait(es_out_sys_t *p_sys)
+{
+    es_out_id_t *es = NULL;
+
+    foreach_es_then_es_slaves(es)
+    {
+        if (!es->p_dec)
+            continue;
+
+        vlc_input_decoder_StopWait(es->p_dec);
+        if (es->p_dec_record)
+            vlc_input_decoder_StopWait(es->p_dec_record);
+    }
+}
+
 static void EsOutDecodersStopBuffering(es_out_sys_t *p_sys, bool b_forced)
 {
     es_out_id_t *p_es;
@@ -1361,15 +1376,7 @@ static void EsOutDecodersStopBuffering(es_out_sys_t *p_sys, bool b_forced)
         input_SendEventState(p_sys->p_input, PAUSE_S, i_pause_date);
     }
 
-    foreach_es_then_es_slaves(p_es)
-    {
-        if( !p_es->p_dec )
-            continue;
-
-        vlc_input_decoder_StopWait( p_es->p_dec );
-        if( p_es->p_dec_record )
-            vlc_input_decoder_StopWait( p_es->p_dec_record );
-    }
+    EsOutStopWait(p_sys);
 }
 static void EsOutDecodersChangePause(es_out_sys_t *p_sys, bool b_paused, vlc_tick_t i_date)
 {
