@@ -40,6 +40,7 @@
 #include "../stream_output/stream_output.h"
 #include "../audio_output/aout_internal.h"
 #include "../video_output/vout_internal.h"
+#include "../misc/stt.h"
 #include "input_interface.h"
 #include "event.h"
 #include "resource.h"
@@ -84,6 +85,9 @@ struct input_resource_t
 
     bool            b_aout_busy;
     audio_output_t *p_aout;
+
+    /* Stt */
+    struct vlc_stt_ctx *stt_ctx;
 };
 
 #define resource_GetFirstVoutRsc(resource) \
@@ -309,6 +313,8 @@ input_resource_t *input_resource_New( vlc_object_t *p_parent )
     if( !p_resource )
         return NULL;
 
+    p_resource->stt_ctx = NULL;
+
     p_resource->p_vout_dummy = vout_CreateDummy(p_parent);
     if( !p_resource->p_vout_dummy )
     {
@@ -336,6 +342,10 @@ void input_resource_Release( input_resource_t *p_resource )
         aout_Release( p_resource->p_aout );
 
     vout_Release( p_resource->p_vout_dummy );
+    if (p_resource->stt_ctx != NULL) {
+        vlc_stt_ctx_Delete(p_resource->stt_ctx);
+    }
+
     free( p_resource );
 }
 
@@ -644,4 +654,55 @@ void input_resource_TerminateSout( input_resource_t *p_resource )
     vlc_mutex_lock( &p_resource->lock );
     DestroySout(p_resource);
     vlc_mutex_unlock( &p_resource->lock );
+}
+
+struct vlc_stt_ctx *
+input_resource_GetOrCreateSttCtx(input_resource_t *resource,
+                                 const struct vlc_stt_ctx_callbacks *cbs,
+                                 void *data)
+{
+    struct vlc_stt_ctx *stt_ctx = NULL;
+
+    vlc_mutex_lock(&resource->lock);
+    stt_ctx = resource->stt_ctx;
+    vlc_mutex_unlock(&resource->lock);
+
+    if (stt_ctx != NULL) {
+        vlc_mutex_lock(&stt_ctx->lock);
+        enum vlc_stt_ctx_status status = stt_ctx->status;
+        if (status != vlc_stt_ctx_status_done
+            && status != vlc_stt_ctx_status_error
+            && stt_ctx->owner.data != data) {
+            vlc_mutex_unlock(&stt_ctx->lock);
+            return NULL;
+        }
+        if (status != vlc_stt_ctx_status_error) {
+            stt_ctx->owner.cbs = cbs;
+            stt_ctx->owner.data = data;
+            stt_ctx->cancelled = false;
+            vlc_mutex_unlock(&stt_ctx->lock);
+            return stt_ctx;
+        }
+        vlc_mutex_unlock(&stt_ctx->lock);
+        vlc_stt_ctx_Delete(stt_ctx);
+    }
+
+    stt_ctx = vlc_stt_ctx_Loader(resource->p_parent, cbs, data);
+
+    vlc_mutex_lock(&resource->lock);
+    resource->stt_ctx = stt_ctx;
+    vlc_mutex_unlock(&resource->lock);
+
+    return stt_ctx;
+}
+
+void
+input_resource_DetachSttCtx(input_resource_t *resource, void *data)
+{
+    vlc_mutex_lock(&resource->lock);
+    struct vlc_stt_ctx *stt_ctx = resource->stt_ctx;
+    vlc_mutex_unlock(&resource->lock);
+    if (stt_ctx != NULL) {
+        vlc_stt_ctx_Detach(stt_ctx, data);
+    }
 }
