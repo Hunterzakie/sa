@@ -440,6 +440,8 @@ libvlccore_la_SOURCES = \
 	misc/sort.c \
 	misc/subpicture.c \
 	misc/subpicture.h \
+	misc/stt.c \
+	misc/stt.h \
 	misc/medialibrary.c \
 	misc/viewpoint.c
 libvlccore_la_LIBADD = $(LIBS_libvlccore) \
