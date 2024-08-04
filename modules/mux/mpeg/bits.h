@@ -22,6 +22,8 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
+#include <limits.h>
+#include <stdbit.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -61,9 +63,19 @@ static inline void bits_align( bits_buffer_t *p_buffer )
     }
 }
 
+static inline bool bits_will_overflow( const bits_buffer_t *buff, int count )
+{
+    const int leftover = count - (stdc_trailing_zeros(buff->i_mask) + 1);
+    const int byte_shift = (leftover + CHAR_BIT - 1) / CHAR_BIT;
+    return buff->i_data + byte_shift >= buff->i_size;
+}
+
 static inline void bits_write( bits_buffer_t *p_buffer,
                                int i_count, uint64_t i_bits )
 {
+    if( bits_will_overflow(p_buffer, i_count) )
+        return;
+
     while( i_count > 0 )
     {
         i_count--;
