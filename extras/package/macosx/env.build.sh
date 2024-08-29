@@ -163,7 +163,7 @@ vlcSetContribEnvironment() {
     local MINIMAL_OSX_VERSION="$1"
 
     if [ -z "$SDKROOT" ]; then
-        export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
+        SDKROOT="$(xcrun --sdk macosx --show-sdk-path)" && export SDKROOT
     fi
     SDK_VERSION="$(xcrun --sdk $SDKROOT --show-sdk-version)"
 
