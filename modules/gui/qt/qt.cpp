@@ -278,6 +278,12 @@ static void ShowDialog   ( intf_thread_t *, int, int, intf_dialog_args_t * );
 #define PIP_MODE_TEXT N_( "Enable picture-in-picture (PiP) mode" )
 #define PIP_MODE_LONGTEXT N_( "Picture-in-picture mode allows playing video contained in a smaller area so that the interface remains usable." )
 
+#define QUICK_TEXT_RENDER_TYPE_TEXT N_( "Adjust the default render type of text and text-like elements in Qt Quick." )
+#define QUICK_TEXT_RENDER_TYPE_LONGTEXT N_( "The values might be 0 (QtTextRendering), 1 (NativeTextRendering), and " \
+                                            "2 (CurveTextRendering). Curve text rendering is introduced with Qt " \
+                                            "6.7.0. For more information, see Qt Documentation on enumeration " \
+                                            "QQuickWindow::TextRenderType." )
+
 static const int initial_prefs_view_list[] = { 0, 1, 2 };
 static const char *const initial_prefs_view_list_texts[] =
     { N_("Simple"), N_("Advanced"), N_("Expert") };
@@ -455,6 +461,8 @@ vlc_module_begin ()
     add_bool( "qt-backdrop-blur", true, BACKDROP_BLUR_FILTER_TEXT, BACKDROP_BLUR_FILTER_LONGTEXT )
 
     add_bool( "qt-pip-mode", true, PIP_MODE_TEXT, PIP_MODE_LONGTEXT )
+
+    add_integer( "qt-quick-text-render-type", -1, QUICK_TEXT_RENDER_TYPE_TEXT, QUICK_TEXT_RENDER_TYPE_LONGTEXT )
 
     add_float_with_range( "qt-safe-area", 0, 0, 100.0, SAFE_AREA_TEXT, SAFE_AREA_LONGTEXT )
 
@@ -1118,6 +1126,13 @@ static void *Thread( void *obj )
 
     if( !p_intf->b_isDialogProvider )
     {
+        {
+            // Qt Quick text render type adjustment:
+            const int quickTextRenderType = var_InheritInteger(p_intf, "qt-quick-text-render-type");
+            if (quickTextRenderType >= 0)
+                QQuickWindow::setTextRenderType(static_cast<QQuickWindow::TextRenderType>(quickTextRenderType));
+        }
+
         static const auto gracefulExitHandler = [&app, mainCtx = QPointer(p_intf->p_mi), settings = QPointer(p_intf->mainSettings)](QQuickWindow *window) {
             // Graceful exit on error, as if this signal is not connected
             // Qt uses `qFatal()`. With `MainCtx::askToQuit()`, the event loop
