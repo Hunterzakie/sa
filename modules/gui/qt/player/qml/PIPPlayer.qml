@@ -57,6 +57,15 @@ T.Control {
         root.anchors.horizontalCenter = undefined
     }
 
+    readonly property ColorContext colorContext: ColorContext {
+        id: theme
+
+        // NOTE: We force the night theme when playing a video.
+        palette: VLCStyle.darkPalette
+
+        colorSet: ColorContext.View
+    }
+
     DoubleClickIgnoringItem {
         anchors.fill: parent
 
@@ -117,7 +126,8 @@ T.Control {
         color: (hoverHandler.hovered ||
                 playButton?.hovered ||
                 closeButton?.hovered ||
-                fullscreenButton?.hovered) ? "#10000000" : "transparent"
+                fullscreenButton?.hovered ||
+                contentItem?.immersiveModeToggleButton?.hovered) ? "#10000000" : "transparent"
 
         // It is acceptable for effects to exceed the boundaries of the
         // parent. They are an exception to the "hypothetical clip test".
@@ -131,13 +141,16 @@ T.Control {
                  (hoverHandler.hovered ||
                  playButton.hovered ||
                  closeButton.hovered ||
-                 fullscreenButton.hovered)
+                 fullscreenButton.hovered ||
+                 !!immersiveModeToggleButton?.hovered)
 
         // Raise the content item so that the handlers of the control do
         // not handle events that are to be handled by the handlers/items
         // of the content item. Raising the content item should be fine
         // because content item is supposed to be the foreground item.
         z: 1
+
+        property ImmersiveView.ImmersiveModeToggleButton immersiveModeToggleButton
 
         Widgets.IconButton {
             id: playButton
@@ -194,6 +207,35 @@ T.Control {
             textStyle: root.textStyle
 
             onClicked: MainCtx.playerView = true
+        }
+
+        Component {
+            id: immersiveModeToggleButtonComponent
+
+            ImmersiveView.ImmersiveModeToggleButton {
+                textStyle: root.textStyle
+
+                font.pixelSize: VLCStyle.icon_PIP
+
+                anchors {
+                    bottom: parent.bottom
+                    bottomMargin: VLCStyle.margin_small
+                    right: parent.right
+                    rightMargin: VLCStyle.margin_small
+                }
+
+                Component.onCompleted: {
+                    parent.immersiveModeToggleButton = this
+                }
+            }
+        }
+
+        Component.onCompleted: {
+            // Immersive mode is not supported on Wayland because:
+            // - Window can not get hidden while video output is present.
+            // - Always on top does not work.
+            if (!Qt.platform.pluginName.startsWith("wayland"))
+                immersiveModeToggleButtonComponent.incubateObject(this, {}, 1 /* QQmlIncubator::AsynchronousIfNested */)
         }
     }
 }

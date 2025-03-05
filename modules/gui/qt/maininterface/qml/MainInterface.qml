@@ -304,6 +304,8 @@ Item {
                     return "qrc:///qt/qml/VLC/Player/MinimalView.qml"
                 case  MainCtx.MAININTERFACE_MODE_PLAYER:
                     return "qrc:///qt/qml/VLC/Player/Player.qml"
+                case MainCtx.MAININTERFACE_MODE_IMMERSIVE:
+                    return "qrc:///qt/qml/VLC/Player/ImmersiveView.qml"
                 default:
                     console.error("unexpected interface mode", MainCtx.effectiveMainInterfaceMode)
                 case MainCtx.MAININTERFACE_MODE_MAINDISPLAY:

@@ -425,6 +425,20 @@ FocusScope{
 
         visible: root._showTopBar
 
+        ImmersiveView.ImmersiveModeToggleButton {
+            anchors.verticalCenter: parent.verticalCenter
+
+            font.pixelSize: VLCStyle.icon_banner
+
+            width: VLCStyle.bannerButton_width
+            height: VLCStyle.bannerButton_height
+
+            // Immersive mode is not supported on Wayland because:
+            // - Window can not get hidden while video output is present.
+            // - Always on top does not work.
+            visible: !Qt.platform.pluginName.startsWith("wayland")
+        }
+
         Widgets.IconToolButton {
             id: menuSelector
 

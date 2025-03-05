@@ -114,7 +114,7 @@ class MainCtx : public QObject
     Q_PROPERTY(Grouping grouping READ grouping WRITE setGrouping NOTIFY groupingChanged FINAL)
     Q_PROPERTY(ColorSchemeModel* colorScheme READ getColorScheme CONSTANT FINAL)
     Q_PROPERTY(bool hasVLM READ hasVLM CONSTANT FINAL)
-    Q_PROPERTY(bool clientSideDecoration READ useClientSideDecoration NOTIFY useClientSideDecorationChanged FINAL)
+    Q_PROPERTY(bool clientSideDecoration READ useClientSideDecoration WRITE setUseClientSideDecoration NOTIFY useClientSideDecorationChanged FINAL)
     Q_PROPERTY(bool hasFirstrun READ hasFirstrun CONSTANT FINAL)
     Q_PROPERTY(int  csdBorderSize READ CSDBorderSize NOTIFY useClientSideDecorationChanged FINAL)
     Q_PROPERTY(bool hasToolbarMenu READ hasToolbarMenu WRITE setHasToolbarMenu NOTIFY hasToolbarMenuChanged FINAL)
@@ -145,6 +145,7 @@ class MainCtx : public QObject
     // Expose Property Minimal View for Player View
     Q_PROPERTY(bool minimalView READ isMinimalView WRITE setMinimalView NOTIFY mainInterfaceModesChanged FINAL)
     Q_PROPERTY(bool playerView READ isPlayerView WRITE setPlayerView NOTIFY mainInterfaceModesChanged FINAL)
+    Q_PROPERTY(bool immersiveMode READ immersiveMode WRITE setImmersiveMode NOTIFY mainInterfaceModesChanged FINAL)
 
     // This Property only works if hasAcrylicSurface is set
     Q_PROPERTY(bool acrylicActive READ acrylicActive WRITE setAcrylicActive NOTIFY acrylicActiveChanged FINAL)
@@ -216,7 +217,8 @@ public:
         MAININTERFACE_MODE_INVALID = 0,
         MAININTERFACE_MODE_MAINDISPLAY = 1,
         MAININTERFACE_MODE_PLAYER = 2,
-        MAININTERFACE_MODE_MINIMAL = 4
+        MAININTERFACE_MODE_MINIMAL = 4,
+        MAININTERFACE_MODE_IMMERSIVE = 8
     };
     Q_FLAG(MainInterfaceMode);
     Q_DECLARE_FLAGS(MainInterfaceModes, MainInterfaceMode)
@@ -242,6 +244,7 @@ public:
     inline ColorSchemeModel* getColorScheme() const { return m_colorScheme; }
     bool hasVLM() const;
     bool useClientSideDecoration() const;
+    void setUseClientSideDecoration(bool);
     bool hasFirstrun() const;
     inline bool hasToolbarMenu() const { return m_hasToolbarMenu; }
     inline bool canShowVideoPIP() const { return m_canShowVideoPIP; }
@@ -281,6 +284,9 @@ public:
     int mouseHideTimeout() const { return m_mouseHideTimeout; }
 
     bool usingTouch() const { return m_usingTouch; }
+
+    bool immersiveMode() const;
+    void setImmersiveMode(bool);
 
     Q_INVOKABLE bool backdropBlurRequested() const { return var_InheritBool(p_intf, "qt-backdrop-blur"); }
 
@@ -504,6 +510,9 @@ protected:
 
     SearchCtx* m_search = nullptr;
     SortCtx* m_sort = nullptr;
+
+    bool m_immersiveModeRestoreIntfOnTop = false;
+    bool m_immersiveModeRestoreTitleBar = false;
 
 #ifdef UPDATE_CHECK
     //m_updateModel is created on first access
