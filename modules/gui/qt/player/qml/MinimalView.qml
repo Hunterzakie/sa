@@ -42,6 +42,8 @@ FocusScope {
         colorSet: ColorContext.Window
     }
 
+    property alias videoSurface: videoSurface
+
     VideoSurface {
         id: videoSurface
 
