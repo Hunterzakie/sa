@@ -43,6 +43,7 @@ FocusScope {
     }
 
     property alias videoSurface: videoSurface
+    property alias csdDecorations: csdDecorations
 
     VideoSurface {
         id: videoSurface
