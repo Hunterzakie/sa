@@ -4892,15 +4892,6 @@ static int ProbeFragments( demux_t *p_demux, bool b_force, bool *pb_fragmented )
                 return VLC_EGENERIC;
             }
 
-            stime_t *pi_track_times = calloc( p_sys->i_tracks, sizeof(*pi_track_times) );
-            if( !pi_track_times )
-            {
-                MP4_Fragments_Index_Delete( p_sys->p_fragsindex );
-                p_sys->p_fragsindex = NULL;
-                MP4_BoxFree( p_vroot );
-                return VLC_EGENERIC;
-            }
-
             for( unsigned track_num=0; track_num<p_sys->i_tracks; track_num++ )
             {
                 stime_t fragment_time = 0;
@@ -4935,14 +4926,12 @@ static int ProbeFragments( demux_t *p_demux, bool b_force, bool *pb_fragmented )
 
                     p_sys->p_fragsindex->pi_pos[fragment++] = p_moof->i_pos;
                 }
-                pi_track_times[track_num] = fragment_time;
 
                 stime_t i_movietime = MP4_rescale( fragment_time, p_sys->track[track_num].i_timescale, p_sys->i_timescale );
                 if( p_sys->p_fragsindex->i_last_time < i_movietime )
                     p_sys->p_fragsindex->i_last_time = i_movietime;
             }
 
-            free( pi_track_times );
 #ifdef MP4_VERBOSE
             MP4_Fragments_Index_Dump( VLC_OBJECT(p_demux), p_sys->p_fragsindex, p_sys->i_timescale );
 #endif
