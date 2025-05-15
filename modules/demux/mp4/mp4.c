@@ -4901,15 +4901,15 @@ static int ProbeFragments( demux_t *p_demux, bool b_force, bool *pb_fragmented )
                 return VLC_EGENERIC;
             }
 
-            unsigned fragment = 0;
-
-            for( MP4_Box_t *p_moof = p_vroot->p_first; p_moof; p_moof = p_moof->p_next )
+            for( unsigned track_num=0; track_num<p_sys->i_tracks; track_num++ )
             {
-                if( p_moof->i_type != ATOM_moof )
-                    continue;
+                unsigned fragment = 0;
 
-                for( unsigned track_num=0; track_num<p_sys->i_tracks; track_num++ )
+                for( MP4_Box_t *p_moof = p_vroot->p_first; p_moof; p_moof = p_moof->p_next )
                 {
+                    if( p_moof->i_type != ATOM_moof )
+                        continue;
+
                     MP4_Box_t *p_tfdt = NULL;
                     MP4_Box_t *p_traf = MP4_GetTrafByTrackID( p_moof, p_sys->track[track_num].i_track_ID );
                     if( p_traf )
@@ -4931,9 +4931,9 @@ static int ProbeFragments( demux_t *p_demux, bool b_force, bool *pb_fragmented )
                     stime_t i_duration = 0;
                     if( GetMoofTrackDuration( p_sys->p_moov, p_moof, p_sys->track[track_num].i_track_ID, &i_duration ) )
                         pi_track_times[track_num] += i_duration;
-                }
 
-                p_sys->p_fragsindex->pi_pos[fragment++] = p_moof->i_pos;
+                    p_sys->p_fragsindex->pi_pos[fragment++] = p_moof->i_pos;
+                }
             }
 
             for( unsigned track_num=0; track_num<p_sys->i_tracks; track_num++ )
