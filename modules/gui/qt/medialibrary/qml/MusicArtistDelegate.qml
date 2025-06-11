@@ -47,6 +47,9 @@ T.ItemDelegate {
 
     required  property MLDragItem dragTarget
 
+    // When `minimalWidthState` is set, the text is not visible:
+    property bool minimalWidthState: false
+
     // Aliases
     // Private
 
@@ -63,7 +66,7 @@ T.ItemDelegate {
     height: VLCStyle.play_cover_small + (VLCStyle.margin_xsmall * 2)
 
     verticalPadding: VLCStyle.margin_xsmall
-    horizontalPadding: VLCStyle.margin_normal
+    horizontalPadding: minimalWidthState ? VLCStyle.margin_xsmall : VLCStyle.margin_normal
 
     hoverEnabled: true
 
@@ -205,6 +208,8 @@ T.ItemDelegate {
 
             Layout.fillWidth: true
             Layout.fillHeight: true
+
+            visible: !root.minimalWidthState
 
             Widgets.ListLabel {
                 id: artistName
