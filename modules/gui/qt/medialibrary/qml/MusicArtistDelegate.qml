@@ -72,6 +72,11 @@ T.ItemDelegate {
 
     Accessible.onPressAction: root.itemClicked()
 
+    T.ToolTip.visible: (visible && (visualFocus || hovered) && (!artistName.visible || (artistName.implicitWidth > artistName.width)))
+    T.ToolTip.timeout: visualFocus ? VLCStyle.duration_humanMoment : 0 // we should not obstruct forever with visual focus
+    T.ToolTip.text: artistName.text
+    T.ToolTip.delay: VLCStyle.delayToolTipAppear
+    
     Component.onCompleted: {
         // Qt Quick AbstractButton sets a cursor for itself, unset it so that if the view has
         // busy cursor, it is visible over the delegate:
