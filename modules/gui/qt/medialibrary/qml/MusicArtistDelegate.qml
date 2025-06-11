@@ -227,6 +227,8 @@ T.ItemDelegate {
                                    : qsTr("Unknown artist")
 
                 color: theme.fg.primary
+
+                T.ToolTip.visible: false
             }
         }
     }
