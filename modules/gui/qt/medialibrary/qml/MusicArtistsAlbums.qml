@@ -44,6 +44,7 @@ Widgets.PageExt {
     property alias currentAlbumIndex: albumSubView.currentIndex
 
     property bool isScreenSmall: VLCStyle.isScreenSmall
+    property bool isScreenReallySmall: VLCStyle.isScreenReallySmall
 
     //padding is handled internally
     leftPadding: 0
@@ -68,13 +69,8 @@ Widgets.PageExt {
     onInitialAlbumIndexChanged: resetFocus()
     onInitialIndexChanged: resetFocus()
 
-    onIsScreenSmallChanged: {
-        if (VLCStyle.isScreenSmall)
-            resetFocus()
-    }
-
     function resetFocus() {
-        if (VLCStyle.isScreenSmall) {
+        if (albumSubView.focus) {
             albumSubView.setCurrentItemFocus(Qt.OtherFocusReason)
             return
         }
@@ -87,7 +83,7 @@ Widgets.PageExt {
     }
 
     function setCurrentItemFocus(reason) {
-        if (VLCStyle.isScreenSmall) {
+        if (albumSubView.focus) {
             albumSubView.setCurrentItemFocus(reason);
         } else {
             artistList.setCurrentItemFocus(reason);
@@ -172,11 +168,12 @@ Widgets.PageExt {
             z: 1
             Layout.fillHeight: true
 
-            Layout.preferredWidth: VLCStyle.isScreenSmall
+            Layout.preferredWidth: root.isScreenReallySmall
                                    ? 0
-                                   : Helpers.clamp(resizeHandle.requestedWidth, minimumWidth, maximumWidth)
-            visible: !VLCStyle.isScreenSmall && (artistModel.count > 0)
-            focus: !VLCStyle.isScreenSmall && (artistModel.count > 0)
+                                   : (root.isScreenSmall ? (VLCStyle.play_cover_small + VLCStyle.margin_normal)
+                                                         : Helpers.clamp(resizeHandle.requestedWidth, minimumWidth, maximumWidth))
+            visible: !root.isScreenReallySmall && (artistModel.count > 0)
+            focus: !root.isScreenReallySmall && (artistModel.count > 0)
 
             displayMarginBeginning: root.displayMarginBeginning
             displayMarginEnd: root.displayMarginEnd
@@ -214,7 +211,7 @@ Widgets.PageExt {
             header: Widgets.ViewHeader {
                 view: artistList
 
-                visible: view.count > 0
+                visible: (view.count > 0) && !root.isScreenSmall
 
                 leftPadding: VLCStyle.margin_normal
                 bottomPadding: VLCStyle.margin_small
@@ -240,6 +237,8 @@ Widgets.PageExt {
                 dragTarget: musicArtistDragItem
 
                 selected: selectionModel.selectedIndexesFlat.includes(index)
+
+                minimalWidthState: VLCStyle.isScreenSmall
             }
 
             Widgets.HorizontalResizeHandle {
@@ -317,7 +316,7 @@ Widgets.PageExt {
             focus: true
             initialIndex: root.initialAlbumIndex
             Navigation.parentItem: root
-            Navigation.leftItem: VLCStyle.isScreenSmall ? null : artistList
+            Navigation.leftItem: artistList
         }
     }
 
