@@ -82,10 +82,6 @@ static void Close (filter_t *p_filter)
 
 static int Open (filter_t *p_filter)
 {
-    if (p_filter->fmt_out.audio.i_channels < 2) {
-        msg_Err( p_filter, "At least 2 audio channels are required" );
-        return VLC_EGENERIC;
-    }
     vlc_object_t *p_aout = vlc_object_parent(p_filter);
     filter_sys_t *p_sys = p_filter->p_sys = malloc( sizeof(*p_sys) );
     if (unlikely(!p_sys))
@@ -95,8 +91,12 @@ static int Open (filter_t *p_filter)
             var_CreateGetFloat( p_aout, "pan-control" ) );
     var_AddCallback( p_aout, "pan-control", paramCallback, p_sys );
 
-    p_filter->fmt_out.audio.i_format = VLC_CODEC_FL32;
+    /* The algorithm only supports a stereo left+right pair for now. */
+    p_filter->fmt_in.audio.i_physical_channels = AOUT_CHANS_STEREO;
+    p_filter->fmt_out.audio.i_physical_channels = AOUT_CHANS_STEREO;
+
     p_filter->fmt_in.audio.i_format = VLC_CODEC_FL32;
+    p_filter->fmt_out.audio.i_format = VLC_CODEC_FL32;
     aout_FormatPrepare( &p_filter->fmt_in.audio );
     aout_FormatPrepare( &p_filter->fmt_out.audio );
 
