@@ -40,12 +40,12 @@ typedef struct
 
 static block_t *Process ( filter_t *p_filter, block_t *p_in_buf )
 {
-    filter_sys_t *p_sys = p_filter->p_sys;
-    float *p_in = (float *)p_in_buf->p_buffer;
-    size_t i_nb_samples = p_in_buf->i_nb_samples;
-    size_t i_nb_channels = aout_FormatNbChannels( &p_filter->fmt_in.audio );
-    float f_pan = atomic_load( &p_sys->f_pan );
+    const filter_sys_t *p_sys = p_filter->p_sys;
+    const size_t i_nb_samples = p_in_buf->i_nb_samples;
+    const size_t i_nb_channels = aout_FormatNbChannels( &p_filter->fmt_in.audio );
+    const float f_pan = atomic_load( &p_sys->f_pan );
 
+    float *p_in = (float *)p_in_buf->p_buffer;
     for ( size_t i = 0 ; i < i_nb_samples ; ++i )
     {
         float f_left = p_in[ i * i_nb_channels ];
