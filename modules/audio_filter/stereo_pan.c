@@ -92,6 +92,8 @@ static int Open (filter_t *p_filter)
     var_AddCallback( p_aout, "pan-control", paramCallback, p_sys );
 
     /* The algorithm only supports a stereo left+right pair for now. */
+    p_filter->fmt_in.audio.channel_type = AUDIO_CHANNEL_TYPE_BITMAP;
+    p_filter->fmt_out.audio.channel_type = AUDIO_CHANNEL_TYPE_BITMAP;
     p_filter->fmt_in.audio.i_physical_channels = AOUT_CHANS_STEREO;
     p_filter->fmt_out.audio.i_physical_channels = AOUT_CHANS_STEREO;
 
