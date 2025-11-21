@@ -814,6 +814,10 @@ option('ndi',
        type: 'feature',
        value: 'auto',
        description: 'Build with NDI module (requires libnoidea)')
+option('enable_medialib_gen',
+    type: 'boolean',
+    value: false,
+    description: 'Medialibrary generation module option')
 
 # TODO: Missing v4l2
 # TODO: Missing rpi-omxil

@@ -1,5 +1,13 @@
 # Graphical user interface (GUI) modules
 
+# generate_medialib
+if get_option('enable_medialib_gen')
+vlc_modules += {
+    'name' : 'generate_medialib',
+    'sources' : files('generate_medialib.c')
+}
+endif
+
 # ncurses text-based interface
 ncursesw_dep = dependency('ncursesw', required: get_option('ncurses'))
 if ncursesw_dep.found()

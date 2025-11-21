@@ -12,6 +12,12 @@ gui_LTLIBRARIES += $(gui_PLUGINS)
 gui_RPATH += -rpath '$(guidir)'
 endif
 
+if ENABLE_MEDIALIB_GEN
+libgenerate_medialib_plugin_la_SOURCES = gui/generate_medialib.c
+libgenerate_medialib_plugin_la_CPPFLAGS = $(AM_CPPFLAGS)
+gui_LTLIBRARIES += libgenerate_medialib_plugin.la
+endif
+
 libncurses_plugin_la_SOURCES = gui/ncurses.c
 libncurses_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) $(NCURSES_CFLAGS)
 libncurses_plugin_la_LIBADD = $(NCURSES_LIBS) $(LIBM)
