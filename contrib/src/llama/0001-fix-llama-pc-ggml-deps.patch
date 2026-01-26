@@ -1,0 +1,61 @@
+From: Gabriel Lafond-Thenaille <gabriel@videolabs.io>
+Subject: [PATCH] fix llama.pc: add missing ggml static library dependencies
+
+libllama.a links against backend libraries such as ggml-cpu and, when
+enabled, ggml-vulkan or ggml-metal; downstream static consumers need
+these in the Libs line.  Mirror the approach used by whisper.cpp: build
+a LIBLIST from GGML_AVAILABLE_BACKENDS and append the loader and the
+Darwin frameworks conditionally, then substitute the result as
+@PRIVATE_LIBS@ in llama.pc.in.
+
+For the Vulkan loader the link flag is platform-dependent: on Windows
+the loader is an import library (libvulkan-1.dll.a) that the static
+linker can only find by exact filename (-l:libvulkan-1.dll.a); on
+other platforms the conventional -lvulkan is used.
+
+--- a/cmake/llama.pc.in
++++ b/cmake/llama.pc.in
+@@ -6,5 +6,5 @@ includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+ Name: llama
+ Description: Port of Facebook's LLaMA model in C/C++
+ Version: @LLAMA_INSTALL_VERSION@
+-Libs: -L${libdir} -lggml -lggml-base -lllama
++Libs: -L${libdir} -lllama -lggml -lggml-base @PRIVATE_LIBS@
+ Cflags: -I${includedir}
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -270,6 +270,34 @@
+         WORLD_EXECUTE
+     DESTINATION ${CMAKE_INSTALL_BINDIR})
+
++if(GGML_AVAILABLE_BACKENDS)
++    foreach(_backend ${GGML_AVAILABLE_BACKENDS})
++        list(APPEND LIBLIST "-l${_backend}")
++    endforeach()
++endif()
++
++if(GGML_VULKAN)
++    if(WIN32)
++        list(APPEND LIBLIST "-l:libvulkan-1.dll.a")
++    else()
++        list(APPEND LIBLIST "-lvulkan")
++    endif()
++endif()
++
++if(GGML_METAL)
++    list(APPEND LIBLIST "-framework Foundation" "-framework Metal" "-framework MetalKit")
++endif()
++
++if(APPLE AND GGML_ACCELERATE)
++    list(APPEND LIBLIST "-framework Accelerate")
++endif()
++
++if(LIBLIST)
++    string(REPLACE ";" " " PRIVATE_LIBS "${LIBLIST}")
++else()
++    set(PRIVATE_LIBS "")
++endif()
++
+ configure_file(cmake/llama.pc.in
+         "${CMAKE_CURRENT_BINARY_DIR}/llama.pc"
+         @ONLY)

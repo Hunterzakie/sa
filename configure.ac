@@ -3107,6 +3107,11 @@ dnl
 PKG_HAVE_WITH_MODULES([WHISPER], [whisper], [Whisper Speech To Text (default auto)])
 
 dnl
+dnl  Llama.cpp
+dnl
+PKG_HAVE_WITH_MODULES([LLAMA], [llama], [Llama LLM inference (default auto)])
+
+dnl
 dnl libvpx decoder plugin
 dnl
 AC_ARG_ENABLE([vpx],
