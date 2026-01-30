@@ -4901,7 +4901,7 @@ static int ProbeFragments( demux_t *p_demux, bool b_force, bool *pb_fragmented )
                 return VLC_EGENERIC;
             }
 
-            unsigned index = 0;
+            unsigned fragment = 0;
 
             for( MP4_Box_t *p_moof = p_vroot->p_first; p_moof; p_moof = p_moof->p_next )
             {
@@ -4919,21 +4919,21 @@ static int ProbeFragments( demux_t *p_demux, bool b_force, bool *pb_fragmented )
                     {
                         pi_track_times[track_num] = p_tfdt->data.p_tfdt->i_base_media_decode_time;
                     }
-                    else if( index == 0 ) /* Set first fragment time offset from moov */
+                    else if( fragment == 0 ) /* Set first fragment time offset from moov */
                     {
                         stime_t i_duration = GetMoovTrackDuration( p_sys, p_sys->track[track_num].i_track_ID );
                         pi_track_times[track_num] = MP4_rescale( i_duration, p_sys->i_timescale, p_sys->track[track_num].i_timescale );
                     }
 
                     stime_t i_movietime = MP4_rescale( pi_track_times[track_num], p_sys->track[track_num].i_timescale, p_sys->i_timescale );
-                    p_sys->p_fragsindex->p_times[index * p_sys->i_tracks + track_num] = i_movietime;
+                    p_sys->p_fragsindex->p_times[fragment * p_sys->i_tracks + track_num] = i_movietime;
 
                     stime_t i_duration = 0;
                     if( GetMoofTrackDuration( p_sys->p_moov, p_moof, p_sys->track[track_num].i_track_ID, &i_duration ) )
                         pi_track_times[track_num] += i_duration;
                 }
 
-                p_sys->p_fragsindex->pi_pos[index++] = p_moof->i_pos;
+                p_sys->p_fragsindex->pi_pos[fragment++] = p_moof->i_pos;
             }
 
             for( unsigned track_num=0; track_num<p_sys->i_tracks; track_num++ )
