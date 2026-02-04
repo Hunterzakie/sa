@@ -1,0 +1,13 @@
+appium/
+__pycache__/
+.venv/
+venv/
+.vscode/
+dist/
+.vagrant/
+*.lock
+*.log
+*.webm
+*.gz
+*.tar
+.vagrant/

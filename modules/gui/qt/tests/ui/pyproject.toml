@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vlc_gui_automation"
+description = "A project that allows to automate VLC GUI using Appium on Windows and Dogtail on Linux."
+requires-python = ">=3.8"
+readme = "README.md"
+dependencies = [
+    "Appium-Python-Client ; platform_system == 'Windows'",
+    "pywin32 ; platform_system == 'Windows'",
+    "dogtail==2.0.4 ; platform_system == 'Linux'",
+    "mss ; platform_system == 'Linux'",
+    "PyGObject ; platform_system == 'Linux'",
+]
+authors = [
+    {name = "Wassim Lalaoui", email = "wassim@videolabs.io"},
+]
+maintainers = [
+    {name = "Wassim Lalaoui", email = "wassim@videolabs.io"},
+]
+keywords = ["vlc", "automation", "gui", "appium", "dogtail", "novawindows"]
+version = "0.1.0"
+
+
+[project.urls]
+Repository = "https://code.videolan.org/videolan/vlc"
+Issues = "https://code.videolan.org/videolan/vlc/-/issues"
