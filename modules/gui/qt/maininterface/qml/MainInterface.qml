@@ -59,6 +59,20 @@ Item {
         anchors.rightMargin: MainCtx.windowExtendedMargin
         anchors.bottomMargin: MainCtx.windowExtendedMargin
 
+        property real _eDPR: MainCtx.effectiveDevicePixelRatio(Window.window)
+
+        Connections {
+            target: MainCtx
+
+            function onIntfDevicePixelRatioChanged() {
+                // Update the DPR:
+                // Normally, this is not done, as we display the images at the size we
+                // want, and we don't want to re-load all images on DPR change. But in
+                // this case it is necessary as we need to update the csd window radius.
+                g_mainInterface._eDPR = MainCtx.effectiveDevicePixelRatio(g_mainInterface.Window.window)
+            }
+        }
+
         Binding {
             target: VLCStyle
             property: "appWidth"
@@ -75,6 +89,18 @@ Item {
             target: MainCtx
             property: "windowExtendedMargin"
             value: _extendedFrameVisible ? (Qt.platform.pluginName.startsWith("wayland") ? 60 : 30) : 0
+        }
+
+        Binding {
+            target: MainCtx
+            property: "windowRadius"
+            value: (MainCtx.csdRoundedCorners &&
+                    g_mainInterface.Window.window &&
+                    MainCtx.clientSideDecoration &&
+                    !MainCtx.platformHandlesRoundingWithCSD() &&
+                    (MainCtx.intfMainWindow?.visibility === Window.Windowed) &&
+                    ((MainCtx.effectiveMainInterfaceMode === MainCtx.MAININTERFACE_MODE_MAINDISPLAY) || (!MainCtx.hasEmbededVideo || MainCtx.pinVideoControls)) &&
+                    MainCtx.windowHasDepthBuffer(g_mainInterface.Window.window)) ? (VLCStyle.csdWindowRadius * g_mainInterface._eDPR) : 0
         }
 
         Window.onWindowChanged: {
@@ -331,6 +357,45 @@ Item {
             }
         }
 
+        Rectangle {
+            id: windowBorderRectangle
+
+            color: "transparent"
+
+            // Effect should not clip the border, and
+            // the border must be on top of the effect
+            // to cover the non-AA corners of the clipped
+            // content.
+            z: effect.z + 1
+
+            radius: MainCtx.windowRadius
+
+            visible: (MainCtx.windowRadius > 0.0)
+
+            anchors.fill: parent
+            anchors.margins: -(border.width / 2)
+
+            border.width: Math.floor(VLCStyle.dp(1, VLCStyle.scale))
+            border.pixelAligned: false
+
+            // The window border must be fully opaque, to cover
+            // for the lack of (both inner and outer) AA in clipped
+            // content. If there is no border, or translucent
+            // border, MSAA can be used:
+            border.color: Qt.alpha(windowBorderTheme.separator, 1.0)
+
+            ColorContext {
+                id: windowBorderTheme
+                // NOTE: We force the night theme when playing a video.
+                palette: ((MainCtx.effectiveMainInterfaceMode === MainCtx.MAININTERFACE_MODE_MINIMAL ||
+                           MainCtx.effectiveMainInterfaceMode === MainCtx.MAININTERFACE_MODE_PLAYER) &&
+                          MainCtx.hasEmbededVideo && MainCtx.pinVideoControls === false)
+                         ? VLCStyle.darkPalette
+                         : VLCStyle.palette
+                colorSet: theme.colorSet // Same as `theme`
+            }
+        }
+
         Loader {
             asynchronous: true
             source: "qrc:///qt/qml/VLC/Menus/GlobalShortcuts.qml"
@@ -365,6 +430,7 @@ Item {
         // as opaque in the scene graph by the renderer, which makes it possible to not use a clip node for the content due to depth test (since
         // this item is quasi-opaque, the content pixels obscured by the shadow pixels are not painted), and at the same time not spend effort on
         // blending. Note that this optimization relies on hollow mode that discards the inner pixels, so the actual content area is still painted.
+        // Note that this is also how the interface content is rounded, in that case this is not only an optimization.
         blending: false
         visible: _extendedFrameVisible && !MainCtx.platformHandlesShadowsWithCSD()
         color: Qt.rgba(0.0, 0.0, 0.0, 0.5) // sg opacity < 1.0 force enables blending, so we adjust the color instead
@@ -373,6 +439,8 @@ Item {
         z: hasDepthBuffer ? 99 : -1
 
         readonly property bool hasDepthBuffer: (Window.window && MainCtx.windowHasDepthBuffer(Window.window))
+
+        radius: MainCtx.windowRadius
 
         // Blur radius can not be greater than (margin / compensationFactor), as in that case it would need bigger
         // size than the window to compensate. If you want bigger blur radius, either decrease the compensation
