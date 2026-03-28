@@ -17,6 +17,9 @@
  *****************************************************************************/
 
 #include "compositor.hpp"
+
+#include <QPainterPath>
+
 #include "compositor_dummy.hpp"
 #include "mainctx.hpp"
 #include "video_window_handler.hpp"
@@ -351,6 +354,9 @@ void CompositorVideo::adjustBlurBehind()
             {
                 QRegion blurRegion;
                 const QRegion maskRegion = window->mask();
+                const auto windowRadius = m_mainCtx->windowRadius();
+                const auto margin = m_mainCtx->windowExtendedMargin();
+
                 if (maskRegion.isEmpty())
                 {
                     // If there is window mask, we assume that the content area is smaller than the
@@ -360,9 +366,30 @@ void CompositorVideo::adjustBlurBehind()
                     // Since the mask region represents the actual content area, and the outside region
                     // is included in the frame margins, we can set the blur region only if the mask is
                     // empty. This fixes blur backdrop applied to client shadows on X11:
-                    const auto margin = m_mainCtx->windowExtendedMargin();
-                    blurRegion = QRegion(margin, margin, window->width() - 2 * margin, window->height() - 2 * margin);
+                    if (windowRadius > 0.0)
+                    {
+                        QPainterPath path; // This is intentionally not cached.
+                        path.addRoundedRect(QRectF(margin,
+                                                   margin,
+                                                   window->width() - 2 * margin,
+                                                   window->height() - 2 * margin), windowRadius, windowRadius);
+                        blurRegion = QRegion(path.toFillPolygon().toPolygon());
+                    }
+                    else
+                    {
+                        blurRegion = QRegion(margin, margin, window->width() - 2 * margin, window->height() - 2 * margin);
+                    }
                 }
+                else if (windowRadius > 0.0)
+                {
+                    QPainterPath path; // This is intentionally not cached.
+                    path.addRoundedRect(QRectF(0.0,
+                                               0.0,
+                                               window->width() - 2 * margin - 0.0,
+                                               window->height() - 2 * margin - 0.0), windowRadius, windowRadius);
+                    blurRegion = QRegion(path.toFillPolygon().toPolygon());
+                }
+
                 m_windowEffectsModule->setBlurBehind(window, true, blurRegion);
             }
             else
@@ -474,6 +501,7 @@ bool CompositorVideo::setBlurBehind(QWindow *window, const bool enable)
             connect(window, &QWindow::heightChanged, this, &CompositorVideo::adjustBlurBehind, Qt::UniqueConnection);
             connect(m_mainCtx, &MainCtx::windowExtendedMarginChanged, this, &CompositorVideo::adjustBlurBehind, Qt::UniqueConnection);
             connect(m_mainCtx, &MainCtx::useClientSideDecorationChanged, this, &CompositorVideo::adjustBlurBehind, Qt::UniqueConnection);
+            connect(m_mainCtx, &MainCtx::windowRadiusChanged, this, &CompositorVideo::adjustBlurBehind, Qt::UniqueConnection);
         }
         else
         {
@@ -481,6 +509,7 @@ bool CompositorVideo::setBlurBehind(QWindow *window, const bool enable)
             disconnect(window, &QWindow::heightChanged, this, &CompositorVideo::adjustBlurBehind);
             disconnect(m_mainCtx, &MainCtx::windowExtendedMarginChanged, this, &CompositorVideo::adjustBlurBehind);
             disconnect(m_mainCtx, &MainCtx::useClientSideDecorationChanged, this, &CompositorVideo::adjustBlurBehind);
+            disconnect(m_mainCtx, &MainCtx::windowRadiusChanged, this, &CompositorVideo::adjustBlurBehind);
         }
 
         adjustBlurBehind();
