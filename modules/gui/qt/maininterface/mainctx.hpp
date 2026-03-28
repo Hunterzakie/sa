@@ -363,6 +363,7 @@ public:
         });
     }
 
+    Q_INVOKABLE virtual bool platformHandlesRoundingWithCSD() const { return false; };
     Q_INVOKABLE virtual bool platformHandlesResizeWithCSD() const { return false; };
     Q_INVOKABLE virtual bool platformHandlesTitleBarButtonsWithCSD() const { return false; };
     Q_INVOKABLE virtual bool platformHandlesShadowsWithCSD() const { return false; };
