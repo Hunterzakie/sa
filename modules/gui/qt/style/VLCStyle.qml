@@ -262,6 +262,8 @@ QtObject {
     readonly property int applicationHorizontalMargin: MainCtx.safeArea * appWidth / 100
     readonly property int applicationVerticalMargin: MainCtx.safeArea * appHeight / 100
 
+    readonly property int csdWindowRadius: 8
+
     readonly property int globalToolbar_height: MainCtx.dp(40, scale)
     readonly property int localToolbar_height: MainCtx.dp(48, scale)
 
