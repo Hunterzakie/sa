@@ -270,7 +270,7 @@ AbstractButton {
                         " -- / -- "
                     else {
                         const length = Player.length
-                        return Player.time.formatHMS(length.isSubSecond() ? VLCTick.SubSecondFormattedAsMS : 0) +
+                        return Player.interpolatedTime.formatHMS(length.isSubSecond() ? VLCTick.SubSecondFormattedAsMS : 0) +
                                 " / " +
                                 length.formatHMS()
                     }

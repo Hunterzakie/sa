@@ -26,7 +26,6 @@
 #include "util/shared_input_item.hpp"
 #include "util/renderer_manager.hpp"
 
-#include <QTimer>
 #include <QUrl>
 
 #ifndef QT_HAS_LIBATOMIC
@@ -93,12 +92,8 @@ public:
     PlayerController::PlayingState m_playing_status = PlayerController::PLAYING_STATE_STOPPED;
     QString         m_name;
     float           m_buffering = 0.f;
-    float           m_rate = 1.f;
 
-    VLCTime      m_time;
-    VLCDuration  m_remainingTime;
-    double       m_position = 0.f;
-    VLCDuration  m_length;
+    TimerPoint m_timerPoint;
 
 #ifdef QT_HAS_LIBATOMIC
     std::atomic<vlc_player_timer_smpte_timecode> m_highResolutionTime {{}};
@@ -131,9 +126,6 @@ public:
     vlc_player_timer_id* m_player_timer = nullptr;
     vlc_player_timer_id* m_player_timer_smpte = nullptr;
     struct vlc_player_timer_point m_player_time;
-    bool seeking = false;
-    QTimer m_position_timer;
-    QTimer m_time_timer;
 
     //title/chapters/menu
     TitleListModel m_titleList;
@@ -186,6 +178,11 @@ public:
     //others
     QString         m_artUrl;
     struct input_stats_t m_stats;
+
+    // For `::interpolateTimerPoint()`:
+    vlc_tick_t m_lastTimerPointTime = VLC_TICK_INVALID;
+    std::optional<TimerPoint> m_lastTimerPoint;
+    std::optional<TimerPoint> m_lastInterpolatedTimerPoint;
 
     RendererManager m_rendererManager;
 

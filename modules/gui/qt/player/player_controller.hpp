@@ -29,6 +29,11 @@
 #include <QEvent>
 #include <QScopedPointer>
 #include <QUrl>
+#include <QPointer>
+#include <QQuickWindow>
+#include <QQuickItem>
+#include <QQmlPropertyValueSource>
+#include <QQmlProperty>
 #include "player/input_models.hpp"
 #include "util/audio_device_model.hpp"
 #include "util/varchoicemodel.hpp"
@@ -171,13 +176,19 @@ public:
     Q_PROPERTY(bool isStarted READ isStarted NOTIFY playingStateChanged FINAL)
     Q_PROPERTY(QString name READ getName NOTIFY nameChanged FINAL)
     Q_PROPERTY(float buffering READ getBuffering  NOTIFY bufferingChanged FINAL)
-    Q_PROPERTY(float rate READ getRate WRITE setRate NOTIFY rateChanged FINAL)
     Q_PROPERTY(QUrl url READ getUrl NOTIFY inputChanged FINAL)
 
+    // NOTE: If update frequency becomes too high, get rid of NOTIFY signals for
+    //       time, remainingTime, and position. For now they are available,
+    //       because they are not updated too frequently (as in high precision
+    //       timer). This is to prevent event backlogging.
     Q_PROPERTY(VLCTime time READ getTime WRITE setTime NOTIFY timeChanged FINAL)
-    Q_PROPERTY(VLCTime remainingTime READ getRemainingTime NOTIFY remainingTimeChanged FINAL)
+    Q_PROPERTY(VLCTime interpolatedTime READ getInterpolatedTime NOTIFY interpolatedTimeChanged FINAL)
+    Q_PROPERTY(VLCDuration remainingTime READ getRemainingTime NOTIFY remainingTimeChanged FINAL)
     Q_PROPERTY(double position READ getPosition WRITE setPosition NOTIFY positionChanged FINAL)
+    Q_PROPERTY(double interpolatedPosition READ getInterpolatedPosition NOTIFY interpolatedPositionChanged FINAL)
     Q_PROPERTY(VLCDuration length READ getLength NOTIFY lengthChanged FINAL)
+    Q_PROPERTY(double rate READ getRate WRITE setRate NOTIFY rateChanged FINAL)
 
     Q_PROPERTY(bool seekable READ isSeekable NOTIFY seekableChanged FINAL)
     Q_PROPERTY(bool rewindable READ isRewindable NOTIFY rewindableChanged FINAL)
@@ -261,6 +272,14 @@ public:
 
     /* exposed actions */
 public slots:
+    Q_INVOKABLE TimerPoint timerPoint() const;
+
+    void updateTimerPoint(const TimerPoint& point);
+
+    // Interpolates (if necessary) position based on the length and current time.
+    // This method is temporally aware:
+    Q_INVOKABLE TimerPoint interpolateTimerPoint(bool notifyInterpolatedPropertiesChange = true);
+
     void reverse();
     void slower();
     void faster();
@@ -333,8 +352,6 @@ public:
     void requestArtUpdate( input_item_t *p_item );
     void setArt( input_item_t *p_item, QString fileUrl );
     static const QString decodeArtURL( input_item_t *p_item );
-    void updatePosition();
-    void updateTime(vlc_tick_t system_now, bool forceTimer);
 
     //getter/setters binded to a Q_PROPERTY
 public slots:
@@ -344,20 +361,20 @@ public slots:
     bool hasInput() const;
     QString getName() const;
     float getBuffering() const;
-    float getRate() const;
-    void setRate( float );
+    double getRate() const;
+    void setRate( double );
     VLCTime getTime() const;
+    VLCTime getInterpolatedTime(bool reInterpolate = true);
     void setTime(VLCTime);
     VLCDuration getRemainingTime() const;
     double getPosition() const;
+    double getInterpolatedPosition(bool reInterpolate = true);
     void setPosition(double);
     VLCDuration getLength() const;
     bool isSeekable() const;
     bool isRewindable() const;
     bool isPausable() const;
     bool isRateChangable() const;
-    void updatePositionFromTimer();
-    void updateTimeFromTimer();
     bool canRestorePlayback() const;
     void restorePlaybackPos();
     void openVLsub();
@@ -468,11 +485,13 @@ signals:
     void inputChanged( bool hasInput );
     void nameChanged( const QString& );
     void bufferingChanged( float );
-    void rateChanged( float );
+    void rateChanged( double );
 
     void timeChanged( VLCTime );
+    void interpolatedTimeChanged(VLCTime);
     void remainingTimeChanged( VLCTime );
     void positionChanged( double );
+    void interpolatedPositionChanged(double);
     void lengthChanged( VLCDuration );
     void positionUpdated( double , VLCTime, VLCDuration );
     void seekRequested( double pos ); //not exposed through Q_PROPERTY
@@ -548,6 +567,104 @@ signals:
 private:
     Q_DECLARE_PRIVATE(PlayerController)
     QScopedPointer<PlayerControllerPrivate> d_ptr;
+};
+
+// In order to disable updating, set `window` property to null.
+class PlayerTimerPointUpdater : public QObject, public QQmlPropertyValueSource
+{
+    Q_OBJECT
+    Q_INTERFACES(QQmlPropertyValueSource)
+
+    Q_PROPERTY(PlayerController* playerController MEMBER m_playerController NOTIFY playerControllerChanged FINAL)
+    Q_PROPERTY(QQuickWindow* window MEMBER m_window WRITE setWindow NOTIFY windowChanged FINAL)
+    Q_PROPERTY(QQuickItem* item MEMBER m_item NOTIFY itemChanged FINAL)
+    Q_PROPERTY(bool constantUpdates MEMBER m_constantUpdates NOTIFY constantUpdatesChanged FINAL)
+    Q_PROPERTY(bool interpolate MEMBER m_interpolate NOTIFY interpolateChanged FINAL)
+
+    QML_ELEMENT
+
+public:
+    explicit PlayerTimerPointUpdater(QObject *parent = nullptr)
+        : QObject(parent)
+    {
+
+    }
+
+    void setWindow(QQuickWindow* window)
+    {
+        if (m_window == window)
+            return;
+
+        if (m_window)
+            disconnect(m_window, nullptr, this, nullptr);
+
+        m_window = window;
+
+        if (m_window)
+            connect(m_window, &QQuickWindow::afterAnimating, this, &PlayerTimerPointUpdater::update); // emitted from GUI thread
+
+        emit windowChanged();
+    }
+
+    void setTarget(const QQmlProperty &prop) override
+    {
+        m_item = qobject_cast<QQuickItem*>(prop.object());
+        assert(m_item);
+        if (prop.isValid() && prop.isWritable())
+            m_property = prop;
+    }
+
+public slots:
+    bool update()
+    {
+        if (!m_playerController)
+            return false;
+
+        // Constantly update the item, so that the window
+        // prepares new frames and we make sure that this
+        // function is also called in the very next frame.
+        // This is similar to animations:
+        if (m_constantUpdates && m_item)
+            m_item->update();
+
+        TimerPoint timerPoint;
+        if (m_interpolate)
+            timerPoint = m_playerController->interpolateTimerPoint();
+        else
+            timerPoint = m_playerController->timerPoint();
+
+        if (m_property)
+        {
+            if (!m_property->write(QVariant::fromValue(timerPoint)))
+                return false;
+        }
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
+        // Item would like re-polishing after value change.
+        // We should have this because `afterAnimating()` is
+        // signalled after the items are polished. This may
+        // not be necessary, but it is better to have it:
+        if (m_item)
+            m_item->ensurePolished();
+#endif
+
+        return true;
+    }
+
+signals:
+    void playerControllerChanged();
+    void windowChanged();
+    void constantUpdatesChanged();
+    void itemChanged();
+    void interpolateChanged();
+
+private:
+    QPointer<PlayerController> m_playerController;
+    QPointer<QQuickWindow> m_window;
+    QPointer<class QQuickItem> m_item;
+    std::optional<QQmlProperty> m_property;
+    bool m_constantUpdates = true;
+    bool m_interpolate = true;
 };
 
 #endif
