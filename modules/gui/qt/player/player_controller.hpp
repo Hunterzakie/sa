@@ -73,6 +73,67 @@ private:
     input_item_t *p_item;
 };
 
+// vlc_player_timer_point
+class TimerPoint
+{
+    Q_GADGET
+    QML_VALUE_TYPE(timerPoint)
+
+    Q_PROPERTY(double position READ position CONSTANT FINAL)
+    Q_PROPERTY(double rate READ rate CONSTANT FINAL)
+    Q_PROPERTY(VLCTime time READ ts CONSTANT FINAL)
+    Q_PROPERTY(VLCTime ts READ ts CONSTANT FINAL)
+    Q_PROPERTY(VLCDuration length READ length CONSTANT FINAL)
+    Q_PROPERTY(bool live READ live CONSTANT FINAL)
+    Q_PROPERTY(VLCTime systemDate READ systemDate CONSTANT FINAL)
+    Q_PROPERTY(VLCDuration remainingTime READ remainingTime CONSTANT FINAL)
+
+public:
+    TimerPoint() = default;
+
+    explicit TimerPoint(const vlc_player_timer_point& timerPoint)
+     : m_timerPoint(timerPoint)
+    { }
+
+    double position() const { return m_timerPoint.position; }
+    double rate() const { return m_timerPoint.rate; }
+    VLCTime ts() const { return m_timerPoint.ts; }
+    VLCDuration length() const { return m_timerPoint.length; }
+    bool live() const { return m_timerPoint.live; }
+    VLCTime systemDate() const { return m_timerPoint.system_date; }
+    VLCDuration remainingTime() const { return VLCTime(m_timerPoint.length) - m_timerPoint.ts; }
+
+    operator vlc_player_timer_point&()
+    {
+        return m_timerPoint;
+    }
+
+    operator vlc_player_timer_point() const
+    {
+        return m_timerPoint;
+    }
+
+    TimerPoint& operator=(const vlc_player_timer_point& timerPoint)
+    {
+        m_timerPoint = timerPoint;
+        return *this;
+    }
+
+    bool operator==(const TimerPoint& _other) const
+    {
+        const vlc_player_timer_point other = _other;
+        return (m_timerPoint.live == other.live &&
+                m_timerPoint.length == other.length &&
+                m_timerPoint.position == other.position &&
+                m_timerPoint.rate == other.rate &&
+                m_timerPoint.system_date == other.system_date &&
+                m_timerPoint.ts == other.ts);
+    }
+
+private:
+    vlc_player_timer_point m_timerPoint = {};
+};
+
 class PlayerControllerPrivate;
 class PlayerController : public QObject
 {
