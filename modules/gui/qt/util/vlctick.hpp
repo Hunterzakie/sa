@@ -135,6 +135,7 @@ public:
     VLCTime(VLCDuration);
     VLCDuration operator-(const VLCTime &rhs) const;
     bool operator<=(const VLCTime &) const;
+    bool operator==(const VLCTime &) const;
 
     Q_INVOKABLE VLCTime scale(float) const;
 

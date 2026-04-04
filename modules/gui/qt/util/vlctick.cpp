@@ -287,6 +287,11 @@ bool VLCTime::operator<=(const VLCTime &rhs) const
     return m_ticks <= rhs.m_ticks;
 }
 
+bool VLCTime::operator==(const VLCTime &rhs) const
+{
+    return m_ticks == rhs.m_ticks;
+}
+
 VLCTime VLCTime::scale(float scalar) const
 {
     if(!valid())
