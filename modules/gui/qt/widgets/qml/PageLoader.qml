@@ -34,6 +34,11 @@ StackViewExt {
     //list of available pages
     property var pageModel: []
 
+    // Cache components created through `component: { module: 'Module', type: 'Type' }`
+    // by writing back to the page model. This only happens when `Component` is actually
+    // created:
+    property bool cacheComponent: true
+
     //indicates whether the subview support grid/list mode
     readonly property bool hasGridListMode: currentItem?.hasGridListMode ?? false
 
@@ -90,8 +95,20 @@ StackViewExt {
                 //as a second component to load
                 let component = undefined
                 if (model.component) {
-                    component = model.component
+                    if (model.component instanceof Component) {
+                        component = model.component
+                    } else {
+                        const moduleUri = model.component.module
+                        const typeName = model.component.type
+                        console.assert(typeof moduleUri === 'string' && moduleUri.length > 0)
+                        console.assert(typeof typeName === 'string' && typeName.length > 0)
+
+                        component = MainCtx.createComponent(moduleUri, typeName)
+                        if (root.cacheComponent && component)
+                            pageModel[tab].component = component
+                    }
                 } else if ( model.url ) {
+                    console.debug("Use `component: { module: 'ModuleUri', type: 'TypeName' }` instead!")
                     component = Qt.createComponent(model.url)
                 } else {
                     console.warn( "you should define either component or url of the view to load" )
