@@ -122,37 +122,37 @@ FocusScope {
             displayText: qsTr("Home"),
             icon: VLCIcons.home,
             name: "home",
-            url: MainCtx.mediaLibraryAvailable ?
-                 "qrc:///qt/qml/VLC/MediaLibrary/HomeDisplay.qml" :
-                 "qrc:///qt/qml/VLC/MainInterface/NoMedialibHome.qml"
+            component: MainCtx.mediaLibraryAvailable ?
+                 { module: 'VLC.MediaLibrary', type: 'HomeDisplay' } :
+                 { module: 'VLC.MainInterface', type: 'NoMedialibHome' }
         }, {
             listed: MainCtx.mediaLibraryAvailable,
             displayText: qsTr("Video"),
             icon: VLCIcons.topbar_video,
             name: "video",
-            url: "qrc:///qt/qml/VLC/MediaLibrary/VideoDisplay.qml"
+            component: { module: 'VLC.MediaLibrary', type: 'VideoDisplay' }
         }, {
             listed: MainCtx.mediaLibraryAvailable,
             displayText: qsTr("Music"),
             icon: VLCIcons.topbar_music,
             name: "music",
-            url: "qrc:///qt/qml/VLC/MediaLibrary/MusicDisplay.qml"
+            component: { module: 'VLC.MediaLibrary', type: 'MusicDisplay' }
         }, {
             listed: true,
             displayText: qsTr("Browse"),
             icon: VLCIcons.topbar_network,
             name: "network",
-            url: "qrc:///qt/qml/VLC/Network/BrowseDisplay.qml"
+            component: { module: 'VLC.Network', type: 'BrowseDisplay' }
         }, {
             listed: true,
             displayText: qsTr("Discover"),
             icon: VLCIcons.topbar_discover,
             name: "discover",
-            url: "qrc:///qt/qml/VLC/Network/DiscoverDisplay.qml"
+            component: { module: 'VLC.Network', type: 'DiscoverDisplay' }
         }, {
             listed: false,
             name: "mlsettings",
-            url: "qrc:///qt/qml/VLC/MediaLibrary/MLFoldersSettings.qml"
+            component: { module: 'VLC.MediaLibrary', type: 'MLFoldersSettings' }
         }
     ]
 
