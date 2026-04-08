@@ -116,6 +116,16 @@ Item {
             }
         }
 
+        Component.onCompleted: {
+            globalShortcutsComponent.incubateObject(this) // Incubator creates the object asynchronously
+        }
+
+        Component {
+            id: globalShortcutsComponent
+
+            GlobalShortcuts { }
+        }
+
         DropArea {
             anchors.fill: parent
             z: -1
@@ -193,11 +203,6 @@ Item {
                     return "qrc:///qt/qml/VLC/MainInterface/MainDisplay.qml"
                 }
             }
-        }
-
-        Loader {
-            asynchronous: true
-            source: "qrc:///qt/qml/VLC/Menus/GlobalShortcuts.qml"
         }
 
         Loader {
