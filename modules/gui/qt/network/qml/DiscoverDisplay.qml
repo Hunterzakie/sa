@@ -34,11 +34,11 @@ Widgets.PageLoader {
             displayText: qsTr("Services"),
             default: true,
             name: "services",
-            url: "qrc:///qt/qml/VLC/Network/ServicesHomeDisplay.qml"
+            component: { module: 'VLC.Network', type: 'ServicesHomeDisplay' }
         }, {
             displayText: qsTr("URL"),
             name: "url",
-            url: "qrc:///qt/qml/VLC/Network/DiscoverUrlDisplay.qml"
+            component: { module: 'VLC.Network', type: 'DiscoverUrlDisplay' }
         }
     ]
 
