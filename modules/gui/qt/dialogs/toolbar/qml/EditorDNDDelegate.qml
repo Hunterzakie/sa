@@ -21,7 +21,7 @@ import QtQuick.Templates as T
 import QtQuick.Layouts
 import QtQml.Models
 
-
+import VLC.MainInterface
 import VLC.Player
 import VLC.Widgets as Widgets
 import VLC.Style
@@ -158,14 +158,15 @@ T.Control {
 
             anchors.fill: (parent === control.contentItem) ? parent : undefined
 
-            source: PlayerControlbarControls.control(model.id).source
+            // TODO: Use `sourceComponent` once Qt starts allowing setting initial properties with source component.
+            readonly property url targetSource: PlayerControlbarControls.control(model.id).component.url
+
+            onTargetSourceChanged: {
+                loader.setSource(targetSource, { 'paintOnly': true,
+                                                 'enabled': false })
+            }
 
             Drag.source: control
-
-            onLoaded: {
-                item.paintOnly = true
-                item.enabled = false
-            }
         }
     }
 }
