@@ -213,12 +213,10 @@ Item {
                         && (windowVisibility !== Window.FullScreen)
 
             }
-            Component.onCompleted: {
-                setSource(
-                    "qrc:///qt/qml/VLC/Widgets/CSDMouseStealer.qml", {
-                        target: g_mainInterface,
-                        anchorInside: Qt.binding(() => !_extendedFrameVisible)
-                    })
+
+            sourceComponent: Widgets.CSDMouseStealer {
+                target: g_mainInterface
+                anchorInside: !root._extendedFrameVisible
             }
         }
     }
