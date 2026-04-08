@@ -26,6 +26,7 @@ import QtQml.Models
 import VLC.Style
 import VLC.Widgets as Widgets
 import VLC.Util
+import VLC.Player
 
 // FIXME: Keyboard navigation needs to be fixed for this Popup.
 T.Popup {
@@ -85,7 +86,7 @@ T.Popup {
         }
 
         initialItem: TracksListPage {
-            trackMenuController: trackMenuController
+            trackMenuController: controller
         }
 
         pushEnter: Transition {
@@ -119,7 +120,7 @@ T.Popup {
     }
 
     QtObject {
-      id: trackMenuController
+      id: controller
 
       signal requestAudioPage()
       signal requestSubtitlePage()
@@ -130,16 +131,42 @@ T.Popup {
           stackView.pop()
       }
 
+      readonly property list<Component> components: [
+          Component {
+              id: tracksPageAudioComponent
+
+              TracksPageAudio {
+                  trackMenuController: controller
+              }
+          },
+
+          Component {
+              id: tracksPageSubtitleComponent
+
+              TracksPageSubtitle {
+                  trackMenuController: controller
+              }
+          },
+
+          Component {
+              id: tracksPageSpeedComponent
+
+              TracksPageSpeed {
+                  trackMenuController: controller
+              }
+          }
+      ]
+
       onRequestAudioPage: {
-          stackView.push("qrc:///qt/qml/VLC/Player/TracksPageAudio.qml", {"trackMenuController": trackMenuController})
+          stackView.push(tracksPageAudioComponent)
       }
 
       onRequestSubtitlePage: {
-          stackView.push("qrc:///qt/qml/VLC/Player/TracksPageSubtitle.qml", {"trackMenuController": trackMenuController})
+          stackView.push(tracksPageSubtitleComponent)
       }
 
       onRequestPlaybackSpeedPage: {
-          stackView.push("qrc:///qt/qml/VLC/Player/TracksPageSpeed.qml", {"trackMenuController": trackMenuController})
+          stackView.push(tracksPageSpeedComponent)
       }
     }
 }
