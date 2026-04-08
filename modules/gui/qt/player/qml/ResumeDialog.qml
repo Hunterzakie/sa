@@ -55,7 +55,7 @@ FocusScope {
     function hideResumePanel() {
         resumeTimeout.stop()
         resumePanel.visible = false
-        Player.acknowledgeRestoreCallback()
+        MainPlayerController.acknowledgeRestoreCallback()
         hidden()
     }
 
@@ -69,9 +69,9 @@ FocusScope {
     }
 
     Connections {
-        target: Player
+        target: MainPlayerController
         function onCanRestorePlaybackChanged() {
-            if (Player.canRestorePlayback) {
+            if (MainPlayerController.canRestorePlayback) {
                 showResumePanel()
             } else {
                 hideResumePanel()
@@ -86,7 +86,7 @@ FocusScope {
 
 
     Component.onCompleted: {
-        if (Player.canRestorePlayback) {
+        if (MainPlayerController.canRestorePlayback) {
             showResumePanel()
         }
     }
@@ -130,7 +130,7 @@ FocusScope {
         color: theme.fg.primary
         focus: true
         onClicked: {
-            Player.restorePlaybackPos()
+            MainPlayerController.restorePlaybackPos()
             hideResumePanel()
         }
 

@@ -26,7 +26,7 @@ import VLC.Playlist
 
 Widgets.IconToolButton {
     id: stopBtn
-    enabled: Player.isStarted
+    enabled: MainPlayerController.isStarted
     text: VLCIcons.stop
     onClicked: MainPlaylistController.stop()
     description: qsTr("Stop")

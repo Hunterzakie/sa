@@ -32,7 +32,7 @@ ControlBar {
 
     height: _delayedImplicitHeight
 
-    state: Player.isStarted ? "inViewport"
+    state: MainPlayerController.isStarted ? "inViewport"
                             : "outViewport"
 
     textPosition: (MainCtx.pinVideoControls) ? ControlBar.TimeTextPosition.LeftRightSlider

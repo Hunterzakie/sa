@@ -44,11 +44,11 @@ T.ProgressBar {
 
     property color backgroundColor: theme.bg.primary
 
-    Keys.onRightPressed: Player.jumpFwd()
-    Keys.onLeftPressed: Player.jumpBwd()
+    Keys.onRightPressed: MainPlayerController.jumpFwd()
+    Keys.onLeftPressed: MainPlayerController.jumpBwd()
 
-    Accessible.onIncreaseAction: Player.jumpFwd()
-    Accessible.onDecreaseAction: Player.jumpBwd()
+    Accessible.onIncreaseAction: MainPlayerController.jumpFwd()
+    Accessible.onDecreaseAction: MainPlayerController.jumpBwd()
 
     function showChapterMarks() {
         _isSeekPointsShown = true
@@ -66,7 +66,7 @@ T.ProgressBar {
 
     Timer {
         id: seekpointTimer
-        running: Player.hasChapters && !hoverHandler.hovered && _isSeekPointsShown
+        running: MainPlayerController.hasChapters && !hoverHandler.hovered && _isSeekPointsShown
         interval: 3000
         onTriggered: control._isSeekPointsShown = false
     }
@@ -82,16 +82,16 @@ T.ProgressBar {
         text: {
             let _text
 
-            const length = Player.length
+            const length = MainPlayerController.length
             if (hoverHandler.hovered)
                 _text = length.scale(pos.x / control.width)
             else
-                _text = Player.time
+                _text = MainPlayerController.time
 
             _text = _text.formatHMS(length.isSubSecond() ? VLCTick.SubSecondFormattedAsMS : 0)
 
-            if (Player.hasChapters)
-                _text += " - " + Player.chapters.getNameAtPosition(control._tooltipPosition)
+            if (MainPlayerController.hasChapters)
+                _text += " - " + MainPlayerController.chapters.getNameAtPosition(control._tooltipPosition)
 
             return _text
         }
@@ -128,13 +128,13 @@ T.ProgressBar {
             position = Helpers.clamp(position, 0., 1.)
             control.value = position
             if (!forcePrecise) {
-                const chapter = Player.chapters.getClosestChapterFromPos(position, threshold)
+                const chapter = MainPlayerController.chapters.getClosestChapterFromPos(position, threshold)
                 if (chapter !== -1) {
-                    Player.chapters.selectChapter(chapter)
+                    MainPlayerController.chapters.selectChapter(chapter)
                     return
                 }
             }
-            Player.position = position
+            MainPlayerController.position = position
         }
 
         FSMState {
@@ -178,7 +178,7 @@ T.ProgressBar {
             id: fsmHeldWrongInput
 
             function enter() {
-                fsm._setPositionFromValue(Player.position)
+                fsm._setPositionFromValue(MainPlayerController.position)
             }
 
             transitions: ({
@@ -193,12 +193,12 @@ T.ProgressBar {
     }
 
     Connections {
-        target: Player
-        function onPositionChanged() {  fsm.playerUpdatePosition(Player.position) }
+        target: MainPlayerController
+        function onPositionChanged() {  fsm.playerUpdatePosition(MainPlayerController.position) }
         function onInputChanged() {  fsm.inputChanged() }
     }
 
-    Component.onCompleted: value = Player.position
+    Component.onCompleted: value = MainPlayerController.position
 
     implicitHeight: control.barHeight
     height: implicitHeight
@@ -213,10 +213,10 @@ T.ProgressBar {
 
         onHoveredChanged: () => {
             if (hovered) {
-                if(Player.hasChapters)
+                if(MainPlayerController.hasChapters)
                     control._isSeekPointsShown = true
             } else {
-                if(Player.hasChapters)
+                if(MainPlayerController.hasChapters)
                     seekpointTimer.restart()
             }
         }
@@ -293,16 +293,16 @@ T.ProgressBar {
 
             function handleVertical(steps: int) {
                 if (steps > 0)
-                    Player.jumpFwd()
+                    MainPlayerController.jumpFwd()
                 else
-                    Player.jumpBwd()
+                    MainPlayerController.jumpBwd()
             }
 
             function handleHorizontal(steps: int) {
                 if (steps > 0)
-                    Player.jumpBwd()
+                    MainPlayerController.jumpBwd()
                 else
-                    Player.jumpFwd()
+                    MainPlayerController.jumpFwd()
             }
 
             Component.onCompleted: {
@@ -331,9 +331,9 @@ T.ProgressBar {
             anchors.left: parent.left
             anchors.right: parent.right
             height: control.barHeight
-            visible: Player.hasChapters
+            visible: MainPlayerController.hasChapters
 
-            model: Player.chapters
+            model: MainPlayerController.chapters
             Item {
                 Rectangle {
                     id: seekpointsRect
@@ -430,7 +430,7 @@ T.ProgressBar {
             property int bufferFrames: 1000
             property alias animateLoading: loadingAnim.running
             property bool display: false
-            property bool buffering: Player.buffering > 0 && Player.buffering < 1
+            property bool buffering: MainPlayerController.buffering > 0 && MainPlayerController.buffering < 1
 
             height: control.barHeight
             opacity: 0.4
@@ -473,7 +473,7 @@ T.ProgressBar {
                 },
                 State {
                     name: "buffering not started"
-                    when: control.visible && Player.buffering === 0
+                    when: control.visible && MainPlayerController.buffering === 0
                     PropertyChanges {
                         target: bufferRect
                         width: bufferAnimWidth
@@ -487,7 +487,7 @@ T.ProgressBar {
                     when: control.visible && bufferRect.display
                     PropertyChanges {
                         target: bufferRect
-                        width: Player.buffering * parent.width
+                        width: MainPlayerController.buffering * parent.width
                         visible: true
                         x: 0
                         animateLoading: false
@@ -498,7 +498,7 @@ T.ProgressBar {
                     when: control.visible && !bufferRect.display
                     PropertyChanges {
                         target: bufferRect
-                        width: Player.buffering * parent.width
+                        width: MainPlayerController.buffering * parent.width
                         visible: false
                         x: 0
                         animateLoading: false
@@ -582,7 +582,7 @@ T.ProgressBar {
         ]
 
         state: (hoverHandler.hovered || control.visualFocus)
-               ? ((control._currentChapterHovered || (Player.hasChapters && fsm._state === fsm.fsmHeld)) ? "visibleLarge" : "visible")
+               ? ((control._currentChapterHovered || (MainPlayerController.hasChapters && fsm._state === fsm.fsmHeld)) ? "visibleLarge" : "visible")
                : "hidden"
     }
 }

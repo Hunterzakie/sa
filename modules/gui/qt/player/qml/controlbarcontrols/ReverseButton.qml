@@ -26,10 +26,10 @@ import VLC.Player
 import VLC.Style
 
 Widgets.IconToolButton {
-    enabled: Player.rewindable
+    enabled: MainPlayerController.rewindable
 
     text: VLCIcons.play_reverse
     description: qsTr("Reverse")
 
-    onClicked: Player.reverse()
+    onClicked: MainPlayerController.reverse()
 }

@@ -27,10 +27,10 @@ import VLC.Player
 
 Widgets.IconToolButton {
 
-    enabled: Player.hasMenu
+    enabled: MainPlayerController.hasMenu
 
     text: VLCIcons.dvd_menu
     description: qsTr("Menu")
 
-    onClicked: Player.sectionMenu()
+    onClicked: MainPlayerController.sectionMenu()
 }

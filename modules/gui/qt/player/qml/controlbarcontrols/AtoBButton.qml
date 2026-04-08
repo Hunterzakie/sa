@@ -30,25 +30,25 @@ Widgets.ImageToolButton {
 
     sourceSize: Qt.size(VLCStyle.icon_toolbar, VLCStyle.icon_toolbar)
 
-    checked: Player.ABloopState !== Player.ABLOOP_STATE_NONE
-    onClicked: Player.toggleABloopState()
+    checked: MainPlayerController.ABloopState !== MainPlayerController.ABLOOP_STATE_NONE
+    onClicked: MainPlayerController.toggleABloopState()
 
     description: text
 
     //imageSource: "qrc:///icons/atob.svg"
     imageSource: {
-        switch(Player.ABloopState) {
-        case Player.ABLOOP_STATE_A:
+        switch(MainPlayerController.ABloopState) {
+        case MainPlayerController.ABLOOP_STATE_A:
             return control._colorize(
                 control.colorContext.accent,
                 control.colorContext.fg.primary
             )
-        case Player.ABLOOP_STATE_B:
+        case MainPlayerController.ABLOOP_STATE_B:
             return control._colorize(
                 control.colorContext.accent,
                 control.colorContext.accent
             )
-        case Player.ABLOOP_STATE_NONE:
+        case MainPlayerController.ABLOOP_STATE_NONE:
         default:
             return control._colorize(
                 control.colorContext.fg.primary,

@@ -78,7 +78,7 @@ TracksPage {
                 id: delayEstimatorPrimary
 
                 onDelayChanged: {
-                    Player.addSubtitleDelay(delayEstimatorPrimary.delay)
+                    MainPlayerController.addSubtitleDelay(delayEstimatorPrimary.delay)
                 }
             }
 
@@ -114,7 +114,7 @@ TracksPage {
                     Navigation.rightItem: resetA
 
                     Component.onCompleted: {
-                        spinBoxA.value = Player.subtitleDelayMS
+                        spinBoxA.value = MainPlayerController.subtitleDelayMS
 
                         spinBoxA.update = true
                     }
@@ -123,16 +123,16 @@ TracksPage {
                         if (update === false)
                             return
 
-                        Player.subtitleDelayMS = spinBoxA.value
+                        MainPlayerController.subtitleDelayMS = spinBoxA.value
                     }
 
                     Connections {
-                        target: Player
+                        target: MainPlayerController
 
                         function onSubtitleDelayChanged() {
                             spinBoxA.update = false
 
-                            spinBoxA.value = Player.subtitleDelayMS
+                            spinBoxA.value = MainPlayerController.subtitleDelayMS
 
                             spinBoxA.update = true
                         }
@@ -152,7 +152,7 @@ TracksPage {
                     Navigation.downItem: resetB
 
                     onClicked: {
-                        Player.subtitleDelayMS = 0
+                        MainPlayerController.subtitleDelayMS = 0
                         delayEstimatorPrimary.reset()
                     }
                 }
@@ -207,7 +207,7 @@ TracksPage {
                 id: delayEstimatorSecondary
 
                 onDelayChanged: {
-                    Player.addSecondarySubtitleDelay(delayEstimatorSecondary.delay)
+                    MainPlayerController.addSecondarySubtitleDelay(delayEstimatorSecondary.delay)
                 }
             }
 
@@ -243,7 +243,7 @@ TracksPage {
                     Navigation.rightItem: resetB
 
                     Component.onCompleted: {
-                        value = Player.secondarySubtitleDelayMS
+                        value = MainPlayerController.secondarySubtitleDelayMS
 
                         update = true
                     }
@@ -252,16 +252,16 @@ TracksPage {
                         if (update === false)
                             return
 
-                        Player.secondarySubtitleDelayMS = spinBoxB.value
+                        MainPlayerController.secondarySubtitleDelayMS = spinBoxB.value
                     }
 
                     Connections {
-                        target: Player
+                        target: MainPlayerController
 
                         function onSecondarySubtitleDelayChanged() {
                             spinBoxB.update = false
 
-                            spinBoxB.value = Player.secondarySubtitleDelayMS
+                            spinBoxB.value = MainPlayerController.secondarySubtitleDelayMS
 
                             spinBoxB.update = true
                         }
@@ -279,7 +279,7 @@ TracksPage {
                     Navigation.downItem: resetC
 
                     onClicked: {
-                        Player.secondarySubtitleDelayMS = 0
+                        MainPlayerController.secondarySubtitleDelayMS = 0
                         delayEstimatorSecondary.reset()
                     }
                 }
@@ -357,7 +357,7 @@ TracksPage {
                 Navigation.rightItem: resetC
 
                 Component.onCompleted: {
-                    value = Player.subtitleFPS * 10
+                    value = MainPlayerController.subtitleFPS * 10
 
                     update = true
                 }
@@ -366,16 +366,16 @@ TracksPage {
                     if (update === false)
                         return
 
-                    Player.subtitleFPS = value / 10
+                    MainPlayerController.subtitleFPS = value / 10
                 }
 
                 Connections {
-                    target: Player
+                    target: MainPlayerController
 
                     function onSecondarySubtitleDelayChanged() {
                         spinBoxC.update = false
 
-                        value = Player.subtitleFPS / 10
+                        value = MainPlayerController.subtitleFPS / 10
 
                         spinBoxC.update = true
                     }

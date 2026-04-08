@@ -65,7 +65,7 @@ ColumnLayout {
 
     // Events
 
-    Component.onCompleted: _updateValue(Player.rate)
+    Component.onCompleted: _updateValue(MainPlayerController.rate)
 
     // Function
 
@@ -110,7 +110,7 @@ ColumnLayout {
 
         _update = false
 
-        Player.rate = value
+        MainPlayerController.rate = value
 
         _update = true
     }
@@ -122,10 +122,10 @@ ColumnLayout {
     // Connections
 
     Connections {
-        target: Player
+        target: MainPlayerController
 
         function onRateChanged() {
-            _updateValue(Player.rate)
+            _updateValue(MainPlayerController.rate)
         }
     }
 
@@ -256,7 +256,7 @@ ColumnLayout {
             id: buttonGroup
 
             onClicked: function(button /* : AbstractButton */) {
-                Player.rate = button.modelData
+                MainPlayerController.rate = button.modelData
                 root.radioButtonClicked(button)
             }
         }
@@ -273,7 +273,7 @@ ColumnLayout {
 
                 text: modelData
 
-                checked: Math.abs(Player.rate - modelData) < 0.01 // need some generous epsilon here
+                checked: Math.abs(MainPlayerController.rate - modelData) < 0.01 // need some generous epsilon here
 
                 padding: 0 // we use spacing instead of paddings here
 

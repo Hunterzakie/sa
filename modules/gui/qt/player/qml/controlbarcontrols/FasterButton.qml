@@ -25,9 +25,9 @@ import VLC.Player
 Widgets.IconToolButton {
     id: fasterBtn
 
-    enabled: Player.ratechangable
+    enabled: MainPlayerController.ratechangable
 
     text: VLCIcons.faster
-    onClicked: Player.faster()
+    onClicked: MainPlayerController.faster()
     description: qsTr("Faster")
 }

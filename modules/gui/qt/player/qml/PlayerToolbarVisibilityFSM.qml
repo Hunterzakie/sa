@@ -19,6 +19,7 @@ import QtQuick
 
 import VLC.MainInterface
 import VLC.Util
+import VLC.Player
 
 /**
  * player toolbars visibility state machine
@@ -61,7 +62,7 @@ FSM {
     property int lockCount: 0 // Track the number of locks
     property int timeoutDuration: MainCtx.mouseHideTimeout
 
-    initialState: ((Player.isInteractive && MainCtx.hasEmbededVideo))
+    initialState: ((MainPlayerController.isInteractive && MainCtx.hasEmbededVideo))
                   ? fsmHidden : fsmVisible
  
     signalMap: ({

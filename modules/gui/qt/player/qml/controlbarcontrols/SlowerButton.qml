@@ -25,9 +25,9 @@ import VLC.Player
 Widgets.IconToolButton {
     id: slowerBtn
 
-    enabled: Player.ratechangable
+    enabled: MainPlayerController.ratechangable
 
     text: VLCIcons.slower
-    onClicked: Player.slower()
+    onClicked: MainPlayerController.slower()
     description: qsTr("Slower")
 }

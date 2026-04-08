@@ -26,13 +26,13 @@ import VLC.Player
 Widgets.IconToolButton {
     id: control
 
-    enabled: !paintOnly && Player.isStarted
+    enabled: !paintOnly && MainPlayerController.isStarted
 
     color: "#FFFF0000" //red means recording
     text: VLCIcons.record
     description: qsTr("record")
 
-    onClicked: Player.toggleRecord()
+    onClicked: MainPlayerController.toggleRecord()
 
     //IconToolButton already contains a color animation that would conflict
     contentItem: Widgets.IconLabel {
@@ -42,7 +42,7 @@ Widgets.IconToolButton {
 
         SequentialAnimation on color {
             loops: Animation.Infinite
-            running: control.enabled && Player.recording
+            running: control.enabled && MainPlayerController.recording
 
             ColorAnimation  {
                 from:  "#FFFF0000"

@@ -69,7 +69,7 @@ PopupIconToolButton {
 
             font.pixelSize: VLCStyle.fontSize_normal
 
-            text: !root.paintOnly ? qsTr("%1x").arg(+Player.rate.toFixed(2))
+            text: !root.paintOnly ? qsTr("%1x").arg(+MainPlayerController.rate.toFixed(2))
                                   : qsTr("1x")
 
             color: root.color

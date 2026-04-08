@@ -32,7 +32,7 @@ PopupIconToolButton {
 
     // Settings
 
-    enabled: Player.isTeletextAvailable
+    enabled: MainPlayerController.isTeletextAvailable
 
     text: VLCIcons.tvtelx
 

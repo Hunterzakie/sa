@@ -41,10 +41,10 @@ FocusScope {
     readonly property int positionSliderY: controlBar.y + controlBar.sliderY
 
     readonly property string coverSource: {
-        if (Player.artwork &&
-            Player.artwork.toString())
-            return Player.artwork
-        else if (Player.hasVideoOutput)
+        if (MainPlayerController.artwork &&
+            MainPlayerController.artwork.toString())
+            return MainPlayerController.artwork
+        else if (MainPlayerController.hasVideoOutput)
             return VLCStyle.noArtVideoCover
         else
             return VLCStyle.noArtAlbumCover
@@ -215,7 +215,7 @@ FocusScope {
 
                     function onMouseEvent() {
                         //short interval for mouse events
-                        if (Player.isInteractive)
+                        if (MainPlayerController.isInteractive)
                             interactiveAutoHideTimer.restart()
                         else
                             playerToolbarVisibilityFSM.mouseMove();
@@ -489,7 +489,7 @@ FocusScope {
                                 value: centerContent.height > (albumLabel.y + albumLabel.height)
                             }
 
-                            text: Player.album
+                            text: MainPlayerController.album
                             font.pixelSize: VLCStyle.fontSize_xxlarge
                             horizontalAlignment: Text.AlignHCenter
                             color: centerTheme.fg.primary
@@ -514,7 +514,7 @@ FocusScope {
                                 value: centerContent.height > (artistLabel.y + artistLabel.height)
                             }
 
-                            text: Player.artist
+                            text: MainPlayerController.artist
                             font.weight: Font.Light
                             horizontalAlignment: Text.AlignHCenter
                             color: centerTheme.fg.primary
@@ -536,14 +536,14 @@ FocusScope {
                             Binding on visible {
                                 delayed: true
                                 when: audioControls.componentCompleted
-                                value: Player.videoTracks.count === 0 && centerContent.height > (audioControls.y + audioControls.height)
+                                value: MainPlayerController.videoTracks.count === 0 && centerContent.height > (audioControls.y + audioControls.height)
                             }
 
                             focus: true
                             spacing: VLCStyle.margin_xxsmall
                             Navigation.parentItem: rootPlayer
                             Navigation.upItem: topBar
-                            Navigation.downItem: Player.isInteractive ? toggleControlBarButton : controlBar
+                            Navigation.downItem: MainPlayerController.isInteractive ? toggleControlBarButton : controlBar
 
                             property bool componentCompleted: false
 
@@ -554,21 +554,21 @@ FocusScope {
                             Widgets.IconToolButton {
                                 text: VLCIcons.skip_back
                                 font.pixelSize: VLCStyle.icon_audioPlayerButton
-                                onClicked: Player.jumpBwd()
+                                onClicked: MainPlayerController.jumpBwd()
                                 description: qsTr("Step back")
                             }
 
                             Widgets.IconToolButton {
                                 text: VLCIcons.visualization
                                 font.pixelSize: VLCStyle.icon_audioPlayerButton
-                                onClicked: Player.toggleVisualization()
+                                onClicked: MainPlayerController.toggleVisualization()
                                 description: qsTr("Visualization")
                             }
 
                             Widgets.IconToolButton{
                                 text: VLCIcons.skip_for
                                 font.pixelSize: VLCStyle.icon_audioPlayerButton
-                                onClicked: Player.jumpFwd()
+                                onClicked: MainPlayerController.jumpFwd()
                                 description: qsTr("Step forward")
                             }
                         }
@@ -585,14 +585,14 @@ FocusScope {
 
                         visible: false
 
-                        text: qsTr("Volume %1%").arg(Math.round(Player.volume * 100))
+                        text: qsTr("Volume %1%").arg(Math.round(MainPlayerController.volume * 100))
 
                         color: centerTheme.fg.primary
 
                         font.weight: Font.Normal
 
                         Connections {
-                            target: Player
+                            target: MainPlayerController
 
                             function onVolumeChanged() {
                                 animationVolume.restart()
@@ -639,7 +639,7 @@ FocusScope {
                   resumeVisible)
 
         focus: true
-        title: Player.title
+        title: MainPlayerController.title
 
         pinControls: MainCtx.pinVideoControls
 
@@ -653,7 +653,7 @@ FocusScope {
                 return playlistpopup
             if (MainCtx.hasEmbededVideo)
                 return playerSpecializationLoader
-            if (Player.isInteractive)
+            if (MainPlayerController.isInteractive)
                 return toggleControlBarButton
             return controlBar
         }
@@ -756,7 +756,7 @@ FocusScope {
 
             Navigation.parentItem: rootPlayer
             Navigation.upItem: topBar
-            Navigation.downItem: Player.isInteractive ? toggleControlBarButton : controlBar
+            Navigation.downItem: MainPlayerController.isInteractive ? toggleControlBarButton : controlBar
             Navigation.leftAction: closePlaylist
             Navigation.cancelAction: closePlaylist
 
@@ -837,7 +837,7 @@ FocusScope {
 
     NavigationBox {
         id: navBox
-        visible: Player.isInteractive && navBox.show
+        visible: MainPlayerController.isInteractive && navBox.show
                     && (interactiveAutoHideTimer.running
                     || navBox.hovered || !MainCtx.hasEmbededVideo)
 
@@ -874,7 +874,7 @@ FocusScope {
 
     Widgets.ButtonExt {
         id: toggleControlBarButton
-        visible: Player.isInteractive
+        visible: MainPlayerController.isInteractive
                  && MainCtx.hasEmbededVideo
                  && !(MainCtx.pinVideoControls && !Player.fullscreen)
                  && (interactiveAutoHideTimer.running === true
@@ -941,7 +941,7 @@ FocusScope {
         Navigation.upItem: {
             if (playlistVisibility.isPlaylistVisible)
                 return playlistpopup
-            if (Player.isInteractive)
+            if (MainPlayerController.isInteractive)
                 return toggleControlBarButton
             if (!MainCtx.hasEmbededVideo)
                 return playerSpecializationLoader
@@ -956,7 +956,7 @@ FocusScope {
 
         onRequestLockUnlockAutoHide: (lock) => rootPlayer.lockUnlockAutoHide(lock)
 
-        identifier: (Player.hasVideoOutput) ? PlayerControlbarModel.Videoplayer
+        identifier: (MainPlayerController.hasVideoOutput) ? PlayerControlbarModel.Videoplayer
                                             : PlayerControlbarModel.Audioplayer
 
         onHoveredChanged: rootPlayer.lockUnlockAutoHide(hovered)
@@ -1020,7 +1020,7 @@ FocusScope {
     target: MainCtx.intfMainWindow
 
         Keys.onPressed: (event) => {
-            if (Player.isInteractive)
+            if (MainPlayerController.isInteractive)
                 interactiveAutoHideTimer.restart()
             else
                 playerToolbarVisibilityFSM.keyboardMove()

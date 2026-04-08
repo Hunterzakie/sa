@@ -169,9 +169,9 @@ T.Control {
             Accessible.name: qsTr("Cover")
             Accessible.description: {
                 if (delegate.isCurrent) {
-                    if (Player.playingState === Player.PLAYING_STATE_PLAYING)
+                    if (MainPlayerController.playingState === MainPlayerController.PLAYING_STATE_PLAYING)
                         return qsTr("Playing")
-                    else if (Player.playingState === Player.PLAYING_STATE_PAUSED)
+                    else if (MainPlayerController.playingState === MainPlayerController.PLAYING_STATE_PAUSED)
                         return qsTr("Paused")
                 }
                 return qsTr("Media cover")
@@ -251,9 +251,9 @@ T.Control {
                 visible: (delegate.isCurrent && text !== "")
                 color: theme.accent
                 text: {
-                    if (Player.playingState === Player.PLAYING_STATE_PLAYING)
+                    if (MainPlayerController.playingState === MainPlayerController.PLAYING_STATE_PLAYING)
                         return VLCIcons.volume_high
-                    else if (Player.playingState === Player.PLAYING_STATE_PAUSED)
+                    else if (MainPlayerController.playingState === MainPlayerController.PLAYING_STATE_PAUSED)
                         return VLCIcons.pause_filled
                     else
                         return ""

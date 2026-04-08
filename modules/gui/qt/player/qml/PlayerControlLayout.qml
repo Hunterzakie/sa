@@ -21,6 +21,7 @@ import QtQuick.Layouts
 
 
 import VLC.MainInterface
+import VLC.Player
 import VLC.Style
 import VLC.Widgets as Widgets
 import VLC.PlayerControls
@@ -94,7 +95,7 @@ FocusScope {
                 model: ControlListFilter {
                     sourceModel: playerControlLayout.model.left
 
-                    player: Player
+                    player: MainPlayerController
                     ctx: MainCtx
                 }
 
@@ -141,7 +142,7 @@ FocusScope {
                 model: ControlListFilter {
                     sourceModel: playerControlLayout.model.right
 
-                    player: Player
+                    player: MainPlayerController
                     ctx: MainCtx
                 }
 
@@ -192,7 +193,7 @@ FocusScope {
             model: ControlListFilter {
                 sourceModel: playerControlLayout.model.left
 
-                player: Player
+                player: MainPlayerController
                 ctx: MainCtx
             }
 
@@ -256,7 +257,7 @@ FocusScope {
             model: ControlListFilter {
                 sourceModel: playerControlLayout.model.center
 
-                player: Player
+                player: MainPlayerController
                 ctx: MainCtx
             }
 
@@ -300,7 +301,7 @@ FocusScope {
             model: ControlListFilter {
                 sourceModel: playerControlLayout.model.right
 
-                player: Player
+                player: MainPlayerController
                 ctx: MainCtx
             }
 

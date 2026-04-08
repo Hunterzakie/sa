@@ -19,7 +19,7 @@ import QtQuick
 import QtQuick.Controls
 
 import VLC.MediaLibrary
-
+import VLC.Player
 import VLC.Widgets as Widgets
 import VLC.Style
 import VLC.Player
@@ -92,7 +92,7 @@ Item {
         model: MLBookmarkModel {
             id: modelBookmark
 
-            player: Player
+            player: MainPlayerController
 
             ml: MediaLib
         }

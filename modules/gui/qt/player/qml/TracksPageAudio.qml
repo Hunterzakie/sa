@@ -68,7 +68,7 @@ TracksPage {
 
             DelayEstimator {
                 id: delayEstimator
-                onDelayChanged: Player.addAudioDelay(delayEstimator.delay)
+                onDelayChanged: MainPlayerController.addAudioDelay(delayEstimator.delay)
             }
 
             Widgets.MenuCaption {
@@ -98,7 +98,7 @@ TracksPage {
                 Navigation.rightItem: reset
 
                 Component.onCompleted: {
-                    value = Player.audioDelayMS
+                    value = MainPlayerController.audioDelayMS
 
                     update = true
                 }
@@ -107,16 +107,16 @@ TracksPage {
                     if (update === false)
                         return
 
-                    Player.audioDelayMS = value
+                    MainPlayerController.audioDelayMS = value
                 }
 
                 Connections {
-                    target: Player
+                    target: MainPlayerController
 
                     function onAudioDelayChanged() {
                         spinBox.update = false
 
-                        spinBox.value = Player.audioDelayMS
+                        spinBox.value = MainPlayerController.audioDelayMS
 
                         spinBox.update = true
                     }
@@ -129,7 +129,7 @@ TracksPage {
                 text: qsTr("Reset")
 
                 onClicked: {
-                    Player.audioDelayMS = 0
+                    MainPlayerController.audioDelayMS = 0
                     delayEstimator.reset()
                 }
 
