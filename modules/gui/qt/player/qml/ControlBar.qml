@@ -209,25 +209,21 @@ T.Pane {
                 Keys.onPressed: (event) => {
                     Navigation.defaultKeyAction(event)
                 }
-            },
-            Loader {
-                id: bookmarksLoader
-
-                parent: root
-                active: MainCtx.mediaLibraryAvailable
-                source: "qrc:///qt/qml/VLC/MediaLibrary/Bookmarks.qml"
-
-                x: root.leftPadding + trackPositionSlider.x + row2.Layout.leftMargin
-                y: row2.y + row2.height + VLCStyle.margin_xxsmall
-                width: trackPositionSlider.width
-
-                onLoaded: {
-                   item.barHeight = Qt.binding(function() { return bookmarksHeight })
-                   item.controlBarHovered = Qt.binding(function() { return root.hovered })
-                   item.yShift = Qt.binding(function() { return row2.height + VLCStyle.margin_xxsmall })
-                }
             }
         ]
+
+        Component.onCompleted: {
+            if (MainCtx.mediaLibraryAvailable) {
+                const component = MainCtx.createComponent('VLC.MediaLibrary', 'Bookmarks')
+                component.incubateObject(root, { 'x': Qt.binding(() => root.leftPadding + trackPositionSlider.x + row2.Layout.leftMargin),
+                                                 'y': Qt.binding(() => row2.y + row2.height + VLCStyle.margin_xxsmall),
+                                                 'width': Qt.binding(() => trackPositionSlider.width),
+                                                 'barHeight': Qt.binding(() => root.bookmarksHeight),
+                                                 'controlBarHovered': Qt.binding(() => root.hovered),
+                                                 'yShift': Qt.binding(() => row2.height + VLCStyle.margin_xxsmall) },
+                                              1 /* QQmlIncubator::AsynchronousIfNested */)
+            }
+        }
 
         Item {
             // BUG: RowLayout can not be used here
