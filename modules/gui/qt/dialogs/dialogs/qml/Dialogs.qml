@@ -587,7 +587,9 @@ Item {
     Loader {
         id: toolbarEditorDialogLoader
         active: false
-        source: "qrc:///qt/qml/VLC/Dialogs/ToolbarEditorDialog.qml"
+        sourceComponent: ToolbarEditorDialog {
+
+        }
 
         Connections {
             target: DialogsProvider
