@@ -30,6 +30,7 @@
 #include <QApplication>
 #include <QQuickItem>
 #include <QTimer>
+#include <QJSEngine>
 
 Q_MOC_INCLUDE( "dialogs/toolbar/controlbar_profile_model.hpp" )
 Q_MOC_INCLUDE( "util/csdbuttonmodel.hpp" )
@@ -357,6 +358,87 @@ public:
         QTimer::singleShot(delay, context, [func, params]() {
             func.call(params);
         });
+    }
+
+    // TODO: Get rid of this when minimum required Qt version becomes 6.5:
+    Q_INVOKABLE QQmlComponent* createComponent(const QString& moduleUri,
+                                               const QString& typeName,
+                                               QQmlComponent::CompilationMode mode = QQmlComponent::PreferSynchronous,
+                                               QObject *parent = nullptr)
+    {
+        const auto engine = qmlEngine(this);
+        assert(engine);
+
+        const auto component = createComponent(engine, moduleUri, typeName, mode, parent);
+
+        if (!parent)
+            QJSEngine::setObjectOwnership(component, QJSEngine::JavaScriptOwnership);
+
+        return component;
+    }
+
+    // TODO: Get rid of this when minimum required Qt version becomes 6.5:
+    Q_INVOKABLE static QQmlComponent* createComponent(QQmlEngine *engine,
+                                                         const QString& moduleUri,
+                                                         const QString& typeName,
+                                                         QQmlComponent::CompilationMode mode = QQmlComponent::PreferSynchronous,
+                                                         QObject *parent = nullptr)
+    {
+        assert(engine);
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+        const auto component = new QQmlComponent(engine, moduleUri, typeName, mode, parent);
+#else
+
+        QQmlComponent *component = nullptr;
+
+        {
+            // If the type is a pure QML type provided backed by a QML file rather than a C++ class,
+            // we can specify its URI:
+
+            QString uri;
+            {
+                QString formatString;
+                if (moduleUri.startsWith(QLatin1String("VLC")))
+                {
+                    // VLC type:
+                    formatString = QStringLiteral("qrc:/qt/qml/%1/%2.qml");
+                }
+                else
+                {
+                    // Qt (built-in) type:
+                    assert(moduleUri.startsWith("Qt"));
+                    formatString = QStringLiteral("qrc:/qt-project.org/imports/%1/%2.qml");
+                }
+
+                uri = formatString.arg(QString(moduleUri).replace('.', '/'), typeName);
+            }
+
+            component = new QQmlComponent(engine,
+                                          uri,
+                                          mode,
+                                          parent);
+        }
+
+        if (component->isError())
+        {
+            // Note that we can not simply check if such file exists instead of going this way,
+            // because `qmlcachegen` might have been used.
+            if (component->errors()[0].description().contains(QLatin1String("No such file or directory")))
+            {
+                // Assume QML type backed by C++ class. QQmlComponent does not allow creating
+                // from qml type id. Note that we do not do this in all cases, even though it
+                // also works for pure QML types, because the docs says it is slower.
+
+                delete component; // This seems safer than re-using with `::setData()` to clear the errors.
+
+                component = new QQmlComponent(engine, parent);
+                component->setData(QStringLiteral("import %1; %2 { }").arg(moduleUri, typeName).toLatin1(), { });
+            }
+        }
+#endif
+
+        return component;
     }
 
     Q_INVOKABLE virtual bool platformHandlesResizeWithCSD() const { return false; };
