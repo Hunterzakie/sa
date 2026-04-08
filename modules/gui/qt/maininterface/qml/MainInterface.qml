@@ -102,7 +102,9 @@ Item {
             id: playlistWindowLoader
             asynchronous: true
             active: !MainCtx.playlistDocked
-            source: "qrc:///qt/qml/VLC/Playlist/PlaylistDetachedWindow.qml"
+            sourceComponent: PlaylistDetachedWindow {
+
+            }
         }
 
         Connections {
