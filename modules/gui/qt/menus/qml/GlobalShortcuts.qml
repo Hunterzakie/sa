@@ -52,8 +52,10 @@ Item {
     ShortcutExt{ sequences: [StandardKey.ZoomIn]; onActivated: MainCtx.incrementIntfUserScaleFactor(true) }
     ShortcutExt{ sequences: [StandardKey.ZoomOut]; onActivated: MainCtx.incrementIntfUserScaleFactor(false) }
 
-    Loader {
-        active: MainCtx.mediaLibraryAvailable
-        source: "qrc:///qt/qml/VLC/MediaLibrary/MLGlobalShortcuts.qml"
+    Component.onCompleted: {
+        if (MainCtx.mediaLibraryAvailable) {
+            const component = MainCtx.createComponent('VLC.MediaLibrary', 'MLGlobalShortcuts')
+            component.incubateObject(this, {}, 1 /* QQmlIncubator::AsynchronousIfNested */)
+        }
     }
 }
