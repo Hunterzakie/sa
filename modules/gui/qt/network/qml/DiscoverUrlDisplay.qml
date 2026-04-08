@@ -36,9 +36,7 @@ FocusScope {
     property var pagePrefix: []
 
     readonly property bool hasGridListMode: false
-    readonly property bool isSearchable: urlListDisplay.active
-                                    && urlListDisplay.item.isSearchable !== undefined
-                                    && urlListDisplay.item.isSearchable
+    readonly property bool isSearchable: (_urlListDisplay && _urlListDisplay.isSearchable)
 
     property int leftPadding: 0
     property int rightPadding: 0
@@ -47,6 +45,8 @@ FocusScope {
 
     property bool enableBeginningFade: true
     property bool enableEndFade: true
+
+    property Item _urlListDisplay // Can not use type `UrlListDisplay` because `MediaLibrary` module is not imported
 
     //---------------------------------------------------------------------------------------------
     // Functions
@@ -61,6 +61,7 @@ FocusScope {
     //---------------------------------------------------------------------------------------------
 
     Column {
+        id: column
         anchors.fill: parent
 
         FocusScope {
@@ -71,7 +72,7 @@ FocusScope {
             focus: true
 
             Navigation.parentItem:  root
-            Navigation.downItem: urlListDisplay.item ?? null
+            Navigation.downItem: root._urlListDisplay
 
             Widgets.TextFieldExt {
                 id: searchField
@@ -84,8 +85,8 @@ FocusScope {
                 selectByMouse: true
 
                 onAccepted: {
-                    if (urlListDisplay.status == Loader.Ready)
-                        urlListDisplay.item.model.addAndPlay(text)
+                    if (root._urlListDisplay)
+                        root._urlListDisplay.model.addAndPlay(text)
                     else
                         MainPlaylistController.append([text], true)
                 }
@@ -104,33 +105,25 @@ FocusScope {
             }
         }
 
-        Loader {
-            id: urlListDisplay
+        Component.onCompleted: {
+            if (MainCtx.mediaLibraryAvailable) {
+                const component = MainCtx.createComponent('VLC.MediaLibrary', 'UrlListDisplay')
+                root._urlListDisplay = component.incubateObject(column, { 'width': Qt.binding(() => column.width),
+                                                                          'height': Qt.binding(() => column.height - searchFieldContainer.height),
 
-            width: parent.width
-            height: parent.height - searchFieldContainer.height
+                                                                          'leftPadding': Qt.binding(() => root.leftPadding),
+                                                                          'rightPadding': Qt.binding(() => root.rightPadding),
 
-            active: MainCtx.mediaLibraryAvailable
-            source: "qrc:///qt/qml/VLC/MediaLibrary/UrlListDisplay.qml"
+                                                                          'displayMarginEnd': Qt.binding(() => root.displayMarginEnd),
 
-            onLoaded: {
-                item.leftPadding = Qt.binding(function() {
-                    return root.leftPadding
-                })
+                                                                          'fadingEdge.enableBeginningFade': Qt.binding(() => root.enableBeginningFade),
+                                                                          'fadingEdge.enableEndFade': Qt.binding(() => root.enableEndFade),
 
-                item.rightPadding = Qt.binding(function() {
-                    return root.rightPadding
-                })
+                                                                          'Navigation.upItem': searchField,
+                                                                          'Navigation.parentItem': root,
 
-                item.displayMarginEnd = Qt.binding(() => { return root.displayMarginEnd })
-
-                item.fadingEdge.enableBeginningFade = Qt.binding(() => { return root.enableBeginningFade })
-                item.fadingEdge.enableEndFade = Qt.binding(() => { return root.enableEndFade })
-
-                item.Navigation.upItem = searchField
-                item.Navigation.parentItem =  root
-
-                item.searchPattern = Qt.binding(() => MainCtx.search.pattern)
+                                                                          'searchPattern': Qt.binding(() => MainCtx.search.pattern) },
+                                                                        1 /* QQmlIncubator::AsynchronousIfNested */)
             }
         }
     }
