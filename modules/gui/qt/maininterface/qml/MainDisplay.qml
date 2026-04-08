@@ -205,7 +205,7 @@ FocusScope {
         id: voronoiSnowLoader
 
         z: 1.5
-        source: "qrc:///qt/qml/VLC/Widgets/VoronoiSnow.qml"
+        sourceComponent: MainCtx.createComponent('VLC.Widgets', 'VoronoiSnow')
         anchors.fill: parent
         active: false
 
@@ -662,31 +662,34 @@ FocusScope {
             }
         }
 
-        source: "qrc:///qt/qml/VLC/MainInterface/UpdatePane.qml"
-
         Navigation.parentItem: mainColumn
         Navigation.upItem: mainRow
         Navigation.downItem: miniPlayer
 
         onLoaded: {            
-            item.background.visible = Qt.binding(function() { return !stackViewParent.layer.enabled })
-
-            item.leftPadding = Qt.binding(function() { return VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin })
-            item.rightPadding = Qt.binding(function() { return VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin })
-            item.bottomPadding = Qt.binding(function() { return VLCStyle.margin_small + ((miniPlayer.visible || loaderProgress.visible) ? 0
-                                                                                                                                        : VLCStyle.applicationVerticalMargin) })
-
             item.dismissRequested.connect(loaderUpdatePane, loaderUpdatePane.dismiss)
+        }
 
-            // We have height animation here, we don't want animation inside the item in addition to that:
-            item.animations = Qt.binding(function() { return !loaderUpdatePane.toggleAnimation })
+        // TODO: Use `sourceComponent: Qt.createComponent('VLC.MainInterface', 'UpdatePane') once
+        //       Qt starts allowing setting initial properties with source component.
+        readonly property url targetSource: MainCtx.createComponent('VLC.MainInterface', 'UpdatePane').url
 
-            item.Navigation.parentItem = loaderUpdatePane
+        onTargetSourceChanged: {
+            loaderUpdatePane.setSource(targetSource, { 'background.visible': Qt.binding(() => !stackViewParent.layer.enabled),
 
-            item.focus = true // Loader itself is a focus scope, so we need this
+                                                       'leftPadding': Qt.binding(() => VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin),
+                                                       'rightPadding': Qt.binding(() => VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin),
+                                                       'bottomPadding': Qt.binding(() => VLCStyle.margin_small + ((miniPlayer.visible || loaderProgress.visible) ? 0
+                                                                                                                                                                 : VLCStyle.applicationVerticalMargin)),
+
+                                                       'Navigation.parentItem': loaderUpdatePane,
+
+                                                       // We have height animation here, we don't want animation inside the item in addition to that:
+                                                       'animations': Qt.binding(() => !loaderUpdatePane.toggleAnimation),
+                                                       // Loader itself is a focus scope, so we need this:
+                                                       'focus': true })
         }
     }
-
 
     Loader {
         id: loaderProgress
@@ -699,14 +702,15 @@ FocusScope {
 
         height: active ? implicitHeight : 0
 
-        source: "qrc:///qt/qml/VLC/MediaLibrary/ScanProgressBar.qml"
+        // TODO: Use `sourceComponent: Qt.createComponent('VLC.MediaLibrary', 'ScanProgressBar') once
+        //       Qt starts allowing setting initial properties with source component.
+        readonly property url targetSource: MainCtx.createComponent('VLC.MediaLibrary', 'ScanProgressBar').url
 
-        onLoaded: {
-            item.background.visible = Qt.binding(function() { return !stackViewParent.layer.enabled })
-
-            item.leftPadding = Qt.binding(function() { return VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin })
-            item.rightPadding = Qt.binding(function() { return VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin })
-            item.bottomPadding = Qt.binding(function() { return VLCStyle.margin_small + (miniPlayer.visible ? 0 : VLCStyle.applicationVerticalMargin) })
+        onTargetSourceChanged: {
+            loaderProgress.setSource(targetSource, { 'background.visible': Qt.binding(() => !stackViewParent.layer.enabled),
+                                                     'leftPadding': Qt.binding(() => VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin),
+                                                     'rightPadding': Qt.binding(() => VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin),
+                                                     'bottomPadding': Qt.binding(() => VLCStyle.margin_small + (miniPlayer.visible ? 0 : VLCStyle.applicationVerticalMargin)) })
         }
     }
 
