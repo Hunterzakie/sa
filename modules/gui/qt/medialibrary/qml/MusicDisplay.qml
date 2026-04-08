@@ -36,23 +36,23 @@ Widgets.PageLoader {
             displayText: qsTr("Artists"),
             name: "artists",
             default: true,
-            url: "qrc:///qt/qml/VLC/MediaLibrary/MusicArtistsDisplay.qml"
+            component: { module: 'VLC.MediaLibrary', type: 'MusicArtistsDisplay' }
         }, {
             displayText: qsTr("Albums"),
             name: "albums",
-            url: "qrc:///qt/qml/VLC/MediaLibrary/MusicAlbumsDisplay.qml"
+            component: { module: 'VLC.MediaLibrary', type: 'MusicAlbumsDisplay' }
         }, {
             displayText: qsTr("Tracks"),
             name: "tracks" ,
-            url: "qrc:///qt/qml/VLC/MediaLibrary/MusicTracksDisplay.qml"
+            component: { module: 'VLC.MediaLibrary', type: 'MusicTracksDisplay' }
         }, {
             displayText: qsTr("Genres"),
             name: "genres" ,
-            url: "qrc:///qt/qml/VLC/MediaLibrary/MusicGenresDisplay.qml"
+            component: { module: 'VLC.MediaLibrary', type: 'MusicGenresDisplay' }
         }, {
             displayText: qsTr("Playlists"),
             name: "playlists" ,
-            url: "qrc:///qt/qml/VLC/MediaLibrary/MusicPlaylistsDisplay.qml"
+            component: { module: 'VLC.MediaLibrary', type: 'MusicPlaylistsDisplay' }
         }
     ]
 
