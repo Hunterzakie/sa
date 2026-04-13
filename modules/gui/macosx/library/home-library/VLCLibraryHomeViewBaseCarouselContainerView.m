@@ -78,6 +78,11 @@
     [self setup];
 }
 
+- (BOOL)mouseDownCanMoveWindow
+{
+    return NO;
+}
+
 - (void)setup
 {
     [self setupView];
