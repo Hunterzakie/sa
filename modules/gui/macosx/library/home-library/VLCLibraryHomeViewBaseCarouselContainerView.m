@@ -211,6 +211,12 @@
     self.rightButton.hidden = currentItemIndex == numberOfItems - 1;
 }
 
+- (void)layout
+{
+    [super layout];
+    [self updateCarouselOffset];
+}
+
 - (void)resizeWithOldSuperviewSize:(NSSize)oldSize
 {
     [super resizeWithOldSuperviewSize:oldSize];
