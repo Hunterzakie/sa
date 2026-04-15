@@ -18,6 +18,7 @@
 import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
+import QtQuick.Templates as T
 import QtQuick.Layouts
 import QtQml.Models
 
@@ -28,8 +29,13 @@ import VLC.Widgets as Widgets
 import VLC.Util
 import VLC.Style
 
-FocusScope {
+T.Pane {
     id: root
+
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
+                            implicitContentWidth + leftPadding + rightPadding)
+    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
+                             implicitContentHeight + topPadding + bottomPadding)
 
     property var model
 
@@ -42,19 +48,15 @@ FocusScope {
 
     property bool forcePlayActionBtnFocusOnce: false
 
+    spacing: VLCStyle.margin_large
+
+    leftPadding: VLCStyle.margin_normal
+    rightPadding: VLCStyle.margin_small
+    topPadding: VLCStyle.margin_large
+    bottomPadding: VLCStyle.margin_xxsmall
+
     signal retract()
-
-    implicitWidth: layout.implicitWidth
-
-    implicitHeight: {
-        const verticalMargins = layout.anchors.topMargin + layout.anchors.bottomMargin
-        if (tracks.contentHeight < artAndControl.height)
-            return artAndControl.height + verticalMargins
-        return Math.min(tracks.contentHeight
-                        , tracks.listView.headerItem.height + tracks.rowHeight * 6) // show a maximum of 6 rows
-                + verticalMargins
-    }
-
+    
     // components should shrink with change of height, but it doesn't happen fast enough
     // causing expand and shrink animation bit laggy, so clip the delegate to fix it
     clip: true
@@ -76,10 +78,7 @@ FocusScope {
         colorSet: ColorContext.View
     }
 
-    Rectangle {
-        id: background
-
-        anchors.fill: parent
+    background: Rectangle {
         color: theme.bg.secondary
 
         Rectangle {
@@ -103,15 +102,19 @@ FocusScope {
         }
     }
 
-    RowLayout {
+    contentItem: RowLayout {
         id: layout
 
-        anchors.fill: parent
-        anchors.leftMargin: VLCStyle.margin_normal
-        anchors.topMargin: VLCStyle.margin_large
-        anchors.rightMargin: VLCStyle.margin_small
-        anchors.bottomMargin: VLCStyle.margin_xxsmall
-        spacing: VLCStyle.margin_large
+        spacing: root.spacing
+
+        implicitHeight: {
+            const verticalMargins = layout.anchors.topMargin + layout.anchors.bottomMargin
+            if (tracks.contentHeight < artAndControl.height)
+                return artAndControl.height + verticalMargins
+            return Math.min(tracks.contentHeight
+                            , tracks.headerItem.height + tracks.rowHeight * 6) // show a maximum of 6 rows
+                    + verticalMargins
+        }
 
         Component {
             id: cover
@@ -418,7 +421,7 @@ FocusScope {
                 }
             }]
 
-            fadingEdge.backgroundColor: background.color
+            fadingEdge.backgroundColor: root.background?.color ?? "transparent"
 
             preferredHeader: Loader {
                 sourceComponent: VLCStyle.isScreenSmall
