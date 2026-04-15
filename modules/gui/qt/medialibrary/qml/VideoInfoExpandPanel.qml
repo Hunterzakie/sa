@@ -18,6 +18,7 @@
 import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
+import QtQuick.Templates as T
 import QtQml.Models
 import QtQuick.Layouts
 
@@ -28,8 +29,13 @@ import VLC.Widgets as Widgets
 import VLC.Util
 import VLC.Style
 
-FocusScope {
+T.Pane {
     id: root
+
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
+                            implicitContentWidth + leftPadding + rightPadding)
+    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
+                             implicitContentHeight + topPadding + bottomPadding)
 
     property var model : ({})
     property int index: -1
@@ -37,13 +43,14 @@ FocusScope {
     property bool _showMoreInfo: false
     signal retract()
 
-    implicitHeight: contentRect.implicitHeight
-
     // otherwise produces artefacts on retract animation
     clip: true
 
     focus: true
 
+    spacing: VLCStyle.margin_normal
+    padding: VLCStyle.margin_normal
+    
     function setCurrentItemFocus(reason) {
         playActionBtn.forceActiveFocus(reason);
     }
@@ -53,12 +60,7 @@ FocusScope {
         colorSet: ColorContext.View
     }
 
-
-    Rectangle{
-        id: contentRect
-
-        anchors.fill: parent
-        implicitHeight: contentLayout.implicitHeight + ( VLCStyle.margin_normal * 2 )
+    background: Rectangle {
         color: theme.bg.secondary
 
         Rectangle {
@@ -80,235 +82,232 @@ FocusScope {
             color: theme.border
             height: VLCStyle.expandDelegate_border
         }
+    }
 
-        RowLayout {
-            id: contentLayout
+    contentItem: RowLayout {
+        id: contentLayout
 
-            anchors.fill: parent
-            anchors.margins: VLCStyle.margin_normal
-            implicitHeight: artAndControl.implicitHeight
-            spacing: VLCStyle.margin_normal
+        spacing: root.spacing
 
-            FocusScope {
-                id: artAndControl
+        FocusScope {
+            id: artAndControl
 
-                focus: true
+            focus: true
 
-                implicitHeight: artAndControlLayout.implicitHeight
-                implicitWidth: artAndControlLayout.implicitWidth
+            implicitHeight: artAndControlLayout.implicitHeight
+            implicitWidth: artAndControlLayout.implicitWidth
 
-                Layout.preferredWidth: implicitWidth
-                Layout.preferredHeight: implicitHeight
-                Layout.alignment: Qt.AlignTop
+            Layout.preferredWidth: implicitWidth
+            Layout.preferredHeight: implicitHeight
+            Layout.alignment: Qt.AlignTop
 
-                Column {
-                    id: artAndControlLayout
+            Column {
+                id: artAndControlLayout
 
-                    spacing: VLCStyle.margin_normal
+                spacing: VLCStyle.margin_normal
 
-                    Item {
-                        height: VLCStyle.gridCover_video_height
-                        width: VLCStyle.gridCover_video_width
+                Item {
+                    height: VLCStyle.gridCover_video_height
+                    width: VLCStyle.gridCover_video_width
 
-                        /* A bigger cover for the album */
-                        Widgets.ImageExt {
-                            id: expand_cover_id
+                    /* A bigger cover for the album */
+                    Widgets.ImageExt {
+                        id: expand_cover_id
 
-                            anchors.fill: parent
-                            source: model.thumbnail || VLCStyle.noArtVideoCover
-                            sourceSize: Qt.size(width * eDPR, height * eDPR)
-                            radius: VLCStyle.gridCover_radius
-                            backgroundColor: theme.bg.primary
+                        anchors.fill: parent
+                        source: model.thumbnail || VLCStyle.noArtVideoCover
+                        sourceSize: Qt.size(width * eDPR, height * eDPR)
+                        radius: VLCStyle.gridCover_radius
+                        backgroundColor: theme.bg.primary
 
-                            readonly property real eDPR: MainCtx.effectiveDevicePixelRatio(Window.window)
+                        readonly property real eDPR: MainCtx.effectiveDevicePixelRatio(Window.window)
 
-                            Widgets.DefaultShadow {
-                                visible: (parent.status === Image.Ready)
-                            }
+                        Widgets.DefaultShadow {
+                            visible: (parent.status === Image.Ready)
                         }
                     }
+                }
 
-                    Widgets.NavigableRow {
-                        id: actionButtons
+                Widgets.NavigableRow {
+                    id: actionButtons
 
-                        focus: true
-                        spacing: VLCStyle.margin_large
+                    focus: true
+                    spacing: VLCStyle.margin_large
 
-                        Widgets.ActionButtonPrimary {
-                            id: playActionBtn
+                    Widgets.ActionButtonPrimary {
+                        id: playActionBtn
 
-                            AccessibleCompat.id: "videoInfoPlayButton"
+                        AccessibleCompat.id: "videoInfoPlayButton"
 
-                            iconTxt: VLCIcons.play
-                            text: qsTr("Play")
-                            onClicked: MediaLib.addAndPlay( model.id )
-                        }
-
-                        Widgets.ButtonExt {
-                            id: enqueueActionBtn
-
-                            AccessibleCompat.id: "videoInfoEnqueueButton"
-
-                            iconTxt: VLCIcons.enqueue
-                            text: qsTr("Enqueue")
-                            onClicked: MediaLib.addToPlaylist( model.id )
-                        }
-
-                        Navigation.parentItem: root
-                        Navigation.rightItem: showMoreButton
+                        iconTxt: VLCIcons.play
+                        text: qsTr("Play")
+                        onClicked: MediaLib.addAndPlay( model.id )
                     }
+
+                    Widgets.ButtonExt {
+                        id: enqueueActionBtn
+
+                        AccessibleCompat.id: "videoInfoEnqueueButton"
+
+                        iconTxt: VLCIcons.enqueue
+                        text: qsTr("Enqueue")
+                        onClicked: MediaLib.addToPlaylist( model.id )
+                    }
+
+                    Navigation.parentItem: root
+                    Navigation.rightItem: showMoreButton
+                }
+            }
+        }
+
+        Column {
+            id: expand_infos_id
+
+            spacing: 0
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+            Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+
+            RowLayout {
+                width: parent.width
+
+                Widgets.SubtitleLabel {
+                    text: model.title || qsTr("Unknown title")
+                    color: theme.fg.primary
+
+                    Layout.fillWidth: true
+                }
+
+                Widgets.IconToolButton {
+                    id: closeButton
+
+                    AccessibleCompat.id: "videoInfoCloseButton"
+
+                    text: VLCIcons.close
+
+                    description: qsTr("Close")
+
+                    onClicked: root.retract()
+
+                    Navigation.parentItem: root
+                    Navigation.leftItem: showMoreButton
                 }
             }
 
-            Column {
-                id: expand_infos_id
+            Widgets.CaptionLabel {
+                text: (model && model.duration) ? model.duration.formatHMS() : ""
+                color: theme.fg.primary
+                width: parent.width
+            }
 
-                spacing: 0
-                Layout.fillHeight: true
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+            Widgets.MenuCaption {
+                topPadding: VLCStyle.margin_normal
+                text: "<b>" + qsTr("File Name:") + "</b> " + root.model.fileName
+                width: parent.width
+                color: theme.fg.secondary
+                textFormat: Text.StyledText
+            }
 
-                RowLayout {
-                    width: parent.width
+            Widgets.MenuCaption {
 
-                    Widgets.SubtitleLabel {
-                        text: model.title || qsTr("Unknown title")
-                        color: theme.fg.primary
+                readonly property string folderMRL: MainCtx.folderMRL(root.model?.mrl ?? "")
 
-                        Layout.fillWidth: true
-                    }
+                text: {
+                    if (!!folderMRL)
+                        return "<b>%1</b> <a href='%2'>%3</a>"
+                                    .arg(qsTr("Folder:"))
+                                    .arg(folderMRL)
+                                    .arg(MainCtx.displayMRL(folderMRL))
 
-                    Widgets.IconToolButton {
-                        id: closeButton
+                    return "<b>" + qsTr("Path:") + "</b> " + root.model.display_mrl
+                }
 
-                        AccessibleCompat.id: "videoInfoCloseButton"
+                linkColor: theme.fg.link
+                color: theme.fg.secondary
+                topPadding: VLCStyle.margin_xsmall
+                bottomPadding: VLCStyle.margin_large
+                width: parent.width
+                textFormat: Text.StyledText
 
-                        text: VLCIcons.close
+                onLinkActivated: function (link) {
+                    Qt.openUrlExternally(link)
+                }
+            }
 
-                        description: qsTr("Close")
+            Widgets.ButtonExt {
+                id: showMoreButton
 
-                        onClicked: root.retract()
+                AccessibleCompat.id: "videoInfoShowMoreButton"
 
-                        Navigation.parentItem: root
-                        Navigation.leftItem: showMoreButton
+                text: root._showMoreInfo ? qsTr("View Less") : qsTr("View More")
+                iconTxt: VLCIcons.expand
+                iconRotation: root._showMoreInfo ? -180 : 0
+                visible: (root.model.audioDesc?.length > 0)
+                         || (root.model.videoDesc?.length > 0)
+
+                Behavior on iconRotation {
+                    NumberAnimation {
+                        duration: VLCStyle.duration_short
                     }
                 }
 
-                Widgets.CaptionLabel {
-                    text: (model && model.duration) ? model.duration.formatHMS() : ""
-                    color: theme.fg.primary
-                    width: parent.width
-                }
+                onClicked: root._showMoreInfo = !root._showMoreInfo
 
-                Widgets.MenuCaption {
-                    topPadding: VLCStyle.margin_normal
-                    text: "<b>" + qsTr("File Name:") + "</b> " + root.model.fileName
-                    width: parent.width
-                    color: theme.fg.secondary
-                    textFormat: Text.StyledText
-                }
+                Navigation.parentItem: root
+                Navigation.leftItem: enqueueActionBtn
+                Navigation.rightItem: closeButton
+            }
 
-                Widgets.MenuCaption {
+            Row {
+                width: parent.width
 
-                    readonly property string folderMRL: MainCtx.folderMRL(root.model?.mrl ?? "")
+                topPadding: VLCStyle.margin_normal
 
-                    text: {
-                        if (!!folderMRL)
-                            return "<b>%1</b> <a href='%2'>%3</a>"
-                                        .arg(qsTr("Folder:"))
-                                        .arg(folderMRL)
-                                        .arg(MainCtx.displayMRL(folderMRL))
+                spacing: VLCStyle.margin_xlarge
 
-                        return "<b>" + qsTr("Path:") + "</b> " + root.model.display_mrl
-                    }
+                visible: root._showMoreInfo
 
-                    linkColor: theme.fg.link
-                    color: theme.fg.secondary
-                    topPadding: VLCStyle.margin_xsmall
-                    bottomPadding: VLCStyle.margin_large
-                    width: parent.width
-                    textFormat: Text.StyledText
+                opacity: visible ? 1.0 : 0.0
 
-                    onLinkActivated: function (link) {
-                        Qt.openUrlExternally(link)
+                Behavior on opacity {
+                    OpacityAnimator {
+                        duration: VLCStyle.duration_long
                     }
                 }
 
-                Widgets.ButtonExt {
-                    id: showMoreButton
+                DescriptionList {
+                    title: qsTr("Video track")
 
-                    AccessibleCompat.id: "videoInfoShowMoreButton"
+                    sourceModel: root.model.videoDesc
 
-                    text: root._showMoreInfo ? qsTr("View Less") : qsTr("View More")
-                    iconTxt: VLCIcons.expand
-                    iconRotation: root._showMoreInfo ? -180 : 0
-                    visible: (root.model.audioDesc?.length > 0)
-                             || (root.model.videoDesc?.length > 0)
-
-                    Behavior on iconRotation {
-                        NumberAnimation {
-                            duration: VLCStyle.duration_short
-                        }
-                    }
-
-                    onClicked: root._showMoreInfo = !root._showMoreInfo
-
-                    Navigation.parentItem: root
-                    Navigation.leftItem: enqueueActionBtn
-                    Navigation.rightItem: closeButton
+                    delegateModel:  [
+                        {text: qsTr("Codec:"), role: "codec" },
+                        {text: qsTr("Language:"), role: "language" },
+                        {text: qsTr("FPS:"), role: "fps" }
+                    ]
                 }
 
-                Row {
-                    width: parent.width
+                DescriptionList {
+                    title: qsTr("Audio track")
 
-                    topPadding: VLCStyle.margin_normal
+                    sourceModel: root.model.videoDesc
 
-                    spacing: VLCStyle.margin_xlarge
+                    delegateModel:  [
+                        {text: qsTr("Codec:"), role: "codec" },
+                        {text: qsTr("Language:"), role: "language" },
+                        {text: qsTr("Channel:"), role: "nbchannels" }
+                    ]
+                }
 
-                    visible: root._showMoreInfo
+                DescriptionList {
+                    title: qsTr("Subtitle track")
 
-                    opacity: visible ? 1.0 : 0.0
+                    sourceModel: [{"text": root.model.subtitleDesc?.map(desc => desc.language)
+                                                .filter(l => !!l).join(", ")}]
 
-                    Behavior on opacity {
-                        OpacityAnimator {
-                            duration: VLCStyle.duration_long
-                        }
-                    }
-
-                    DescriptionList {
-                        title: qsTr("Video track")
-
-                        sourceModel: root.model.videoDesc
-
-                        delegateModel:  [
-                            {text: qsTr("Codec:"), role: "codec" },
-                            {text: qsTr("Language:"), role: "language" },
-                            {text: qsTr("FPS:"), role: "fps" }
-                        ]
-                    }
-
-                    DescriptionList {
-                        title: qsTr("Audio track")
-
-                        sourceModel: root.model.videoDesc
-
-                        delegateModel:  [
-                            {text: qsTr("Codec:"), role: "codec" },
-                            {text: qsTr("Language:"), role: "language" },
-                            {text: qsTr("Channel:"), role: "nbchannels" }
-                        ]
-                    }
-
-                    DescriptionList {
-                        title: qsTr("Subtitle track")
-
-                        sourceModel: [{"text": root.model.subtitleDesc?.map(desc => desc.language)
-                                                    .filter(l => !!l).join(", ")}]
-
-                        delegateModel:  [
-                            {text: qsTr("Language:"), role: "text" }
-                        ]
-                    }
+                    delegateModel:  [
+                        {text: qsTr("Language:"), role: "text" }
+                    ]
                 }
             }
         }
