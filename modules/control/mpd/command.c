@@ -259,9 +259,16 @@ static mpd_cmd_result_t cmd_currentsong(intf_thread_t *intf, mpd_client_t *clien
     VLC_UNUSED(argv);
     intf_sys_t *sys = intf->p_sys;
 
+    vlc_playlist_Lock(sys->playlist);
     input_item_t *item = vlc_player_GetCurrentMedia(sys->player);
-    if (item != NULL)
+    if (item)
+        input_item_Hold(item);
+    vlc_playlist_Unlock(sys->playlist);
+
+    if (item) {
         mpd_ml_print_item(intf, client, item);
+        input_item_Release(item);
+    }
 
     return MPD_CMD_OK;
 }
