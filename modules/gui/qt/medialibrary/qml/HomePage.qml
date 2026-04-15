@@ -217,10 +217,6 @@ Widgets.PageExt {
 
                 emptyLabel: null
 
-                // FIXME: `ExpandGridView` causes extreme performance degradation when `reuseItems`
-                //        is true and items provided by the model change (#29084).
-                reuseItems: !MainCtx.gridView
-
                 listCoverWidth: root.listCoverWidth
                 listCoverHeight: root.listCoverHeight
                 listCoverRadius: root.listCoverRadius
@@ -301,10 +297,6 @@ Widgets.PageExt {
                 interactive: false
 
                 emptyLabel: null
-
-                // FIXME: `ExpandGridView` causes extreme performance degradation when `reuseItems`
-                //        is true and items provided by the model change (#29084).
-                reuseItems: !MainCtx.gridView
 
                 listCoverWidth: root.listCoverWidth
                 listCoverHeight: root.listCoverHeight
@@ -462,10 +454,6 @@ Widgets.PageExt {
                 interactive: false
 
                 emptyLabel: null
-
-                // FIXME: `ExpandGridView` causes extreme performance degradation when `reuseItems`
-                //        is true and items provided by the model change (#29084).
-                reuseItems: !MainCtx.gridView
 
                 listCoverWidth: root.listCoverWidth
                 listCoverHeight: root.listCoverHeight

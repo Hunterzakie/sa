@@ -370,9 +370,6 @@ Widgets.PageExt {
         enableBeginningFade: false
         enableEndFade: false
 
-        // FIXME: ExpandGridView makes this page completely unusable when `reuseItems` is set (#29084):
-        reuseItems: !MainCtx.gridView
-
         onBrowse: (tree, reason) => root.browse(tree, reason)
 
         onActiveFocusChanged: {
