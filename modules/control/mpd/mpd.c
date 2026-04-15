@@ -152,7 +152,7 @@ void write_to_client_buffer(intf_thread_t *intf, mpd_client_t *client, const cha
 
     msg_Dbg(intf, "sending: %.*s", (int)(strlen(buf) - 1), buf);
     if (vlc_vector_push_all(&client->sendbuf, buf, strlen(buf)))
-        sys->fds.data[client->pfd].events |= POLLOUT;
+        atomic_store_explicit(&client->needs_pollout, true, memory_order_release);
 
     /* Wakeup from poll */
     int rc = write(sys->pipe[1], (char[]){MPD_WAKE_UP}, 1);
@@ -179,7 +179,8 @@ void mpd_send_idle_events_update(intf_thread_t *intf, int event) {
     intf_sys_t *sys = intf->p_sys;
 
     uint8_t data[3] = {MPD_CHANGED_SUBSYSTEMS};
-    *(uint16_t *)&data[1] = event;
+    uint16_t subsystems = event;
+    memcpy(&data[1], &subsystems, sizeof subsystems);
     ssize_t written = write(sys->pipe[1], data, sizeof data);
     VLC_UNUSED(written);
 }
@@ -257,11 +258,9 @@ static mpd_client_t *find_client(intf_thread_t *intf, size_t pfd) {
     return NULL;
 }
 
-static int handle_client(intf_thread_t *intf, mpd_client_t *client) {
-    intf_sys_t *sys = intf->p_sys;
-    struct pollfd *pfd = &sys->fds.data[client->pfd];
+static int handle_client(intf_thread_t *intf, mpd_client_t *client,
+                         struct pollfd *pfd) {
 
-    /* TODO: add POLLHUP to pfd->events */
     if (pfd->revents & POLLHUP) {
         msg_Dbg(intf, "received POLLHUP");
         return MPD_CLIENT_REMOVE;
@@ -272,6 +271,11 @@ static int handle_client(intf_thread_t *intf, mpd_client_t *client) {
         ssize_t r = read(pfd->fd, recvbuf, 1024);
         if (r < 0) {
             msg_Err(intf, "read failed: %s", vlc_strerror_c(errno));
+            return MPD_CLIENT_REMOVE;
+        }
+        if (r == 0) {
+            /* End of stream (peer closed its side) */
+            msg_Dbg(intf, "client closed connection");
             return MPD_CLIENT_REMOVE;
         }
 
@@ -300,7 +304,7 @@ static int handle_client(intf_thread_t *intf, mpd_client_t *client) {
     return MPD_OK;
 }
 
-static mpd_client_t *mpd_client_new(size_t pfd) {
+static mpd_client_t *mpd_client_new(size_t pfd, int fd) {
     mpd_client_t *client = malloc(sizeof *client);
     if (client == NULL)
         return NULL;
@@ -308,6 +312,8 @@ static mpd_client_t *mpd_client_new(size_t pfd) {
     vlc_vector_init(&client->recvbuf);
     vlc_vector_init(&client->sendbuf);
     client->pfd = pfd;
+    client->fd = fd;
+    atomic_init(&client->needs_pollout, false);
     client->in_command_list = MPD_CL_NO;
     client->current_command = NULL;
     client->command_number_in_list = 0;
@@ -320,6 +326,7 @@ static mpd_client_t *mpd_client_new(size_t pfd) {
 
 static void mpd_client_destroy(mpd_client_t *client) {
     vlc_list_remove(&client->node);
+    net_Close(client->fd);
     vlc_vector_destroy(&client->recvbuf);
     vlc_vector_destroy(&client->sendbuf);
     free(client);
@@ -332,7 +339,8 @@ static void decrease_pfd_indexes(intf_sys_t *sys, size_t removed_pfd_index) {
             client->pfd--;
 }
 
-static void handle_new_clients(intf_thread_t *intf, int sock) {
+static void handle_new_clients(intf_thread_t *intf, int sock,
+                               mpd_pollfd_vec_t *fds) {
     intf_sys_t *sys = intf->p_sys;
 
     for (;;) {
@@ -368,10 +376,10 @@ static void handle_new_clients(intf_thread_t *intf, int sock) {
         struct pollfd pfd = {
             .fd = cfd,
         };
-        if (!vlc_vector_push(&sys->fds, pfd))
+        if (!vlc_vector_push(fds, pfd))
             goto pfd_push_error;
 
-        mpd_client_t *client = mpd_client_new(sys->fds.size - 1);
+        mpd_client_t *client = mpd_client_new(fds->size - 1, cfd);
         if (!client)
             goto client_new_error;
         vlc_list_append(&client->node, &sys->clients);
@@ -380,11 +388,12 @@ static void handle_new_clients(intf_thread_t *intf, int sock) {
         return;
 
 client_new_error:
-        vlc_vector_remove(&sys->fds, sys->fds.size - 1);
+        vlc_vector_remove(fds, fds->size - 1);
 pfd_push_error:
+        net_Close(cfd);
         msg_Err(intf, "cannot connect client: Out of memory");
 accept_error:
-        ;
+        return;
     }
 }
 
@@ -407,34 +416,44 @@ static void *Run(void *data) {
         return NULL;
     }
 
+    mpd_pollfd_vec_t fds;
+    vlc_vector_init(&fds);
+
     for (int i = 0; sys->sockv[i] != -1; i++) {
         struct pollfd server_pfd = {
             .fd = sys->sockv[i],
             .events = POLLIN,
         };
-        if (!vlc_vector_push(&sys->fds, server_pfd))
-            return NULL;
+        if (!vlc_vector_push(&fds, server_pfd))
+            goto out;
     }
     {
         struct pollfd pipe_pfd = {
             .fd = sys->pipe[0], /* read end of the pipe */
             .events = POLLIN,
         };
-        if (!vlc_vector_push(&sys->fds, pipe_pfd))
-            return NULL;
+        if (!vlc_vector_push(&fds, pipe_pfd))
+            goto out;
     }
 
     bool stop_server = false;
     while (!stop_server) {
-        int rc = poll(sys->fds.data, sys->fds.size, -1);
+        /* Apply pending POLLOUT flags from other threads */
+        mpd_client_t *cl;
+        vlc_list_foreach(cl, &sys->clients, node) {
+            if (atomic_exchange_explicit(&cl->needs_pollout, false, memory_order_acquire))
+                fds.data[cl->pfd].events |= POLLOUT;
+        }
+
+        int rc = poll(fds.data, fds.size, -1);
         if (rc < 0) {
             msg_Err(intf, "poll failed: %s", vlc_strerror_c(errno));
-            return NULL;
+            goto out;
         }
 
         size_t i = 0;
-        while (i < sys->fds.size) {
-            struct pollfd *pfd = &sys->fds.data[i];
+        while (i < fds.size) {
+            struct pollfd *pfd = &fds.data[i];
             bool remove_client = false;
 
             if (pfd->revents == 0) {
@@ -444,6 +463,10 @@ static void *Run(void *data) {
                     msg_Err(intf, "error on fd %d: %s", pfd->fd, vlc_strerror_c(error));
                 else
                     msg_Err(intf, "getsockopt: %s", vlc_strerror_c(errno));
+                if (pfd->fd == sys->pipe[0] || is_fd_in(pfd->fd, sys->sockv)) {
+                    stop_server = true;
+                    break;
+                }
                 remove_client = true;
             } else if (pfd->fd == sys->pipe[0]) {
                 char action;
@@ -473,22 +496,26 @@ static void *Run(void *data) {
                     stop_server = true;
                 }
             } else if (is_fd_in(pfd->fd, sys->sockv)) {
-                handle_new_clients(intf, pfd->fd);
+                handle_new_clients(intf, pfd->fd, &fds);
             } else {
                 mpd_client_t *client = find_client(intf, i);
                 if (client == NULL) {
                     msg_Err(intf, "could not find client with fd %d", pfd->fd);
                     remove_client = true;
                 } else {
-                    rc = handle_client(intf, client);
-                    if (rc == MPD_CLIENT_REMOVE)
+                    rc = handle_client(intf, client, pfd);
+                    if (rc == MPD_CLIENT_REMOVE) {
                         remove_client = true;
+                    } else if (rc < 0) {
+                        msg_Err(intf, "dropping client: %s", vlc_strerror_c(rc));
+                        remove_client = true;
+                    }
                 }
             }
 
             if (remove_client) {
                 msg_Info(intf, "removing client");
-                vlc_vector_remove(&sys->fds, i);
+                vlc_vector_remove(&fds, i);
 
                 mpd_client_t *client = find_client(intf, i);
                 if (client)
@@ -500,6 +527,8 @@ static void *Run(void *data) {
         }
     }
 
+out:
+    vlc_vector_destroy(&fds);
     return NULL;
 }
 
@@ -516,7 +545,6 @@ static int Open(vlc_object_t *obj) {
     vlc_mutex_init(&sys->pl_lock);
     vlc_mutex_init(&sys->ep_lock);
     vlc_list_init(&sys->clients);
-    vlc_vector_init(&sys->fds);
     vlc_vector_init(&sys->pl);
     vlc_vector_init(&sys->entry_points);
 
@@ -592,7 +620,6 @@ error_listen:
     close(sys->pipe[0]);
     close(sys->pipe[1]);
 error_pipe:
-    vlc_vector_destroy(&sys->fds);
     vlc_vector_destroy(&sys->pl);
     vlc_vector_destroy(&sys->entry_points);
     free(sys);
@@ -626,12 +653,10 @@ static void Close(vlc_object_t *obj) {
     vlc_list_foreach(client, &sys->clients, node)
         mpd_client_destroy(client);
 
-    struct pollfd pfd;
-    vlc_vector_foreach(pfd, &sys->fds)
-        close(pfd.fd);
-    vlc_vector_destroy(&sys->fds);
-
+    for (int i = 0; sys->sockv[i] != -1; i++)
+        net_Close(sys->sockv[i]);
     free(sys->sockv);
+
     close(sys->pipe[0]);
     close(sys->pipe[1]);
 

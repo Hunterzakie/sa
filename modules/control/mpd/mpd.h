@@ -27,6 +27,7 @@
 # include "config.h"
 #endif
 
+#include <stdatomic.h>
 #include <stdbool.h>
 
 #ifdef HAVE_POLL_H
@@ -41,16 +42,21 @@
 #include <vlc_media_library.h>
 #include <vlc_list.h>
 
+typedef struct VLC_VECTOR(struct pollfd) mpd_pollfd_vec_t;
+
 typedef struct mpd_client_t {
     struct VLC_VECTOR(char) recvbuf;
     struct VLC_VECTOR(char) sendbuf;
 
-    /* Index of this client's pfd in sys->fds.
+    /* Index of this client's pfd in the local fds vector in Run().
        We can't use a pointer to it because its location isn't stable
        (vlc_vector_remove will memmove, vlc_vector_push will realloc).
        The index isn't stable either; it decreases when we remove a
        pfd before it. */
     size_t pfd;
+
+    int fd;
+    atomic_bool needs_pollout;
 
     enum in_command_list {
         MPD_CL_NO,
@@ -107,7 +113,6 @@ enum {
 typedef struct intf_sys_t {
     vlc_thread_t thread;
 
-    struct VLC_VECTOR(struct pollfd) fds;
     struct vlc_list clients;
 
     int *sockv;
