@@ -37,6 +37,28 @@ vlc_modules += {
     'dependencies' : [socket_libs, m_lib]
 }
 
+# MPD control interface
+if host_system != 'windows'
+    vlc_modules += {
+        'name' : 'mpd',
+        'sources' : files(
+            'mpd/mpd.c',
+            'mpd/mpd.h',
+            'mpd/protocol.c',
+            'mpd/protocol.h',
+            'mpd/command.c',
+            'mpd/command.h',
+            'mpd/playlist.c',
+            'mpd/playlist.h',
+            'mpd/medialibrary.c',
+            'mpd/medialibrary.h',
+            'mpd/filter.c',
+            'mpd/filter.h',
+        ),
+        'dependencies' : [socket_libs, m_lib]
+    }
+endif
+
 # XCB hotkeys
 if xcb_dep.found() and xcb_keysyms_dep.found()
     vlc_modules += {
