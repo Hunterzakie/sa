@@ -55,12 +55,15 @@ char *vlc_tick_to_str( char *psz_buffer, vlc_tick_t ticks )
     i_seconds = d.rem;
     d = lldiv( d.quot, 60 );
 
+    int ret;
     if( d.quot )
-        snprintf( psz_buffer, MSTRTIME_MAX_SIZE, "%s%lld:%02u:%02u",
-                  b_negative ? "-" : "", d.quot, d.rem, i_seconds );
+        ret = snprintf( psz_buffer, MSTRTIME_MAX_SIZE, "%s%lld:%02u:%02u",
+                        b_negative ? "-" : "", d.quot, d.rem, i_seconds );
     else
-        snprintf( psz_buffer, MSTRTIME_MAX_SIZE, "%s%02d:%02u",
-                                b_negative ? "-" : "", d.rem, i_seconds );
+        ret = snprintf( psz_buffer, MSTRTIME_MAX_SIZE, "%s%02d:%02u",
+                        b_negative ? "-" : "", d.rem, i_seconds );
+    if(ret < 0)
+        *psz_buffer = 0;
     return psz_buffer;
 }
 
