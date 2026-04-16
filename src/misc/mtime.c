@@ -41,11 +41,11 @@
 
 char *vlc_tick_to_str( char *psz_buffer, vlc_tick_t ticks )
 {
+    bool b_negative = false;
     if( unlikely(ticks < 0) )
     {
-        vlc_tick_to_str( psz_buffer + 1, -ticks );
-        *psz_buffer = '-';
-        return psz_buffer;
+        ticks = -ticks;
+        b_negative = true;
     }
 
     int i_seconds = SEC_FROM_VLC_TICK(ticks);
@@ -56,11 +56,11 @@ char *vlc_tick_to_str( char *psz_buffer, vlc_tick_t ticks )
     d = div( d.quot, 60 );
 
     if( d.quot )
-        snprintf( psz_buffer, MSTRTIME_MAX_SIZE, "%u:%02u:%02u",
-                 d.quot, d.rem, i_seconds );
+        snprintf( psz_buffer, MSTRTIME_MAX_SIZE, "%s%d:%02u:%02u",
+                  b_negative ? "-" : "", d.quot, d.rem, i_seconds );
     else
-        snprintf( psz_buffer, MSTRTIME_MAX_SIZE, "%02u:%02u",
-                  d.rem, i_seconds );
+        snprintf( psz_buffer, MSTRTIME_MAX_SIZE, "%s%02d:%02u",
+                  b_negative ? "-" : "", d.rem, i_seconds );
     return psz_buffer;
 }
 
