@@ -42,13 +42,13 @@
 char *vlc_tick_to_str( char *psz_buffer, vlc_tick_t ticks )
 {
     bool b_negative = false;
-    if( unlikely(ticks < 0) )
+    vlc_tick_t i_seconds = SEC_FROM_VLC_TICK(ticks);
+    if( unlikely(i_seconds < 0) )
     {
-        ticks = -ticks;
+        i_seconds = -i_seconds;
         b_negative = true;
     }
 
-    vlc_tick_t i_seconds = SEC_FROM_VLC_TICK(ticks);
     lldiv_t d;
 
     d = lldiv( i_seconds, 60 );
