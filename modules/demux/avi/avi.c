@@ -3158,7 +3158,7 @@ static void AVI_ExtractSubtitle( demux_t *p_demux,
                 break;
             }
         }
-        if( i_size <= 0 )
+        if( i_size == 0 )
             goto exit;
     }
 
