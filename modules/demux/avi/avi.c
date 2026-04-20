@@ -3177,6 +3177,7 @@ static void AVI_ExtractSubtitle( demux_t *p_demux,
 
     /* Parse packet header */
     const uint8_t *p = p_block->p_buffer;
+    i_size = p_block->i_buffer;
     if( i_size < 8 || p[2] != 't' || p[3] != 'x' )
         goto exit;
     p += 8;
