@@ -3178,14 +3178,13 @@ static void AVI_ExtractSubtitle( demux_t *p_demux,
     /* Parse packet header */
     const uint8_t *p = p_block->p_buffer;
     i_size = p_block->i_buffer;
-    if( i_size < 8 || p[2] != 't' || p[3] != 'x' )
+    if( i_size < (8+11) || p[2] != 't' || p[3] != 'x' )
         goto exit;
     p += 8;
     i_size -= 8;
 
     /* Parse subtitle chunk header */
-    if( i_size < 11 || memcmp( p, "GAB2", 4 ) ||
-        p[4] != 0x00 || GetWLE( &p[5] ) != 0x2 )
+    if( memcmp( p, "GAB2", 4 ) || p[4] != 0x00 || GetWLE( &p[5] ) != 0x2 )
         goto exit;
     const unsigned i_name = GetDWLE( &p[7] );
     if( i_size - 11 < i_name )
