@@ -148,7 +148,8 @@ T.Pane {
             }
 
             Widgets.CaptionLabel {
-                color: theme.fg.secondary
+                color: (listView.mode === Widgets.ListViewExt.Mode.Select || listView.mode === Widgets.ListViewExt.Move) ? theme.accent
+                                                                                                                         : theme.fg.secondary
                 visible: listView.count !== 0
                 text: {
                     if (listView.count <= 0)
