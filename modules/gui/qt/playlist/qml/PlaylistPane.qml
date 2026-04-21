@@ -102,7 +102,23 @@ T.Pane {
         controler: MainPlaylistController
         ctx: MainCtx
 
+        displayActionKeyboardSelectionMode: (listView.mode !== Widgets.ListViewExt.Mode.Select)
+        displayActionKeyboardMoveMode: (listView.mode !== Widgets.ListViewExt.Mode.Move)
+        displayActionKeyboardResetMode: (listView.mode !== Widgets.ListViewExt.Mode.Normal)
+
         onJumpToCurrentPlaying: listView.positionViewAtIndex( MainPlaylistController.currentIndex, ItemView.Center)
+
+        onKeyboardSelectionModeRequested: {
+            listView.mode = Widgets.ListViewExt.Mode.Select
+        }
+
+        onKeyboardMoveModeRequested: {
+            listView.mode = Widgets.ListViewExt.Mode.Move
+        }
+
+        onKeyboardResetModeRequested: {
+            listView.mode = Widgets.ListViewExt.Mode.Normal
+        }
     }
 
     background: Widgets.AcrylicBackground {
