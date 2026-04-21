@@ -111,8 +111,18 @@ T.Control {
 
     ListView.delayRemove: dragHandler.active
 
-    Component.onCompleted: {
-        Keys.menuPressed.connect(contextButton.clicked)
+    Keys.onMenuPressed: (event) => {
+        if (delegate.contextMenu) {
+            if (delegate.contextMenu.displayKeyboardModeActions !== undefined) {
+                delegate.contextMenu.displayKeyboardModeActions = true
+            }
+
+            contextButton.clicked()
+
+            if (delegate.contextMenu.displayKeyboardModeActions !== undefined) {
+                delegate.contextMenu.displayKeyboardModeActions = false
+            }
+        }
     }
 
     // Childs
@@ -143,7 +153,7 @@ T.Control {
             onActiveChanged: {
                 if (dragItem) {
                     if (active) {
-                        if (!selected) {
+                        if (!selected && delegate.ListView.view.mode === Widgets.ListViewExt.Normal) {
                             delegate.selectionModel.select(index, ItemSelectionModel.ClearAndSelect)
                         }
 
@@ -167,10 +177,16 @@ T.Control {
             onSingleTapped: (eventPoint, button) => {
                 initialAction()
 
-                if (!(delegate.selected && button === Qt.RightButton)) {
-                    const view = delegate.ListView.view
-                    delegate.selectionModel.updateSelection(point.modifiers, view.currentIndex, index)
-                    view.currentIndex = index
+                const view = delegate.ListView.view
+                if (view.mode === Widgets.ListViewExt.Normal) {
+                    if (!(delegate.selected && button === Qt.RightButton)) {
+                       delegate.selectionModel.updateSelection(point.modifiers, view.currentIndex, index)
+                       view.currentIndex = index
+                    }
+                } else {
+                    if (button === Qt.LeftButton && view.mode === Widgets.ListViewExt.Select) {
+                        delegate.selectionModel.select(view.model.index(index, 0), ItemSelectionModel.Toggle)
+                    }
                 }
 
                 if (button === Qt.RightButton)
