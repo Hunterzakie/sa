@@ -227,6 +227,28 @@ void MLPlaylistModel::move(const QModelIndexList& indexes, int to)
     move(rows, to);
 }
 
+bool MLPlaylistModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int count, const QModelIndex &destinationParent, int destinationChild)
+{
+    // MLPlaylistModel model is a linear model, parent is useless but if provided it must be conforming:
+    assert(!sourceParent.isValid() || index(sourceRow, 0).parent() == sourceParent);
+    assert(!destinationParent.isValid() || index(destinationChild, 0).parent() == destinationParent);
+
+    if (count <= 0)
+        return false;
+
+    QVector<int> items;
+    items.reserve(count);
+
+    for (/*size_t*/ int i = 0; i < count; ++i)
+    {
+        items.push_back(sourceRow + i);
+    }
+
+    move(items, destinationChild);
+
+    return true; // ###
+}
+
 void MLPlaylistModel::removeImpl(int64_t playlistId, const std::vector<std::pair<int, int> >&& rangeList, size_t index)
 {
     if (index >= rangeList.size())

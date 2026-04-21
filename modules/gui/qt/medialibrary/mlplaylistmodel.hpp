@@ -56,6 +56,12 @@ public: // Interface
     Q_INVOKABLE void move(const QModelIndexList & indexes, int to);
     Q_INVOKABLE void move(const QVector<int>& indexes, int to);
 
+    Q_INVOKABLE bool moveRows(const QModelIndex &sourceParent,
+                              int sourceRow,
+                              int count,
+                              const QModelIndex &destinationParent,
+                              int destinationChild) override;
+
     Q_INVOKABLE void remove(const QModelIndexList & indexes);
 
     bool transactionPending() const { return m_transactionPending; };
