@@ -406,6 +406,32 @@ PlaylistListModel::moveItemsPost(const QVector<int> &sortedIndexes,
     return moveItems(sortedIndexes, postTarget, false);
 }
 
+bool PlaylistListModel::moveRows(const QModelIndex &sourceParent,
+                                 int sourceRow,
+                                 int count,
+                                 const QModelIndex &destinationParent,
+                                 int destinationChild)
+{
+    // Playlist model is a linear model, parent is useless but if provided it must be conforming:
+    assert(!sourceParent.isValid() || index(sourceRow, 0).parent() == sourceParent);
+    assert(!destinationParent.isValid() || index(destinationChild, 0).parent() == destinationParent);
+
+    if (count <= 0)
+        return false;
+
+    QVector<int> items;
+    items.reserve(count);
+
+    for (/*size_t*/ int i = 0; i < count; ++i)
+    {
+        items.push_back(sourceRow + i);
+    }
+
+    moveItemsPre(items, destinationChild);
+
+    return true; // ###
+}
+
 int PlaylistListModel::getCurrentIndex() const
 {
     Q_D(const PlaylistListModel);
