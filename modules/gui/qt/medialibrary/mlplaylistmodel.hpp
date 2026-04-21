@@ -91,6 +91,7 @@ private: // Functions
      * returns list of row indexes in decreasing order
      */
     std::vector<std::pair<int, int>> getSortedRowsRanges(const QModelIndexList & indexes, bool asc) const;
+    std::vector<std::pair<int, int>> getSortedRowsRanges(const QVector<int> & indexes, bool asc) const;
 
     void removeImpl(int64_t playlistId, const std::vector<std::pair<int, int> >&& rangeList, size_t index);
 

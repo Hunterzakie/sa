@@ -431,11 +431,18 @@ void MLPlaylistModel::thumbnailUpdated(const QModelIndex& idx, MLItem* mlitem, c
 
 std::vector<std::pair<int, int>> MLPlaylistModel::getSortedRowsRanges(const QModelIndexList & indexes, bool asc) const
 {
-    assert (indexes.size() > 0);
-
-    QList<int> rows;
+    QVector<int> rows;
+    rows.reserve(indexes.size());
     for (const QModelIndex & index : indexes)
         rows.append(index.row());
+    return getSortedRowsRanges(rows, asc);
+}
+
+std::vector<std::pair<int, int> > MLPlaylistModel::getSortedRowsRanges(const QVector<int> &indexes, bool asc) const
+{
+    assert (indexes.size() > 0);
+
+    auto rows = indexes;
 
     std::sort(rows.begin(), rows.end());
 
