@@ -242,7 +242,7 @@ Widgets.PageExt {
 
                 onActiveFocusChanged: {
                     if (activeFocus) {
-                        const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
+                        const item = currentItem?.currentItem
                         contentYBehavior.enabled = true
                         Helpers.positionFlickableToContainItem(flickable, item ?? this)
                         contentYBehavior.enabled = false
@@ -251,7 +251,7 @@ Widgets.PageExt {
 
                 onCurrentIndexChanged: {
                     if (activeFocus) {
-                        const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
+                        const item = currentItem?.currentItem
                         if (item) {
                             contentYBehavior.enabled = true
                             Helpers.positionFlickableToContainItem(flickable, item)
@@ -319,7 +319,7 @@ Widgets.PageExt {
 
                 onActiveFocusChanged: {
                     if (activeFocus) {
-                        const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
+                        const item = currentItem?.currentItem
                         contentYBehavior.enabled = true
                         Helpers.positionFlickableToContainItem(flickable, item ?? this)
                         contentYBehavior.enabled = false
@@ -328,7 +328,7 @@ Widgets.PageExt {
 
                 onCurrentIndexChanged: {
                     if (activeFocus) {
-                        const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
+                        const item = currentItem?.currentItem
                         if (item) {
                             contentYBehavior.enabled = true
                             Helpers.positionFlickableToContainItem(flickable, item)
@@ -474,7 +474,7 @@ Widgets.PageExt {
 
                 onActiveFocusChanged: {
                     if (activeFocus) {
-                        const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
+                        const item = currentItem?.currentItem
                         contentYBehavior.enabled = true
                         Helpers.positionFlickableToContainItem(flickable, item ?? this)
                         contentYBehavior.enabled = false
@@ -483,7 +483,7 @@ Widgets.PageExt {
 
                 onCurrentIndexChanged: {
                     if (activeFocus) {
-                        const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
+                        const item = currentItem?.currentItem
                         if (item) {
                             contentYBehavior.enabled = true
                             Helpers.positionFlickableToContainItem(flickable, item)
