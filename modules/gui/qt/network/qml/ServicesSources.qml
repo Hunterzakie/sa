@@ -43,7 +43,7 @@ Widgets.PageExt {
         grid.positionViewAtBeginningAnimated()
     }
 
-    Widgets.ExpandGridItemView {
+    Widgets.GridViewExt {
         //settings
         id: grid
 
@@ -51,8 +51,12 @@ Widgets.PageExt {
 
         focus: true
 
-        basePictureWidth: VLCStyle.gridCover_network_width
-        basePictureHeight: VLCStyle.gridCover_network_height
+        gridSizeHelper: GridSizeHelper {
+            basePictureWidth: VLCStyle.gridCover_network_width
+            basePictureHeight: VLCStyle.gridCover_network_height
+            availableWidth: grid.contentWidth
+        }
+
         subtitleHeight: 0
 
         model: sourcesModel

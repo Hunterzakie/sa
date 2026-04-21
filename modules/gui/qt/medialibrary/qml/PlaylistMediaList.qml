@@ -282,14 +282,17 @@ MainViewLoader {
     Component {
         id: grid
 
-        Widgets.ExpandGridItemView {
+        Widgets.GridViewExt {
             id: gridView
 
             //-------------------------------------------------------------------------------------
             // Settings
 
-            basePictureWidth: isMusic ? VLCStyle.gridCover_music_width : VLCStyle.gridCover_video_width
-            basePictureHeight: isMusic ? VLCStyle.gridCover_music_height : VLCStyle.gridCover_video_height
+            gridSizeHelper: GridSizeHelper {
+                basePictureWidth: isMusic ? VLCStyle.gridCover_music_width : VLCStyle.gridCover_video_width
+                basePictureHeight: isMusic ? VLCStyle.gridCover_music_height : VLCStyle.gridCover_video_height
+                availableWidth: gridView.contentWidth
+            }
 
             model: root.model
 

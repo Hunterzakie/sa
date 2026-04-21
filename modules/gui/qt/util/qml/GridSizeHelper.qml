@@ -46,7 +46,7 @@ QtObject{
 
     readonly property int _defaultHorizontalSpacing: VLCStyle.column_spacing
 
-    property var maxNbItemPerRow
+    property int maxNbItemPerRow: basePictureWidth === basePictureHeight ? 10 : 6
     readonly property int nbItemPerRow: {
         const _nbItemPerRow = Math.max(
             Math.floor(

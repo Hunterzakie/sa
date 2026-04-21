@@ -171,13 +171,16 @@ FocusScope {
     Component {
         id: grid
 
-        Widgets.ExpandGridItemView {
+        Widgets.GridViewExt {
             id: gridView
 
-            basePictureWidth: VLCStyle.gridCover_network_width
-            basePictureHeight: VLCStyle.gridCover_network_height
+            gridSizeHelper: GridSizeHelper {
+                basePictureWidth: VLCStyle.gridCover_network_width
+                basePictureHeight: VLCStyle.gridCover_network_height
+                availableWidth: gridView.contentWidth
 
-            maxNbItemPerRow: 12
+                maxNbItemPerRow: 12
+            }
 
             readonly property int maximumCount: (root.maximumRows === -1)
                                                 ? -1

@@ -28,7 +28,7 @@ import VLC.Util
 import VLC.Widgets as Widgets
 import VLC.Style
 
-Widgets.ExpandGridItemView {
+Widgets.ExpandGridView {
     id: gridView
 
     // Properties
@@ -43,8 +43,11 @@ Widgets.ExpandGridItemView {
 
     // Settings
 
-    basePictureWidth: VLCStyle.gridCover_video_width
-    basePictureHeight: VLCStyle.gridCover_video_height
+    gridSizeHelper: GridSizeHelper {
+        basePictureWidth: VLCStyle.gridCover_video_width
+        basePictureHeight: VLCStyle.gridCover_video_height
+        availableWidth: gridView.contentWidth
+    }
 
     activeFocusOnTab: true
 

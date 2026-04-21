@@ -123,11 +123,15 @@ MainViewLoader {
     /* Grid View */
     Component {
         id: gridComponent
-        Widgets.ExpandGridItemView {
+        Widgets.GridViewExt {
             id: gridView_id
 
-            basePictureWidth: VLCStyle.gridCover_video_width
-            basePictureHeight: VLCStyle.gridCover_video_width / 2
+            gridSizeHelper: GridSizeHelper {
+                basePictureWidth: VLCStyle.gridCover_video_width
+                basePictureHeight: VLCStyle.gridCover_video_width / 2
+                availableWidth: gridView_id.contentWidth
+            }
+
             titleHeight: 0
             subtitleHeight: 0
 

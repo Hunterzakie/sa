@@ -101,11 +101,15 @@ MainViewLoader {
     Component {
         id: gridComponent
 
-        Widgets.ExpandGridItemView {
+        Widgets.GridViewExt {
             id: artistGrid
 
-            basePictureWidth: VLCStyle.gridCover_music_width
-            basePictureHeight: VLCStyle.gridCover_music_height
+            gridSizeHelper: GridSizeHelper {
+                basePictureWidth: VLCStyle.gridCover_music_width
+                basePictureHeight: VLCStyle.gridCover_music_height
+                availableWidth: artistGrid.contentWidth
+            }
+
             titleTopMargin: VLCStyle.gridItemTitle_topMargin + VLCStyle.margin_xxsmall
 
             selectionModel: root.selectionModel

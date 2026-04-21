@@ -123,7 +123,7 @@ MainViewLoader {
     Component {
         id: gridComponent
 
-        Widgets.ExpandGridItemView {
+        Widgets.GridViewExt {
             id: gridView
 
             focus: true
@@ -132,8 +132,11 @@ MainViewLoader {
 
             selectionModel: root.selectionModel
 
-            basePictureWidth: root.gridCoverWidth
-            basePictureHeight: root.gridCoverHeight
+            gridSizeHelper: GridSizeHelper {
+                basePictureWidth: root.gridCoverWidth
+                basePictureHeight: root.gridCoverHeight
+                availableWidth: gridView.contentWidth
+            }
 
             displayMarginBeginning: root.displayMarginBeginning
             displayMarginEnd: root.displayMarginEnd
@@ -164,8 +167,6 @@ MainViewLoader {
 
                 title: model.title || qsTr("Unknown Title")
                 subtitle: model.duration?.formatHMS() ?? "--:--"
-
-                opacity: gridView.expandIndex !== -1 && gridView.expandIndex !== index ? 0.7 : 1
 
                 dragItem: dragItemId
 

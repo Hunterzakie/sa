@@ -98,11 +98,14 @@ MainViewLoader {
     Component {
         id: gridComponent
 
-        Widgets.ExpandGridItemView {
+        Widgets.ExpandGridView {
             id: gridView_id
 
-            basePictureWidth: VLCStyle.gridCover_music_width
-            basePictureHeight: VLCStyle.gridCover_music_height
+            gridSizeHelper: GridSizeHelper {
+                basePictureWidth: VLCStyle.gridCover_music_width
+                basePictureHeight: VLCStyle.gridCover_music_height
+                availableWidth: gridView_id.contentWidth
+            }
 
             activeFocusOnTab:true
 
