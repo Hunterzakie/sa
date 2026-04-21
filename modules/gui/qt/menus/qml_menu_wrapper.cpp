@@ -931,6 +931,8 @@ void PlaylistMediaContextMenu::popup(const QModelIndexList & selected, QPoint po
         m_model->remove(selected);
     });
 
+    createKeyboardModeActions(*menu);
+
     menu->popup(pos);
 }
 
@@ -1045,7 +1047,7 @@ void NetworkDeviceContextMenu::popup(const QModelIndexList& selected, QPoint pos
 }
 
 PlaylistContextMenu::PlaylistContextMenu(QObject* parent)
-    : QObject(parent)
+    : ItemViewMenu(parent)
 {}
 
 void PlaylistContextMenu::popup(int selectedIndex, QPoint pos )
@@ -1243,5 +1245,49 @@ void PlaylistContextMenu::popup(int selectedIndex, QPoint pos )
         }
     }
 
+    createKeyboardModeActions(*m_menu);
+
     m_menu->popup(pos);
+}
+
+ItemViewMenu::ItemViewMenu(QObject *parent)
+    : BasicMenuContainer(parent)
+{
+
+}
+
+bool ItemViewMenu::createKeyboardModeActions(QMenu &menu)
+{
+    if (!m_displayKeyboardModeActions)
+        return false;
+
+    bool ret = false;
+
+    if (m_displayActionKeyboardSelectionMode || m_displayActionKeyboardMoveMode || m_displayActionKeyboardResetMode)
+    {
+        ret = true;
+        menu.addSeparator();
+    }
+
+    QAction *action;
+
+    if (m_displayActionKeyboardSelectionMode)
+    {
+        action = menu.addAction(qtr("Switch to keyboard selection mode"));
+        connect(action, &QAction::triggered, this, &ItemViewMenu::keyboardSelectionModeRequested);
+    }
+
+    if (m_displayActionKeyboardMoveMode)
+    {
+        action = menu.addAction(qtr("Switch to keyboard move mode"));
+        connect(action, &QAction::triggered, this, &ItemViewMenu::keyboardMoveModeRequested);
+    }
+
+    if (m_displayActionKeyboardResetMode)
+    {
+        action = menu.addAction(qtr("Reset keyboard mode"));
+        connect(action, &QAction::triggered, this, &ItemViewMenu::keyboardResetModeRequested);
+    }
+
+    return ret;
 }

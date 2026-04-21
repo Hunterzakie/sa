@@ -263,6 +263,28 @@ private:
     QPoint m_position;
 };
 
+class ItemViewMenu : public BasicMenuContainer
+{
+    Q_OBJECT
+
+    SIMPLE_MENU_PROPERTY(bool, displayKeyboardModeActions, false)
+
+    SIMPLE_MENU_PROPERTY(bool, displayActionKeyboardSelectionMode, false)
+    SIMPLE_MENU_PROPERTY(bool, displayActionKeyboardMoveMode, false)
+    SIMPLE_MENU_PROPERTY(bool, displayActionKeyboardResetMode, false)
+
+public:
+    ItemViewMenu(QObject* parent = nullptr);
+
+protected:
+    bool createKeyboardModeActions(QMenu& menu);
+
+signals:
+    void keyboardSelectionModeRequested();
+    void keyboardMoveModeRequested();
+    void keyboardResetModeRequested();
+};
+
 class QmlBookmarkMenu : public QObject
 {
     Q_OBJECT
@@ -422,11 +444,11 @@ private:
     std::unique_ptr<QMenu> m_menu;
 };
 
-class PlaylistMediaContextMenu : public BasicMenuContainer {
+class PlaylistMediaContextMenu : public ItemViewMenu {
     Q_OBJECT
     SIMPLE_MENU_PROPERTY(MLPlaylistModel *, model, nullptr)
 public:
-    using BasicMenuContainer::BasicMenuContainer;
+    using ItemViewMenu::BasicMenuContainer;
 
 public slots:
     void popup(const QModelIndexList & selected, QPoint pos, QVariantMap options = {});
@@ -463,13 +485,13 @@ public slots:
 
 };
 
-class PlaylistContextMenu : public QObject {
+class PlaylistContextMenu : public ItemViewMenu {
     Q_OBJECT
     SIMPLE_MENU_PROPERTY(vlc::playlist::PlaylistListModel*, model, nullptr)
     SIMPLE_MENU_PROPERTY(QAbstractProxyModel*, proxyModel, nullptr)
     SIMPLE_MENU_PROPERTY(vlc::playlist::PlaylistController*, controler, nullptr)
     SIMPLE_MENU_PROPERTY(ListSelectionModel*, selectionModel, nullptr)
-    SIMPLE_MENU_PROPERTY(MainCtx *, ctx, nullptr)
+
 public:
     PlaylistContextMenu(QObject* parent = nullptr);
 
