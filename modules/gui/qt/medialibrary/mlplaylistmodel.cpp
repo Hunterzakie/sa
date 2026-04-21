@@ -174,7 +174,7 @@ void MLPlaylistModel::moveImpl(int64_t playlistId, HighLowRanges&& ranges)
  *    reason. Having the data split in before/after the destination point, allows to
  *    do it sequentially without having to guess what is the next segment to move
  */
-/* Q_INVOKABLE */ void MLPlaylistModel::move(const QModelIndexList & indexes, int to)
+/* Q_INVOKABLE */ void MLPlaylistModel::move(const QVector<int>& indexes, int to)
 {
     assert(m_mediaLib);
 
@@ -218,6 +218,14 @@ void MLPlaylistModel::moveImpl(int64_t playlistId, HighLowRanges&& ranges)
     moveImpl(id, std::move(highLowRanges));
 }
 
+void MLPlaylistModel::move(const QModelIndexList& indexes, int to)
+{
+    QVector<int> rows;
+    rows.reserve(indexes.size());
+    for (/*size_t*/ int i = 0; i < indexes.size(); ++i)
+        rows.append(indexes[i].row());
+    move(rows, to);
+}
 
 void MLPlaylistModel::removeImpl(int64_t playlistId, const std::vector<std::pair<int, int> >&& rangeList, size_t index)
 {

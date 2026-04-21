@@ -54,6 +54,7 @@ public: // Interface
     Q_INVOKABLE void insert(const QVariantList & items, int at);
 
     Q_INVOKABLE void move(const QModelIndexList & indexes, int to);
+    Q_INVOKABLE void move(const QVector<int>& indexes, int to);
 
     Q_INVOKABLE void remove(const QModelIndexList & indexes);
 
