@@ -39,11 +39,23 @@ extern "C" {
  * @{
  */
 
+/**
+ * Service discovery states
+ */
+enum services_discovery_state_e
+{
+    SD_STATE_PENDING = 0,
+    SD_STATE_DONE,
+    SD_STATE_ERROR,
+};
+
 struct services_discovery_callbacks
 {
     void (*item_added)(struct services_discovery_t *sd, input_item_t *parent,
                        input_item_t *item);
     void (*item_removed)(struct services_discovery_t *sd, input_item_t *item);
+    void (*state_changed)(struct services_discovery_t *sd,
+                          enum services_discovery_state_e state);
 };
 
 struct services_discovery_owner_t
@@ -201,6 +213,19 @@ static inline void services_discovery_RemoveItem(services_discovery_t *sd,
                                                  input_item_t *item)
 {
     sd->owner.cbs->item_removed(sd, item);
+}
+
+/**
+ * Service discovery state callback.
+ *
+ * A services discovery module invokes this function whenever its loading state
+ * changes.
+ */
+static inline void services_discovery_SetState(services_discovery_t *sd,
+                                               enum services_discovery_state_e state)
+{
+    if (sd->owner.cbs->state_changed != NULL)
+        sd->owner.cbs->state_changed(sd, state);
 }
 
 /* SD probing */

@@ -288,8 +288,10 @@ static void* Run( void *data )
                   "function main(): %s", p_sys->psz_filename,
                   lua_tostring( L, lua_gettop( L ) ) );
         lua_pop( L, 1 );
+        services_discovery_SetState(p_sd, SD_STATE_ERROR);
         return NULL;
     }
+    services_discovery_SetState(p_sd, SD_STATE_DONE);
     msg_Dbg( p_sd, "LuaSD script loaded: %s", p_sys->psz_filename );
 
     /* Force garbage collection, because the core will keep the SD
