@@ -256,6 +256,36 @@ typedef struct vlc_media_source_t
 } vlc_media_source_t;
 
 /**
+ * Media source state.
+ */
+enum vlc_media_source_state
+{
+    VLC_MEDIA_SOURCE_STATE_PENDING = 0,
+    VLC_MEDIA_SOURCE_STATE_DONE,
+    VLC_MEDIA_SOURCE_STATE_ERROR,
+};
+
+/** Listener identifier for media source state events. */
+typedef struct vlc_media_source_listener_id vlc_media_source_listener_id;
+
+/**
+ * Callbacks to receive media source state events.
+ */
+struct vlc_media_source_callbacks
+{
+    /**
+     * Called when media source state changes.
+     *
+     * \param media_source media source
+     * \param state        new state
+     * \param userdata     userdata provided to AddListener()
+     */
+    void (*on_state_changed)(vlc_media_source_t *media_source,
+                             enum vlc_media_source_state state,
+                             void *userdata);
+};
+
+/**
  * Increase the media source reference count.
  */
 VLC_API void
@@ -269,6 +299,32 @@ vlc_media_source_Hold(vlc_media_source_t *);
  */
 VLC_API void
 vlc_media_source_Release(vlc_media_source_t *);
+
+/**
+ * Return the current media source state.
+ */
+VLC_API enum vlc_media_source_state
+vlc_media_source_GetState(vlc_media_source_t *);
+
+/**
+ * Add a media source listener.
+ *
+ * \param media_source         media source
+ * \param cbs                  callbacks (must outlive the listener)
+ * \param userdata             userdata provided as callback parameter
+ * \param notify_current_state true to notify current state immediately
+ */
+VLC_API vlc_media_source_listener_id *
+vlc_media_source_AddListener(vlc_media_source_t *media_source,
+                             const struct vlc_media_source_callbacks *cbs,
+                             void *userdata, bool notify_current_state);
+
+/**
+ * Remove a media source listener.
+ */
+VLC_API void
+vlc_media_source_RemoveListener(vlc_media_source_t *media_source,
+                                vlc_media_source_listener_id *listener);
 
 /**
  * Media source provider (opaque pointer), used to get media sources.
