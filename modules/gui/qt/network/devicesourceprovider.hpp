@@ -26,6 +26,7 @@
 
 #include <QString>
 #include <QSet>
+#include <functional>
 #include <vector>
 #include <QMutex>
 
@@ -59,9 +60,12 @@ public:
     QString getDescription() const;
     MediaTreePtr getTree() const;
 
+    void setState(vlc_media_source_state state);
+
 signals:
     void mediaAdded(SharedInputItem media);
     void mediaRemoved(SharedInputItem media);
+    void stateChanged(vlc_media_source_state state);
 
 private:
     void addItems(const std::vector<SharedInputItem>& inputList,
@@ -72,9 +76,17 @@ private:
                      const MediaSourcePtr& mediaSource);
 
     struct ListenerCb;
-    std::unique_ptr<MediaTreeListener> m_listenner;
+    std::unique_ptr<MediaTreeListener> m_listener;
+    using SourceStateListenerPtr = std::unique_ptr<vlc_media_source_listener_id,
+                                                   std::function<void(vlc_media_source_listener_id*)>>;
+    SourceStateListenerPtr m_sourceStateListener;
     MediaSourcePtr m_mediaSource;
     std::vector<SharedInputItem> m_medias;
+    vlc_media_source_state m_state = VLC_MEDIA_SOURCE_STATE_PENDING;
+
+public:
+    vlc_media_source_state getState() const { return m_state; }
+    bool isPending() const { return m_state == VLC_MEDIA_SOURCE_STATE_PENDING; }
 };
 typedef QSharedPointer<MediaSourceModel> SharedMediaSourceModel;
 
