@@ -18,14 +18,13 @@
 import QtQuick
 import QtQuick.Controls
 
-
+import VLC.Widgets
 import VLC.Style
 
-Control {
+BusyIndicatorExt {
     id: root
 
-    padding: VLCStyle.margin_xxxsmall
-    font.pixelSize: VLCStyle.fontSize_normal
+    font.pixelSize: VLCStyle.fontSize_large
 
     hoverEnabled: false
 
@@ -56,10 +55,12 @@ Control {
             visible: (text.length > 0)
         }
 
-        BusyIndicator {
-            palette.dark: theme.fg.primary
+        BusyIndicatorExt.DefaultAnimatedCone {
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: height
 
-            anchors.verticalCenter: parent.verticalCenter
+            root: root
         }
     }
 }
