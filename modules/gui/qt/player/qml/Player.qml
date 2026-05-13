@@ -206,7 +206,18 @@ FocusScope {
             bottom: (MainCtx.hasEmbededVideo && rootPlayer._controlsUnderVideo) ? controlBar.top : parent.bottom
         }
 
-        sourceComponent: MainCtx.hasEmbededVideo ? videoComponent : audioComponent
+        sourceComponent: {
+            switch (rootPlayer.effectivePlayerMode){
+                case -1:
+                    return emptyComponent
+                case PlayerControlbarModel.Videoplayer:
+                    // Be careful for the case where video.tracks > 0 but hasEmbededVideo is still false
+                    // Without this check, in Wayland sometimes we can end up with the video being misplaced
+                    return MainCtx.hasEmbededVideo ? videoComponent : emptyComponent
+                case PlayerControlbarModel.Audioplayer:
+                    return audioComponent
+            }
+        }
 
         property int cursorShape
 
@@ -266,6 +277,8 @@ FocusScope {
                 }
             }
         }
+
+        Component { id: emptyComponent; Item { } }
 
         Component {
             id: videoComponent
