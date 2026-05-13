@@ -278,7 +278,15 @@ FocusScope {
             }
         }
 
-        Component { id: emptyComponent; Item { } }
+        Component {
+            id: emptyComponent
+
+            // Avoids transparent window moment until video loads
+            Rectangle {
+                anchors.fill: parent
+                color: "black"
+            }
+        }
 
         Component {
             id: videoComponent
