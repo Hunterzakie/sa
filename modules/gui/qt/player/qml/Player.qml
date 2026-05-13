@@ -63,6 +63,20 @@ FocusScope {
 
     property bool _keyPressed: false
 
+    // Use for the initial media load, to not load audio components
+    property int _lastKnownPlayerMode: -1
+
+    readonly property int effectivePlayerMode: {
+        // No video or audio tracks, means we don't know the type of media yet
+        if (Player.videoTracks.count === 0 && Player.audioTracks.count === 0)
+            return _lastKnownPlayerMode
+
+        // Video tracks identified before hasEmbededVideo changes
+        return (Player.videoTracks.count > 0 || MainCtx.hasEmbededVideo)
+                 ? PlayerControlbarModel.Videoplayer
+                 : PlayerControlbarModel.Audioplayer
+    }
+
     // Settings
 
     Accessible.role: Accessible.Client
@@ -98,6 +112,11 @@ FocusScope {
 
     on_ControlsUnderVideoChanged: {
         lockUnlockAutoHide(_controlsUnderVideo)
+    }
+
+    onEffectivePlayerModeChanged: {
+        if (effectivePlayerMode >= 0)
+            _lastKnownPlayerMode = effectivePlayerMode
     }
 
     // Functions
@@ -1293,8 +1312,7 @@ FocusScope {
 
         onRequestLockUnlockAutoHide: (lock) => rootPlayer.lockUnlockAutoHide(lock)
 
-        identifier: (Player.hasVideoOutput) ? PlayerControlbarModel.Videoplayer
-                                            : PlayerControlbarModel.Audioplayer
+        identifier: rootPlayer.effectivePlayerMode
 
         onHoveredChanged: rootPlayer.lockUnlockAutoHide(hovered)
 
