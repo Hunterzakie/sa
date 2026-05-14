@@ -51,6 +51,21 @@ QPair<QByteArray, QColor> colorizeSvg(const QString &filename, const QList<QPair
 
     QColor backgroundColor;
 
+#ifndef NDEBUG
+    QStringList targetList;
+    targetList.reserve(replacements.size());
+
+    for (const auto& pair : replacements)
+    {
+        targetList.append(pair.second);
+    }
+
+    for (const auto& source : replacements)
+    {
+        assert(!targetList.contains(source.first));
+    }
+#endif
+
     for (const auto& replacePair: replacements)
     {
         if (replacePair.first == PATH_KEY)
