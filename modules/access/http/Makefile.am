@@ -1,6 +1,8 @@
 libhttps_plugin_la_SOURCES = access/http/access.c
 libhttps_plugin_la_LIBADD = libvlc_http.la
+if HAVE_HTTP
 access_PLUGINS += libhttps_plugin.la
+endif
 
 libvlc_http_la_SOURCES = \
 	access/http/transport.h \

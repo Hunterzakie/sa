@@ -365,7 +365,20 @@ access_PLUGINS += libgopher_plugin.la
 
 libhttp_plugin_la_SOURCES = access/http.c
 libhttp_plugin_la_LIBADD = $(SOCKET_LIBS)
+if HAVE_HTTP
 access_PLUGINS += libhttp_plugin.la
+endif
+
+libaccess_network_plugin_la_SOURCES = access/network.m
+libaccess_network_plugin_la_OBJCFLAGS = $(AM_OBJCFLAGS) -fobjc-arc \
+	-I$(srcdir)/access/http
+libaccess_network_plugin_la_LIBADD = libvlc_http.la
+libaccess_network_plugin_la_LDFLAGS = $(AM_LDFLAGS) $(access_RPATH) \
+	-Wl,-framework,Foundation -Wl,-framework,Network \
+	-Wl,-framework,Security
+if HAVE_ACCESS_NETWORK
+access_PLUGINS += libaccess_network_plugin.la
+endif
 
 libwebdav_plugin_la_SOURCES = access/webdav.c
 libwebdav_plugin_la_LIBADD = libvlc_http.la

@@ -443,15 +443,40 @@ vlc_modules += {
     'dependencies' : [socket_libs]
 }
 
+# Portable HTTP(S)
+# Auto-disabled on watchOS, enabled elsewhere.
+http_opt = get_option('http')
+http_enabled = http_opt.allowed() and (http_opt.enabled() or not have_watchos)
+
 # Old HTTP
 vlc_modules += {
     'name' : 'http',
     'sources' : files('http.c'),
-    'dependencies' : [socket_libs]
+    'dependencies' : [socket_libs],
+    'enabled' : http_enabled,
 }
 
 # New HTTP(S)
 subdir('http')
+
+# Network.framework-based HTTP(S) access
+# Auto-enabled on watchOS, opt-in elsewhere on Apple platforms.
+access_network_opt = get_option('access_network') \
+    .require(host_system == 'darwin',
+             error_message: 'access_network requires Darwin')
+access_network_enabled = access_network_opt.allowed() and \
+    (access_network_opt.enabled() or have_watchos)
+vlc_modules += {
+    'name' : 'access_network',
+    'sources' : files('network.m'),
+    'objc_args' : ['-fobjc-arc'],
+    'dependencies' : [
+        frameworks['Foundation'],
+        frameworks['Network'],
+        frameworks['Security'],
+    ],
+    'enabled' : access_network_enabled,
+}
 
 # Network file sharing
 nfs_dep = dependency('libnfs', version: '>= 1.10.0', required: get_option('nfs'))

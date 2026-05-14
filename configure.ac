@@ -2449,6 +2449,23 @@ PKG_ENABLE_MODULES_VLC([FREERDP], [rdp], [freerdp2 >= 2.0.0], (RDP/Remote Deskto
 dnl
 dnl AVFoundation
 AC_SUBST([have_avfoundation], ["no"])
+AC_ARG_ENABLE([access-network],
+  AS_HELP_STRING([--enable-access-network], [Network.framework based HTTP(S) access module for Apple platforms (default enabled on watchOS)]))
+AS_IF([test -z "${enable_access_network}"],
+  [AS_IF([test "${HAVE_WATCHOS}" = "1"],
+    [enable_access_network="yes"],
+    [enable_access_network="no"])])
+AM_CONDITIONAL([HAVE_ACCESS_NETWORK],
+  [test "${enable_access_network}" = "yes" && test "${SYS}" = "darwin"])
+
+AC_ARG_ENABLE([http],
+  AS_HELP_STRING([--disable-http], [portable HTTP and HTTPS access modules (default enabled, except on watchOS)]))
+AS_IF([test -z "${enable_http}"],
+  [AS_IF([test "${HAVE_WATCHOS}" = "1"],
+    [enable_http="no"],
+    [enable_http="yes"])])
+AM_CONDITIONAL([HAVE_HTTP], [test "${enable_http}" != "no"])
+
 AC_ARG_ENABLE([macosx-avfoundation],
   AS_HELP_STRING([--enable-macosx-avfoundation], [Mac OS X avcapture (video) module (default enabled on Mac OS X)]))
 if test "${enable_macosx_avfoundation}" != "no" &&
