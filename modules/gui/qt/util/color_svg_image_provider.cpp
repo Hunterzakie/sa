@@ -74,14 +74,27 @@ QPair<QByteArray, QColor> colorizeSvg(const QString &filename, const QList<QPair
         {
             backgroundColor = QColor(replacePair.second);
         }
-        else if (predefinedSubst.contains(replacePair.first))
-        {
-            dataStr = dataStr.replace(predefinedSubst[replacePair.first],
-                                      replacePair.second, Qt::CaseInsensitive);
-        }
         else
         {
-            dataStr = dataStr.replace(replacePair.first, replacePair.second, Qt::CaseInsensitive);
+            QString source = dataStr;
+            QString replacement;
+            if (predefinedSubst.contains(replacePair.first))
+                replacement = predefinedSubst[replacePair.first];
+            else
+                replacement = replacePair.first;
+
+            source.replace(replacement, replacePair.second, Qt::CaseInsensitive);;
+
+#ifndef NDEBUG
+            if (source == dataStr)
+            {
+                qWarning() << "SVGColorizer:"
+                           << replacement
+                           << "is not found in file:"
+                           << filename;
+            }
+#endif
+            dataStr = std::move(source);
         }
     }
 
