@@ -71,7 +71,7 @@ Item {
                     text: {
                         const text = modelData.name
 
-                        if (MainCtx.controlbarProfileModel.currentModel?.getModel(identifier).dirty)
+                        if (MainCtx.controlbarProfileModel.currentModel?.getModel(identifier)?.dirty)
                             return _markDirty(text)
                         else
                             return text
