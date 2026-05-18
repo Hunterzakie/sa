@@ -40,6 +40,7 @@ T.Button {
                              implicitContentHeight + topPadding + bottomPadding)
 
     font.family: VLCIcons.fontFamily
+    font.pixelSize: VLCStyle.icon_normal
 
     Keys.priority: Keys.AfterItem
     Keys.onPressed: (event) => Navigation.defaultKeyAction(event)
