@@ -362,6 +362,10 @@ libqt_plugin_la_SOURCES = \
 	util/textureproviderindirection.hpp \
 	util/sgmanipulator.cpp \
 	util/sgmanipulator.hpp \
+	util/memoryimageprovider.cpp \
+	util/memoryimageprovider.hpp \
+	util/rhireadbacktexturejob.cpp \
+	util/rhireadbacktexturejob.hpp \
 	widgets/native/animators.cpp \
 	widgets/native/animators.hpp \
 	widgets/native/customwidgets.cpp widgets/native/customwidgets.hpp \
@@ -522,6 +526,7 @@ nodist_libqt_plugin_la_SOURCES = \
 	util/kirigamiwheelhandler.moc.cpp \
 	util/textureproviderindirection.moc.cpp \
 	util/sgmanipulator.moc.cpp \
+	util/memoryimageprovider.moc.cpp \
 	widgets/native/animators.moc.cpp \
 	widgets/native/csdthemeimage.moc.cpp \
 	widgets/native/customwidgets.moc.cpp \

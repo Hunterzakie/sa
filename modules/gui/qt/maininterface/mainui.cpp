@@ -52,6 +52,7 @@
 #include "util/textureproviderobserver.hpp"
 #include "util/textureproviderindirection.hpp"
 #include "util/sgmanipulator.hpp"
+#include "util/memoryimageprovider.hpp"
 
 #include "dialogs/help/aboutmodel.hpp"
 #include "dialogs/dialogs_provider.hpp"
@@ -140,6 +141,8 @@ MainUI::~MainUI()
 bool MainUI::setup(QQmlEngine* engine)
 {
     m_engineBound = engine;
+
+    engine->addImageProvider(QStringLiteral("memory"), new BasicMemoryImageProvider());
 
     if (m_mainCtx->hasMediaLibrary())
     {
@@ -237,6 +240,7 @@ void MainUI::registerQMLTypes()
         qmlRegisterUncreatableType<CSDButtonModel>(uri, versionMajor, versionMinor, "CSDButtonModel", "has CSD buttons and provides for communicating CSD events between UI and backend");
         qmlRegisterTypesAndRevisions<CSDMenu>( uri, versionMajor);
         qmlRegisterUncreatableType<NavigationAttached>( uri, versionMajor, versionMinor, "Navigation", "Navigation is only available via attached properties");
+        qmlRegisterAnonymousType<ImageContainer>( uri, versionMajor );
         qmlRegisterModule(uri, versionMajor, versionMinor);
         qmlProtectModule(uri, versionMajor);
     }

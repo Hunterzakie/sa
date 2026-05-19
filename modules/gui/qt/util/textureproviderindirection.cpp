@@ -20,6 +20,22 @@
 #include <QSGTextureProvider>
 #include <QRunnable>
 #include <QMutexLocker>
+#include <QJSEngine>
+
+// For RHI sanity check:
+#if __has_include(<QtGui/rhi/qrhi.h>)
+// RHI is semi-public since Qt 6.6, but still requires gui-private.
+#define RHI_PUBLIC
+#define RHI_AVAILABLE
+#include <QtGui/rhi/qrhi.h>
+#elif __has_include(<QtGui/private/qrhi_p.h>) && __has_include(<QtQuick/private/qquickwindow_p.h>)
+#warning "It is recommended to use Qt 6.6 or greater."
+#define RHI_AVAILABLE
+#include <QtGui/private/qrhi_p.h>
+#include <QtQuick/private/qquickwindow_p.h>
+#endif
+
+#include "util/rhireadbacktexturejob.hpp"
 
 class TextureProviderCleaner : public QRunnable
 {
@@ -136,6 +152,121 @@ void TextureProviderIndirection::resetTextureSubRect()
     emit rectChanged({});
 }
 
+bool TextureProviderIndirection::updateTexture()
+{
+    return updateTexture(nullptr, std::function<void()>());
+}
+
+bool TextureProviderIndirection::updateTexture(QObject *context, std::function<void()> callback)
+{
+    if (!m_source)
+        return false;
+
+    const auto w = window();
+    if (!w)
+    {
+        qCritical() << "TextureProviderIndirection::updateTexture(): window is not available!";
+        return false;
+    }
+
+    // Note that `beforeSynchronizing()` is signalled when the GUI thread is blocked,
+    // this means we are already in synchronization phase. We don't want to use
+    // `afterSynchronizing()`, because doing so would make `textureToImage()` to
+    // wait advance one frame, which would be unnecessary waiting.
+    connect(w, &QQuickWindow::beforeSynchronizing, this, [weakThis = QPointer(this), callback, context = QPointer(context)]() {
+        if (!weakThis)
+        {
+            qCritical() << "TextureProviderIndirection::updateTexture(): texture provider indirection is no longer available!";
+            return;
+        }
+
+        // This initializes the texture provider, if it does not already exist:
+        const auto tp = weakThis->textureProvider();
+
+        if (!tp)
+        {
+            qCritical() << "TextureProviderIndirection::updateTexture(): failed to initialize or get the texture provider!";
+            return;
+        }
+
+        const auto texture = qobject_cast<QSGDynamicTexture*>(tp->texture());
+
+        if (!texture)
+        {
+            qCritical() << "TextureProviderIndirection::updateTexture(): failed to get `QSGDynamicTexture`!";
+            return;
+        }
+
+        // As the docs note, this should be called during synchronization:
+        texture->updateTexture();
+
+        if (callback)
+        {
+            if (context)
+            {
+                if (context->thread() == QThread::currentThread())
+                    callback();
+                else
+                    QMetaObject::invokeMethod(context, [callback]() { callback(); }, Qt::QueuedConnection);
+            }
+            else
+            {
+                callback();
+            }
+        }
+    }, static_cast<Qt::ConnectionType>(Qt::DirectConnection | Qt::SingleShotConnection));
+
+    return true;
+}
+
+bool TextureProviderIndirection::updateTexture(QObject *context, QJSValue callback)
+{
+    assert(callback.isCallable());
+    return updateTexture(context, [callback, weakContext = QPointer(context)] () mutable {
+        if (Q_LIKELY(weakContext))
+        {
+            // There is no TOCTOU condition risk here, the callback is called when the
+            // gui thread is blocked.
+            const auto engine = qjsEngine(weakContext);
+
+            assert(engine);
+            assert(engine->thread() == weakContext->thread());
+            if (QThread::currentThread() != engine->thread())
+            {
+                // std::move is to make sure that we do not hold reference to callback
+                // in a (scene graph) thread, which is not the engine's thread:
+                QMetaObject::invokeMethod(engine, [callback = std::move(callback)]() {
+                    assert(callback.isCallable());
+                    std::move(callback).call();
+                }, Qt::QueuedConnection);
+            }
+            else
+            {
+                assert(callback.isCallable());
+                std::move(callback).call();
+            }
+        }
+        else
+        {
+            // We do not need to assert, callback is not that important here (unlike ::textureToImage())
+            qWarning() << "TextureProviderIndirection::updateTexture(): context is no longer available, can not call the callback!";
+            // Callback may be destroyed in a thread different than the engine's thread, but there is not much we can do here.
+        }
+    });
+}
+
+bool TextureProviderIndirection::textureToImage(QObject *context, const QJSValue& callback)
+{
+    assert(callback.isCallable());
+    return textureToImageImpl(context, callback);
+}
+
+bool TextureProviderIndirection::textureToImage(QObject *context,
+                                                std::function<void (const QImage &)> callback)
+{
+    return textureToImageImpl(context, callback);
+}
+
 void TextureProviderIndirection::invalidateSceneGraph()
 {
     // https://doc.qt.io/qt-6/qquickitem.html#graphics-resource-handling
@@ -166,6 +297,41 @@ void TextureProviderIndirection::releaseResources()
     }
 
     QQuickItem::releaseResources();
+}
+
+bool TextureProviderIndirection::rhiSanityCheck()
+{
+#ifdef RHI_AVAILABLE
+    // Sanity check:
+    const auto w = window();
+
+    if (!w)
+        return false;
+
+#ifdef RHI_PUBLIC
+    QRhi* const rhi = w->rhi();
+#else
+    const QQuickWindowPrivate *const privateWindow = QQuickWindowPrivate::get(w);
+    assert(privateWindow);
+    QRhi* const rhi = privateWindow->rhi;
+#endif
+
+    if (!rhi)
+        return false;
+
+#ifdef RHI_PUBLIC
+    QRhiSwapChain* const swapChain = w->swapChain();
+#else
+    QRhiSwapChain* const swapChain = privateWindow->swapchain;
+#endif
+
+    if (!swapChain)
+        return false;
+
+    return true;
+#else
+    return false;
+#endif
 }
 
 void QSGTextureViewProvider::adjustTexture()
@@ -278,4 +444,58 @@ void QSGTextureViewProvider::setVerticalWrapMode(QSGTexture::WrapMode vwrap)
 void QSGTextureViewProvider::requestDetachFromAtlas()
 {
     m_textureView.requestDetachFromAtlas();
+}
+
+template<typename T>
+bool TextureProviderIndirection::textureToImageImpl(QObject *context, const T& callback)
+{
+    bool sanityCheck = false;
+    QPointer<QQuickWindow> weakQuickWindow;
+
+    if (QThread::currentThread() == thread())
+    {
+        sanityCheck = rhiSanityCheck();
+        weakQuickWindow = window();
+    }
+    else
+    {
+        QMetaObject::invokeMethod(this, [this, &sanityCheck, &weakQuickWindow]() {
+            sanityCheck = rhiSanityCheck();
+            weakQuickWindow = window();
+        }, Qt::BlockingQueuedConnection);
+    }
+
+    if (!sanityCheck)
+    {
+        qDebug() << "TextureProviderIndirection::textureToImage(): rhi is not available.";
+        return false;
+    }
+
+    assert(weakQuickWindow); // `rhiSanityCheck()` would have caught it, this is not aggressive assertion.
+
+    // We have to create this here, and not in the callback, because it needs to be created
+    // in js engine's thread (when the callback is `QJSValue` type).
+    const auto imageRenderJob = new RhiReadBackTextureJob(weakQuickWindow, this, context, callback);
+
+    // Context is not provided so that callback is not queued. It is assumed that `QQuickWindow::scheduleRenderJob()`
+    // can be called from the rendering thread, at least during synchronization phase (GUI thread is blocked).
+    const bool ret = updateTexture(nullptr, [weakQuickWindow, imageRenderJob]() {        
+        // There is no TOCTOU here, because (as noted) this callback is only called during synchronization,
+        // when GUI thread is blocked.
+        if (Q_UNLIKELY(!weakQuickWindow))
+        {
+            qCritical() << "TextureProviderIndirection::textureToImage(): window is no longer available!";
+            return;
+        }
+
+        // This will be the same frame because this stage comes after during synchronization, this is good,
+        // because it means less waiting (no need to wait frame advance). Also note that the window takes
+        // the ownership:
+        weakQuickWindow->scheduleRenderJob(imageRenderJob, QQuickWindow::AfterSynchronizingStage);
+    });
+
+    if (Q_UNLIKELY(!ret))
+        delete imageRenderJob;
+
+    return ret;
 }
