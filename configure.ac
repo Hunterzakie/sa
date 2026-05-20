@@ -481,11 +481,6 @@ case "${host_os}" in
     AS_IF([test -n "$ANDROID_API" -a "$ANDROID_API" -lt "26"],[
         ac_cv_header_sys_shm_h=no
     ])
-
-    dnl Those functions and headers are not functional on android, use vlc_fixups instead
-    ac_cv_header_search_h=no
-    ac_cv_func_tdestroy=no
-    ac_cv_func_tfind=no
     ;;
 esac
 
