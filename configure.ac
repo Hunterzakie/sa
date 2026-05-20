@@ -462,7 +462,6 @@ int foo() { return my_array[0]; }
     ;;
 esac
 
-ANDROID_API=17
 dnl Vendor-specific configuration
 case "${host_os}" in
   linux-android*)
