@@ -468,7 +468,7 @@ case "${host_os}" in
   linux-android*)
     VENDOR=android
     AC_MSG_CHECKING([Check Android API version])
-    ANDROID_API="`echo ${host_os} | tr -c -d '[[:digit:]]'`"
+    ANDROID_API="`echo ${CC} | sed -r 's/.*(.{15}$)/\1/' | tr -c -d '[[:digit:]]'`"
     AC_MSG_RESULT([${ANDROID_API}])
     HAVE_PROCESS_SPAWN="0"
 
