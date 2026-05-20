@@ -123,7 +123,7 @@ static int ReadEvent(demux_t *demux, unsigned char *buf,
     /* Compute delay until next event */
     *delay = 0;
 
-    while (byte & 0x80) {
+    for (unsigned i=0; (byte & 0x80) && i < sizeof(uint32_t); i++) {
         byte = GetByte(demux);
 
         if (byte < 0)
