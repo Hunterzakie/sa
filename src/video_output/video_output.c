@@ -1099,16 +1099,16 @@ static picture_t *PreparePicture(vout_thread_sys_t *vout, bool reuse_decoded,
             filter_chain_VideoFlush(sys->filter.chain_static);
         }
 
-            if (drop_policy && drop_policy(opaque, decoded))
-            {
-                picture_Release(decoded);
-                vout_statistic_AddLost(&sys->statistic, 1);
+        if (drop_policy && drop_policy(opaque, decoded))
+        {
+            picture_Release(decoded);
+            vout_statistic_AddLost(&sys->statistic, 1);
 
-                /* A picture dropped means discontinuity for the
-                 * filters and we need to notify eg. deinterlacer. */
-                filter_chain_VideoFlush(sys->filter.chain_static);
-                continue;
-            }
+            /* A picture dropped means discontinuity for the
+             * filters and we need to notify eg. deinterlacer. */
+            filter_chain_VideoFlush(sys->filter.chain_static);
+            continue;
+        }
 
         if (!VideoFormatIsCropArEqual(&decoded->format, &sys->filter.src_fmt))
         {
