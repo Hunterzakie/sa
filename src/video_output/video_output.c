@@ -1080,29 +1080,29 @@ static picture_t *PreparePicture(vout_thread_sys_t *vout, bool reuse_decoded,
             if (decoded == NULL)
                 break;
 
+            const vlc_tick_t system_now = vlc_tick_now();
+            uint32_t clock_id;
+            vlc_clock_Lock(sys->clock);
+            const vlc_tick_t system_pts =
+                vlc_clock_ConvertToSystem(sys->clock, system_now,
+                                          decoded->date, sys->rate, &clock_id);
+            vlc_clock_Unlock(sys->clock);
+            if (clock_id != sys->clock_id)
+            {
+                sys->clock_id = clock_id;
+                msg_Dbg(&vout->obj, "Using a new clock context (%u), "
+                        "flushing static filters", clock_id);
+
+                /* Most deinterlace modules can't handle a PTS
+                 * discontinuity, so flush them.
+                 *
+                 * FIXME: Pass a discontinuity flag and handle it in
+                 * deinterlace modules. */
+                filter_chain_VideoFlush(sys->filter.chain_static);
+            }
+
             if (!decoded->b_force)
             {
-                const vlc_tick_t system_now = vlc_tick_now();
-                uint32_t clock_id;
-                vlc_clock_Lock(sys->clock);
-                const vlc_tick_t system_pts =
-                    vlc_clock_ConvertToSystem(sys->clock, system_now,
-                                              decoded->date, sys->rate, &clock_id);
-                vlc_clock_Unlock(sys->clock);
-                if (clock_id != sys->clock_id)
-                {
-                    sys->clock_id = clock_id;
-                    msg_Dbg(&vout->obj, "Using a new clock context (%u), "
-                            "flusing static filters", clock_id);
-
-                    /* Most deinterlace modules can't handle a PTS
-                     * discontinuity, so flush them.
-                     *
-                     * FIXME: Pass a discontinuity flag and handle it in
-                     * deinterlace modules. */
-                    filter_chain_VideoFlush(sys->filter.chain_static);
-                }
-
                 if (is_late_dropped
                  && IsPictureLateToStaticFilter(vout, system_pts - system_now))
                 {
