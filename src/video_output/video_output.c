@@ -1099,8 +1099,6 @@ static picture_t *PreparePicture(vout_thread_sys_t *vout, bool reuse_decoded,
             filter_chain_VideoFlush(sys->filter.chain_static);
         }
 
-        if (!decoded->b_force)
-        {
             if (drop_policy && drop_policy(opaque, decoded))
             {
                 picture_Release(decoded);
@@ -1111,7 +1109,6 @@ static picture_t *PreparePicture(vout_thread_sys_t *vout, bool reuse_decoded,
                 filter_chain_VideoFlush(sys->filter.chain_static);
                 continue;
             }
-        }
 
         if (!VideoFormatIsCropArEqual(&decoded->format, &sys->filter.src_fmt))
         {
@@ -1585,6 +1582,9 @@ static int DisplayNextFrame(vout_thread_sys_t *sys)
 
 static bool DropLatePic(void *opaque, const picture_t *decoded)
 {
+    if (decoded->b_force)
+        return false;
+
     vout_thread_sys_t *sys = opaque;
     vlc_clock_Lock(sys->clock);
     const vlc_tick_t system_now = vlc_tick_now();
