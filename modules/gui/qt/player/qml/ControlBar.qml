@@ -107,7 +107,7 @@ T.Pane {
             // Length might not be reported in some cases, for that reason we should check both and use the bigger one.
 
             // Some extra space to compensate non-monospaced fonts ("-" takes more space than ":", double "-" for guarantee)
-            return (Player.time.isSubHour() && Player.length.isSubHour()) ? "00--00" : "00--00--00"
+            return (Player.interpolatedTime.isSubHour() && Player.length.isSubHour()) ? "00--00" : "00--00--00"
         }
     }
 
@@ -134,7 +134,7 @@ T.Pane {
 
                 text: {
                     const length = Player.length
-                    return Player.time.formatHMS(length.isSubSecond() ? VLCTick.SubSecondFormattedAsMS : 0)
+                    return Player.interpolatedTime.formatHMS(length.isSubSecond() ? VLCTick.SubSecondFormattedAsMS : 0)
                 }
                 color: theme.fg.primary
                 font: timeTextMetrics.font

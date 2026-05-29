@@ -262,18 +262,6 @@ void PlayerControllerPrivate::UpdateSpuOrder(vlc_es_id_t *es_id, enum vlc_vout_o
     }
 }
 
-int PlayerControllerPrivate::interpolateTime(vlc_tick_t system_now)
-{
-    vlc_tick_t new_time;
-    if (vlc_player_timer_point_Interpolate(&m_player_time, system_now,
-                                           &new_time, &m_position) == VLC_SUCCESS)
-    {
-        m_time = new_time;
-        return VLC_SUCCESS;
-    }
-    return VLC_EGENERIC;
-}
-
 extern "C" {
 
 //player callbacks
@@ -352,12 +340,10 @@ static void on_player_state_changed(vlc_player_t *, enum vlc_player_state state,
             that->m_audioVisualization.resetObject((audio_output_t*)nullptr);
 
             /* reset the state on stop */
-            that->m_position = 0;
-            that->m_time = 0;
-            that->m_length = 0;
+            that->m_timerPoint = vlc_player_timer_point { };
             emit q->positionUpdated( -1.0, VLCTime() , VLCDuration() );
-            that->m_rate = 1.0f;
-            emit q->rateChanged( 1.0f );
+            static_cast<vlc_player_timer_point&>(that->m_timerPoint).rate = 1.0;
+            emit q->rateChanged( 1.0 );
             that->m_name = "";
             emit q->nameChanged( "" );
             that->m_hasChapters = false;
@@ -911,106 +897,39 @@ static void on_player_playback_restore_queried(vlc_player_t *, void *data)
 static void on_player_timer_update(const struct vlc_player_timer_point *point,
                                    void *data)
 {
-    PlayerControllerPrivate* that = static_cast<PlayerControllerPrivate*>(data);
-    if (that->seeking)
+    if (!point)
         return;
+
+    PlayerControllerPrivate* that = static_cast<PlayerControllerPrivate*>(data);
+    assert(that);
 
     that->callAsync([that,point_copy = *point](){
         PlayerController* q = that->q_func();
-
-        that->m_player_time = point_copy;
-        bool lengthOrRateChanged = false;
-
-        if (that->m_length.toVLCTick() != that->m_player_time.length)
-        {
-            that->m_length = that->m_player_time.length > 0 ? VLCDuration(that->m_player_time.length) : VLCDuration();
-            emit q->lengthChanged(that->m_length);
-
-            lengthOrRateChanged = true;
-        }
-        if (that->m_rate != that->m_player_time.rate)
-        {
-            that->m_rate = that->m_player_time.rate;
-            emit q->rateChanged(that->m_rate);
-
-            lengthOrRateChanged = true;
-        }
-
-        vlc_tick_t system_now = vlc_tick_now();
-        if (that->interpolateTime(system_now) == VLC_SUCCESS)
-        {
-            if (lengthOrRateChanged || !that->m_position_timer.isActive())
-            {
-                q->updatePosition();
-
-                if (that->m_player_time.system_date != VLC_TICK_MAX)
-                {
-                    // Setup the position update interval, depending on media
-                    // length and rate.  XXX: VLC_TICK_FROM_MS(1) is an educated
-                    // guess, it should be also calculated according to the slider
-                    // size.
-
-                    vlc_tick_t interval =
-                        that->m_length.toVLCTick() / that->m_player_time.rate / VLC_TICK_FROM_MS(1);
-                    if (interval < POSITION_MIN_UPDATE_INTERVAL)
-                        interval = POSITION_MIN_UPDATE_INTERVAL;
-
-                    that->m_position_timer.start(MS_FROM_VLC_TICK(interval));
-                }
-            }
-            q->updateTime(system_now, lengthOrRateChanged);
-        }
-
+        q->updateTimerPoint(TimerPoint(point_copy));
     });
 }
 
 static void on_player_timer_paused(vlc_tick_t system_date, void *data)
 {
-    PlayerControllerPrivate* that = static_cast<PlayerControllerPrivate*>(data);
-    that->callAsync([that,system_date](){
-        PlayerController* q = that->q_func();
-
-        if (system_date != VLC_TICK_INVALID
-         && that->interpolateTime(system_date) == VLC_SUCCESS)
-        {
-            // The discontinuity event got a valid system date, update the time
-            // properties.
-            q->updatePosition();
-            q->updateTime(system_date, false);
-        }
-
-        // And stop the timers.
-        that->m_position_timer.stop();
-        that->m_time_timer.stop();
-    });
+    Q_UNUSED(system_date);
+    Q_UNUSED(data);
 }
 
 static void on_player_timer_seek(const struct vlc_player_timer_point *point,
                                  void *data)
 {
+    if (!point)
+        return;
+
     PlayerControllerPrivate* that = static_cast<PlayerControllerPrivate*>(data);
-    if (point != NULL)
-    {
-        that->seeking = true;
-        that->callAsync([that,point_copy = *point](){
-            PlayerController* q = that->q_func();
+    assert(that);
 
-            that->m_player_time = point_copy;
-            if (that->m_player_time.position > 0)
-                that->m_position = that->m_player_time.position;
-            if (that->m_player_time.ts != VLC_TICK_INVALID)
-                that->m_time = that->m_player_time.ts - VLC_TICK_0;
-
-            q->updatePosition();
-            q->updateTime(VLC_TICK_INVALID, false);
-
-            that->m_position_timer.stop();
-            that->m_time_timer.stop();
-        });
-    }
-    else
-        that->seeking = false;
+    that->callAsync([that,point_copy = *point](){
+        PlayerController* q = that->q_func();
+        q->updateTimerPoint(TimerPoint(point_copy));
+    });
 }
+
 static void on_player_timer_smpte_update(const struct vlc_player_timer_smpte_timecode *tc,
                                          void *data)
 {
@@ -1141,9 +1060,6 @@ PlayerControllerPrivate::PlayerControllerPrivate(PlayerController *playercontrol
     QObject::connect( &m_autoscale, &QVLCBool::valueChanged, q_ptr, &PlayerController::autoscaleChanged );
     QObject::connect( &m_audioVisualization, &VLCVarChoiceModel::hasCurrentChanged, q_ptr, &PlayerController::hasAudioVisualizationChanged );
 
-    m_time_timer.setSingleShot( true );
-    m_time_timer.setTimerType( Qt::PreciseTimer );
-
     // Initialise fullscreen to match the player state
     m_fullscreen = vlc_player_vout_IsFullscreen( m_player );
 
@@ -1172,8 +1088,7 @@ PlayerController::PlayerController( qt_intf_t *_p_intf )
     : QObject(NULL)
     , d_ptr( new PlayerControllerPrivate(this, _p_intf) )
 {
-    connect( &d_ptr->m_position_timer, &QTimer::timeout, this, &PlayerController::updatePositionFromTimer );
-    connect( &d_ptr->m_time_timer, &QTimer::timeout, this, &PlayerController::updateTimeFromTimer );
+
 }
 
 PlayerController::~PlayerController()
@@ -1208,6 +1123,109 @@ bool PlayerController::hasInput() const
     return getInput();
 }
 
+TimerPoint PlayerController::timerPoint() const
+{
+    Q_D(const PlayerController);
+
+    return TimerPoint(d->m_timerPoint);
+}
+
+void PlayerController::updateTimerPoint(const TimerPoint &point)
+{
+    Q_D(PlayerController);
+
+    assert(QThread::currentThread() == thread());
+
+    const TimerPoint currentTimerPoint = d->m_timerPoint;
+
+    d->m_timerPoint = point;
+
+    if (const auto rate = point.rate(); currentTimerPoint.rate() != rate)
+        emit rateChanged(rate);
+
+    if (const auto length = point.length(); !(currentTimerPoint.length() == length))
+        emit lengthChanged(length);
+
+    if (const auto ts = point.ts(); !(currentTimerPoint.ts() == ts))
+        emit timeChanged(ts);
+
+    if (const auto remainingTime = point.remainingTime(); !(currentTimerPoint.remainingTime() == remainingTime))
+        emit remainingTimeChanged(remainingTime);
+
+    if (const auto position = point.position(); currentTimerPoint.position() != position)
+        emit positionChanged(position);
+}
+
+TimerPoint PlayerController::interpolateTimerPoint(bool notifyInterpolatedPropertiesChange)
+{
+    Q_D(PlayerController);
+
+    const TimerPoint timerPoint = PlayerController::timerPoint();
+    TimerPoint ret = timerPoint;
+
+    const vlc_tick_t currentTime = vlc_tick_now();
+
+    if (d->m_lastTimerPoint && ((timerPoint == *d->m_lastTimerPoint)))
+    {
+        // No change in timer point, interpolate:
+
+        if (getPlayingState() != PLAYING_STATE_PLAYING)
+        {
+            d->m_lastTimerPointTime = currentTime;
+
+            if (d->m_lastInterpolatedTimerPoint)
+                return *d->m_lastInterpolatedTimerPoint;
+        }
+
+        auto tp = static_cast<vlc_player_timer_point>(timerPoint);
+
+        if (d->m_lastTimerPointTime != VLC_TICK_INVALID)
+            tp.system_date = d->m_lastTimerPointTime;
+
+        vlc_tick_t ts;
+        double pos;
+
+        if (vlc_player_timer_point_Interpolate(&tp, currentTime, &ts, &pos) == VLC_SUCCESS)
+        {
+            auto& tp = static_cast<vlc_player_timer_point&>(ret);
+            tp.ts = ts;
+            tp.position = pos;
+
+            d->m_lastInterpolatedTimerPoint = ret;
+
+            if (notifyInterpolatedPropertiesChange)
+            {
+                interpolatedTimeChanged(ts);
+                interpolatedPositionChanged(pos);
+            }
+        }
+        else
+        {
+            d->m_lastInterpolatedTimerPoint = timerPoint;
+
+            if (notifyInterpolatedPropertiesChange)
+            {
+                interpolatedTimeChanged(getTime());
+                interpolatedPositionChanged(getPosition());
+            }
+        }
+    }
+    else
+    {
+        d->m_lastTimerPointTime = currentTime;
+        d->m_lastTimerPoint = timerPoint;
+        d->m_lastInterpolatedTimerPoint = timerPoint;
+
+        if (notifyInterpolatedPropertiesChange)
+        {
+            interpolatedTimeChanged(getTime());
+            interpolatedPositionChanged(getPosition());
+        }
+    }
+
+    return ret;
+}
+
 void PlayerController::reverse()
 {
     Q_D(PlayerController);
@@ -1220,11 +1238,11 @@ void PlayerController::reverse()
     }
 }
 
-void PlayerController::setRate( float new_rate )
+void PlayerController::setRate( double new_rate )
 {
     Q_D(PlayerController);
 
-    if (qFuzzyCompare(d->m_rate, new_rate))
+    if (qFuzzyCompare(d->m_timerPoint.rate(), new_rate))
         return;
 
     msg_Dbg( d->p_intf, "setRate %f", new_rate);
@@ -1237,8 +1255,8 @@ void PlayerController::setRate( float new_rate )
         // the rate, because player timer update may take a long time.
         // For position, it is supposed to be interpolated but for rate
         // the new value can be taken as is:
-        d->m_rate = new_rate;
-        emit rateChanged(d->m_rate);
+        static_cast<vlc_player_timer_point&>(d->m_timerPoint).rate = new_rate;
+        emit rateChanged(new_rate);
     }
 }
 
@@ -1296,7 +1314,7 @@ void PlayerController::setTime(VLCTime new_time)
 void PlayerController::setPosition(double position)
 {
     Q_D(PlayerController);
-    if (qFuzzyCompare(d->m_position, position))
+    if (qFuzzyCompare(d->m_timerPoint.position(), position))
         return;
 
     vlc_player_locker lock{ d->m_player };
@@ -1756,59 +1774,56 @@ bool PlayerController::hasAudioVisualization() const
     return d->m_audioVisualization.hasCurrent();
 }
 
-void PlayerController::updatePosition()
+VLCTime PlayerController::getTime() const
 {
-    Q_D(PlayerController);
-
-    // Update position properties
-    emit positionChanged(d->m_position);
-    emit positionUpdated(d->m_position, d->m_time, d->m_length);
+    Q_D(const PlayerController);
+    return d->m_timerPoint.ts();
 }
 
-void PlayerController::updatePositionFromTimer()
+VLCTime PlayerController::getInterpolatedTime(bool reInterpolate)
 {
-    Q_D(PlayerController);
-
-    vlc_tick_t system_now = vlc_tick_now();
-    if (d->interpolateTime(system_now) == VLC_SUCCESS)
-        updatePosition();
-}
-
-void PlayerController::updateTime(vlc_tick_t system_now, bool forceUpdate)
-{
-    Q_D(PlayerController);
-
-    // Update time properties
-    emit timeChanged(d->m_time);
-    if (d->m_time.valid() && d->m_length.valid() && d->m_time <= VLCTime(d->m_length))
-        d->m_remainingTime = VLCTime(d->m_length) - d->m_time;
+    Q_D(const PlayerController);
+    if (reInterpolate)
+        return interpolateTimerPoint(false).ts();
+    else if (d->m_lastInterpolatedTimerPoint && ((vlc_tick_now() - d->m_lastTimerPointTime) < VLC_TICK_FROM_SEC(1)))
+        return d->m_lastInterpolatedTimerPoint->ts();
     else
-        d->m_remainingTime = VLCDuration();
-    emit remainingTimeChanged(d->m_remainingTime);
+        return getTime();
+}
 
-    if (system_now != VLC_TICK_INVALID
-     && d->m_player_time.system_date != VLC_TICK_MAX
-     && (forceUpdate || !d->m_time_timer.isActive()))
-    {
-        // Tell the timer to wait until the next second is reached.
-        vlc_tick_t next_update_date =
-            vlc_player_timer_point_GetNextIntervalDate(&d->m_player_time, system_now,
-                                                       d->m_time.toVLCTick(), VLC_TICK_FROM_SEC(1));
+VLCDuration PlayerController::getRemainingTime() const
+{
+    Q_D(const PlayerController);
+    return d->m_timerPoint.remainingTime();
+}
 
-        vlc_tick_t next_update_interval = next_update_date - system_now;
+double PlayerController::getPosition() const
+{
+    Q_D(const PlayerController);
+    return d->m_timerPoint.position();
+}
 
-        if (next_update_interval > 0)
-        {
-            // The timer can be triggered a little before. In that case, it's
-            // likely that we didn't reach the next next second. It's better to
-            // add a very small delay in order to be triggered after the next
-            // seconds.
-            static const unsigned imprecision_delay_ms = 30;
+double PlayerController::getInterpolatedPosition(bool reInterpolate)
+{
+    Q_D(const PlayerController);
+    if (reInterpolate)
+        return interpolateTimerPoint(false).position();
+    else if (d->m_lastInterpolatedTimerPoint && ((vlc_tick_now() - d->m_lastTimerPointTime) < VLC_TICK_FROM_SEC(1)))
+        return d->m_lastInterpolatedTimerPoint->position();
+    else
+        return getPosition();
+}
 
-            d->m_time_timer.start(MS_FROM_VLC_TICK(next_update_interval)
-                                  + imprecision_delay_ms);
-        }
-    }
+double PlayerController::getRate() const
+{
+    Q_D(const PlayerController);
+    return d->m_timerPoint.rate();
+}
+
+VLCDuration PlayerController::getLength() const
+{
+    Q_D(const PlayerController);
+    return d->m_timerPoint.length();
 }
 
 void PlayerController::openVLsub()
@@ -1820,15 +1835,6 @@ void PlayerController::openVLsub()
         extensionManager->loadExtensions();
 
     extensionManager->openVLsub();
-}
-
-void PlayerController::updateTimeFromTimer()
-{
-    Q_D(PlayerController);
-
-    vlc_tick_t system_now = vlc_tick_now();
-    if (d->interpolateTime(system_now) == VLC_SUCCESS)
-        updateTime(system_now, false);
 }
 
 void PlayerController::restorePlaybackPos()
@@ -2130,10 +2136,6 @@ QABSTRACTLIST_GETTER( RendererManager, getRendererManager, m_rendererManager)
 
 PRIMITIVETYPE_GETTER(PlayerController::PlayingState, getPlayingState, m_playing_status)
 PRIMITIVETYPE_GETTER(QString, getName, m_name)
-PRIMITIVETYPE_GETTER(VLCTime, getTime, m_time)
-PRIMITIVETYPE_GETTER(VLCDuration, getRemainingTime, m_remainingTime)
-PRIMITIVETYPE_GETTER(double, getPosition, m_position)
-PRIMITIVETYPE_GETTER(VLCDuration, getLength, m_length)
 PRIMITIVETYPE_GETTER(VLCDuration, getAudioDelay, m_audioDelay)
 PRIMITIVETYPE_GETTER(VLCDuration, getSubtitleDelay, m_subtitleDelay)
 PRIMITIVETYPE_GETTER(VLCDuration, getSecondarySubtitleDelay, m_secondarySubtitleDelay)
@@ -2149,7 +2151,6 @@ PRIMITIVETYPE_GETTER(float, getVolume, m_volume)
 PRIMITIVETYPE_GETTER(bool, isMuted, m_muted)
 PRIMITIVETYPE_GETTER(bool, isFullscreen, m_fullscreen)
 PRIMITIVETYPE_GETTER(bool, getWallpaperMode, m_wallpaperMode)
-PRIMITIVETYPE_GETTER(float, getRate, m_rate)
 PRIMITIVETYPE_GETTER(bool, hasTitles, m_hasTitles)
 PRIMITIVETYPE_GETTER(bool, hasChapters, m_hasChapters)
 PRIMITIVETYPE_GETTER(bool, hasMenu, m_hasMenu)
@@ -2172,3 +2173,4 @@ PRIMITIVETYPE_GETTER(QUrl, getArtwork, m_artwork)
 PRIMITIVETYPE_GETTER(QUrl, getUrl, m_url)
 
 #undef PRIMITIVETYPE_GETTER
+

@@ -16,6 +16,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 import QtQuick
+import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Templates as T
 import QtQuick.Layouts
@@ -71,6 +72,14 @@ T.ProgressBar {
         onTriggered: control._isSeekPointsShown = false
     }
 
+    TimerPointUpdater {
+        playerController: Player
+        item: control
+        // We can not assume the timer point to change only during playing state,
+        // that's why `isStarted` is used here:
+        window: (Player.isStarted && control.visible) ? control.Window.window : null
+    }
+
     Widgets.PointingTooltip {
         id: timeTooltip
 
@@ -86,7 +95,7 @@ T.ProgressBar {
             if (hoverHandler.hovered)
                 _text = length.scale(pos.x / control.width)
             else
-                _text = Player.time
+                _text = Player.interpolatedTime
 
             _text = _text.formatHMS(length.isSubSecond() ? VLCTick.SubSecondFormattedAsMS : 0)
 
@@ -178,7 +187,7 @@ T.ProgressBar {
             id: fsmHeldWrongInput
 
             function enter() {
-                fsm._setPositionFromValue(Player.position)
+                fsm._setPositionFromValue(Player.interpolatedPosition)
             }
 
             transitions: ({
@@ -194,11 +203,11 @@ T.ProgressBar {
 
     Connections {
         target: Player
-        function onPositionChanged() {  fsm.playerUpdatePosition(Player.position) }
+        function onInterpolatedPositionChanged(pos : double) {  fsm.playerUpdatePosition(pos) }
         function onInputChanged() {  fsm.inputChanged() }
     }
 
-    Component.onCompleted: value = Player.position
+    Component.onCompleted: value = Player.interpolatedPosition
 
     implicitHeight: control.barHeight
     height: implicitHeight
