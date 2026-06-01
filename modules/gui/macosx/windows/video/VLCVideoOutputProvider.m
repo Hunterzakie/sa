@@ -75,8 +75,10 @@ static int WindowEnable(vlc_window_t *p_wnd, const vlc_window_cfg_t *cfg)
                              withProposedVideoViewPosition:proposedVideoViewPosition];
         });
 
-        // this method is not supposed to fail
-        assert(videoView != nil);
+        if (videoView == nil) {
+            msg_Err(p_wnd, "Failed to setup video output window");
+            return VLC_EGENERIC;
+        }
 
         msg_Dbg(getIntf(), "returning videoview with proposed position x=%i, y=%i, width=%i, height=%i", cfg->x, cfg->y, cfg->width, cfg->height);
         p_wnd->handle.nsobject = (void *)CFBridgingRetain(videoView);
@@ -298,9 +300,12 @@ static int WindowFloatOnTop(vlc_object_t *obj,
 
 - (VLCVideoWindowCommon *)setupMainLibraryVideoWindow
 {
-    VLCMain *mainInstance = VLCMain.sharedInstance;
+    VLCLibraryWindow * const libraryWindow = VLCMain.sharedInstance.libraryWindow;
+    if (libraryWindow == nil) {
+        return nil;
+    }
     b_mainWindowHasVideo = YES;
-    return mainInstance.libraryWindow;
+    return libraryWindow;
 }
 
 - (VLCVideoWindowCommon *)setupDetachedVideoWindow
@@ -358,7 +363,11 @@ static int WindowFloatOnTop(vlc_object_t *obj,
 
     BOOL isEmbedded = var_InheritBool(getIntf(), "embedded-video") && !b_mainWindowHasVideo;
     if (isEmbedded) {
-        return [self setupMainLibraryVideoWindow];
+        VLCVideoWindowCommon * const embeddedWindow = [self setupMainLibraryVideoWindow];
+        if (embeddedWindow != nil) {
+            return embeddedWindow;
+        }
+        msg_Warn(getIntf(), "Library window not ready, falling back to detached video window");
     }
 
     return [self setupDetachedVideoWindow];
@@ -457,6 +466,10 @@ static int WindowFloatOnTop(vlc_object_t *obj,
 {
     _playerController = VLCMain.sharedInstance.playQueueController.playerController;
     VLCVideoWindowCommon *newVideoWindow = [self setupVideoWindow];
+    if (newVideoWindow == nil) {
+        msg_Err(getIntf(), "Cannot setup vout: failed to create or retrieve video window");
+        return nil;
+    }
     VLCVoutView *voutView = newVideoWindow.videoViewController.voutView;
 
     BOOL multipleVoutWindows = _voutWindows.count > 0;
