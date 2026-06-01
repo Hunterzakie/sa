@@ -65,6 +65,8 @@
                              position:(float)position
                                  text:(NSString *)text;
 
+- (void)updateDisplayedProgressDialogWithInfo:(NSDictionary *)info;
+
 - (void)cancelDialog:(NSValue *)dialogIDValue;
 
 - (void)restoreModalDialog:(vlc_dialog_id *)previousModalDialogID;
@@ -179,11 +181,17 @@ static void updateProgressCallback(void *p_data,
 {
     @autoreleasepool {
         VLCCoreDialogProvider *dialogProvider = (__bridge VLCCoreDialogProvider *)p_data;
-        dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0), ^{
-            [dialogProvider updateDisplayedProgressDialog:p_id
-                                                 position:f_value
-                                                     text:toNSStr(psz_text)];
-        });
+        /* NSModalPanelRunLoopMode: also deliver while runModalForWindow: is up. */
+        NSDictionary *info = @{
+            @"dialogID" : [NSValue valueWithPointer:p_id],
+            @"position" : @(f_value),
+            @"text"     : toNSStr(psz_text)
+        };
+        NSArray *modes = @[NSDefaultRunLoopMode, NSModalPanelRunLoopMode];
+        [dialogProvider performSelectorOnMainThread:@selector(updateDisplayedProgressDialogWithInfo:)
+                                         withObject:info
+                                      waitUntilDone:NO
+                                              modes:modes];
     }
 }
 
@@ -423,10 +431,21 @@ static void updateProgressCallback(void *p_data,
     vlc_dialog_id_dismiss(dialogID);
 }
 
+- (void)updateDisplayedProgressDialogWithInfo:(NSDictionary *)info
+{
+    [self updateDisplayedProgressDialog:[info[@"dialogID"] pointerValue]
+                               position:[info[@"position"] floatValue]
+                                   text:info[@"text"]];
+}
+
 - (void)updateDisplayedProgressDialog:(vlc_dialog_id *)dialogID
                              position:(float)position
                                  text:(NSString *)text
 {
+    if (_currentModalDialogID != dialogID) {
+        return;
+    }
+
     if (!_progressIndicator.indeterminate) {
         _progressIndicator.doubleValue = position;
         _progressDescriptionLabel.stringValue = text;
