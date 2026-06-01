@@ -54,6 +54,9 @@
 
 @property (readonly) VLCErrorWindowController* errorPanel;
 
+/* Unregisters the core dialog callbacks. Must be called before releasing. */
+- (void)invalidate;
+
 - (IBAction)authenticationDialogAction:(id)sender;
 
 - (IBAction)progressDialogAction:(id)sender;
