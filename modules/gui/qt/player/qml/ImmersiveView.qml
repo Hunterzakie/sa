@@ -114,5 +114,27 @@ MinimalView {
         // - Always on top does not work.
         if (!Qt.platform.pluginName.startsWith("wayland"))
             immersiveModeToggleButtonComponent.incubateObject(csdDecorations?.parent, {}, 1 /* QQmlIncubator::AsynchronousIfNested */)
+
+        root._oldWindowSize = Qt.size(MainCtx.intfMainWindow.width,
+                                      MainCtx.intfMainWindow.height)
+
+        const size = MainCtx.settingValue(_windowSizeKey,
+                                          Qt.size(854, 480) /* Default size */)
+
+        // NOTE: `QWindow::resize()` is not invokable.
+        Qt.callLater(MainCtx.resizeWindow, MainCtx.intfMainWindow, size)
     }
+
+    Component.onDestruction: {
+        MainCtx.setSettingValue(_windowSizeKey, Qt.size(MainCtx.intfMainWindow.width,
+                                                        MainCtx.intfMainWindow.height))
+
+        if (_oldWindowSize.width > 0 && _oldWindowSize.height > 0) {
+            // This should not be delayed:
+            MainCtx.resizeWindow(MainCtx.intfMainWindow, _oldWindowSize)
+        }
+    }
+
+    property size _oldWindowSize
+    readonly property string _windowSizeKey: "ImmersiveView/windowSize"
 }
