@@ -108,8 +108,19 @@ bool FlickableScrollHandler::eventFilter(QObject *watched, QEvent *event)
     }
     else if (!m_handleOnlyPixelDelta && !wheel->angleDelta().isNull())
     {
-        ev.delta = wheel->angleDelta() / QWheelEvent::DefaultDeltasPerStep;
-        ev.type = Type::Degree;
+        // Some mice (especially Logitech free spinning mice) does not use regular 120 deltas per step,
+        // in this case we treat such eccentric angle delta as pixel delta:
+        if ((wheel->angleDelta().x() == 0 || (wheel->angleDelta().x() % QWheelEvent::DefaultDeltasPerStep)) &&
+            (wheel->angleDelta().y() == 0 || (wheel->angleDelta().y() % QWheelEvent::DefaultDeltasPerStep)))
+        {
+            ev.delta = wheel->angleDelta();
+            ev.type = Type::Pixel;
+        }
+        else
+        {
+            ev.delta = wheel->angleDelta() / QWheelEvent::DefaultDeltasPerStep;
+            ev.type = Type::Degree;
+        }
     }
     else
         return false;
