@@ -53,7 +53,7 @@ typedef struct
     module_t *module; /**< Output plugin (or NULL if inactive) */
     bool bitexact;
 
-    vlc_aout_stream *main_stream;
+    vlc_aout_stream *_Atomic main_stream;
 
     struct
     {

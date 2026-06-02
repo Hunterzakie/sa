@@ -35,6 +35,7 @@
 
 #include "../libvlc.h"
 #include "aout_internal.h"
+#include "misc/rcu.h"
 
 typedef struct aout_dev
 {
@@ -74,19 +75,34 @@ static int var_CopyDevice (vlc_object_t *src, const char *name,
     return var_Set (dst, "audio-device", value);
 }
 
+static vlc_aout_stream *aout_LockStream(audio_output_t *aout)
+{
+    aout_owner_t *owner = aout_owner (aout);
+    vlc_rcu_read_lock();
+    return atomic_load_explicit(&owner->main_stream, memory_order_acquire);
+}
+
+static void aout_UnlockStream(audio_output_t *aout)
+{
+    (void) aout;
+    vlc_rcu_read_unlock();
+}
+
 static void aout_TimingNotify(audio_output_t *aout, vlc_tick_t system_ts,
                               vlc_tick_t audio_ts)
 {
-    aout_owner_t *owner = aout_owner (aout);
-    assert(owner->main_stream);
-    vlc_aout_stream_NotifyTiming(owner->main_stream, system_ts, audio_ts);
+    vlc_aout_stream *stream = aout_LockStream(aout);
+    assert(stream != NULL);
+    vlc_aout_stream_NotifyTiming(stream, system_ts, audio_ts);
+    aout_UnlockStream(aout);
 }
 
 static void aout_DrainedNotify(audio_output_t *aout)
 {
-    aout_owner_t *owner = aout_owner (aout);
-    assert(owner->main_stream);
-    vlc_aout_stream_NotifyDrained(owner->main_stream);
+    vlc_aout_stream *stream = aout_LockStream(aout);
+    assert(stream != NULL);
+    vlc_aout_stream_NotifyDrained(stream);
+    aout_UnlockStream(aout);
 }
 
 /**
@@ -167,19 +183,21 @@ out:
 
 static void aout_RestartNotify (audio_output_t *aout, bool restart_dec)
 {
-    aout_owner_t *owner = aout_owner (aout);
-    if (owner->main_stream)
+    vlc_aout_stream *stream = aout_LockStream(aout);
+    if (stream)
     {
         unsigned mode = restart_dec ? AOUT_RESTART_OUTPUT_DEC : AOUT_RESTART_OUTPUT;
-        vlc_aout_stream_RequestRestart(owner->main_stream, mode);
+        vlc_aout_stream_RequestRestart(stream, mode);
     }
+    aout_UnlockStream(aout);
 }
 
 void aout_InputRequestRestart(audio_output_t *aout)
 {
-    aout_owner_t *owner = aout_owner (aout);
-    if (owner->main_stream)
-        vlc_aout_stream_RequestRestart(owner->main_stream, AOUT_RESTART_FILTERS);
+    vlc_aout_stream *stream = aout_LockStream(aout);
+    if (stream)
+        vlc_aout_stream_RequestRestart(stream, AOUT_RESTART_FILTERS);
+    aout_UnlockStream(aout);
 }
 
 static int aout_GainNotify (audio_output_t *aout, float gain)
@@ -188,8 +206,10 @@ static int aout_GainNotify (audio_output_t *aout, float gain)
 
     vlc_mutex_assert(&owner->lock);
     /* XXX: ideally, return -1 if format cannot be amplified */
-    if (owner->main_stream != NULL)
-        vlc_aout_stream_NotifyGain(owner->main_stream, gain);
+    vlc_aout_stream *stream = atomic_load(&owner->main_stream);
+
+    if (stream != NULL)
+        vlc_aout_stream_NotifyGain(stream, gain);
     return 0;
 }
 
@@ -225,8 +245,10 @@ static int StereoModeCallback (vlc_object_t *obj, const char *varname,
     owner->requested_stereo_mode = newval.i_int;
     vlc_mutex_unlock (&owner->lock);
 
-    if (owner->main_stream)
-        vlc_aout_stream_RequestRestart(owner->main_stream, AOUT_RESTART_OUTPUT);
+    vlc_aout_stream *stream = aout_LockStream(aout);
+    if (stream != NULL)
+        vlc_aout_stream_RequestRestart(stream, AOUT_RESTART_OUTPUT);
+    aout_UnlockStream(aout);
     return 0;
 }
 
@@ -241,8 +263,10 @@ static int MixModeCallback (vlc_object_t *obj, const char *varname,
     owner->requested_mix_mode = newval.i_int;
     vlc_mutex_unlock (&owner->lock);
 
-    if (owner->main_stream)
-        vlc_aout_stream_RequestRestart(owner->main_stream, AOUT_RESTART_OUTPUT);
+    vlc_aout_stream *stream = aout_LockStream(aout);
+    if (stream)
+        vlc_aout_stream_RequestRestart(stream, AOUT_RESTART_OUTPUT);
+    aout_UnlockStream(aout);
     return 0;
 }
 
@@ -281,7 +305,7 @@ audio_output_t *aout_New (vlc_object_t *parent)
     vlc_atomic_rc_init(&owner->rc);
     vlc_audio_meter_Init(&owner->meter, aout);
 
-    owner->main_stream = NULL;
+    atomic_init(&owner->main_stream, NULL);
 
     /* Audio output module callbacks */
     var_Create (aout, "volume", VLC_VAR_FLOAT);
@@ -779,20 +803,21 @@ int aout_OutputNew(audio_output_t *aout, vlc_aout_stream *stream,
 
     vlc_mutex_lock(&owner->lock);
     /* XXX: Remove when aout/stream support is complete (in all modules) */
-    assert(owner->main_stream == NULL);
+    assert(atomic_load(&owner->main_stream) == NULL);
 
     int ret = VLC_EGENERIC;
     for (size_t i = 0; formats[i] != 0 && ret != VLC_SUCCESS; ++i)
     {
         filter_fmt->i_format = fmt->i_format = formats[i];
-        owner->main_stream = stream;
+        atomic_store(&owner->main_stream, stream);
         ret = aout->start(aout, fmt);
         if (ret != 0)
-            owner->main_stream = NULL;
+            atomic_store(&owner->main_stream, NULL);
     }
     vlc_mutex_unlock(&owner->lock);
     if (ret)
     {
+        vlc_rcu_synchronize();
         if (AOUT_FMT_LINEAR(fmt))
             msg_Err (aout, "failed to start audio output");
         else
@@ -825,8 +850,9 @@ void aout_OutputDelete (audio_output_t *aout)
     aout_owner_t *owner = aout_owner(aout);
     vlc_mutex_lock(&owner->lock);
     aout->stop (aout);
-    owner->main_stream = NULL;
+    atomic_store(&owner->main_stream, NULL);
     vlc_mutex_unlock(&owner->lock);
+    vlc_rcu_synchronize();
 }
 
 float aout_VolumeGet (audio_output_t *aout)
