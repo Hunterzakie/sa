@@ -369,6 +369,13 @@ public:
         });
     }
 
+    // TODO: Get rid of this method when `QWindow::resizeWindow()` becomes invokable:
+    Q_INVOKABLE static void resizeWindow(QWindow* window, const QSize& size)
+    {
+        assert(window);
+        window->resize(size);
+    }
+
     Q_INVOKABLE virtual bool platformHandlesResizeWithCSD() const { return false; };
     Q_INVOKABLE virtual bool platformHandlesTitleBarButtonsWithCSD() const { return false; };
     Q_INVOKABLE virtual bool platformHandlesShadowsWithCSD() const { return false; };
