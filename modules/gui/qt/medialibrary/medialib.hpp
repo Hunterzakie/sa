@@ -41,6 +41,7 @@ public:
     Q_PROPERTY(int  parsingProgress READ parsingProgress NOTIFY parsingProgressChanged FINAL)
     Q_PROPERTY(QString discoveryEntryPoint READ discoveryEntryPoint NOTIFY discoveryEntryPointChanged FINAL)
     Q_PROPERTY(bool idle READ idle NOTIFY idleChanged FINAL)
+    Q_PROPERTY(QQmlComponent* homeDisplayComponent READ homeDisplayComponent CONSTANT FINAL)
 
 public:
     MediaLib(qt_intf_t* _intf, vlc::playlist::PlaylistController* playlistController, QObject* _parent = nullptr );
@@ -62,6 +63,8 @@ public:
     Q_INVOKABLE void reload();
 
     Q_INVOKABLE void mlInputItem(const QVector<MLItemId>& itemIdVector, QJSValue callback);
+
+    QQmlComponent* homeDisplayComponent(QQmlEngine *engine = nullptr);
 
     inline bool idle() const { return m_idle; }
     inline int discoveryPending() const { return m_discoveryPending; }
@@ -184,6 +187,7 @@ private:
     bool m_discoveryPending = false;
     int m_parsingProgress = 0;
     QString m_discoveryEntryPoint;
+    std::optional<QPointer<QQmlComponent>> m_homeDisplayComponent;
 
     /* Medialibrary */
     vlc_medialibrary_t* m_ml;
