@@ -187,20 +187,40 @@ Item {
             // If there is depth buffer, clipping is not necessary:
             clip: _extendedFrameVisible && !effect.hasDepthBuffer
 
-            source: {
+            // `Player` and `MainDisplay` are crucial types and they
+            // are intentionally inline, if they are broken, they
+            // should preemptively break the interface at start
+            // so that Qt interface is not loaded.
+
+            Component {
+                id: playerComponent
+
+                Player { }
+            }
+
+            Component {
+                id: mainDisplayComponent
+
+                MainDisplay { }
+            }
+
+            sourceComponent: {
                 // priority applies accross modes
                 // minimal > player > medialib
                 // MEDIALIB_MODE flag should always be set
 
                 switch (MainCtx.effectiveMainInterfaceMode) {
                 case MainCtx.MAININTERFACE_MODE_MINIMAL:
-                    return "qrc:///qt/qml/VLC/Player/MinimalView.qml"
+                    const component = MainCtx.createComponent("VLC.Player", "MinimalView")
+                    if (component)
+                        return component
+                    // fallthrough
                 case  MainCtx.MAININTERFACE_MODE_PLAYER:
-                    return "qrc:///qt/qml/VLC/Player/Player.qml"
+                    return playerComponent
                 default:
                     console.error("unexpected interface mode", MainCtx.effectiveMainInterfaceMode)
                 case MainCtx.MAININTERFACE_MODE_MAINDISPLAY:
-                    return "qrc:///qt/qml/VLC/MainInterface/MainDisplay.qml"
+                    return mainDisplayComponent
                 }
             }
         }
