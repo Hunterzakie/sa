@@ -286,6 +286,7 @@ T.Control {
                 Layout.fillWidth: true
 
                 text: delegate.artist || (delegate.title.length === 0 ? delegate.url : "")
+                font.pixelSize: VLCStyle.fontSize_caption
                 color: theme.fg.primary
             }
         }
@@ -294,6 +295,7 @@ T.Control {
             id: textDuration
 
             text: delegate.duration.formatHMS()
+            font.pixelSize: VLCStyle.fontSize_caption
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             color: theme.fg.primary
