@@ -266,7 +266,8 @@ T.Control {
 
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.leftMargin: VLCStyle.margin_large
+            Layout.leftMargin: VLCStyle.margin_small
+            Layout.rightMargin: VLCStyle.margin_small
             spacing: VLCStyle.margin_xxxsmall
 
             Widgets.ListLabel {

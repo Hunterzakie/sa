@@ -145,9 +145,9 @@ T.Pane {
 
             Layout.fillHeight: false
             Layout.leftMargin: VLCStyle.margin_normal
-            Layout.rightMargin: Math.max(listView.ScrollBar.vertical.width, VLCStyle.margin_normal)
+            Layout.rightMargin: VLCStyle.margin_normal
 
-            spacing: VLCStyle.margin_large
+            spacing: VLCStyle.margin_small
 
             Widgets.IconLabel {
                 // playlist cover column
