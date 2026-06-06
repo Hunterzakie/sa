@@ -119,7 +119,7 @@ QtObject {
     readonly property int icon_actionButton: icon_normal
     readonly property int icon_PIP: icon_normal
     readonly property int icon_CSD: icon_small
-    readonly property int icon_playlistArt: MainCtx.dp(32, scale)
+    readonly property int icon_playlistArt: MainCtx.dp(36, scale)
 
     readonly property int play_cover_small: MainCtx.dp(24, scale)
     readonly property int play_cover_normal: MainCtx.dp(48, scale)
