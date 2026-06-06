@@ -77,7 +77,7 @@ T.Control {
 
     hoverEnabled: true
 
-    verticalPadding: VLCStyle.margin_xxxsmall
+    verticalPadding: VLCStyle.margin_xxsmall + VLCStyle.margin_xxxsmall
 
     leftPadding: VLCStyle.margin_normal
 
@@ -268,7 +268,7 @@ T.Control {
             Layout.fillHeight: true
             Layout.leftMargin: VLCStyle.margin_small
             Layout.rightMargin: VLCStyle.margin_small
-            spacing: VLCStyle.margin_xxxsmall
+            spacing: 0
 
             Widgets.ListLabel {
                 id: textInfo
