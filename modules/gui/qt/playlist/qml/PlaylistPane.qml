@@ -210,6 +210,8 @@ T.Pane {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
+            useCompactDropFooter: true
+
             selectionModel: ListSelectionModel {
                 model: listView.model
             }
