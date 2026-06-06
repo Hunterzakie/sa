@@ -274,6 +274,7 @@ T.Control {
                 id: textInfo
 
                 Layout.fillWidth: true
+                Layout.bottomMargin: textArtist.visible ? 0 : MainCtx.dp(1, scale);
 
                 font.weight: delegate.isCurrent ? Font.Bold : Font.DemiBold
                 text: delegate.title || qsTr("Unknown Title")
@@ -282,6 +283,8 @@ T.Control {
 
             Widgets.ListSubtitleLabel {
                 id: textArtist
+
+                visible: text != ""
 
                 Layout.fillWidth: true
 
