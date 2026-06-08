@@ -271,13 +271,13 @@ static int TOC_GetAudioRange(vcddev_toc_t *p_toc,
     int i_last = p_toc->i_last_track;
     for(int i=i_first; i<p_toc->i_tracks; i++)
     {
-        if((p_toc->p_sectors[i - 1].i_control & CD_ROM_SUBCODE_DATA) == 0)
+        if((p_toc->p_sectors[i - 1].i_control & CD_CHANNEL_Q_CTRL_MASK_DATA) == 0)
             break;
         i_first++;
     }
     for(int i=i_last; i > 0; i--)
     {
-        if((p_toc->p_sectors[i - 1].i_control & CD_ROM_SUBCODE_DATA) == 0)
+        if((p_toc->p_sectors[i - 1].i_control & CD_CHANNEL_Q_CTRL_MASK_DATA) == 0)
             break;
         i_last--;
     }
@@ -293,7 +293,7 @@ static int TOC_GetAudioRange(vcddev_toc_t *p_toc,
         /* last audio is invalid, bigger than lead out */
         i_last = i_last - 1;
         p_toc->i_last_track = i_last;
-        p_last->i_lba -= CD_ROM_XA_INTERVAL;
+        p_last->i_lba -= CDDA_INTERVAL;
         p_toc->i_tracks--; /* change lead out */
     } while( i_last > i_first );
 
@@ -339,7 +339,7 @@ static int DemuxOpen(vlc_object_t *obj, vcddev_t *dev, unsigned track)
         int i_first_sector = p_toc->p_sectors[track].i_lba;
         int i_last_sector = p_toc->p_sectors[track + 1].i_lba;
         if(i_cdda_first + track == (unsigned) i_cdda_last && p_toc->i_last_track > i_cdda_last)
-            i_last_sector -= CD_ROM_XA_INTERVAL;
+            i_last_sector -= CDDA_INTERVAL;
 
         sys->start = i_first_sector;
         sys->length = i_last_sector - i_first_sector;
@@ -415,7 +415,7 @@ static char * BuildMusicbrainzDiscID( const vcddev_toc_t *p_toc,
      * https://github.com/metabrainz/libdiscid/blob/e46249415eb6d657ecc63667b03d670a4347712f/src/toc.c#L90 */
     int i_last_track_end;
     if (p_toc->i_tracks > i_total)
-        i_last_track_end = LBAPregap(p_toc->p_sectors[i_total].i_lba) - CD_ROM_XA_INTERVAL;
+        i_last_track_end = LBAPregap(p_toc->p_sectors[i_total].i_lba) - CDDA_INTERVAL;
     else
         i_last_track_end = LBAPregap(p_toc->p_sectors[p_toc->i_tracks].i_lba);
 
@@ -498,7 +498,7 @@ static musicbrainz_recording_t * GetMusicbrainzInfo( vlc_object_t *obj,
          * https://github.com/metabrainz/libdiscid/blob/e46249415eb6d657ecc63667b03d670a4347712f/src/toc.c#L90 */
         int i_last_track_end;
         if (p_toc->i_tracks > i_total)
-            i_last_track_end = LBAPregap(p_toc->p_sectors[i_total].i_lba) - CD_ROM_XA_INTERVAL;
+            i_last_track_end = LBAPregap(p_toc->p_sectors[i_total].i_lba) - CDDA_INTERVAL;
         else
             i_last_track_end = LBAPregap(p_toc->p_sectors[p_toc->i_tracks].i_lba);
         vlc_memstream_printf(&ms, "+%u", i_last_track_end );
@@ -554,7 +554,7 @@ static int ReadDir(stream_t *access, input_item_node_t *node)
         int i_last_sector = p_toc->p_sectors[i + cdda_offset + 1].i_lba;
         if(sys->i_cdda_first + i == sys->i_cdda_last &&
            p_toc->i_last_track > sys->i_cdda_last)
-            i_last_sector -= CD_ROM_XA_INTERVAL;
+            i_last_sector -= CDDA_INTERVAL;
 
         const vlc_tick_t duration =
             vlc_tick_from_samples(i_last_sector - i_first_sector, CD_ROM_CDDA_FRAMES);

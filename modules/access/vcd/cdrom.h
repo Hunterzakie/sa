@@ -31,32 +31,46 @@ enum {
     VCD_TYPE  = 1,
 };
 
-/* size of a CD sector */
-#define CD_RAW_SECTOR_SIZE  2352
+/* size of a CD sector / Red Book IEC-60908 */
+#define CD_RAW_PHYSICAL_BLOCK_SIZE   2448
+#define CD_RAW_SUBCHANNELS_DATA_SIZE 96
+#define CD_RAW_SECTOR_SIZE (CD_RAW_PHYSICAL_BLOCK_SIZE-CD_RAW_SUBCHANNELS_DATA_SIZE) // 2352
+
+#define CD_RAW_FRAMES_PER_SECOND 75
+#define CD_RAW_PREGAP_SECONDS    2
+
+/* Subchannels control flag */
+#define CD_CHANNEL_Q_CTRL_MASK_PRE_EMPHASIS   0x01
+#define CD_CHANNEL_Q_CTRL_MASK_COPY_PERMITTED 0x02
+#define CD_CHANNEL_Q_CTRL_MASK_DATA           0x04
+#define CD_CHANNEL_Q_CTRL_MASK_4CH            0x08
+
+/* CDROM ISO/IEC 10149 Yellow Book */
+#define CD_ROM_SYNC_PATTERN_SIZE 12
+#define CD_ROM_MODE_HEADER_SIZE  4
+#define CD_ROM_SECTOR_HEADER_SIZE (CD_ROM_SYNC_PATTERN_SIZE+CD_ROM_MODE_HEADER_SIZE)
 #define CD_ROM_MODE1_DATA_SIZE 2048
 #define CD_ROM_MODE2_DATA_SIZE 2336
 
-#define CD_ROM_XA_MODE2_F1_DATA_SIZE 2048
-#define CD_ROM_XA_MODE2_F2_DATA_SIZE 2324
+/* CDROM-XA ISO/IEC 10149 Yellow Book Annex */
+#define CD_ROM_XA_SECTOR_SUBHEADER_SIZE 8
+#define CD_ROM_XA_SECTOR_HEADER_SIZE (CD_ROM_SECTOR_HEADER_SIZE+CD_ROM_XA_SECTOR_SUBHEADER_SIZE)
+#define CD_ROM_XA_MODE2_FORM1_DATA_SIZE 2048
+#define CD_ROM_XA_MODE2_FORM2_DATA_SIZE 2324
 
-#define CD_ROM_XA_FRAMES   75
-#define CD_ROM_XA_INTERVAL ((60 + 90 + 2) * CD_ROM_XA_FRAMES)
+/* Orange Book / ECMA-394 ECMA-395 */
+#define CD_MULTISESSION_LEADOUT_SECS 60   // Secondary session Lead-Out
+#define CD_MULTISESSION_LEADIN_SECS  90   // Secondary session Lead-In
 
-/* Subcode control flag */
-#define CD_ROM_SUBCODE_NONE           0x00
-#define CD_ROM_SUBCODE_PRE_EMPHASIS   0x01
-#define CD_ROM_SUBCODE_COPY_PERMITTED 0x02
-#define CD_ROM_SUBCODE_DATA           0x04
-#define CD_ROM_SUBCODE_4CH            0x08
-#define CD_ROM_SUBCODE_SCMS           0x10
+
 
 /* size of a CD sector */
 #define CD_SECTOR_SIZE      CD_ROM_MODE1_DATA_SIZE
 
 /* where the data start on a VCD sector */
-#define VCD_DATA_START      24
+#define VCD_DATA_START      CD_ROM_XA_SECTOR_HEADER_SIZE
 /* size of the available data on a VCD sector */
-#define VCD_DATA_SIZE       CD_ROM_XA_MODE2_F2_DATA_SIZE
+#define VCD_DATA_SIZE       CD_ROM_XA_MODE2_FORM2_DATA_SIZE
 /* size of a VCD sector, header and tail included */
 #define VCD_SECTOR_SIZE     CD_RAW_SECTOR_SIZE
 /* sector containing the entry points */
@@ -68,6 +82,9 @@ enum {
 #define CDDA_SECTOR_SIZE    CD_RAW_SECTOR_SIZE
 /* number of audio frames per second */
 #define CD_ROM_CDDA_FRAMES  ((44100 * 4) / CDDA_DATA_SIZE)
+
+#define CDDA_INTERVAL ((CD_MULTISESSION_LEADIN_SECS + CD_MULTISESSION_LEADOUT_SECS + \
+                        CD_RAW_PREGAP_SECONDS) * CD_RAW_FRAMES_PER_SECOND)
 
 /*****************************************************************************
  * Misc. Macros
