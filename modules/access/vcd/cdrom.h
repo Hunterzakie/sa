@@ -63,40 +63,16 @@ enum {
 #define CD_MULTISESSION_LEADIN_SECS  90   // Secondary session Lead-In
 
 
-
-/* size of a CD sector */
-#define CD_SECTOR_SIZE      CD_ROM_MODE1_DATA_SIZE
-
-/* where the data start on a VCD sector */
-#define VCD_DATA_START      CD_ROM_XA_SECTOR_HEADER_SIZE
-/* size of the available data on a VCD sector */
-#define VCD_DATA_SIZE       CD_ROM_XA_MODE2_FORM2_DATA_SIZE
-/* size of a VCD sector, header and tail included */
-#define VCD_SECTOR_SIZE     CD_RAW_SECTOR_SIZE
-/* sector containing the entry points */
-#define VCD_ENTRIES_SECTOR  151
-
-/* size of the available data on a CDDA sector */
-#define CDDA_DATA_SIZE      CD_RAW_SECTOR_SIZE
-/* size of a CDDA sector, header and tail included */
-#define CDDA_SECTOR_SIZE    CD_RAW_SECTOR_SIZE
-/* number of audio frames per second */
-#define CD_ROM_CDDA_FRAMES  ((44100 * 4) / CDDA_DATA_SIZE)
-
-#define CDDA_INTERVAL ((CD_MULTISESSION_LEADIN_SECS + CD_MULTISESSION_LEADOUT_SECS + \
-                        CD_RAW_PREGAP_SECONDS) * CD_RAW_FRAMES_PER_SECOND)
-
 /*****************************************************************************
  * Misc. Macros
  *****************************************************************************/
 static inline int MSF_TO_LBA(uint8_t min, uint8_t sec, uint8_t frame)
 {
-    static_assert(((44100 * 4) % CDDA_DATA_SIZE) == 0, "bogus CDDA_DATA_SIZE");
-    return (int)(frame + CD_ROM_CDDA_FRAMES * (sec + 60 * min));
+    return (int)(frame + CD_RAW_FRAMES_PER_SECOND * (sec + 60 * min));
 }
 static inline int MSF_TO_LBA2(uint8_t min, uint8_t sec, uint8_t frame)
 {
-    return (int)(frame + CD_ROM_CDDA_FRAMES * (sec -2 + 60 * min));
+    return (int)(frame + CD_RAW_FRAMES_PER_SECOND * (sec -CD_RAW_PREGAP_SECONDS + 60 * min));
 }
 
 /* Converts BCD to Binary data */
@@ -134,37 +110,6 @@ static inline void vcddev_toc_Free( vcddev_toc_t *toc )
     free(toc->p_sectors);
     free(toc);
 }
-
-/*****************************************************************************
- * structure to store minute/second/frame locations
- *****************************************************************************/
-typedef struct msf_s
-{
-    uint8_t minute;
-    uint8_t second;
-    uint8_t frame;
-} msf_t;
-
-/*****************************************************************************
- * entries_sect structure: the sector containing entry points
- *****************************************************************************/
-typedef struct entries_sect_s
-{
-    char psz_id[8];                                 /* "ENTRYVCD" */
-    uint8_t i_version;                              /* 0x02 VCD2.0
-                                                       0x01 SVCD  */
-    uint8_t i_sys_prof_tag;                         /* 0x01 if VCD1.1
-                                                       0x00 else */
-    uint16_t i_entries_nb;                          /* entries number <= 500 */
-
-    struct
-    {
-        uint8_t i_track;                            /* track number */
-        msf_t   msf;                                /* msf location
-                                                       (in BCD format) */
-    } entry[500];
-    uint8_t zeros[36];                              /* should be 0x00 */
-} entries_sect_t;
 
 /*****************************************************************************
  * Prototypes

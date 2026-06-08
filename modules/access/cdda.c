@@ -57,11 +57,14 @@
 #endif
 
 #include "disc_helper.h"
-#include "vcd/cdrom.h"  /* For CDDA_DATA_SIZE */
+#include "vcd/cdrom.h"
 #include "../misc/webservices/musicbrainz.h"
 
 
 #define INVALID_SECTOR ((unsigned) -1)
+
+#define CDDA_INTERVAL ((CD_MULTISESSION_LEADIN_SECS + CD_MULTISESSION_LEADOUT_SECS + \
+                        CD_RAW_PREGAP_SECONDS) * CD_RAW_FRAMES_PER_SECOND)
 
 static vcddev_t *DiscOpen(vlc_object_t *obj, const char *location,
                          const char *path, unsigned *restrict trackp)
@@ -161,7 +164,7 @@ static int Demux(demux_t *demux)
     if (sys->position + count >= sys->length)
         count = sys->length - sys->position;
 
-    block_t *block = block_Alloc(count * CDDA_DATA_SIZE);
+    block_t *block = block_Alloc(count * CD_RAW_SECTOR_SIZE);
     if (unlikely(block == NULL))
         return VLC_DEMUXER_EOF;
 
@@ -224,13 +227,13 @@ static int DemuxControl(demux_t *demux, int query, va_list args)
             break;
 
         case DEMUX_GET_LENGTH:
-            *va_arg(args, vlc_tick_t *) = vlc_tick_from_samples(sys->length, CD_ROM_CDDA_FRAMES);
+            *va_arg(args, vlc_tick_t *) = vlc_tick_from_samples(sys->length, CD_RAW_FRAMES_PER_SECOND);
             break;
         case DEMUX_GET_TIME:
-            *va_arg(args, vlc_tick_t *) = vlc_tick_from_samples(sys->position, CD_ROM_CDDA_FRAMES);
+            *va_arg(args, vlc_tick_t *) = vlc_tick_from_samples(sys->position, CD_RAW_FRAMES_PER_SECOND);
             break;
         case DEMUX_SET_TIME:
-            sys->position = samples_from_vlc_tick(va_arg(args, vlc_tick_t), CD_ROM_CDDA_FRAMES);
+            sys->position = samples_from_vlc_tick(va_arg(args, vlc_tick_t), CD_RAW_FRAMES_PER_SECOND);
             date_Set(&sys->pts, VLC_TICK_0);
             date_Increment(&sys->pts, sys->position);
             break;
@@ -353,7 +356,7 @@ static int DemuxOpen(vlc_object_t *obj, vcddev_t *dev, unsigned track)
     fmt.audio.i_channels = 2;
     sys->es = es_out_Add(demux->out, &fmt);
 
-    date_Init(&sys->pts, CD_ROM_CDDA_FRAMES, 1);
+    date_Init(&sys->pts, CD_RAW_FRAMES_PER_SECOND, 1);
     date_Set(&sys->pts, VLC_TICK_0);
 
     sys->position = 0;
@@ -557,7 +560,7 @@ static int ReadDir(stream_t *access, input_item_node_t *node)
             i_last_sector -= CDDA_INTERVAL;
 
         const vlc_tick_t duration =
-            vlc_tick_from_samples(i_last_sector - i_first_sector, CD_ROM_CDDA_FRAMES);
+            vlc_tick_from_samples(i_last_sector - i_first_sector, CD_RAW_FRAMES_PER_SECOND);
 
         input_item_t *item = input_item_NewDisc(access->psz_url,
                                                 (name != NULL) ? name :

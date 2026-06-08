@@ -612,7 +612,7 @@ int ioctl_ReadSectors( vlc_object_t *p_this, const vcddev_t *p_vcddev,
     uint8_t *p_block;
 
     if( i_type == VCD_TYPE )
-        p_block = vlc_alloc( i_nb, VCD_SECTOR_SIZE );
+        p_block = vlc_alloc( i_nb, CD_RAW_SECTOR_SIZE );
     else
         p_block = p_buffer;
 
@@ -621,14 +621,14 @@ int ioctl_ReadSectors( vlc_object_t *p_this, const vcddev_t *p_vcddev,
         /*
          *  vcd image mode
          */
-        if( lseek( p_vcddev->i_vcdimage_handle, i_sector * VCD_SECTOR_SIZE,
+        if( lseek( p_vcddev->i_vcdimage_handle, i_sector * CD_RAW_SECTOR_SIZE,
                    SEEK_SET ) == -1 )
         {
             msg_Err( p_this, "Could not lseek to sector %d", i_sector );
             goto error;
         }
 
-        ssize_t toread = VCD_SECTOR_SIZE * i_nb;
+        ssize_t toread = CD_RAW_SECTOR_SIZE * i_nb;
         if( read( p_vcddev->i_vcdimage_handle, p_block, toread ) != toread )
         {
             msg_Err( p_this, "Could not read sector %d", i_sector );
@@ -648,14 +648,14 @@ int ioctl_ReadSectors( vlc_object_t *p_this, const vcddev_t *p_vcddev,
 
         memset( &cd_read, 0, sizeof(cd_read) );
 
-        cd_read.offset = i_sector * VCD_SECTOR_SIZE;
+        cd_read.offset = i_sector * CD_RAW_SECTOR_SIZE;
         cd_read.sectorArea = kCDSectorAreaSync | kCDSectorAreaHeader |
                              kCDSectorAreaSubHeader | kCDSectorAreaUser |
                              kCDSectorAreaAuxiliary;
         cd_read.sectorType = kCDSectorTypeUnknown;
 
         cd_read.buffer = p_block;
-        cd_read.bufferLength = VCD_SECTOR_SIZE * i_nb;
+        cd_read.bufferLength = CD_RAW_SECTOR_SIZE * i_nb;
 
         if( ioctl( p_vcddev->i_device_handle, DKIOCCDREAD, &cd_read ) == -1 )
         {
@@ -669,13 +669,13 @@ int ioctl_ReadSectors( vlc_object_t *p_this, const vcddev_t *p_vcddev,
         RAW_READ_INFO cdrom_raw;
 
         /* Initialize CDROM_RAW_READ structure */
-        cdrom_raw.DiskOffset.QuadPart = CD_SECTOR_SIZE * i_sector;
+        cdrom_raw.DiskOffset.QuadPart = CD_ROM_MODE1_DATA_SIZE * i_sector;
         cdrom_raw.SectorCount = i_nb;
         cdrom_raw.TrackMode =  i_type == VCD_TYPE ? XAForm2 : CDDA;
 
         if( DeviceIoControl( p_vcddev->h_device_handle, IOCTL_CDROM_RAW_READ,
                              &cdrom_raw, sizeof(RAW_READ_INFO), p_block,
-                             VCD_SECTOR_SIZE * i_nb, &dwBytesReturned,
+                             CD_RAW_SECTOR_SIZE * i_nb, &dwBytesReturned,
                              NULL ) == 0 )
         {
             DWORD dwError = GetLastError();
@@ -688,7 +688,7 @@ int ioctl_ReadSectors( vlc_object_t *p_this, const vcddev_t *p_vcddev,
                 b_read = DeviceIoControl( p_vcddev->h_device_handle,
                                           IOCTL_CDROM_RAW_READ, &cdrom_raw,
                                           sizeof(RAW_READ_INFO), p_block,
-                                          VCD_SECTOR_SIZE * i_nb,
+                                          CD_RAW_SECTOR_SIZE * i_nb,
                                           &dwBytesReturned, NULL ) != 0;
                 if( !b_read )
                     dwError = GetLastError();
@@ -727,7 +727,7 @@ int ioctl_ReadSectors( vlc_object_t *p_this, const vcddev_t *p_vcddev,
 
         rc = DosDevIOCtl( p_vcddev->hcd, IOCTL_CDROMDISK, CDROMDISK_READLONG,
                           &readlong, sizeof( readlong ), &param_len,
-                          p_block, VCD_SECTOR_SIZE * i_nb, &data_len );
+                          p_block, CD_RAW_SECTOR_SIZE * i_nb, &data_len );
         if( rc )
         {
             /* TODO return -2 in case of unrecoverable read failure. */
@@ -754,7 +754,7 @@ int ioctl_ReadSectors( vlc_object_t *p_this, const vcddev_t *p_vcddev,
         sc.cmd[10] = 0; /* sub channel */
         sc.cmdlen = 12;
         sc.databuf = (caddr_t)p_block;
-        sc.datalen = VCD_SECTOR_SIZE * i_nb;
+        sc.datalen = CD_RAW_SECTOR_SIZE * i_nb;
         sc.senselen = sizeof( sc.sense );
         sc.flags = SCCMD_READ;
         sc.timeout = 10000;
@@ -774,7 +774,7 @@ int ioctl_ReadSectors( vlc_object_t *p_this, const vcddev_t *p_vcddev,
         }
 
 #elif defined( HAVE_IOC_TOC_HEADER_IN_SYS_CDIO_H )
-        int i_size = VCD_SECTOR_SIZE;
+        int i_size = CD_RAW_SECTOR_SIZE;
 
         if( ioctl( p_vcddev->i_device_handle, CDRIOCSETBLOCKSIZE, &i_size )
             == -1 )
@@ -784,13 +784,13 @@ int ioctl_ReadSectors( vlc_object_t *p_this, const vcddev_t *p_vcddev,
         }
 
         if( lseek( p_vcddev->i_device_handle,
-                   i_sector * VCD_SECTOR_SIZE, SEEK_SET ) == -1 )
+                   i_sector * CD_RAW_SECTOR_SIZE, SEEK_SET ) == -1 )
         {
             msg_Err( p_this, "Could not lseek to sector %d", i_sector );
             goto error;
         }
 
-        ssize_t toread = VCD_SECTOR_SIZE * i_nb;
+        ssize_t toread = CD_RAW_SECTOR_SIZE * i_nb;
         if( read( p_vcddev->i_device_handle, p_block, toread ) != toread )
         {
             /* TODO return -2 in case of unrecoverable read failure. */
@@ -803,14 +803,14 @@ int ioctl_ReadSectors( vlc_object_t *p_this, const vcddev_t *p_vcddev,
         {
             int i_dummy = i_sector + i + 2 * CD_FRAMES;
 
-#define p_msf ((struct cdrom_msf0 *)(p_block + i * VCD_SECTOR_SIZE))
+#define p_msf ((struct cdrom_msf0 *)(p_block + i * CD_RAW_SECTOR_SIZE))
             p_msf->minute =   i_dummy / (CD_FRAMES * CD_SECS);
             p_msf->second = ( i_dummy % (CD_FRAMES * CD_SECS) ) / CD_FRAMES;
             p_msf->frame =  ( i_dummy % (CD_FRAMES * CD_SECS) ) % CD_FRAMES;
 #undef p_msf
 
             if( ioctl( p_vcddev->i_device_handle, CDROMREADRAW,
-                       p_block + i * VCD_SECTOR_SIZE ) == -1 )
+                       p_block + i * CD_RAW_SECTOR_SIZE ) == -1 )
             {
                 /* ENOMEDIUM is Linux's, and this arm is the last #else of the
                  * platform chain, so it may be compiled where that spelling
@@ -845,9 +845,9 @@ int ioctl_ReadSectors( vlc_object_t *p_this, const vcddev_t *p_vcddev,
     {
         for( int i = 0; i < i_nb; i++ )
         {
-            memcpy( p_buffer + i * VCD_DATA_SIZE,
-                    p_block + i * VCD_SECTOR_SIZE + VCD_DATA_START,
-                    VCD_DATA_SIZE );
+            memcpy( p_buffer + i * CD_ROM_XA_MODE2_FORM2_DATA_SIZE,
+                    p_block + i * CD_RAW_SECTOR_SIZE + CD_ROM_XA_SECTOR_HEADER_SIZE,
+                    CD_ROM_XA_MODE2_FORM2_DATA_SIZE );
         }
         free( p_block );
     }
@@ -1042,7 +1042,7 @@ static int OpenVCDImage( vlc_object_t * p_this, const char *psz_dev,
         goto error;
     p_toc->p_sectors = buf;
     p_toc->p_sectors[p_toc->i_tracks].i_lba =
-            lseek(p_vcddev->i_vcdimage_handle, 0, SEEK_END) / VCD_SECTOR_SIZE;
+            lseek(p_vcddev->i_vcdimage_handle, 0, SEEK_END) / CD_RAW_SECTOR_SIZE;
     p_toc->p_sectors[p_toc->i_tracks].i_control = track_subcodes;
     msg_Dbg( p_this, "vcd tracks end at sector:%i",
              p_toc->p_sectors[p_toc->i_tracks].i_lba );

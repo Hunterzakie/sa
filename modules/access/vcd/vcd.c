@@ -59,9 +59,40 @@ vlc_module_end ()
  * Local prototypes
  *****************************************************************************/
 
+/* size of the available data on a VCD sector */
+#define VCD_DATA_SIZE       CD_ROM_XA_MODE2_FORM2_DATA_SIZE
+
 /* how many blocks VCDRead will read in each loop */
 #define VCD_BLOCKS_ONCE 20
 #define VCD_DATA_ONCE   (VCD_BLOCKS_ONCE * VCD_DATA_SIZE)
+
+/* sector containing the entry points */
+#define VCD_ENTRIES_SECTOR  151
+
+typedef struct msf_s
+{
+    uint8_t minute;
+    uint8_t second;
+    uint8_t frame;
+} msf_t;
+
+typedef struct entries_sect_s
+{
+    char psz_id[8];                                 /* "ENTRYVCD" */
+    uint8_t i_version;                              /* 0x02 VCD2.0
+                                                       0x01 SVCD  */
+    uint8_t i_sys_prof_tag;                         /* 0x01 if VCD1.1
+                                                       0x00 else */
+    uint16_t i_entries_nb;                          /* entries number <= 500 */
+
+    struct
+    {
+        uint8_t i_track;                            /* track number */
+        msf_t   msf;                                /* msf location
+                                                       (in BCD format) */
+    } entry[500];
+    uint8_t zeros[36];                              /* should be 0x00 */
+} entries_sect_t;
 
 typedef struct
 {
@@ -461,7 +492,7 @@ static int EntryPoints( stream_t *p_access )
         msg_Err( p_access, "could not read entry points sector" );
         return VLC_EGENERIC;
     }
-    memcpy( &entries, sector, CD_SECTOR_SIZE );
+    memcpy( &entries, sector, CD_ROM_MODE1_DATA_SIZE );
 
     i_nb = GetWBE( &entries.i_entries_nb );
     if( i_nb == 0 || i_nb > 500 /* See 6.3.2 */ )
