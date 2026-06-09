@@ -204,9 +204,6 @@ system_Configure(libvlc_int_t *p_libvlc, int i_argc, const char *const pp_argv[]
                                       "(Ljava/lang/String;)Ljava/lang/String;");
         (*env)->DeleteLocalRef(env, clazz);
     }
-
-    var_Create(p_libvlc, "android-jvm", VLC_VAR_ADDRESS);
-    var_SetAddress(p_libvlc, "android-jvm", s_jvm);
     return;
 error:
     if (clazz)
