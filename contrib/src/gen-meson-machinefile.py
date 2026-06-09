@@ -109,7 +109,10 @@ if args.type == 'internal':
     # Host machine section
     args.file.write("\n[host_machine]\n")
     _add_environ_val('system', 'HOST_SYSTEM')
-    _add_environ_val('cpu_family', 'HOST_ARCH')
+    if os.environ.get('HOST_ARCH') == 'arm64_32':
+        _add_environ_val('cpu_family', 'aarch64')
+    else:
+        _add_environ_val('cpu_family', 'HOST_ARCH')
     args.file.write("endian = 'little'\n")
 
     # Get first part of triplet
