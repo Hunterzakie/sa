@@ -111,7 +111,7 @@ Item {
 
     // Fading edge effect provider when background is opaque:
     // This is an optimization, because layering is not used.
-    component FadingEdgeRectangleForOpaqueBackground : Rectangle {
+    component FadingEdgeEffectForOpaqueBackground : ShaderEffect {
         id: fadingEdgeRectangle
 
         implicitHeight: root.fadeSize
@@ -141,30 +141,9 @@ Item {
             }, 50, [], fadingEdgeRectangle)
         }
 
-        required property color colorStop0
-        required property color colorStop1
+        property color color: root.backgroundColor
 
-        // FIXME: Qt 6.2 switching orientation within `Gradient` is problematic
-        gradient: (root.orientation === Qt.Horizontal) ? horizontalGradient
-                                                       : verticalGradient
-
-        Gradient {
-            id: horizontalGradient
-
-            orientation: Gradient.Horizontal
-
-            GradientStop { position: 0.0; color: fadingEdgeRectangle.colorStop0; }
-            GradientStop { position: 1.0; color: fadingEdgeRectangle.colorStop1; }
-        }
-
-        Gradient {
-            id: verticalGradient
-
-            orientation: Gradient.Vertical
-
-            GradientStop { position: 0.0; color: fadingEdgeRectangle.colorStop0; }
-            GradientStop { position: 1.0; color: fadingEdgeRectangle.colorStop1; }
-        }
+        fragmentShader: "qrc:///shaders/Fade.frag.qsb"
     }
 
     Item {
@@ -178,7 +157,7 @@ Item {
             bottomMargin: (root.orientation === Qt.Vertical ? -root.endMargin : 0)
         }
 
-        FadingEdgeRectangleForOpaqueBackground {
+        FadingEdgeEffectForOpaqueBackground {
             anchors {
                 top: parent.top
                 left: parent.left
@@ -188,11 +167,9 @@ Item {
             }
 
             enabled: root.enableBeginningFade
-            colorStop0: root.backgroundColor
-            colorStop1: "transparent"
         }
 
-        FadingEdgeRectangleForOpaqueBackground {
+        FadingEdgeEffectForOpaqueBackground {
             anchors {
                 bottom: parent.bottom
                 right: parent.right
@@ -202,8 +179,7 @@ Item {
             }
 
             enabled: root.enableEndFade
-            colorStop0: "transparent"
-            colorStop1: root.backgroundColor
+            rotation: 180
         }
     }
 
