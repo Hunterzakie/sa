@@ -43,13 +43,9 @@ bool HLSSegment::prepareChunk(SharedResources *res, SegmentChunk *chunk, BaseRep
     {
         if (encryption.iv.size() != 16)
         {
-            uint64_t sequence = getSequenceNumber();
-            encryption.iv.clear();
-            encryption.iv.resize(16);
-            encryption.iv[15] = (sequence >> 0) & 0xff;
-            encryption.iv[14] = (sequence >> 8) & 0xff;
-            encryption.iv[13] = (sequence >> 16) & 0xff;
-            encryption.iv[12] = (sequence >> 24) & 0xff;
+            /* no explicit IV: derive from the 64-bit media sequence (RFC 8216 5.2) */
+            encryption.iv.assign(16, 0);
+            SetQWBE(&encryption.iv[8], getSequenceNumber());
         }
     }
 
