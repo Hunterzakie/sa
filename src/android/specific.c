@@ -94,10 +94,11 @@ system_End(void)
         ppsz_generic_names[i] = NULL;
     }
 
-    JNIEnv* env = NULL;
+    void *env_ptr = NULL;
     if (s_jvm == NULL
-     || (*s_jvm)->GetEnv(s_jvm, (void**) &env, JNI_VERSION_1_2) != JNI_OK)
+     || (*s_jvm)->GetEnv(s_jvm, &env_ptr, JNI_VERSION_1_2) != JNI_OK)
         return;
+    JNIEnv* env = env_ptr;
 
     if (fields.Environment.clazz)
     {
@@ -153,8 +154,10 @@ system_Configure(libvlc_int_t *p_libvlc, int i_argc, const char *const pp_argv[]
      * created. system_End() releases them. */
     if (fields.Environment.clazz == NULL)
     {
-        if ((*s_jvm)->GetEnv(s_jvm, (void**) &env, JNI_VERSION_1_2) != JNI_OK)
+        void *env_ptr = NULL;
+        if ((*s_jvm)->GetEnv(s_jvm, &env_ptr, JNI_VERSION_1_2) != JNI_OK)
             return;
+        env = env_ptr;
 
         clazz = (*env)->FindClass(env, "android/os/Environment");
         if ((*env)->ExceptionCheck(env))
@@ -235,9 +238,13 @@ fallback:
 
 static JNIEnv *get_env(bool *p_detach)
 {
-    JNIEnv *env;
-    if ((*s_jvm)->GetEnv(s_jvm, (void **)&env, JNI_VERSION_1_2) != JNI_OK)
+    JNIEnv *env = NULL;
+
+    void *env_ptr;
+    if ((*s_jvm)->GetEnv(s_jvm, &env_ptr, JNI_VERSION_1_2) != JNI_OK)
     {
+        env = env_ptr;
+
         /* attach the thread to the Java VM */
         JavaVMAttachArgs args;
 
