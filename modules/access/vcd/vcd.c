@@ -94,6 +94,9 @@ typedef struct entries_sect_s
     uint8_t zeros[36];                              /* should be 0x00 */
 } entries_sect_t;
 
+static_assert(sizeof(entries_sect_t) == (12 + 500 * 4 + 36),
+              "entries_sect_t is not packed");
+
 typedef struct
 {
     vlc_cd_t    *vlc_cd;                            /* vcd device descriptor */
