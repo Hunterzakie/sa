@@ -182,7 +182,7 @@ static int Open( vlc_object_t *p_this )
         p_sys->titles[i].seekpoints = NULL;
 
     /* We read the Table Of Content information */
-    p_sys->p_toc = ioctl_GetTOC( VLC_OBJECT(p_access), p_sys->vcddev );
+    p_sys->p_toc = ioctl_GetTOC( p_sys->vcddev );
     if( p_sys->p_toc == NULL )
     {
         msg_Err( p_access, "unable to count tracks" );
@@ -237,7 +237,7 @@ static int Open( vlc_object_t *p_this )
     return VLC_SUCCESS;
 
 error:
-    ioctl_Close( VLC_OBJECT(p_access), vcddev );
+    ioctl_Close( vcddev );
     free( p_sys );
     return VLC_EGENERIC;
 }
@@ -255,7 +255,7 @@ static void Close( vlc_object_t *p_this )
 
     vcddev_toc_Free( p_sys->p_toc );
 
-    ioctl_Close( p_this, p_sys->vcddev );
+    ioctl_Close( p_sys->vcddev );
     free( p_sys );
 }
 
@@ -400,7 +400,7 @@ static block_t *Block( stream_t *p_access, bool *restrict eof )
         return NULL;
     }
 
-    int i_ret = ioctl_ReadSectors( VLC_OBJECT(p_access), p_sys->vcddev,
+    int i_ret = ioctl_ReadSectors( p_sys->vcddev,
                                    p_sys->i_sector, p_block->p_buffer, i_blocks, VCD_TYPE );
     if( i_ret < 0 )
     {
@@ -486,7 +486,7 @@ static int EntryPoints( stream_t *p_access )
     int i_nb;
 
     /* Read the entry point sector */
-    if( ioctl_ReadSectors( VLC_OBJECT(p_access), p_sys->vcddev,
+    if( ioctl_ReadSectors( p_sys->vcddev,
         VCD_ENTRIES_SECTOR, sector, 1, VCD_TYPE ) < 0 )
     {
         msg_Err( p_access, "could not read entry points sector" );

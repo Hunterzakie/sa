@@ -115,19 +115,17 @@ static inline void vcddev_toc_Free( vcddev_toc_t *toc )
  * Prototypes
  *****************************************************************************/
 vcddev_t *ioctl_Open         ( vlc_object_t *, const char * );
-void      ioctl_Close        ( vlc_object_t *, vcddev_t * );
-vcddev_toc_t * ioctl_GetTOC  ( vlc_object_t *, vcddev_t * );
+void      ioctl_Close        ( vcddev_t * );
+vcddev_toc_t * ioctl_GetTOC  ( vcddev_t * );
 
 /* Returns:
  *    0  success
  *   -1  recoverable failure, or at least not known not to be (ex: a scratch)
  *   -2  irrecoverable failure (ex: disc ejected, device unplugged) */
-int       ioctl_ReadSectors  ( vlc_object_t *, vcddev_t *,
-                               int, uint8_t *, int, int );
+int       ioctl_ReadSectors  ( vcddev_t *, int, uint8_t *, int, int );
 
 /* CDDA only
  * The track 0 is for album meta data */
-int       ioctl_GetCdText( vlc_object_t *, vcddev_t *,
-                           vlc_meta_t ***ppp_tracks, int *pi_tracks );
+int       ioctl_GetCdText( vcddev_t *, vlc_meta_t ***ppp_tracks, int *pi_tracks );
 
 #endif /* VLC_CDROM_H */

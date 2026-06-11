@@ -168,7 +168,7 @@ static int Demux(demux_t *demux)
     if (unlikely(block == NULL))
         return VLC_DEMUXER_EOF;
 
-    int ret = ioctl_ReadSectors(VLC_OBJECT(demux), sys->vcddev,
+    int ret = ioctl_ReadSectors(sys->vcddev,
                                 sys->start + sys->position,
                                 block->p_buffer, count, CDDA_TYPE);
     if (ret < 0)
@@ -324,7 +324,7 @@ static int DemuxOpen(vlc_object_t *obj, vcddev_t *dev, unsigned track)
     /* Track number in input item */
     if (sys->start == INVALID_SECTOR || sys->length == INVALID_SECTOR)
     {
-        vcddev_toc_t *p_toc = ioctl_GetTOC(obj, dev);
+        vcddev_toc_t *p_toc = ioctl_GetTOC(dev);
         if(p_toc == NULL)
             goto error;
 
@@ -365,7 +365,7 @@ static int DemuxOpen(vlc_object_t *obj, vcddev_t *dev, unsigned track)
     return VLC_SUCCESS;
 
 error:
-    ioctl_Close(obj, dev);
+    ioctl_Close(dev);
     return VLC_EGENERIC;
 }
 
@@ -726,12 +726,12 @@ static int AccessOpen(vlc_object_t *obj, vcddev_t *dev)
     access_sys_t *sys = vlc_obj_malloc(obj, sizeof (*sys));
     if (unlikely(sys == NULL))
     {
-        ioctl_Close(obj, dev);
+        ioctl_Close(dev);
         return VLC_ENOMEM;
     }
 
     sys->vcddev = dev;
-    sys->p_toc = ioctl_GetTOC(obj, dev);
+    sys->p_toc = ioctl_GetTOC(dev);
     if (sys->p_toc == NULL)
     {
         msg_Err(obj, "cannot count tracks");
@@ -746,7 +746,7 @@ static int AccessOpen(vlc_object_t *obj, vcddev_t *dev)
         goto error;
     }
 
-    if (ioctl_GetCdText(obj, dev, &sys->cdtextv, &sys->cdtextc))
+    if (ioctl_GetCdText(dev, &sys->cdtextv, &sys->cdtextc))
     {
         msg_Dbg(obj, "CD-TEXT information missing");
         sys->cdtextv = NULL;
@@ -771,7 +771,7 @@ static int AccessOpen(vlc_object_t *obj, vcddev_t *dev)
     return VLC_SUCCESS;
 
 error:
-    ioctl_Close(obj, dev);
+    ioctl_Close(dev);
     return VLC_EGENERIC;
 }
 
@@ -816,7 +816,7 @@ static void Close(vlc_object_t *obj)
 
     static_assert(offsetof(demux_sys_t, vcddev) == 0, "Invalid cast");
     static_assert(offsetof(access_sys_t, vcddev) == 0, "Invalid cast");
-    ioctl_Close(obj, *(vcddev_t **)sys);
+    ioctl_Close(*(vcddev_t **)sys);
 }
 
 /*****************************************************************************

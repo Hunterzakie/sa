@@ -26,6 +26,7 @@
  *****************************************************************************/
 struct vcddev_s
 {
+    vlc_object_t *p_obj;
     char   *psz_dev;                                      /* vcd device name */
 
     /* Section used in vcd image mode */
@@ -181,16 +182,16 @@ typedef struct cdrom_readlong_s
 /*****************************************************************************
  * Local Prototypes
  *****************************************************************************/
-static int    OpenVCDImage( vlc_object_t *, const char *, struct vcddev_s * );
-static void   CloseVCDImage( vlc_object_t *, struct vcddev_s * );
+static int    OpenVCDImage( const char *, struct vcddev_s * );
+static void   CloseVCDImage( struct vcddev_s * );
 
 #if defined( __APPLE__ )
-static CDTOC *darwin_getTOC( vlc_object_t *, struct vcddev_s * );
+static CDTOC *darwin_getTOC( struct vcddev_s * );
 static int    darwin_getNumberOfTracks( CDTOC *, int, int *, int * );
 
 #elif defined( _WIN32 )
-static int    win32_vcd_open( vlc_object_t *, const char *, struct vcddev_s *);
+static int    win32_vcd_open( const char *, struct vcddev_s *);
 
 #elif defined( __OS2__ )
-static int    os2_vcd_open( vlc_object_t *, const char *, struct vcddev_s *);
+static int    os2_vcd_open( const char *, struct vcddev_s *);
 #endif
