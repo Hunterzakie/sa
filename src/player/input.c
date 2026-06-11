@@ -419,6 +419,7 @@ vlc_player_input_HandleState(struct vlc_player_input *input,
                                 input_WakeGapless(successor->thread,
                                                   VLC_TICK_INVALID);
                             }
+                            vlc_player_RestoreTimerGapless(player, seam);
                             /* The predecessor is stopped: hand its outputs over
                              * to the successor. */
                             input_GaplessPromoted(successor->thread);
@@ -1175,9 +1176,6 @@ input_thread_Events(input_thread_t *input_thread,
     /* No player lock for this event */
     if (event->type == INPUT_EVENT_OUTPUT_CLOCK)
     {
-        if (input->gapless)
-            return true;
-
         if (event->output_clock.system_ts != VLC_TICK_INVALID)
         {
             const struct vlc_player_timer_point point = {

@@ -533,6 +533,9 @@ void
 vlc_player_ResetTimer(vlc_player_t *player);
 
 void
+vlc_player_RestoreTimerGapless(vlc_player_t *player, vlc_tick_t seam);
+
+void
 vlc_player_UpdateTimerEvent(vlc_player_t *player, vlc_es_id_t *es_source,
                             enum vlc_player_timer_event event,
                             vlc_tick_t system_date);
