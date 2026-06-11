@@ -147,11 +147,11 @@ exit_free:
 /*****************************************************************************
  * ioctl_Open: Opens a VCD device or file and returns an opaque handle
  *****************************************************************************/
-vcddev_t *ioctl_Open( vlc_object_t *p_this, const char *psz_dev )
+static vlc_cd_t *ioctl_Open( vlc_object_t *p_this, const char *psz_dev )
 {
     int i_ret;
     int b_is_file;
-    vcddev_t *p_vcddev;
+    vlc_cd_t *p_vlc_cd;
 #if !defined( _WIN32 ) && !defined( __OS2__ )
     struct stat fileinfo;
 #endif
@@ -161,13 +161,13 @@ vcddev_t *ioctl_Open( vlc_object_t *p_this, const char *psz_dev )
     /*
      *  Initialize structure with default values
      */
-    p_vcddev = malloc( sizeof(*p_vcddev) );
-    if( p_vcddev == NULL )
+    p_vlc_cd = malloc( sizeof(*p_vlc_cd) );
+    if( p_vlc_cd == NULL )
         return NULL;
-    p_vcddev->p_obj = p_this;
-    p_vcddev->i_vcdimage_handle = -1;
-    p_vcddev->psz_dev = NULL;
-    memset( &p_vcddev->toc, 0, sizeof(p_vcddev->toc) );
+    p_vlc_cd->p_obj = p_this;
+    p_vlc_cd->i_vcdimage_handle = -1;
+    p_vlc_cd->psz_dev = NULL;
+    memset( &p_vlc_cd->toc, 0, sizeof(p_vlc_cd->toc) );
     b_is_file = 1;
 
     /*
@@ -182,7 +182,7 @@ vcddev_t *ioctl_Open( vlc_object_t *p_this, const char *psz_dev )
 #else
     if( vlc_stat( psz_dev, &fileinfo ) < 0 )
     {
-        free( p_vcddev );
+        free( p_vlc_cd );
         return NULL;
     }
 
@@ -193,7 +193,7 @@ vcddev_t *ioctl_Open( vlc_object_t *p_this, const char *psz_dev )
 
     if( b_is_file )
     {
-        i_ret = OpenVCDImage( psz_dev, p_vcddev );
+        i_ret = OpenVCDImage( psz_dev, p_vlc_cd );
     }
     else
     {
@@ -202,43 +202,43 @@ vcddev_t *ioctl_Open( vlc_object_t *p_this, const char *psz_dev )
          */
 
 #ifdef _WIN32
-        i_ret = win32_vcd_open( psz_dev, p_vcddev );
+        i_ret = win32_vcd_open( psz_dev, p_vlc_cd );
 #elif defined( __OS2__ )
-        i_ret = os2_vcd_open( psz_dev, p_vcddev );
+        i_ret = os2_vcd_open( psz_dev, p_vlc_cd );
 #else
-        p_vcddev->i_device_handle = -1;
-        p_vcddev->i_device_handle = vlc_open( psz_dev, O_RDONLY | O_NONBLOCK );
-        i_ret = (p_vcddev->i_device_handle == -1) ? -1 : 0;
+        p_vlc_cd->i_device_handle = -1;
+        p_vlc_cd->i_device_handle = vlc_open( psz_dev, O_RDONLY | O_NONBLOCK );
+        i_ret = (p_vlc_cd->i_device_handle == -1) ? -1 : 0;
 #endif
     }
 
     if( i_ret == 0 )
     {
-        p_vcddev->psz_dev = (char *)strdup( psz_dev );
+        p_vlc_cd->psz_dev = (char *)strdup( psz_dev );
     }
     else
     {
-        free( p_vcddev );
-        p_vcddev = NULL;
+        free( p_vlc_cd );
+        p_vlc_cd = NULL;
     }
 
-    return p_vcddev;
+    return p_vlc_cd;
 }
 
 /*****************************************************************************
  * ioctl_Close: Closes an already opened VCD device or file.
  *****************************************************************************/
-void ioctl_Close( vcddev_t *p_vcddev )
+static void ioctl_Close( vlc_cd_t *p_vlc_cd )
 {
-    free( p_vcddev->psz_dev );
+    free( p_vlc_cd->psz_dev );
 
-    if( p_vcddev->i_vcdimage_handle != -1 )
+    if( p_vlc_cd->i_vcdimage_handle != -1 )
     {
         /*
          *  vcd image mode
          */
 
-        CloseVCDImage( p_vcddev );
+        CloseVCDImage( p_vlc_cd );
         return;
     }
 
@@ -247,16 +247,16 @@ void ioctl_Close( vcddev_t *p_vcddev )
      */
 
 #ifdef _WIN32
-    if( p_vcddev->h_device_handle )
-        CloseHandle( p_vcddev->h_device_handle );
+    if( p_vlc_cd->h_device_handle )
+        CloseHandle( p_vlc_cd->h_device_handle );
 #elif defined( __OS2__ )
-    if( p_vcddev->hcd )
-        DosClose( p_vcddev->hcd );
+    if( p_vlc_cd->hcd )
+        DosClose( p_vlc_cd->hcd );
 #else
-    if( p_vcddev->i_device_handle != -1 )
-        vlc_close( p_vcddev->i_device_handle );
+    if( p_vlc_cd->i_device_handle != -1 )
+        vlc_close( p_vlc_cd->i_device_handle );
 #endif
-    free( p_vcddev );
+    free( p_vlc_cd );
 }
 
 static bool TrackNumberIsValid( int i_number )
@@ -275,20 +275,20 @@ static bool TracksRangeIsValid( int i_first, int i_last )
  * ioctl_GetTOC: Read the Table of Content, fill in the p_sectors map
  *               if b_fill_sector_info is true.
  *****************************************************************************/
-vcddev_toc_t * ioctl_GetTOC( vcddev_t *p_vcddev )
+static vlc_cd_toc_t * ioctl_GetTOC( vlc_cd_t *p_vlc_cd )
 {
-    vlc_object_t *p_this = p_vcddev->p_obj;
-    vcddev_toc_t *p_toc = calloc(1, sizeof(*p_toc));
+    vlc_object_t *p_this = p_vlc_cd->p_obj;
+    vlc_cd_toc_t *p_toc = calloc(1, sizeof(*p_toc));
     if(!p_toc)
         return NULL;
 
-    if( p_vcddev->i_vcdimage_handle != -1 )
+    if( p_vlc_cd->i_vcdimage_handle != -1 )
     {
         /*
          *  vcd image mode
          */
 
-        *p_toc = p_vcddev->toc;
+        *p_toc = p_vlc_cd->toc;
         p_toc->p_sectors = NULL;
 
         p_toc->p_sectors = calloc( p_toc->i_tracks + 1, sizeof(*p_toc->p_sectors) );
@@ -297,7 +297,7 @@ vcddev_toc_t * ioctl_GetTOC( vcddev_t *p_vcddev )
             free( p_toc );
             return NULL;
         }
-        memcpy( p_toc->p_sectors, p_vcddev->toc.p_sectors,
+        memcpy( p_toc->p_sectors, p_vlc_cd->toc.p_sectors,
                 (p_toc->i_tracks + 1) * sizeof(*p_toc->p_sectors) );
 
         return p_toc;
@@ -314,10 +314,10 @@ vcddev_toc_t * ioctl_GetTOC( vcddev_t *p_vcddev )
         CDTOC *pTOC;
         int i_descriptors;
 
-        if( ( pTOC = darwin_getTOC( p_vcddev ) ) == NULL )
+        if( ( pTOC = darwin_getTOC( p_vlc_cd ) ) == NULL )
         {
             msg_Err( p_this, "failed to get the TOC" );
-            vcddev_toc_Free( p_toc );
+            vlc_cd_toc_Free( p_toc );
             return NULL;
         }
 
@@ -334,7 +334,7 @@ vcddev_toc_t * ioctl_GetTOC( vcddev_t *p_vcddev )
                                     sizeof(*p_toc->p_sectors) );
         if( p_toc->p_sectors == NULL )
         {
-            vcddev_toc_Free( p_toc );
+            vlc_cd_toc_Free( p_toc );
             darwin_freeTOC( pTOC );
             return NULL;
         }
@@ -359,7 +359,7 @@ vcddev_toc_t * ioctl_GetTOC( vcddev_t *p_vcddev )
         if( i_leadout == -1 )
         {
             msg_Err( p_this, "leadout not found" );
-            vcddev_toc_Free( p_toc );
+            vlc_cd_toc_Free( p_toc );
             darwin_freeTOC( pTOC );
             return NULL;
         }
@@ -375,19 +375,19 @@ vcddev_toc_t * ioctl_GetTOC( vcddev_t *p_vcddev )
         CDROM_TOC cdrom_toc;
 
         CDROM_READ_TOC_EX TOCEx = { .Format = CDROM_READ_TOC_EX_FORMAT_TOC, .Msf = 0 };
-        if( DeviceIoControl( p_vcddev->h_device_handle, IOCTL_CDROM_READ_TOC_EX,
+        if( DeviceIoControl( p_vlc_cd->h_device_handle, IOCTL_CDROM_READ_TOC_EX,
                              &TOCEx, sizeof(TOCEx),
                              &cdrom_toc, sizeof(cdrom_toc), &dwBytesReturned, 0 ) == 0 )
         {
             msg_Err( p_this, "could not read TOCHDR" );
-            vcddev_toc_Free( p_toc );
+            vlc_cd_toc_Free( p_toc );
             return NULL;
         }
 
         if( !TracksRangeIsValid( cdrom_toc.FirstTrack, cdrom_toc.LastTrack ) )
         {
             msg_Err( p_this, "Invalid tracks range" );
-            vcddev_toc_Free( p_toc );
+            vlc_cd_toc_Free( p_toc );
             return NULL;
         }
 
@@ -401,7 +401,7 @@ vcddev_toc_t * ioctl_GetTOC( vcddev_t *p_vcddev )
         p_toc->p_sectors = calloc( p_toc->i_tracks + 1, sizeof(*p_toc->p_sectors) );
         if( p_toc->p_sectors == NULL )
         {
-            vcddev_toc_Free( p_toc );
+            vlc_cd_toc_Free( p_toc );
             return NULL;
         }
 
@@ -423,21 +423,21 @@ vcddev_toc_t * ioctl_GetTOC( vcddev_t *p_vcddev )
         ULONG data_len;
         ULONG rc;
 
-        rc = DosDevIOCtl( p_vcddev->hcd, IOCTL_CDROMAUDIO,
+        rc = DosDevIOCtl( p_vlc_cd->hcd, IOCTL_CDROMAUDIO,
                           CDROMAUDIO_GETAUDIODISK,
                           &get_tochdr, sizeof( get_tochdr ), &param_len,
                           &tochdr, sizeof( tochdr ), &data_len );
         if( rc )
         {
             msg_Err( p_this, "could not read TOCHDR" );
-            vcddev_toc_Free( p_toc );
+            vlc_cd_toc_Free( p_toc );
             return NULL;
         }
 
         if( !TracksRangeIsValid( tochdr.first_track, tochdr.last_track ) )
         {
             msg_Err( p_this, "Invalid tracks range" );
-            vcddev_toc_Free( p_toc );
+            vlc_cd_toc_Free( p_toc );
             return NULL;
         }
 
@@ -452,14 +452,14 @@ vcddev_toc_t * ioctl_GetTOC( vcddev_t *p_vcddev )
         p_toc->p_sectors = calloc( p_toc->i_tracks + 1, sizeof(*p_toc->p_sectors) );
         if( p_toc->p_sectors == NULL )
         {
-            vcddev_toc_Free( p_toc );
+            vlc_cd_toc_Free( p_toc );
             return NULL;
         }
 
         for( i = 0 ; i < p_toc->i_tracks ; i++ )
         {
             get_track.track = tochdr.first_track + i;
-            rc = DosDevIOCtl( p_vcddev->hcd, IOCTL_CDROMAUDIO,
+            rc = DosDevIOCtl( p_vlc_cd->hcd, IOCTL_CDROMAUDIO,
                                 CDROMAUDIO_GETAUDIOTRACK,
                                 &get_track, sizeof(get_track), &param_len,
                                 &track, sizeof(track), &data_len );
@@ -467,7 +467,7 @@ vcddev_toc_t * ioctl_GetTOC( vcddev_t *p_vcddev )
             {
                 msg_Err( p_this, "could not read %d track",
                             get_track.track );
-                vcddev_toc_Free( p_toc );
+                vlc_cd_toc_Free( p_toc );
                 return NULL;
             }
 
@@ -490,18 +490,18 @@ vcddev_toc_t * ioctl_GetTOC( vcddev_t *p_vcddev )
         struct ioc_toc_header tochdr;
         struct ioc_read_toc_entry toc_entries;
 
-        if( ioctl( p_vcddev->i_device_handle, CDIOREADTOCHEADER, &tochdr )
+        if( ioctl( p_vlc_cd->i_device_handle, CDIOREADTOCHEADER, &tochdr )
             == -1 )
         {
             msg_Err( p_this, "could not read TOCHDR" );
-            vcddev_toc_Free( p_toc );
+            vlc_cd_toc_Free( p_toc );
             return NULL;
         }
 
         if( !TracksRangeIsValid( tochdr.starting_track, tochdr.ending_track ) )
         {
             msg_Err( p_this, "Invalid tracks range" );
-            vcddev_toc_Free( p_toc );
+            vlc_cd_toc_Free( p_toc );
             return NULL;
         }
 
@@ -512,7 +512,7 @@ vcddev_toc_t * ioctl_GetTOC( vcddev_t *p_vcddev )
         p_toc->p_sectors = calloc( p_toc->i_tracks + 1, sizeof(*p_toc->p_sectors) );
         if( p_toc->p_sectors == NULL )
         {
-            vcddev_toc_Free( p_toc );
+            vlc_cd_toc_Free( p_toc );
             return NULL;
         }
 
@@ -524,17 +524,17 @@ vcddev_toc_t * ioctl_GetTOC( vcddev_t *p_vcddev )
                             malloc( toc_entries.data_len );
         if( toc_entries.data == NULL )
         {
-            vcddev_toc_Free( p_toc );
+            vlc_cd_toc_Free( p_toc );
             return NULL;
         }
 
         /* Read the TOC */
-        if( ioctl( p_vcddev->i_device_handle, CDIOREADTOCENTRYS,
+        if( ioctl( p_vlc_cd->i_device_handle, CDIOREADTOCENTRYS,
                 &toc_entries ) == -1 )
         {
             msg_Err( p_this, "could not read the TOC" );
             free( toc_entries.data );
-            vcddev_toc_Free( p_toc );
+            vlc_cd_toc_Free( p_toc );
             return NULL;
         }
 
@@ -554,7 +554,7 @@ vcddev_toc_t * ioctl_GetTOC( vcddev_t *p_vcddev )
         struct cdrom_tocentry tocent;
 
         /* First we read the TOC header */
-        if( ioctl( p_vcddev->i_device_handle, CDROMREADTOCHDR, &tochdr )
+        if( ioctl( p_vlc_cd->i_device_handle, CDROMREADTOCHDR, &tochdr )
             == -1 )
         {
             msg_Err( p_this, "could not read TOCHDR" );
@@ -565,7 +565,7 @@ vcddev_toc_t * ioctl_GetTOC( vcddev_t *p_vcddev )
         if( !TracksRangeIsValid( tochdr.cdth_trk0, tochdr.cdth_trk1 ) )
         {
             msg_Err( p_this, "Invalid tracks range" );
-            vcddev_toc_Free( p_toc );
+            vlc_cd_toc_Free( p_toc );
             return NULL;
         }
 
@@ -587,7 +587,7 @@ vcddev_toc_t * ioctl_GetTOC( vcddev_t *p_vcddev )
             tocent.cdte_track =
                 ( i == p_toc->i_tracks ) ? CDROM_LEADOUT : tochdr.cdth_trk0 + i;
 
-            if( ioctl( p_vcddev->i_device_handle, CDROMREADTOCENTRY,
+            if( ioctl( p_vlc_cd->i_device_handle, CDROMREADTOCENTRY,
                         &tocent ) == -1 )
             {
                 msg_Err( p_this, "could not read TOCENTRY" );
@@ -608,10 +608,10 @@ vcddev_toc_t * ioctl_GetTOC( vcddev_t *p_vcddev )
 /****************************************************************************
  * ioctl_ReadSector: Read VCD or CDDA sectors
  ****************************************************************************/
-int ioctl_ReadSectors( vcddev_t *p_vcddev,
+static int ioctl_ReadSectors( vlc_cd_t *p_vlc_cd,
                        int i_sector, uint8_t *p_buffer, int i_nb, int i_type )
 {
-    vlc_object_t *p_this = p_vcddev->p_obj;
+    vlc_object_t *p_this = p_vlc_cd->p_obj;
     uint8_t *p_block;
 
     if( i_type == VCD_TYPE )
@@ -619,12 +619,12 @@ int ioctl_ReadSectors( vcddev_t *p_vcddev,
     else
         p_block = p_buffer;
 
-    if( p_vcddev->i_vcdimage_handle != -1 )
+    if( p_vlc_cd->i_vcdimage_handle != -1 )
     {
         /*
          *  vcd image mode
          */
-        if( lseek( p_vcddev->i_vcdimage_handle, i_sector * CD_RAW_SECTOR_SIZE,
+        if( lseek( p_vlc_cd->i_vcdimage_handle, i_sector * CD_RAW_SECTOR_SIZE,
                    SEEK_SET ) == -1 )
         {
             msg_Err( p_this, "Could not lseek to sector %d", i_sector );
@@ -632,7 +632,7 @@ int ioctl_ReadSectors( vcddev_t *p_vcddev,
         }
 
         ssize_t toread = CD_RAW_SECTOR_SIZE * i_nb;
-        if( read( p_vcddev->i_vcdimage_handle, p_block, toread ) != toread )
+        if( read( p_vlc_cd->i_vcdimage_handle, p_block, toread ) != toread )
         {
             msg_Err( p_this, "Could not read sector %d", i_sector );
             goto error;
@@ -660,7 +660,7 @@ int ioctl_ReadSectors( vcddev_t *p_vcddev,
         cd_read.buffer = p_block;
         cd_read.bufferLength = CD_RAW_SECTOR_SIZE * i_nb;
 
-        if( ioctl( p_vcddev->i_device_handle, DKIOCCDREAD, &cd_read ) == -1 )
+        if( ioctl( p_vlc_cd->i_device_handle, DKIOCCDREAD, &cd_read ) == -1 )
         {
             /* TODO return -2 in case of unrecoverable read failure. */
             msg_Err( p_this, "could not read block %d", i_sector );
@@ -676,7 +676,7 @@ int ioctl_ReadSectors( vcddev_t *p_vcddev,
         cdrom_raw.SectorCount = i_nb;
         cdrom_raw.TrackMode =  i_type == VCD_TYPE ? XAForm2 : CDDA;
 
-        if( DeviceIoControl( p_vcddev->h_device_handle, IOCTL_CDROM_RAW_READ,
+        if( DeviceIoControl( p_vlc_cd->h_device_handle, IOCTL_CDROM_RAW_READ,
                              &cdrom_raw, sizeof(RAW_READ_INFO), p_block,
                              CD_RAW_SECTOR_SIZE * i_nb, &dwBytesReturned,
                              NULL ) == 0 )
@@ -688,7 +688,7 @@ int ioctl_ReadSectors( vcddev_t *p_vcddev,
             {
                 /* Retry in YellowMode2 */
                 cdrom_raw.TrackMode = YellowMode2;
-                b_read = DeviceIoControl( p_vcddev->h_device_handle,
+                b_read = DeviceIoControl( p_vlc_cd->h_device_handle,
                                           IOCTL_CDROM_RAW_READ, &cdrom_raw,
                                           sizeof(RAW_READ_INFO), p_block,
                                           CD_RAW_SECTOR_SIZE * i_nb,
@@ -728,7 +728,7 @@ int ioctl_ReadSectors( vcddev_t *p_vcddev,
         readlong.sectors   = i_nb;
         readlong.start     = i_sector;
 
-        rc = DosDevIOCtl( p_vcddev->hcd, IOCTL_CDROMDISK, CDROMDISK_READLONG,
+        rc = DosDevIOCtl( p_vlc_cd->hcd, IOCTL_CDROMDISK, CDROMDISK_READLONG,
                           &readlong, sizeof( readlong ), &param_len,
                           p_block, CD_RAW_SECTOR_SIZE * i_nb, &data_len );
         if( rc )
@@ -762,7 +762,7 @@ int ioctl_ReadSectors( vcddev_t *p_vcddev,
         sc.flags = SCCMD_READ;
         sc.timeout = 10000;
 
-        i_ret = ioctl( p_vcddev->i_device_handle, SCIOCCOMMAND, &sc );
+        i_ret = ioctl( p_vlc_cd->i_device_handle, SCIOCCOMMAND, &sc );
         if( i_ret == -1 )
         {
             msg_Err( p_this, "SCIOCCOMMAND failed" );
@@ -779,14 +779,14 @@ int ioctl_ReadSectors( vcddev_t *p_vcddev,
 #elif defined( HAVE_IOC_TOC_HEADER_IN_SYS_CDIO_H )
         int i_size = CD_RAW_SECTOR_SIZE;
 
-        if( ioctl( p_vcddev->i_device_handle, CDRIOCSETBLOCKSIZE, &i_size )
+        if( ioctl( p_vlc_cd->i_device_handle, CDRIOCSETBLOCKSIZE, &i_size )
             == -1 )
         {
             msg_Err( p_this, "Could not set block size" );
             goto error;
         }
 
-        if( lseek( p_vcddev->i_device_handle,
+        if( lseek( p_vlc_cd->i_device_handle,
                    i_sector * CD_RAW_SECTOR_SIZE, SEEK_SET ) == -1 )
         {
             msg_Err( p_this, "Could not lseek to sector %d", i_sector );
@@ -794,7 +794,7 @@ int ioctl_ReadSectors( vcddev_t *p_vcddev,
         }
 
         ssize_t toread = CD_RAW_SECTOR_SIZE * i_nb;
-        if( read( p_vcddev->i_device_handle, p_block, toread ) != toread )
+        if( read( p_vlc_cd->i_device_handle, p_block, toread ) != toread )
         {
             /* TODO return -2 in case of unrecoverable read failure. */
             msg_Err( p_this, "Could not read sector %d", i_sector );
@@ -812,7 +812,7 @@ int ioctl_ReadSectors( vcddev_t *p_vcddev,
             p_msf->frame =  ( i_dummy % (CD_FRAMES * CD_SECS) ) % CD_FRAMES;
 #undef p_msf
 
-            if( ioctl( p_vcddev->i_device_handle, CDROMREADRAW,
+            if( ioctl( p_vlc_cd->i_device_handle, CDROMREADRAW,
                        p_block + i * CD_RAW_SECTOR_SIZE ) == -1 )
             {
                 /* ENOMEDIUM is Linux's, and this arm is the last #else of the
@@ -875,14 +875,14 @@ unrecoverable:
 /****************************************************************************
  * OpenVCDImage: try to open a vcd image from a .cue file
  ****************************************************************************/
-static int OpenVCDImage( const char *psz_dev, vcddev_t *p_vcddev )
+static int OpenVCDImage( const char *psz_dev, vlc_cd_t *p_vlc_cd )
 {
     int i_ret = -1;
     char *psz_vcdfile = NULL;
     char *psz_cuefile = NULL;
     FILE *cuefile     = NULL;
-    vlc_object_t *p_this = p_vcddev->p_obj;
-    vcddev_toc_t *p_toc = &p_vcddev->toc;
+    vlc_object_t *p_this = p_vlc_cd->p_obj;
+    vlc_cd_toc_t *p_toc = &p_vlc_cd->toc;
     char line[1024];
     bool b_found      = false;
 
@@ -929,7 +929,7 @@ static int OpenVCDImage( const char *psz_dev, vcddev_t *p_vcddev )
     }
 
     msg_Dbg( p_this,"guessing vcd image file: %s", psz_vcdfile );
-    p_vcddev->i_vcdimage_handle = vlc_open( psz_vcdfile,
+    p_vlc_cd->i_vcdimage_handle = vlc_open( psz_vcdfile,
                                     O_RDONLY | O_NONBLOCK | O_BINARY );
 
     while( !b_found && fgets( line, 1024, cuefile ) )
@@ -946,7 +946,7 @@ static int OpenVCDImage( const char *psz_dev, vcddev_t *p_vcddev )
                     goto error; /* Error if not binary, otherwise treat as case 1 */
                 /* fallthrough */
             case 1:
-                if( p_vcddev->i_vcdimage_handle == -1 )
+                if( p_vlc_cd->i_vcdimage_handle == -1 )
                 {
                     msg_Dbg( p_this, "we could not find the data file, but we found a new path" );
                     free( psz_vcdfile);
@@ -973,7 +973,7 @@ static int OpenVCDImage( const char *psz_dev, vcddev_t *p_vcddev )
                         }
                     }
                     msg_Dbg( p_this,"using vcd image file: %s", psz_vcdfile );
-                    p_vcddev->i_vcdimage_handle = vlc_open( psz_vcdfile,
+                    p_vlc_cd->i_vcdimage_handle = vlc_open( psz_vcdfile,
                                         O_RDONLY | O_NONBLOCK | O_BINARY );
                 }
                 b_found = true;
@@ -982,7 +982,7 @@ static int OpenVCDImage( const char *psz_dev, vcddev_t *p_vcddev )
         }
     }
 
-    if( p_vcddev->i_vcdimage_handle == -1)
+    if( p_vlc_cd->i_vcdimage_handle == -1)
         goto error;
 
     /* Try to parse the i_tracks and p_sectors info so we can just forget
@@ -1024,7 +1024,7 @@ static int OpenVCDImage( const char *psz_dev, vcddev_t *p_vcddev )
                          &i_min, &i_sec, &i_frame ) != 4) || (i_num != 1) )
                 continue;
 
-            vcddev_sector_t *buf = realloc (p_toc->p_sectors,
+            vlc_cd_sector_t *buf = realloc (p_toc->p_sectors,
                                             (p_toc->i_tracks + 1) * sizeof (*buf));
             if (buf == NULL)
                 goto error;
@@ -1039,13 +1039,13 @@ static int OpenVCDImage( const char *psz_dev, vcddev_t *p_vcddev )
     }
 
     /* fill in the last entry */
-    vcddev_sector_t *buf = realloc (p_toc->p_sectors,
+    vlc_cd_sector_t *buf = realloc (p_toc->p_sectors,
                                     (p_toc->i_tracks + 1) * sizeof (*buf));
     if (buf == NULL)
         goto error;
     p_toc->p_sectors = buf;
     p_toc->p_sectors[p_toc->i_tracks].i_lba =
-            lseek(p_vcddev->i_vcdimage_handle, 0, SEEK_END) / CD_RAW_SECTOR_SIZE;
+            lseek(p_vlc_cd->i_vcdimage_handle, 0, SEEK_END) / CD_RAW_SECTOR_SIZE;
     p_toc->p_sectors[p_toc->i_tracks].i_control = track_subcodes;
     msg_Dbg( p_this, "vcd tracks end at sector:%i",
              p_toc->p_sectors[p_toc->i_tracks].i_lba );
@@ -1055,7 +1055,7 @@ static int OpenVCDImage( const char *psz_dev, vcddev_t *p_vcddev )
     goto end;
 
 error:
-    vcddev_toc_Reset( p_toc );
+    vlc_cd_toc_Reset( p_toc );
 end:
     if( cuefile ) fclose( cuefile );
     free( psz_cuefile );
@@ -1067,21 +1067,21 @@ end:
 /****************************************************************************
  * CloseVCDImage: closes a vcd image opened by OpenVCDImage
  ****************************************************************************/
-static void CloseVCDImage( vcddev_t *p_vcddev )
+static void CloseVCDImage( vlc_cd_t *p_vlc_cd )
 {
-    if( p_vcddev->i_vcdimage_handle != -1 )
-        vlc_close( p_vcddev->i_vcdimage_handle );
+    if( p_vlc_cd->i_vcdimage_handle != -1 )
+        vlc_close( p_vlc_cd->i_vcdimage_handle );
     else
         return;
 
-    free( p_vcddev->toc.p_sectors );
+    free( p_vlc_cd->toc.p_sectors );
 }
 
 #if defined( __APPLE__ )
 /****************************************************************************
  * darwin_getTOC: get the TOC
  ****************************************************************************/
-static CDTOC *darwin_getTOC( vcddev_t *p_vcddev )
+static CDTOC *darwin_getTOC( vlc_cd_t *p_vlc_cd )
 {
     mach_port_t port;
     char *psz_devname;
@@ -1091,13 +1091,14 @@ static CDTOC *darwin_getTOC( vcddev_t *p_vcddev )
     io_registry_entry_t service;
     CFMutableDictionaryRef properties;
     CFDataRef data;
-    vlc_object_t *p_this = p_vcddev->p_obj;
+
+    vlc_object_t *p_this = p_vlc_cd->p_obj;
 
     /* get the device name */
-    if( ( psz_devname = strrchr( p_vcddev->psz_dev, '/') ) != NULL )
+    if( ( psz_devname = strrchr( p_vlc_cd->psz_dev, '/') ) != NULL )
         ++psz_devname;
     else
-        psz_devname = p_vcddev->psz_dev;
+        psz_devname = p_vlc_cd->psz_dev;
 
     /* unraw the device name */
     if( *psz_devname == 'r' )
@@ -1230,12 +1231,12 @@ static int darwin_getNumberOfTracks( CDTOC *pTOC, int i_descriptors,
  *****************************************************************************
  * Use IOCTLs on WinNT/2K/XP.
  *****************************************************************************/
-static int win32_vcd_open( const char *psz_dev, vcddev_t *p_vcddev )
+static int win32_vcd_open( const char *psz_dev, vlc_cd_t *p_vlc_cd )
 {
-    vlc_object_t *p_this = p_vcddev->p_obj;
+    vlc_object_t *p_this = p_vlc_cd->p_obj;
 
     /* Initializations */
-    p_vcddev->h_device_handle = NULL;
+    p_vlc_cd->h_device_handle = NULL;
 
     char psz_win32_drive[7];
 
@@ -1243,12 +1244,12 @@ static int win32_vcd_open( const char *psz_dev, vcddev_t *p_vcddev )
 
     sprintf( psz_win32_drive, "\\\\.\\%c:", psz_dev[0] );
 
-    p_vcddev->h_device_handle = CreateFileA( psz_win32_drive, GENERIC_READ,
+    p_vlc_cd->h_device_handle = CreateFileA( psz_win32_drive, GENERIC_READ,
                                             FILE_SHARE_READ | FILE_SHARE_WRITE,
                                             NULL, OPEN_EXISTING,
                                             FILE_FLAG_NO_BUFFERING |
                                             FILE_FLAG_RANDOM_ACCESS, NULL );
-    return (p_vcddev->h_device_handle == NULL) ? -1 : 0;
+    return (p_vlc_cd->h_device_handle == NULL) ? -1 : 0;
 }
 
 #endif /* _WIN32 */
@@ -1257,16 +1258,16 @@ static int win32_vcd_open( const char *psz_dev, vcddev_t *p_vcddev )
 /*****************************************************************************
  * os2_vcd_open: open vcd drive
  *****************************************************************************/
-static int os2_vcd_open( const char *psz_dev, vcddev_t *p_vcddev )
+static int os2_vcd_open( const char *psz_dev, vlc_cd_t *p_vlc_cd )
 {
-    vlc_object_t *p_this = p_vcddev->p_obj;
+    vlc_object_t *p_this = p_vlc_cd->p_obj;
 
     char device[] = "X:";
     HFILE hcd;
     ULONG i_action;
     ULONG rc;
 
-    p_vcddev->hcd = 0;
+    p_vlc_cd->hcd = 0;
 
     device[0] = psz_dev[0];
     rc = DosOpen( device, &hcd, &i_action, 0, FILE_NORMAL,
@@ -1280,7 +1281,7 @@ static int os2_vcd_open( const char *psz_dev, vcddev_t *p_vcddev )
         return -1;
     }
 
-    p_vcddev->hcd = hcd;
+    p_vlc_cd->hcd = hcd;
     return 0;
 }
 
@@ -1666,16 +1667,16 @@ exit:
     defined( __OS2__ ) || \
     defined( HAVE_IOC_TOC_HEADER_IN_SYS_CDIO_H ) || \
     defined( HAVE_SCSIREQ_IN_SYS_SCSIIO_H )
-static int CdTextRead( vcddev_t *p_vcddev,
+static int CdTextRead( vlc_cd_t *p_vlc_cd,
                        uint8_t **pp_buffer, int *pi_buffer )
 {
-    VLC_UNUSED( p_vcddev );
+    VLC_UNUSED( p_vlc_cd );
     VLC_UNUSED( pp_buffer );
     VLC_UNUSED( pi_buffer );
     return -1;
 }
 #elif defined( _WIN32 )
-static int CdTextRead( vcddev_t *p_vcddev,
+static int CdTextRead( vlc_cd_t *p_vlc_cd,
                        uint8_t **pp_buffer, int *pi_buffer )
 {
     CDROM_READ_TOC_EX TOCEx = { .Format = CDROM_READ_TOC_EX_FORMAT_CDTEXT };
@@ -1683,7 +1684,7 @@ static int CdTextRead( vcddev_t *p_vcddev,
     uint8_t header[4];
     static_assert(ARRAY_SIZE(header) >= MINIMUM_CDROM_READ_TOC_EX_SIZE, "wrong header size");
     DWORD i_read;
-    if( !DeviceIoControl( p_vcddev->h_device_handle, IOCTL_CDROM_READ_TOC_EX,
+    if( !DeviceIoControl( p_vlc_cd->h_device_handle, IOCTL_CDROM_READ_TOC_EX,
                           &TOCEx, sizeof(TOCEx), header, ARRAY_SIZE(header), &i_read, 0 ) )
         return -1;
 
@@ -1696,7 +1697,7 @@ static int CdTextRead( vcddev_t *p_vcddev,
     if( !p_text )
         return VLC_EGENERIC;
 
-    if( !DeviceIoControl( p_vcddev->h_device_handle, IOCTL_CDROM_READ_TOC_EX,
+    if( !DeviceIoControl( p_vlc_cd->h_device_handle, IOCTL_CDROM_READ_TOC_EX,
                           &TOCEx, sizeof(TOCEx), p_text, i_text, &i_read, 0 ) )
     {
         free( p_text );
@@ -1709,10 +1710,10 @@ static int CdTextRead( vcddev_t *p_vcddev,
     return VLC_SUCCESS;
 }
 #else
-static int CdTextRead( vcddev_t *p_vcddev,
+static int CdTextRead( vlc_cd_t *p_vlc_cd,
                        uint8_t **pp_buffer, int *pi_buffer )
 {
-    if( p_vcddev->i_device_handle == -1 )
+    if( p_vlc_cd->i_device_handle == -1 )
         return -1;
 
     struct cdrom_generic_command gc;
@@ -1732,7 +1733,7 @@ static int CdTextRead( vcddev_t *p_vcddev,
     gc.data_direction = CGC_DATA_READ;
     gc.timeout = 1000;
 
-    if( ioctl( p_vcddev->i_device_handle, CDROM_SEND_PACKET, &gc ) == -1 )
+    if( ioctl( p_vlc_cd->i_device_handle, CDROM_SEND_PACKET, &gc ) == -1 )
         return VLC_EGENERIC;
 
     /* If the size is less than 4 it is an error, if it 4 then
@@ -1758,7 +1759,7 @@ static int CdTextRead( vcddev_t *p_vcddev,
     gc.data_direction = CGC_DATA_READ;
     gc.timeout = 1000;
 
-    if( ioctl( p_vcddev->i_device_handle, CDROM_SEND_PACKET, &gc ) == -1 )
+    if( ioctl( p_vlc_cd->i_device_handle, CDROM_SEND_PACKET, &gc ) == -1 )
     {
         free( p_text );
         return VLC_EGENERIC;
@@ -1771,19 +1772,48 @@ static int CdTextRead( vcddev_t *p_vcddev,
 }
 #endif
 
-int ioctl_GetCdText( vcddev_t *p_vcddev,
-                     vlc_meta_t ***ppp_tracks, int *pi_tracks )
+static int ioctl_GetCdText( vlc_cd_t *p_vlc_cd, vlc_meta_t ***ppp_tracks, int *pi_tracks )
 {
     uint8_t *p_text;
     int i_text;
 
-    if( p_vcddev->i_vcdimage_handle != -1 )
+    if( p_vlc_cd->i_vcdimage_handle != -1 )
         return -1;
 
-    if( CdTextRead( p_vcddev, &p_text, &i_text ) )
+    if( CdTextRead( p_vlc_cd, &p_text, &i_text ) )
         return -1;
 
     CdTextParse( ppp_tracks, pi_tracks, p_text, i_text );
     free( p_text );
     return 0;
+}
+
+vlc_cd_t *vlc_cd_Open( vlc_object_t *p_object, const char *psz_dev )
+{
+    return ioctl_Open( p_object, psz_dev );
+}
+
+void vlc_cd_Close( vlc_cd_t *p_vlc_cd )
+{
+    ioctl_Close( p_vlc_cd );
+}
+
+vlc_cd_toc_t *vlc_cd_GetTOC( vlc_cd_t *p_vlc_cd )
+{
+    return ioctl_GetTOC( p_vlc_cd );
+}
+
+int vlc_cd_ReadSectors( vlc_cd_t *p_vlc_cd,
+                        int i_sector, uint8_t *p_buffer, int i_nb, int i_type )
+{
+    return ioctl_ReadSectors( p_vlc_cd, i_sector, p_buffer, i_nb, i_type );
+}
+
+
+/* CDDA only
+ * The track 0 is for album meta data */
+int vlc_cd_GetCdText( vlc_cd_t *p_vlc_cd,
+                      vlc_meta_t ***ppp_tracks, int *pi_tracks )
+{
+    return ioctl_GetCdText( p_vlc_cd, ppp_tracks, pi_tracks );
 }

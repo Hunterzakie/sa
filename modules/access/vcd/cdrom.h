@@ -79,33 +79,33 @@ static inline int MSF_TO_LBA2(uint8_t min, uint8_t sec, uint8_t frame)
 #define BCD_TO_BIN(i) \
     (uint8_t)((uint8_t)(0xf & (uint8_t)i)+((uint8_t)10*((uint8_t)i >> 4)))
 
-typedef struct vcddev_s vcddev_t;
+typedef struct vlc_cd_s vlc_cd_t;
 typedef struct
 {
     int i_lba;
     int i_control;
-} vcddev_sector_t;
+} vlc_cd_sector_t;
 
 typedef struct
 {
     int i_tracks;
-    vcddev_sector_t *p_sectors;
+    vlc_cd_sector_t *p_sectors;
     int i_first_track;
     int i_last_track;
-} vcddev_toc_t;
+} vlc_cd_toc_t;
 
-static inline vcddev_toc_t * vcddev_toc_New( void )
+static inline vlc_cd_toc_t * vlc_cd_toc_New( void )
 {
-    return calloc(1, sizeof(vcddev_toc_t));
+    return calloc(1, sizeof(vlc_cd_toc_t));
 }
 
-static inline void vcddev_toc_Reset( vcddev_toc_t *toc )
+static inline void vlc_cd_toc_Reset( vlc_cd_toc_t *toc )
 {
     free(toc->p_sectors);
     memset(toc, 0, sizeof(*toc));
 }
 
-static inline void vcddev_toc_Free( vcddev_toc_t *toc )
+static inline void vlc_cd_toc_Free( vlc_cd_toc_t *toc )
 {
     free(toc->p_sectors);
     free(toc);
@@ -114,18 +114,18 @@ static inline void vcddev_toc_Free( vcddev_toc_t *toc )
 /*****************************************************************************
  * Prototypes
  *****************************************************************************/
-vcddev_t *ioctl_Open         ( vlc_object_t *, const char * );
-void      ioctl_Close        ( vcddev_t * );
-vcddev_toc_t * ioctl_GetTOC  ( vcddev_t * );
+vlc_cd_t *vlc_cd_Open         ( vlc_object_t *, const char * );
+void      vlc_cd_Close        ( vlc_cd_t * );
+vlc_cd_toc_t * vlc_cd_GetTOC  ( vlc_cd_t * );
 
 /* Returns:
  *    0  success
  *   -1  recoverable failure, or at least not known not to be (ex: a scratch)
  *   -2  irrecoverable failure (ex: disc ejected, device unplugged) */
-int       ioctl_ReadSectors  ( vcddev_t *, int, uint8_t *, int, int );
+int       vlc_cd_ReadSectors  ( vlc_cd_t *, int, uint8_t *, int, int );
 
 /* CDDA only
  * The track 0 is for album meta data */
-int       ioctl_GetCdText( vcddev_t *, vlc_meta_t ***ppp_tracks, int *pi_tracks );
+int       vlc_cd_GetCdText( vlc_cd_t *, vlc_meta_t ***ppp_tracks, int *pi_tracks );
 
 #endif /* VLC_CDROM_H */

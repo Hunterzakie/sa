@@ -96,11 +96,11 @@ typedef struct entries_sect_s
 
 typedef struct
 {
-    vcddev_t    *vcddev;                            /* vcd device descriptor */
+    vlc_cd_t    *vlc_cd;                            /* vcd device descriptor */
     uint64_t    offset;
 
     /* Title infos */
-    vcddev_toc_t *p_toc;
+    vlc_cd_toc_t *p_toc;
 
     struct
     {
@@ -131,7 +131,7 @@ static int Open( vlc_object_t *p_this )
     char *psz;
     int i_title = 0;
     int i_chapter = 0;
-    vcddev_t *vcddev;
+    vlc_cd_t *vlc_cd;
 
     /* Command line: vcd://[dev_path][#title[,chapter]] */
     if( ( psz = strchr( psz_dup, '#' ) ) )
@@ -166,23 +166,23 @@ static int Open( vlc_object_t *p_this )
 #endif
 
     /* Open VCD */
-    vcddev = ioctl_Open( p_this, psz_dup );
+    vlc_cd = vlc_cd_Open( p_this, psz_dup );
     free( psz_dup );
-    if( !vcddev )
+    if( !vlc_cd )
         return VLC_EGENERIC;
 
     /* Set up p_access */
     p_access->p_sys = p_sys = calloc( 1, sizeof( access_sys_t ) );
     if( unlikely(!p_sys ))
         goto error;
-    p_sys->vcddev = vcddev;
+    p_sys->vlc_cd = vlc_cd;
     p_sys->offset = 0;
 
     for( size_t i = 0; i < ARRAY_SIZE(p_sys->titles); i++ )
         p_sys->titles[i].seekpoints = NULL;
 
     /* We read the Table Of Content information */
-    p_sys->p_toc = ioctl_GetTOC( p_sys->vcddev );
+    p_sys->p_toc = vlc_cd_GetTOC( p_sys->vlc_cd );
     if( p_sys->p_toc == NULL )
     {
         msg_Err( p_access, "unable to count tracks" );
@@ -190,7 +190,7 @@ static int Open( vlc_object_t *p_this )
     }
     else if( p_sys->p_toc->i_tracks <= 1 )
     {
-        vcddev_toc_Free( p_sys->p_toc );
+        vlc_cd_toc_Free( p_sys->p_toc );
         p_sys->p_toc = NULL;
         msg_Err( p_access, "no movie tracks found" );
         goto error;
@@ -237,7 +237,7 @@ static int Open( vlc_object_t *p_this )
     return VLC_SUCCESS;
 
 error:
-    ioctl_Close( vcddev );
+    vlc_cd_Close( vlc_cd );
     free( p_sys );
     return VLC_EGENERIC;
 }
@@ -253,9 +253,9 @@ static void Close( vlc_object_t *p_this )
     for( size_t i = 0; i < ARRAY_SIZE(p_sys->titles); i++ )
         free( p_sys->titles[i].seekpoints );
 
-    vcddev_toc_Free( p_sys->p_toc );
+    vlc_cd_toc_Free( p_sys->p_toc );
 
-    ioctl_Close( p_sys->vcddev );
+    vlc_cd_Close( p_sys->vlc_cd );
     free( p_sys );
 }
 
@@ -367,7 +367,7 @@ static int Control( stream_t *p_access, int i_query, va_list args )
 static block_t *Block( stream_t *p_access, bool *restrict eof )
 {
     access_sys_t *p_sys = p_access->p_sys;
-    const vcddev_toc_t *p_toc = p_sys->p_toc;
+    const vlc_cd_toc_t *p_toc = p_sys->p_toc;
     int i_blocks = VCD_BLOCKS_ONCE;
     block_t *p_block;
 
@@ -400,7 +400,7 @@ static block_t *Block( stream_t *p_access, bool *restrict eof )
         return NULL;
     }
 
-    int i_ret = ioctl_ReadSectors( p_sys->vcddev,
+    int i_ret = vlc_cd_ReadSectors( p_sys->vlc_cd,
                                    p_sys->i_sector, p_block->p_buffer, i_blocks, VCD_TYPE );
     if( i_ret < 0 )
     {
@@ -448,7 +448,7 @@ static block_t *Block( stream_t *p_access, bool *restrict eof )
 static int Seek( stream_t *p_access, uint64_t i_pos )
 {
     access_sys_t *p_sys = p_access->p_sys;
-    const vcddev_toc_t *p_toc = p_sys->p_toc;
+    const vlc_cd_toc_t *p_toc = p_sys->p_toc;
     int i_title = p_sys->i_current_title;
     unsigned i_seekpoint;
 
@@ -479,14 +479,14 @@ static int Seek( stream_t *p_access, uint64_t i_pos )
 static int EntryPoints( stream_t *p_access )
 {
     access_sys_t *p_sys = p_access->p_sys;
-    const vcddev_toc_t *p_toc = p_sys->p_toc;
+    const vlc_cd_toc_t *p_toc = p_sys->p_toc;
     uint8_t      sector[VCD_DATA_SIZE];
 
     entries_sect_t entries;
     int i_nb;
 
     /* Read the entry point sector */
-    if( ioctl_ReadSectors( p_sys->vcddev,
+    if( vlc_cd_ReadSectors( p_sys->vlc_cd,
         VCD_ENTRIES_SECTOR, sector, 1, VCD_TYPE ) < 0 )
     {
         msg_Err( p_access, "could not read entry points sector" );
