@@ -274,7 +274,7 @@ static bool TracksRangeIsValid( int i_first, int i_last )
  * ioctl_GetTOC: Read the Table of Content, fill in the p_sectors map
  *               if b_fill_sector_info is true.
  *****************************************************************************/
-vcddev_toc_t * ioctl_GetTOC( vlc_object_t *p_this, const vcddev_t *p_vcddev )
+vcddev_toc_t * ioctl_GetTOC( vlc_object_t *p_this, vcddev_t *p_vcddev )
 {
     vcddev_toc_t *p_toc = calloc(1, sizeof(*p_toc));
     if(!p_toc)
@@ -606,7 +606,7 @@ vcddev_toc_t * ioctl_GetTOC( vlc_object_t *p_this, const vcddev_t *p_vcddev )
 /****************************************************************************
  * ioctl_ReadSector: Read VCD or CDDA sectors
  ****************************************************************************/
-int ioctl_ReadSectors( vlc_object_t *p_this, const vcddev_t *p_vcddev,
+int ioctl_ReadSectors( vlc_object_t *p_this, vcddev_t *p_vcddev,
                        int i_sector, uint8_t *p_buffer, int i_nb, int i_type )
 {
     uint8_t *p_block;
@@ -1079,7 +1079,7 @@ static void CloseVCDImage( vlc_object_t * p_this, vcddev_t *p_vcddev )
 /****************************************************************************
  * darwin_getTOC: get the TOC
  ****************************************************************************/
-static CDTOC *darwin_getTOC( vlc_object_t * p_this, const vcddev_t *p_vcddev )
+static CDTOC *darwin_getTOC( vlc_object_t * p_this, vcddev_t *p_vcddev )
 {
     mach_port_t port;
     char *psz_devname;
@@ -1661,7 +1661,7 @@ exit:
     defined( __OS2__ ) || \
     defined( HAVE_IOC_TOC_HEADER_IN_SYS_CDIO_H ) || \
     defined( HAVE_SCSIREQ_IN_SYS_SCSIIO_H )
-static int CdTextRead( vlc_object_t *p_object, const vcddev_t *p_vcddev,
+static int CdTextRead( vlc_object_t *p_object, vcddev_t *p_vcddev,
                        uint8_t **pp_buffer, int *pi_buffer )
 {
     VLC_UNUSED( p_object );
@@ -1671,7 +1671,7 @@ static int CdTextRead( vlc_object_t *p_object, const vcddev_t *p_vcddev,
     return -1;
 }
 #elif defined( _WIN32 )
-static int CdTextRead( vlc_object_t *p_object, const vcddev_t *p_vcddev,
+static int CdTextRead( vlc_object_t *p_object, vcddev_t *p_vcddev,
                        uint8_t **pp_buffer, int *pi_buffer )
 {
     VLC_UNUSED( p_object );
@@ -1707,7 +1707,7 @@ static int CdTextRead( vlc_object_t *p_object, const vcddev_t *p_vcddev,
     return VLC_SUCCESS;
 }
 #else
-static int CdTextRead( vlc_object_t *p_object, const vcddev_t *p_vcddev,
+static int CdTextRead( vlc_object_t *p_object, vcddev_t *p_vcddev,
                        uint8_t **pp_buffer, int *pi_buffer )
 {
     VLC_UNUSED( p_object );
@@ -1771,7 +1771,7 @@ static int CdTextRead( vlc_object_t *p_object, const vcddev_t *p_vcddev,
 }
 #endif
 
-int ioctl_GetCdText( vlc_object_t *p_object, const vcddev_t *p_vcddev,
+int ioctl_GetCdText( vlc_object_t *p_object, vcddev_t *p_vcddev,
                      vlc_meta_t ***ppp_tracks, int *pi_tracks )
 {
     uint8_t *p_text;
