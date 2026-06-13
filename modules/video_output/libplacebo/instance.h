@@ -28,6 +28,15 @@
 #include <libplacebo/log.h>
 #include <libplacebo/gpu.h>
 
+// Extra Vulkan extensions to enable at instance / device creation
+struct vlc_placebo_create_params
+{
+    const char * const *instance_extensions;
+    size_t              instance_extension_count;
+    const char * const *device_extensions;
+    size_t              device_extension_count;
+};
+
 struct vlc_placebo_t;
 struct vlc_placebo_operations
 {
@@ -48,6 +57,8 @@ typedef struct vlc_placebo_t
     // fields internal to instance.c, should not be touched
     struct vlc_object_t obj;
     vlc_placebo_system_t *sys;
+    const vout_display_cfg_t *cfg;
+    char *name;
 
     pl_log log;
     pl_gpu gpu;
@@ -59,6 +70,8 @@ typedef struct vlc_placebo_t
     const struct vlc_placebo_operations *ops;
 } vlc_placebo_t;
 
+vlc_placebo_t *vlc_placebo_New(const vout_display_cfg_t *, const char *name) VLC_USED;
+int vlc_placebo_Connect(vlc_placebo_t *, const struct vlc_placebo_create_params *);
 vlc_placebo_t *vlc_placebo_Create(const vout_display_cfg_t *, const char*) VLC_USED;
 void vlc_placebo_Release(vlc_placebo_t *);
 

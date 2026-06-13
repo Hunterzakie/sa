@@ -26,6 +26,7 @@
 
 #include <vlc_common.h>
 #include <vlc_plugin.h>
+#include <vlc_vector.h>
 
 #include <libplacebo/vulkan.h>
 
@@ -46,8 +47,13 @@ static const struct vlc_placebo_operations instance_opts =
     .close = CloseInstance,
 };
 
-static int InitInstance(vlc_placebo_t *pl, const vout_display_cfg_t *cfg)
+static int InitInstance(vlc_placebo_t *pl, const vout_display_cfg_t *cfg,
+                        const struct vlc_placebo_create_params *params)
 {
+    static const struct vlc_placebo_create_params no_params = {0};
+    if (params == NULL)
+        params = &no_params;
+
     vlc_placebo_system_t *sys = pl->sys =
         vlc_obj_calloc(VLC_OBJECT(pl), 1, sizeof (*sys));
     if (unlikely(sys == NULL))
@@ -59,14 +65,22 @@ static int InitInstance(vlc_placebo_t *pl, const vout_display_cfg_t *cfg)
     if (!sys->platform)
         goto error;
 
+    struct VLC_VECTOR(const char *) inst_ext = VLC_VECTOR_INITIALIZER;
+    bool ok = vlc_vector_push(&inst_ext, VK_KHR_SURFACE_EXTENSION_NAME)
+           && vlc_vector_push(&inst_ext, sys->platform->platform_ext);
+    for (size_t i = 0; ok && i < params->instance_extension_count; i++)
+        ok = vlc_vector_push(&inst_ext, params->instance_extensions[i]);
+    if (unlikely(!ok)) {
+        vlc_vector_destroy(&inst_ext);
+        goto error;
+    }
+
     sys->instance = pl_vk_inst_create(pl->log, &(struct pl_vk_inst_params) {
         .debug = var_InheritBool(pl, "vk-debug"),
-        .extensions = (const char *[]) {
-            VK_KHR_SURFACE_EXTENSION_NAME,
-            sys->platform->platform_ext,
-        },
-        .num_extensions = 2,
+        .extensions = inst_ext.data,
+        .num_extensions = inst_ext.size,
     });
+    vlc_vector_destroy(&inst_ext);
     if (!sys->instance)
         goto error;
 
@@ -89,6 +103,8 @@ static int InitInstance(vlc_placebo_t *pl, const vout_display_cfg_t *cfg)
         .async_transfer = var_InheritBool(pl, "vk-async-xfer"),
         .async_compute = var_InheritBool(pl, "vk-async-comp"),
         .queue_count = var_InheritInteger(pl, "vk-queue-count"),
+        .extensions = params->device_extensions,
+        .num_extensions = params->device_extension_count,
     });
     free(device_name);
     if (!sys->vulkan)
