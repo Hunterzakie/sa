@@ -149,6 +149,13 @@ vlc_placebo_t *vlc_placebo_Create(const vout_display_cfg_t *cfg, const char *nam
     return pl;
 }
 
+const struct vlc_placebo_vk_handles *vlc_placebo_GetVkHandles(vlc_placebo_t *pl)
+{
+    if (pl->ops == NULL || pl->ops->get_vk_handles == NULL)
+        return NULL;
+    return pl->ops->get_vk_handles(pl);
+}
+
 void vlc_placebo_Release(vlc_placebo_t *pl)
 {
     if (pl->ops)

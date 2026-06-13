@@ -38,6 +38,8 @@ struct vlc_placebo_create_params
 };
 
 struct vlc_placebo_t;
+struct vlc_placebo_vk_handles;
+
 struct vlc_placebo_operations
 {
     void (*close)(struct vlc_placebo_t *);
@@ -47,6 +49,9 @@ struct vlc_placebo_operations
     void (*release_current)(struct vlc_placebo_t *);
 
     void (*resize)(struct vlc_placebo_t *, unsigned width, unsigned height);
+    
+    // Raw Vulkan handles, NULL for non-Vulkan backends (Optional)
+    const struct vlc_placebo_vk_handles *(*get_vk_handles)(struct vlc_placebo_t *);
 };
 
 typedef struct vlc_placebo_system_t vlc_placebo_system_t;
@@ -74,6 +79,9 @@ vlc_placebo_t *vlc_placebo_New(const vout_display_cfg_t *, const char *name) VLC
 int vlc_placebo_Connect(vlc_placebo_t *, const struct vlc_placebo_create_params *);
 vlc_placebo_t *vlc_placebo_Create(const vout_display_cfg_t *, const char*) VLC_USED;
 void vlc_placebo_Release(vlc_placebo_t *);
+
+// Active backend's Vulkan handles, or NULL if it is not Vulkan-based
+const struct vlc_placebo_vk_handles *vlc_placebo_GetVkHandles(vlc_placebo_t *);
 
 // Needed around every `pl_gpu` / `pl_swapchain` operation
 int vlc_placebo_MakeCurrent(vlc_placebo_t *);

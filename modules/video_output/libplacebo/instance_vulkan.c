@@ -32,6 +32,7 @@
 
 #include "../vulkan/platform.h"
 #include "instance.h"
+#include "instance_vulkan.h"
 #include "utils.h"
 
 struct vlc_placebo_system_t {
@@ -39,12 +40,17 @@ struct vlc_placebo_system_t {
     VkSurfaceKHR surface;
     pl_vk_inst instance;
     pl_vulkan vulkan;
+    struct vlc_placebo_vk_handles handles;
 };
 
 static void CloseInstance(vlc_placebo_t *pl);
+static const struct vlc_placebo_vk_handles *GetVkHandles(vlc_placebo_t *pl);
+static void LockQueue(vlc_placebo_t *pl, uint32_t qf, uint32_t qidx);
+static void UnlockQueue(vlc_placebo_t *pl, uint32_t qf, uint32_t qidx);
 static const struct vlc_placebo_operations instance_opts =
 {
     .close = CloseInstance,
+    .get_vk_handles = GetVkHandles,
 };
 
 static int InitInstance(vlc_placebo_t *pl, const vout_display_cfg_t *cfg,
@@ -121,6 +127,25 @@ static int InitInstance(vlc_placebo_t *pl, const vout_display_cfg_t *cfg,
     if (!pl->swapchain)
         goto error;
 
+    VkQueue graphics_queue = VK_NULL_HANDLE;
+    PFN_vkGetDeviceQueue GetDeviceQueue = (PFN_vkGetDeviceQueue)
+        sys->vulkan->get_proc_addr(sys->instance->instance, "vkGetDeviceQueue");
+    if (GetDeviceQueue != NULL)
+        GetDeviceQueue(sys->vulkan->device, sys->vulkan->queue_graphics.index, 0,
+                       &graphics_queue);
+
+    sys->handles = (struct vlc_placebo_vk_handles) {
+        .instance               = sys->vulkan->instance,
+        .phys_device            = sys->vulkan->phys_device,
+        .device                 = sys->vulkan->device,
+        .graphics_queue_family  = sys->vulkan->queue_graphics.index,
+        .get_instance_proc_addr = sys->vulkan->get_proc_addr,
+        .graphics_queue         = graphics_queue,
+        .graphics_queue_index   = 0,
+        .lock_queue             = LockQueue,
+        .unlock_queue           = UnlockQueue,
+    };
+
     pl->gpu = sys->vulkan->gpu;
     pl->ops = &instance_opts;
     return VLC_SUCCESS;
@@ -128,6 +153,23 @@ static int InitInstance(vlc_placebo_t *pl, const vout_display_cfg_t *cfg,
 error:
     CloseInstance(pl);
     return VLC_EGENERIC;
+}
+
+static void LockQueue(vlc_placebo_t *pl, uint32_t qf, uint32_t qidx)
+{
+    vlc_placebo_system_t *sys = pl->sys;
+    sys->vulkan->lock_queue(sys->vulkan, qf, qidx);
+}
+
+static void UnlockQueue(vlc_placebo_t *pl, uint32_t qf, uint32_t qidx)
+{
+    vlc_placebo_system_t *sys = pl->sys;
+    sys->vulkan->unlock_queue(sys->vulkan, qf, qidx);
+}
+
+static const struct vlc_placebo_vk_handles *GetVkHandles(vlc_placebo_t *pl)
+{
+    return &pl->sys->handles;
 }
 
 static void CloseInstance(vlc_placebo_t *pl)
