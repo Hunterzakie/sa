@@ -37,14 +37,14 @@ Widgets.IconToolButton {
     // NOTE: We want to pop the menu above the button.
     onClicked: menu.popup(this.mapToGlobal(0, 0), true)
 
-    enabled: !paintOnly && (Player.hasChapters || Player.hasTitles || MainCtx.mediaLibraryAvailable)
+    enabled: !paintOnly && (MainPlayerController.hasChapters || MainPlayerController.hasTitles || MainCtx.mediaLibraryAvailable)
 
     QmlBookmarkMenu {
         id: menu
 
         ctx: MainCtx
 
-        player: Player
+        player: MainPlayerController
 
         onAboutToShow: root.requestLockUnlockAutoHide(true)
         onAboutToHide: root.requestLockUnlockAutoHide(false)

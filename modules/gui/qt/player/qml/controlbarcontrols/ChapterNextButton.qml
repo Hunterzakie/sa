@@ -25,7 +25,7 @@ import VLC.Player
 Widgets.IconToolButton {
     id: chapterNextBtn
     text: VLCIcons.dvd_next
-    onClicked: Player.chapterNext()
-    enabled: Player.hasChapters
+    onClicked: MainPlayerController.chapterNext()
+    enabled: MainPlayerController.hasChapters
     description: qsTr("Next chapter")
 }

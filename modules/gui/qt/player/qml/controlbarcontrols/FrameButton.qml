@@ -26,9 +26,9 @@ import VLC.Style
 Widgets.IconToolButton {
     id: frameBtn
 
-    enabled: Player.ratechangable
+    enabled: MainPlayerController.ratechangable
 
     text: VLCIcons.frame_by_frame
-    onClicked: Player.frameNext()
+    onClicked: MainPlayerController.frameNext()
     description: qsTr("Next frame")
 }

@@ -79,7 +79,7 @@ FocusScope {
         MainCtx.sort.model = Qt.binding(function () { return item.sortModel })
         MainCtx.sort.available = Qt.binding(function () { return Helpers.isArray(item.sortModel) && item.sortModel.length > 0 })
 
-        if (Player.hasVideoOutput && MainCtx.hasEmbededVideo)
+        if (MainPlayerController.hasVideoOutput && MainCtx.hasEmbededVideo)
             _showMiniPlayer = true
     }
 
@@ -122,37 +122,37 @@ FocusScope {
             displayText: qsTr("Home"),
             icon: VLCIcons.home,
             name: "home",
-            url: MainCtx.mediaLibraryAvailable ?
-                 "qrc:///qt/qml/VLC/MediaLibrary/HomeDisplay.qml" :
-                 "qrc:///qt/qml/VLC/MainInterface/NoMedialibHome.qml"
+            component: MainCtx.mediaLibraryAvailable ?
+                 { module: 'VLC.MediaLibrary', type: 'HomeDisplay' } :
+                 { module: 'VLC.MainInterface', type: 'NoMedialibHome' }
         }, {
             listed: MainCtx.mediaLibraryAvailable,
             displayText: qsTr("Video"),
             icon: VLCIcons.topbar_video,
             name: "video",
-            url: "qrc:///qt/qml/VLC/MediaLibrary/VideoDisplay.qml"
+            component: { module: 'VLC.MediaLibrary', type: 'VideoDisplay' }
         }, {
             listed: MainCtx.mediaLibraryAvailable,
             displayText: qsTr("Music"),
             icon: VLCIcons.topbar_music,
             name: "music",
-            url: "qrc:///qt/qml/VLC/MediaLibrary/MusicDisplay.qml"
+            component: { module: 'VLC.MediaLibrary', type: 'MusicDisplay' }
         }, {
             listed: true,
             displayText: qsTr("Browse"),
             icon: VLCIcons.topbar_network,
             name: "network",
-            url: "qrc:///qt/qml/VLC/Network/BrowseDisplay.qml"
+            component: { module: 'VLC.Network', type: 'BrowseDisplay' }
         }, {
             listed: true,
             displayText: qsTr("Discover"),
             icon: VLCIcons.topbar_discover,
             name: "discover",
-            url: "qrc:///qt/qml/VLC/Network/DiscoverDisplay.qml"
+            component: { module: 'VLC.Network', type: 'DiscoverDisplay' }
         }, {
             listed: false,
             name: "mlsettings",
-            url: "qrc:///qt/qml/VLC/MediaLibrary/MLFoldersSettings.qml"
+            component: { module: 'VLC.MediaLibrary', type: 'MLFoldersSettings' }
         }
     ]
 
@@ -205,7 +205,7 @@ FocusScope {
         id: voronoiSnowLoader
 
         z: 1.5
-        source: "qrc:///qt/qml/VLC/Widgets/VoronoiSnow.qml"
+        sourceComponent: MainCtx.createComponent('VLC.Widgets', 'VoronoiSnow')
         anchors.fill: parent
         active: false
 
@@ -669,32 +669,35 @@ FocusScope {
             }
         }
 
-        source: "qrc:///qt/qml/VLC/MainInterface/UpdatePane.qml"
-
         Navigation.parentItem: mainColumn
         Navigation.upItem: mainRow
         Navigation.downItem: miniPlayer
         Navigation.navigable: (active && height > 0.0)
 
         onLoaded: {            
-            item.background.visible = Qt.binding(function() { return !stackViewParent.layer.enabled })
-
-            item.leftPadding = Qt.binding(function() { return VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin })
-            item.rightPadding = Qt.binding(function() { return VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin })
-            item.bottomPadding = Qt.binding(function() { return VLCStyle.margin_small + ((miniPlayer.visible || loaderProgress.visible) ? 0
-                                                                                                                                        : VLCStyle.applicationVerticalMargin) })
-
             item.dismissRequested.connect(loaderUpdatePane, loaderUpdatePane.dismiss)
+        }
 
-            // We have height animation here, we don't want animation inside the item in addition to that:
-            item.animations = Qt.binding(function() { return !loaderUpdatePane.toggleAnimation })
+        // TODO: Use `sourceComponent: Qt.createComponent('VLC.MainInterface', 'UpdatePane') once
+        //       Qt starts allowing setting initial properties with source component.
+        readonly property url targetSource: MainCtx.createComponent('VLC.MainInterface', 'UpdatePane').url
 
-            item.Navigation.parentItem = loaderUpdatePane
+        onTargetSourceChanged: {
+            loaderUpdatePane.setSource(targetSource, { 'background.visible': Qt.binding(() => !stackViewParent.layer.enabled),
 
-            item.focus = true // Loader itself is a focus scope, so we need this
+                                                       'leftPadding': Qt.binding(() => VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin),
+                                                       'rightPadding': Qt.binding(() => VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin),
+                                                       'bottomPadding': Qt.binding(() => VLCStyle.margin_small + ((miniPlayer.visible || loaderProgress.visible) ? 0
+                                                                                                                                                                 : VLCStyle.applicationVerticalMargin)),
+
+                                                       'Navigation.parentItem': loaderUpdatePane,
+
+                                                       // We have height animation here, we don't want animation inside the item in addition to that:
+                                                       'animations': Qt.binding(() => !loaderUpdatePane.toggleAnimation),
+                                                       // Loader itself is a focus scope, so we need this:
+                                                       'focus': true })
         }
     }
-
 
     Loader {
         id: loaderProgress
@@ -707,14 +710,15 @@ FocusScope {
 
         height: active ? implicitHeight : 0
 
-        source: "qrc:///qt/qml/VLC/MediaLibrary/ScanProgressBar.qml"
+        // TODO: Use `sourceComponent: Qt.createComponent('VLC.MediaLibrary', 'ScanProgressBar') once
+        //       Qt starts allowing setting initial properties with source component.
+        readonly property url targetSource: MainCtx.createComponent('VLC.MediaLibrary', 'ScanProgressBar').url
 
-        onLoaded: {
-            item.background.visible = Qt.binding(function() { return !stackViewParent.layer.enabled })
-
-            item.leftPadding = Qt.binding(function() { return VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin })
-            item.rightPadding = Qt.binding(function() { return VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin })
-            item.bottomPadding = Qt.binding(function() { return VLCStyle.margin_small + (miniPlayer.visible ? 0 : VLCStyle.applicationVerticalMargin) })
+        onTargetSourceChanged: {
+            loaderProgress.setSource(targetSource, { 'background.visible': Qt.binding(() => !stackViewParent.layer.enabled),
+                                                     'leftPadding': Qt.binding(() => VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin),
+                                                     'rightPadding': Qt.binding(() => VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin),
+                                                     'bottomPadding': Qt.binding(() => VLCStyle.margin_small + (miniPlayer.visible ? 0 : VLCStyle.applicationVerticalMargin)) })
         }
     }
 
@@ -802,9 +806,9 @@ FocusScope {
     }
 
     Connections {
-        target: Player
+        target: MainPlayerController
         function onHasVideoOutputChanged() {
-            if (Player.hasVideoOutput && MainCtx.hasEmbededVideo) {
+            if (MainPlayerController.hasVideoOutput && MainCtx.hasEmbededVideo) {
                 MainCtx.playerView = true
             } else {
                 _showMiniPlayer = false;

@@ -158,7 +158,12 @@ bool MainUI::setup(QQmlEngine* engine)
     engine->addImageProvider(QStringLiteral("svgcolor"), new SVGColorImageImageProvider());
     engine->addImageProvider(QStringLiteral("vlcaccess"), new VLCAccessImageProvider());
 
-    m_component  = new QQmlComponent(engine, QStringLiteral("qrc:/qt/qml/VLC/MainInterface/MainInterface.qml"), QQmlComponent::PreferSynchronous, engine);
+    m_component = MainCtx::createComponent(engine,
+                                           QStringLiteral("VLC.MainInterface"),
+                                           QStringLiteral("MainInterface"),
+                                           QQmlComponent::PreferSynchronous,
+                                           engine);
+
     if (m_component->isLoading())
     {
         msg_Warn(m_intf, "component is still loading");
@@ -296,7 +301,7 @@ void MainUI::registerQMLTypes()
         qmlRegisterUncreatableType<ChapterListModel>(uri, versionMajor, versionMinor, "ChapterListModel", "available chapters of a media" );
         qmlRegisterUncreatableType<ProgramListModel>(uri, versionMajor, versionMinor, "ProgramListModel", "available programs of a media" );
         assert(m_intf->p_mainPlayerController);
-        qmlRegisterSingletonInstance<PlayerController>(uri, versionMajor, versionMinor, "Player", m_intf->p_mainPlayerController);
+        qmlRegisterSingletonInstance<PlayerController>(uri, versionMajor, versionMinor, "MainPlayerController", m_intf->p_mainPlayerController);
         qmlRegisterType<PlayerHighResolutionTimeUpdater>(uri, versionMajor, versionMinor, "HighResolutionTimeUpdater");
 
         qmlRegisterType<QmlBookmarkMenu>( uri, versionMajor, versionMinor, "QmlBookmarkMenu" );

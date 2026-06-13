@@ -51,7 +51,7 @@ RowLayout {
     Widgets.ButtonExt {
         id: playbackBtn
 
-        text: qsTr("%1x").arg(+Player.rate.toFixed(2))
+        text: qsTr("%1x").arg(+MainPlayerController.rate.toFixed(2))
 
         onPressed: {
             trackMenuController.requestPlaybackSpeedPage()
@@ -78,7 +78,7 @@ RowLayout {
 
         TrackColumn {
             title: qsTr("Subtitle")
-            tracksModel: Player.subtitleTracks
+            tracksModel: MainPlayerController.subtitleTracks
             menuIcon: VLCIcons.expand
             menuText: qsTr("Menu")
             onMenuAction: (menuPos)  => {
@@ -88,7 +88,7 @@ RowLayout {
 
         TrackColumn {
             title: qsTr("Audio")
-            tracksModel: Player.audioTracks
+            tracksModel: MainPlayerController.audioTracks
             menuIcon: VLCIcons.expand
             menuText: qsTr("Menu")
             onMenuAction: (menuPos)  => {
@@ -98,7 +98,7 @@ RowLayout {
 
         TrackColumn {
             title: qsTr("Video Tracks")
-            tracksModel: Player.videoTracks
+            tracksModel: MainPlayerController.videoTracks
             menuIcon: VLCIcons.add
             menuText: qsTr("Add")
             onMenuAction: (menuPos) => {
@@ -253,7 +253,7 @@ RowLayout {
     QmlSubtitleMenu {
         id: menuSubtitle
 
-        player: Player
+        player: MainPlayerController
         ctx: MainCtx
 
         onTriggered: {
@@ -264,7 +264,7 @@ RowLayout {
                 trackMenuController.requestSubtitlePage()
             }
             else if (action === QmlSubtitleMenu.Download) {
-                Player.openVLsub()
+                MainPlayerController.openVLsub()
             }
         }
     }

@@ -100,10 +100,10 @@ AbstractButton {
 
         onRequestData: (_, resolve, reject) => {
             resolve([{
-                "title": Player.title,
-                "cover": (!!Player.artwork && Player.artwork.toString() !== "") ? Player.artwork
+                "title": MainPlayerController.title,
+                "cover": (!!Player.artwork && MainPlayerController.artwork.toString() !== "") ? MainPlayerController.artwork
                                                                                 : VLCStyle.noArtAlbumCover,
-                "url": Player.url
+                "url": MainPlayerController.url
             }])
         }
 
@@ -158,8 +158,8 @@ AbstractButton {
             Layout.preferredWidth: height
 
             source: {
-                if (!paintOnly && Player.artwork && Player.artwork.toString())
-                    return VLCAccessImage.uri(Player.artwork)
+                if (!paintOnly && MainPlayerController.artwork && MainPlayerController.artwork.toString())
+                    return VLCAccessImage.uri(MainPlayerController.artwork)
                 else
                     return VLCStyle.noArtAlbumCover
             }
@@ -228,10 +228,10 @@ AbstractButton {
                 text: {
                     if (paintOnly)
                         return qsTr("Title")
-                    else if (Player.title.length > 0)
-                        return Player.title
+                    else if (MainPlayerController.title.length > 0)
+                        return MainPlayerController.title
                     else
-                        return Player.name
+                        return MainPlayerController.name
                 }
                 color: theme.fg.primary
             }
@@ -251,7 +251,7 @@ AbstractButton {
                     if (paintOnly)
                         qsTr("Artist")
                     else
-                        Player.artist
+                        MainPlayerController.artist
                 }
 
                 color: theme.fg.secondary
@@ -269,8 +269,8 @@ AbstractButton {
                     if (paintOnly)
                         " -- / -- "
                     else {
-                        const length = Player.length
-                        return Player.time.formatHMS(length.isSubSecond() ? VLCTick.SubSecondFormattedAsMS : 0) +
+                        const length = MainPlayerController.length
+                        return MainPlayerController.time.formatHMS(length.isSubSecond() ? VLCTick.SubSecondFormattedAsMS : 0) +
                                 " / " +
                                 length.formatHMS()
                     }

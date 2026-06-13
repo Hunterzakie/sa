@@ -130,8 +130,8 @@ T.Control {
             font.pixelSize: VLCStyle.icon_large
 
             description: qsTr("play/pause")
-            text: (Player.playingState !== Player.PLAYING_STATE_PAUSED
-                   && Player.playingState !== Player.PLAYING_STATE_STOPPED)
+            text: (MainPlayerController.playingState !== MainPlayerController.PLAYING_STATE_PAUSED
+                   && MainPlayerController.playingState !== MainPlayerController.PLAYING_STATE_STOPPED)
                   ? VLCIcons.pause_filled
                   : VLCIcons.play_filled
 

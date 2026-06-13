@@ -25,7 +25,7 @@ import VLC.Dialogs
 
 Widgets.IconToolButton {
     id: infoBtn
-    enabled: Player.isStarted
+    enabled: MainPlayerController.isStarted
     text: VLCIcons.info
     onClicked: DialogsProvider.mediaInfoDialog()
     description: qsTr("Information")

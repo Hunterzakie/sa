@@ -24,8 +24,8 @@ import VLC.Player
 
 Widgets.IconToolButton {
     id: snapshotBtn
-    enabled: Player.isStarted
+    enabled: MainPlayerController.isStarted
     text: VLCIcons.snapshot
-    onClicked: Player.snapshot()
+    onClicked: MainPlayerController.snapshot()
     description: qsTr("Snapshot")
 }

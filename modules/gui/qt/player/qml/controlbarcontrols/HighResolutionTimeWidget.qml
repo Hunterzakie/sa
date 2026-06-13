@@ -45,9 +45,9 @@ Control {
             return
 
         if (add === true)
-            Player.requestAddSMPTETimer()
+            MainPlayerController.requestAddSMPTETimer()
         else if (add === false)
-            Player.requestRemoveSMPTETimer()
+            MainPlayerController.requestRemoveSMPTETimer()
     }
 
     Component.onCompleted: {
@@ -92,7 +92,7 @@ Control {
             HighResolutionTimeUpdater on timeText {
                 window: (label.visible && Player.isStarted && !highResolutionTimeWidget.paintOnly) ? label.Window.window
                                                                                                    : null
-                playerController: Player
+                playerController: MainPlayerController
             }
         }
 

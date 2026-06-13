@@ -35,7 +35,7 @@ Widgets.ComboBoxExt {
     width: VLCStyle.combobox_width_normal
     height: VLCStyle.combobox_height_normal
     textRole: "display"
-    model: Player.aspectRatio
+    model: MainPlayerController.aspectRatio
     currentIndex: -1
     onCurrentIndexChanged: model.toggleIndex(currentIndex)
     Accessible.name: qsTr("Aspect ratio")

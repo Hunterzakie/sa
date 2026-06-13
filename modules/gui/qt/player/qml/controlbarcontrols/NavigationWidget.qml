@@ -26,6 +26,7 @@ import VLC.MainInterface
 import VLC.Widgets as Widgets
 import VLC.Style
 import VLC.Player
+import VLC.PlayerControls as PlayerControls
 
 Templates.Pane {
     id: root
@@ -37,8 +38,6 @@ Templates.Pane {
     property bool paintOnly: false
 
     // Private
-
-    readonly property string _controlPath : "qrc:///qt/qml/VLC/PlayerControls/"
 
     // Signals
 
@@ -100,8 +99,11 @@ Templates.Pane {
             focus: (item && item.enabled)
 
             // NOTE: We display the 'menu button' as a placeholder for the customize dialog.
-            source: (Player.hasMenu || root.paintOnly) ? root._controlPath + "DvdMenuButton.qml"
-                                                       : ""
+            active: (MainPlayerController.hasMenu || root.paintOnly)
+
+            sourceComponent: PlayerControls.DvdMenuButton {
+
+            }
 
             Navigation.parentItem: root
 
@@ -125,9 +127,11 @@ Templates.Pane {
 
             focus: (item && item.enabled && loaderA.focus === false)
 
-            source: (Player.hasPrograms
-                     &&
-                     root.paintOnly === false) ? root._controlPath + "ProgramButton.qml" : ""
+            active: MainPlayerController.hasPrograms && (root.paintOnly === false)
+
+            sourceComponent: PlayerControls.ProgramButton {
+
+            }
 
             Navigation.parentItem: root
 
@@ -151,9 +155,11 @@ Templates.Pane {
 
             focus: (item && item.enabled && (loaderA.focus === false && loaderB.focus === false))
 
-            source: (Player.isTeletextAvailable
-                     &&
-                     root.paintOnly == false) ? _controlPath + "TeletextButton.qml" : ""
+            active: MainPlayerController.isTeletextAvailable && (root.paintOnly == false)
+
+            sourceComponent: PlayerControls.TeletextButton {
+
+            }
 
             Navigation.parentItem: root
 

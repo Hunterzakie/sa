@@ -36,7 +36,7 @@ Widgets.PageLoader {
         component: serviceSourceComponent
     }, {
         name: "services_manage",
-        url: "qrc:///qt/qml/VLC/Network/ServicesManage.qml"
+        component: { module: 'VLC.Network', type: 'ServicesManage' }
     }, {
         name: "source_root",
         component: sourceRootComponent

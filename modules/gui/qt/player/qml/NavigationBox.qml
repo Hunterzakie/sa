@@ -82,7 +82,7 @@ Control {
             Layout.row: 0
             iconTxt: VLCIcons.ic_fluent_chevron_up_24
             iconSize: VLCStyle.icon_large
-            onClicked: Player.navigateUp()
+            onClicked: MainPlayerController.navigateUp()
         }
 
         Widgets.ActionButtonOverlay {
@@ -92,7 +92,7 @@ Control {
             Layout.row: 1
             iconTxt: VLCIcons.ic_fluent_chevron_left_24
             iconSize: VLCStyle.icon_large
-            onClicked: Player.navigateLeft()
+            onClicked: MainPlayerController.navigateLeft()
         }
 
         Widgets.ActionButtonOverlay {
@@ -103,7 +103,7 @@ Control {
             iconTxt: VLCIcons.ok
             font.pixelSize: VLCStyle.fontSize_large
             iconSize: VLCStyle.icon_normal
-            onClicked: Player.navigateActivate()
+            onClicked: MainPlayerController.navigateActivate()
         }
 
         Widgets.ActionButtonOverlay {
@@ -113,7 +113,7 @@ Control {
             Layout.row: 1
             iconTxt: VLCIcons.ic_fluent_chevron_right_24
             iconSize: VLCStyle.icon_large
-            onClicked: Player.navigateRight()
+            onClicked: MainPlayerController.navigateRight()
         }
 
         Widgets.ActionButtonOverlay {
@@ -123,7 +123,7 @@ Control {
             Layout.row: 2
             iconTxt: VLCIcons.ic_fluent_chevron_down_24
             iconSize: VLCStyle.icon_large
-            onClicked: Player.navigateDown()
+            onClicked: MainPlayerController.navigateDown()
         }
     }
 

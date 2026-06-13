@@ -25,9 +25,9 @@ import VLC.Player
 Widgets.IconToolButton {
     id: stepfwdBtn
 
-    enabled: Player.seekable
+    enabled: MainPlayerController.seekable
 
     text: VLCIcons.skip_for
-    onClicked: Player.jumpFwd()
+    onClicked: MainPlayerController.jumpFwd()
     description: qsTr("Step forward")
 }

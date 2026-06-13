@@ -102,16 +102,28 @@ Item {
             id: playlistWindowLoader
             asynchronous: true
             active: !MainCtx.playlistDocked
-            source: "qrc:///qt/qml/VLC/Playlist/PlaylistDetachedWindow.qml"
+            sourceComponent: PlaylistDetachedWindow {
+
+            }
         }
 
         Connections {
-            target: Player
+            target: MainPlayerController
             function onPlayingStateChanged() {
-                if (Player.playingState === Player.PLAYING_STATE_STOPPED) {
+                if (MainPlayerController.playingState === MainPlayerController.PLAYING_STATE_STOPPED) {
                     MainCtx.playerView = false
                 }
             }
+        }
+
+        Component.onCompleted: {
+            globalShortcutsComponent.incubateObject(this) // Incubator creates the object asynchronously
+        }
+
+        Component {
+            id: globalShortcutsComponent
+
+            GlobalShortcuts { }
         }
 
         DropArea {
@@ -153,8 +165,8 @@ Item {
 
                 if (urls.length > 0) {
                     /* D&D of a subtitles file, add it on the fly */
-                    if (Player.isStarted && urls.length == 1) {
-                        if (Player.associateSubtitleFile(urls[0])) {
+                    if (MainPlayerController.isStarted && urls.length == 1) {
+                        if (MainPlayerController.associateSubtitleFile(urls[0])) {
                             drop.accept()
                             return
                         }
@@ -175,27 +187,42 @@ Item {
             // If there is depth buffer, clipping is not necessary:
             clip: _extendedFrameVisible && !effect.hasDepthBuffer
 
-            source: {
+            // `Player` and `MainDisplay` are crucial types and they
+            // are intentionally inline, if they are broken, they
+            // should preemptively break the interface at start
+            // so that Qt interface is not loaded.
+
+            Component {
+                id: playerComponent
+
+                Player { }
+            }
+
+            Component {
+                id: mainDisplayComponent
+
+                MainDisplay { }
+            }
+
+            sourceComponent: {
                 // priority applies accross modes
                 // minimal > player > medialib
                 // MEDIALIB_MODE flag should always be set
 
                 switch (MainCtx.effectiveMainInterfaceMode) {
                 case MainCtx.MAININTERFACE_MODE_MINIMAL:
-                    return "qrc:///qt/qml/VLC/Player/MinimalView.qml"
+                    const component = MainCtx.createComponent("VLC.Player", "MinimalView")
+                    if (component)
+                        return component
+                    // fallthrough
                 case  MainCtx.MAININTERFACE_MODE_PLAYER:
-                    return "qrc:///qt/qml/VLC/Player/Player.qml"
+                    return playerComponent
                 default:
                     console.error("unexpected interface mode", MainCtx.effectiveMainInterfaceMode)
                 case MainCtx.MAININTERFACE_MODE_MAINDISPLAY:
-                    return "qrc:///qt/qml/VLC/MainInterface/MainDisplay.qml"
+                    return mainDisplayComponent
                 }
             }
-        }
-
-        Loader {
-            asynchronous: true
-            source: "qrc:///qt/qml/VLC/Menus/GlobalShortcuts.qml"
         }
 
         Loader {
@@ -206,12 +233,10 @@ Item {
                         && (windowVisibility !== Window.FullScreen)
 
             }
-            Component.onCompleted: {
-                setSource(
-                    "qrc:///qt/qml/VLC/Widgets/CSDMouseStealer.qml", {
-                        target: g_mainInterface,
-                        anchorInside: Qt.binding(() => !_extendedFrameVisible)
-                    })
+
+            sourceComponent: Widgets.CSDMouseStealer {
+                target: g_mainInterface
+                anchorInside: !root._extendedFrameVisible
             }
         }
     }

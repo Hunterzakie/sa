@@ -107,7 +107,7 @@ T.Pane {
             // Length might not be reported in some cases, for that reason we should check both and use the bigger one.
 
             // Some extra space to compensate non-monospaced fonts ("-" takes more space than ":", double "-" for guarantee)
-            return (Player.time.isSubHour() && Player.length.isSubHour()) ? "00--00" : "00--00--00"
+            return (MainPlayerController.time.isSubHour() && MainPlayerController.length.isSubHour()) ? "00--00" : "00--00--00"
         }
     }
 
@@ -133,8 +133,8 @@ T.Pane {
                 Layout.preferredWidth: (textPosition === ControlBar.TimeTextPosition.LeftRightSlider) ? timeTextMetrics.width : -1
 
                 text: {
-                    const length = Player.length
-                    return Player.time.formatHMS(length.isSubSecond() ? VLCTick.SubSecondFormattedAsMS : 0)
+                    const length = MainPlayerController.length
+                    return MainPlayerController.time.formatHMS(length.isSubSecond() ? VLCTick.SubSecondFormattedAsMS : 0)
                 }
                 color: theme.fg.primary
                 font: timeTextMetrics.font
@@ -148,9 +148,9 @@ T.Pane {
 
                 Layout.preferredWidth: (textPosition === ControlBar.TimeTextPosition.LeftRightSlider) ? timeTextMetrics.width : -1
 
-                text: (MainCtx.showRemainingTime && Player.remainingTime.valid())
-                      ? "-" + Player.remainingTime.formatHMS()
-                      : Player.length.formatHMS()
+                text: (MainCtx.showRemainingTime && MainPlayerController.remainingTime.valid())
+                      ? "-" + MainPlayerController.remainingTime.formatHMS()
+                      : MainPlayerController.length.formatHMS()
                 color: mediaTime.color
                 font: timeTextMetrics.font
                 horizontalAlignment: Text.AlignHCenter
@@ -197,7 +197,7 @@ T.Pane {
 
                 barHeight: root.sliderHeight
                 Layout.fillWidth: true
-                enabled: Player.playingState === Player.PLAYING_STATE_PLAYING || Player.playingState === Player.PLAYING_STATE_PAUSED
+                enabled: MainPlayerController.playingState === MainPlayerController.PLAYING_STATE_PLAYING || MainPlayerController.playingState === MainPlayerController.PLAYING_STATE_PAUSED
 
                 Navigation.parentItem: root
                 Navigation.downItem: playerControlLayout
@@ -209,25 +209,21 @@ T.Pane {
                 Keys.onPressed: (event) => {
                     Navigation.defaultKeyAction(event)
                 }
-            },
-            Loader {
-                id: bookmarksLoader
-
-                parent: root
-                active: MainCtx.mediaLibraryAvailable
-                source: "qrc:///qt/qml/VLC/MediaLibrary/Bookmarks.qml"
-
-                x: root.leftPadding + trackPositionSlider.x + row2.Layout.leftMargin
-                y: row2.y + row2.height + VLCStyle.margin_xxsmall
-                width: trackPositionSlider.width
-
-                onLoaded: {
-                   item.barHeight = Qt.binding(function() { return bookmarksHeight })
-                   item.controlBarHovered = Qt.binding(function() { return root.hovered })
-                   item.yShift = Qt.binding(function() { return row2.height + VLCStyle.margin_xxsmall })
-                }
             }
         ]
+
+        Component.onCompleted: {
+            if (MainCtx.mediaLibraryAvailable) {
+                const component = MainCtx.createComponent('VLC.MediaLibrary', 'Bookmarks')
+                component.incubateObject(root, { 'x': Qt.binding(() => root.leftPadding + trackPositionSlider.x + row2.Layout.leftMargin),
+                                                 'y': Qt.binding(() => row2.y + row2.height + VLCStyle.margin_xxsmall),
+                                                 'width': Qt.binding(() => trackPositionSlider.width),
+                                                 'barHeight': Qt.binding(() => root.bookmarksHeight),
+                                                 'controlBarHovered': Qt.binding(() => root.hovered),
+                                                 'yShift': Qt.binding(() => row2.height + VLCStyle.margin_xxsmall) },
+                                              1 /* QQmlIncubator::AsynchronousIfNested */)
+            }
+        }
 
         Item {
             // BUG: RowLayout can not be used here

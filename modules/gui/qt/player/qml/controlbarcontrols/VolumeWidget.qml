@@ -35,7 +35,7 @@ T.Pane {
         return (volControl.position > _fullvolpos) ? theme.fg.negative : theme.fg.primary
     }
 
-    readonly property var _player: paintOnly ? ({ muted: false, volume: .5 }) : Player
+    readonly property var _player: paintOnly ? ({ muted: false, volume: .5 }) : MainPlayerController
     readonly property int _maxvol: MainCtx.maxVolume
     readonly property real _fullvolpos: 100 / _maxvol
     readonly property real _maxvolpos: _maxvol / 100
@@ -74,16 +74,16 @@ T.Pane {
                 else
                     VLCIcons.volume_high
             description: qsTr("Mute")
-            onClicked: Player.muted = !Player.muted
+            onClicked: MainPlayerController.muted = !Player.muted
 
             Accessible.onIncreaseAction: {
-                Player.muted = false
-                Player.setVolumeUp()
+                MainPlayerController.muted = false
+                MainPlayerController.setVolumeUp()
             }
 
             Accessible.onDecreaseAction: {
-                Player.muted = false
-                Player.setVolumeDown()
+                MainPlayerController.muted = false
+                MainPlayerController.setVolumeDown()
             }
 
             Navigation.parentItem: root
@@ -122,9 +122,9 @@ T.Pane {
             toolTipTextProvider: function (value) {
                 // the real value i.e 'Player.volume' bounds can be different
                 // from bounds of this widget and we want to show the current
-                // volume here, so directly use Player.volume instead of "value"
+                // volume here, so directly use MainPlayerController.volume instead of "value"
 
-                return Math.round(Player.volume * 100) + "%"
+                return Math.round(MainPlayerController.volume * 100) + "%"
             }
 
             Accessible.name: qsTr("Volume")
@@ -146,7 +146,7 @@ T.Pane {
                 _keyPressed = false
 
                 if (KeyHelper.matchOk(event)) {
-                    Player.muted = !Player.muted
+                    MainPlayerController.muted = !Player.muted
                 }
             }
 
@@ -157,7 +157,7 @@ T.Pane {
             }
 
             function _adjustPlayerVolume() {
-                Player.muted = false
+                MainPlayerController.muted = false
 
                 let value = volControl.value
 
@@ -169,7 +169,7 @@ T.Pane {
                         _clamp = 0.01
                 }
 
-                Player.volume = value
+                MainPlayerController.volume = value
 
                 volControl.value = value
             }
@@ -180,7 +180,7 @@ T.Pane {
             }
 
             Connections {
-                target: Player
+                target: MainPlayerController
                 enabled: !paintOnly
 
                 function onVolumeChanged() { volControl._syncVolumeWithPlayer() }
@@ -195,13 +195,13 @@ T.Pane {
             Navigation.parentItem: root
 
             Keys.onUpPressed: (event) => {
-                Player.muted = false
-                Player.setVolumeUp()
+                MainPlayerController.muted = false
+                MainPlayerController.setVolumeUp()
             }
 
             Keys.onDownPressed: (event) => {
-                Player.muted = false
-                Player.setVolumeDown()
+                MainPlayerController.muted = false
+                MainPlayerController.setVolumeDown()
             }
 
             Keys.priority: Keys.BeforeItem
@@ -324,9 +324,9 @@ T.Pane {
 
                     function handle(steps: int) {
                         if (steps > 0)
-                            Player.setVolumeUp(steps)
+                            MainPlayerController.setVolumeUp(steps)
                         else
-                            Player.setVolumeDown(-steps)
+                            MainPlayerController.setVolumeDown(-steps)
                     }
 
                     Component.onCompleted: {

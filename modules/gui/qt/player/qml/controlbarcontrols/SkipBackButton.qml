@@ -25,9 +25,9 @@ import VLC.Player
 Widgets.IconToolButton {
     id: stepBackBtn
 
-    enabled: Player.seekable
+    enabled: MainPlayerController.seekable
 
     text: VLCIcons.skip_back
-    onClicked: Player.jumpBwd()
+    onClicked: MainPlayerController.jumpBwd()
     description: qsTr("Step back")
 }

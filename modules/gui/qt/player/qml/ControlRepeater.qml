@@ -51,7 +51,17 @@ Repeater {
 
         // Settings
 
-        source: PlayerControlbarControls.control(model.id).source
+        // TODO: Use `sourceComponent` once Qt starts allowing setting initial properties with source component.
+        readonly property url targetSource: PlayerControlbarControls.control(model.id).component.url
+
+        onTargetSourceChanged: {
+            loader.setSource(targetSource, { // control should not request focus if they are not enabled:
+                                             'focus': Qt.binding(() => loader.item ? (loader.item.enabled && loader.item.visible) : false),
+                                             // navigation parent of control is always controlLayout
+                                             // so it can be set here unlike leftItem and rightItem:
+                                             'Navigation.parentItem': repeater,
+                                             'activeFocusOnTab': true } )
+        }
 
         focus: (index === 0)
 
@@ -94,18 +104,6 @@ Repeater {
         }
 
         onLoaded: {
-            // control should not request focus if they are not enabled:
-            item.focus = Qt.binding(function() { return item.enabled && item.visible })
-
-            // navigation parent of control is always controlLayout
-            // so it can be set here unlike leftItem and rightItem:
-            item.Navigation.parentItem = repeater
-
-            if (typeof item.activeFocusOnTab === "boolean")
-                item.activeFocusOnTab = true
-
-            item.visible = Qt.binding(function() { return loader.visible })
-
             if (item.requestLockUnlockAutoHide)
                 item.requestLockUnlockAutoHide.connect(repeater.requestLockUnlockAutoHide)
 
