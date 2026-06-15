@@ -91,6 +91,9 @@ signals:
     void rightActionChanged();
     void cancelItemChanged();
     void cancelActionChanged();
+
+private:
+    bool m_isCurrent = false;
 };
 
 #undef VLC_QT_SIMPLE_PROPERTY
