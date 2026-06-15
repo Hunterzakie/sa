@@ -345,7 +345,7 @@ void CompositorVideo::adjustBlurBehind()
     {
         if (QWindow *const window = interfaceMainWindow())
         {
-            assert(m_windowEffectsModule->isEffectAvailable(window, WindowEffectsModule::BlurBehind));
+            assert(m_windowEffectsModule->isEffectAvailable(*m_windowEffectsModule, window, WindowEffectsModule::BlurBehind));
             const bool blurBehind = m_mainCtx->hasAcrylicSurface();
             if (blurBehind && m_mainCtx->windowSuportExtendedFrame() && m_mainCtx->useClientSideDecoration())
             {
@@ -363,11 +363,11 @@ void CompositorVideo::adjustBlurBehind()
                     const auto margin = m_mainCtx->windowExtendedMargin();
                     blurRegion = QRegion(margin, margin, window->width() - 2 * margin, window->height() - 2 * margin);
                 }
-                m_windowEffectsModule->setBlurBehind(window, true, blurRegion);
+                m_windowEffectsModule->setBlurBehind(*m_windowEffectsModule, window, true, blurRegion);
             }
             else
             {
-                m_windowEffectsModule->setBlurBehind(window, blurBehind, {});
+                m_windowEffectsModule->setBlurBehind(*m_windowEffectsModule, window, blurBehind, {});
             }
         }
     }
@@ -459,7 +459,7 @@ bool CompositorVideo::setBlurBehind(QWindow *window, const bool enable)
         }
     }
 
-    if (!m_windowEffectsModule->isEffectAvailable(window, WindowEffectsModule::BlurBehind))
+    if (!m_windowEffectsModule->isEffectAvailable(*m_windowEffectsModule, window, WindowEffectsModule::BlurBehind))
         return false;
 
     m_mainCtx->setHasAcrylicSurface(enable);
@@ -487,7 +487,7 @@ bool CompositorVideo::setBlurBehind(QWindow *window, const bool enable)
     }
     else
     {
-        m_windowEffectsModule->setBlurBehind(window, enable, {});
+        m_windowEffectsModule->setBlurBehind(*m_windowEffectsModule, window, enable, {});
     }
 
     return true;

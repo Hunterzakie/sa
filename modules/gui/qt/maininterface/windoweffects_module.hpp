@@ -35,13 +35,13 @@ struct WindowEffectsModule
     module_t *p_module = nullptr;
     void *p_sys = nullptr;
 
-    bool (*isEffectAvailable)(const QWindow* window, Effect effect);
+    bool (*isEffectAvailable)(WindowEffectsModule& obj, const QWindow* window, Effect effect);
 
     // NOTE: Region is not guaranteed to be respected.
     // WARNING: Care must be taken for Qt library ABI compatibility.
     //          For example, KWindowSystem may be built with Qt that are not
     //          binary compatible with the version the application uses.
-    void (*setBlurBehind)(QWindow* window, bool enable, const QRegion& region);
+    void (*setBlurBehind)(WindowEffectsModule& obj, QWindow* window, bool enable, const QRegion& region);
 };
 
 #endif // WINDOWEFFECTSMODULE_HPP

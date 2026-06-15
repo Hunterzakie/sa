@@ -27,7 +27,7 @@
 #include <dwmapi.h>
 #include <winuser.h>
 
-static bool isEffectAvailable(const QWindow* window, const WindowEffectsModule::Effect effect)
+static bool isEffectAvailable(WindowEffectsModule&, const QWindow* window, const WindowEffectsModule::Effect effect)
 {
     // Version check is done on module open, no need to re-do it here.
     switch (effect)
@@ -66,7 +66,7 @@ static bool isEffectAvailable(const QWindow* window, const WindowEffectsModule::
     };
 }
 
-static void setBlurBehind(QWindow* const window, const bool enable = true, const QRegion& region = {})
+static void setBlurBehind(WindowEffectsModule&, QWindow* const window, const bool enable = true, const QRegion& region = {})
 {
     Q_UNUSED(region);
 
