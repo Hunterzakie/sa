@@ -191,12 +191,7 @@ CompositorVideo::CompositorVideo(qt_intf_t *p_intf, QObject* parent)
 
 CompositorVideo::~CompositorVideo()
 {
-    if (m_windowEffectsModule)
-    {
-        if (m_windowEffectsModule->p_module)
-            module_unneed(m_windowEffectsModule, m_windowEffectsModule->p_module);
-        vlc_object_delete(m_windowEffectsModule);
-    }
+    unloadWindowEffectsModule();
 }
 
 void CompositorVideo::commonSetupVoutWindow(vlc_window_t* p_wnd, VoutDestroyCb destroyCb)
@@ -412,6 +407,8 @@ void CompositorVideo::commonGUIDestroy()
 #endif
     m_interfaceWindowHandler.reset();
     m_mainCtx = nullptr;
+
+    unloadWindowEffectsModule();
 }
 
 void CompositorVideo::commonIntfDestroy()
@@ -491,6 +488,17 @@ bool CompositorVideo::setBlurBehind(QWindow *window, const bool enable)
     }
 
     return true;
+}
+
+void CompositorVideo::unloadWindowEffectsModule()
+{
+    if (m_windowEffectsModule)
+    {
+        if (m_windowEffectsModule->p_module)
+            module_unneed(m_windowEffectsModule, m_windowEffectsModule->p_module);
+        vlc_object_delete(m_windowEffectsModule);
+        m_windowEffectsModule = nullptr;
+    }
 }
 
 QQuickWindow *Compositor::quickWindow() const
