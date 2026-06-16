@@ -41,6 +41,8 @@ struct WindowEffectsModule
     // WARNING: Care must be taken for Qt library ABI compatibility.
     //          For example, KWindowSystem may be built with Qt that are not
     //          binary compatible with the version the application uses.
+    // WARNING: It is not permitted to call `setBlurBehind()` if `isEffectAvailable()` returned
+    //          false for `Effect::BlurBehind` effect.
     void (*setBlurBehind)(WindowEffectsModule& obj, QWindow* window, bool enable, const QRegion& region);
 };
 
