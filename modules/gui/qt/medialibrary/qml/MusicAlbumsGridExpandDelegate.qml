@@ -37,10 +37,10 @@ T.Pane {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
                              implicitContentHeight + topPadding + bottomPadding)
 
-    property var model
+    required property var model
 
-    property int index
-    property ItemView view
+    required property int index
+    required property GridView view
 
     property var headerFocusScope
     property var enqueueActionBtn

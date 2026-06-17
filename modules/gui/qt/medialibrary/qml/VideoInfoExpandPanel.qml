@@ -37,7 +37,9 @@ T.Pane {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
                              implicitContentHeight + topPadding + bottomPadding)
 
-    property var model
+    required property var model
+    required property int index
+    required property GridView view
 
     property bool _showMoreInfo: false
     signal retract()

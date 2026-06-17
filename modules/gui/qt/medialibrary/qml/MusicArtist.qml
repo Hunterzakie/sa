@@ -627,9 +627,9 @@ FocusScope {
                 }
             }
 
-            expandDelegate: MusicAlbumsGridExpandDelegate {
-
-            }
+            // NOTE: We provide the url here so that initial properties can be set by the `Loader`.
+            // TODO: Use modularization overload:
+            expandDelegate: Qt.createComponent("qrc:///qt/qml/VLC/MediaLibrary/MusicAlbumsGridExpandDelegate.qml")
 
             onActionAtIndex: (index) => {
                 if (albumSelectionModel.selectedIndexes.length === 1) {

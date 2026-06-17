@@ -31,7 +31,7 @@ GridViewExt {
     //          when instantiated for expansion to work.
 
     // Expansion properties:
-    property alias expandDelegate: expandLoader.sourceComponent
+    property alias expandDelegate: expandLoader.targetSourceComponent
     property alias expandItem: expandLoader.item
     property alias expandLoadAsynchronously: expandLoader.asynchronous
     expandLoadAsynchronously: true
@@ -165,7 +165,7 @@ GridViewExt {
             if (active)
                 return false
 
-            if (!sourceComponent)
+            if (!sourceComponent && (source.toString().length <= 0))
                 return false
 
             const behaviorEnabled = expandLoaderHeightBehavior.enabled
@@ -211,26 +211,45 @@ GridViewExt {
             _oldHeight = height
         }
 
-        onLoaded: {
-            // Can not use `!== undefined` because the value may be undefined even though it exists
-            if (item.hasOwnProperty("model"))
-                item.model = Qt.binding(() => root.model.getDataAt(root.expandIndex))
-            if (item.index !== undefined)
-                item.index = Qt.binding(() => expandLoader.index)
-            if (item.view !== undefined)
-                item.view = root
+        // TODO: Get rid of this once Qt starts allowing setting initial properties when
+        //       `Component` in `Loader`:
+        readonly property var itemPropertyMap: ({
+                                                    'model': Qt.binding(() => root.model?.getDataAt(root.expandIndex)),
+                                                    'index':  Qt.binding(() => expandLoader.index),
+                                                    'view': root,
+                                                    'leftPadding': Qt.binding(function() { return VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin }),
+                                                    'rightPadding': Qt.binding(function() { return VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin }),
+                                                    'Navigation.parentItem': expandLoader,
+                                                    'focus': true // Loader itself is a focus scope, so we need this
+                                                })
 
-            if (item.leftPadding !== undefined)
-                item.leftPadding = Qt.binding(function() { return VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin })
-            if (item.rightPadding !== undefined)
-                item.rightPadding = Qt.binding(function() { return VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin })
+        property Component targetSourceComponent
+
+        onTargetSourceComponentChanged: {
+            if (!targetSourceComponent) {
+                sourceComponent = null
+                return
+            }
+
+            if (targetSourceComponent.url.toString().length > 0) {
+                setSource(targetSourceComponent.url, itemPropertyMap)
+            } else {
+                sourceComponent = targetSourceComponent
+            }
+        }
+
+        onLoaded: {
+            if (sourceComponent) {
+                // `setSource()` with initial properties is not used, so we do this:
+                for (let key in itemPropertyMap) {
+                    if (key in expandLoader.item) {
+                        expandLoader.item[key] = itemPropertyMap[key]
+                    }
+                }
+            }
 
             if (item.retract !== undefined)
                 item.retract.connect(root, root.retract)
-
-            item.Navigation.parentItem = expandLoader
-
-            item.focus = true // Loader itself is a focus scope, so we need this
         }
     }
 

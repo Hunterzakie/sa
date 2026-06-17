@@ -134,9 +134,9 @@ Widgets.ExpandGridView {
         }
     }
 
-    expandDelegate: VideoInfoExpandPanel {
-
-    }
+    // NOTE: We provide the url here so that initial properties can be set by the `Loader`.
+    // TODO: Use modularization overload:
+    expandDelegate: Qt.createComponent("qrc:///qt/qml/VLC/MediaLibrary/VideoInfoExpandPanel.qml")
 
     function forceFocus() {
         setCurrentItemFocus(Qt.TabFocus)
