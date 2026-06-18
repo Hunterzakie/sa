@@ -38,6 +38,8 @@
 #include <vlc_config_cat.h>
 #include <vlc_configuration.h>
 #include <vlc_aout.h>
+#include <vlc_player.h>
+#include <vlc_stt.h>
 
 #include <QString>
 #include <QFont>
@@ -55,6 +57,8 @@
 #include <QCheckBox>
 #include <QLabel>
 #include <QPushButton>
+#include <QProgressBar>
+#include <QPointer>
 #include <QGridLayout>
 #include <QWidget>
 #include <QHBoxLayout>
@@ -63,7 +67,9 @@
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QRegularExpression>
+#include <QMessageBox>
 
+#include <atomic>
 #include <cassert>
 #include <math.h>
 #ifdef _WIN32
@@ -78,6 +84,133 @@
 # include <shobjidl.h>
 #endif
 #include <vlc_modules.h>
+
+namespace {
+
+struct SttPreloadState
+{
+    QPointer<QWidget> context;
+    QPointer<QPushButton> button;
+    QPointer<QProgressBar> progress;
+    std::atomic<bool> cancel{ false };
+    bool loading = false;
+};
+
+const char *SttStatusText(enum vlc_stt_ctx_status status)
+{
+    switch (status) {
+        case vlc_stt_ctx_status_downloading: return N_("Downloading model…");
+        case vlc_stt_ctx_status_extracting:  return N_("Extracting model…");
+        case vlc_stt_ctx_status_hashing:     return N_("Verifying model…");
+        case vlc_stt_ctx_status_loading:     return N_("Loading model…");
+        case vlc_stt_ctx_status_done:        return N_("Model ready");
+        case vlc_stt_ctx_status_error:       return N_("Model loading failed");
+    }
+    return "";
+}
+
+void SttPreloadOnProgress(struct vlc_stt_ctx *, enum vlc_stt_ctx_status status,
+                          int64_t position, int64_t total, const char *,
+                          void *opaque)
+{
+    auto *state = static_cast<SttPreloadState *>(opaque);
+    QWidget *context = state->context;
+    if (context == nullptr) {
+        return;
+    }
+
+    QPointer<QProgressBar> progress = state->progress;
+    const QString text = qtr(SttStatusText(status));
+    const bool known = total > 0;
+    const int value = known ? (int)((position * 100) / total) : 0;
+
+    QMetaObject::invokeMethod(context, [progress, text, known, value]() {
+        if (progress.isNull()) {
+            return;
+        }
+        progress->setVisible(true);
+        progress->setRange(0, known ? 100 : 0);
+        if (known) {
+            progress->setValue(value);
+        }
+        progress->setFormat(text);
+    }, Qt::QueuedConnection);
+}
+
+void SttPreloadOnLoaded(struct vlc_stt_ctx *, enum vlc_stt_ctx_status status,
+                        void *opaque)
+{
+    auto *state = static_cast<SttPreloadState *>(opaque);
+    QWidget *context = state->context;
+    if (context == nullptr) {
+        return;
+    }
+
+    const bool ok = status == vlc_stt_ctx_status_done;
+    const QString text = qtr(SttStatusText(status));
+
+    QMetaObject::invokeMethod(context, [state, ok, text]() {
+        state->loading = false;
+        if (!state->button.isNull()) {
+            state->button->setEnabled(true);
+            state->button->setText(qtr("Load now"));
+        }
+        if (!state->progress.isNull()) {
+            state->progress->setRange(0, 100);
+            state->progress->setValue(ok ? 100 : 0);
+            state->progress->setFormat(text);
+        }
+    }, Qt::QueuedConnection);
+}
+
+bool SttPreloadConfirm(struct vlc_stt_ctx *, uint64_t download_size,
+                       const char *path, void *opaque)
+{
+    auto *state = static_cast<SttPreloadState *>(opaque);
+    /* Detaching: don't marshal to a GUI thread that is blocked in the
+     * destructor waiting for this loader to abort. */
+    if (state->cancel.load()) {
+        return false;
+    }
+    QPointer<QWidget> context = state->context;
+    if (context.isNull()) {
+        return false;
+    }
+
+    const QString title = qtr("Download speech recognition model");
+    const QString text = qtr("VLC will download %1 MB to:\n%2")
+                             .arg((qulonglong)(download_size / 1000000))
+                             .arg(qfu(path));
+
+    bool accepted = false;
+    /* Called from the loader thread; block until the user answers on the GUI
+     * thread. The QMessageBox is parented to the preferences panel so it
+     * stacks above the (modal) Preferences window. */
+    QMetaObject::invokeMethod(context, [context, title, text, &accepted]() {
+        if (context.isNull()) {
+            return;
+        }
+        accepted = QMessageBox::question(context, title, text,
+                                         QMessageBox::Yes | QMessageBox::No)
+                   == QMessageBox::Yes;
+    }, Qt::BlockingQueuedConnection);
+    return accepted;
+}
+
+bool SttPreloadAbort(struct vlc_stt_ctx *, void *opaque)
+{
+    auto *state = static_cast<SttPreloadState *>(opaque);
+    return state->cancel.load();
+}
+
+const struct vlc_stt_ctx_callbacks stt_preload_cbs = {
+    SttPreloadOnLoaded,
+    SttPreloadOnProgress,
+    SttPreloadConfirm,
+    SttPreloadAbort,
+};
+
+} // namespace
 
 static struct {
     const char iso[6];
@@ -262,6 +395,7 @@ SPrefsCatList::SPrefsCatList( qt_intf_t *_p_intf, QWidget *_parent ) :
     addCategory( qfut(HOTKEYS_TITLE), qfut(HOTKEYS_TOOLTIP), ":/prefsmenu/spref_hotkeys.png", SPrefsHotkeys );
     if ( vlc_ml_instance_get( p_intf ) != nullptr )
         addCategory( qfut(ML_TITLE), qfut(ML_TOOLTIP), ":/prefsmenu/spref_medialibrary.png", SPrefsMediaLibrary );
+    addCategory( qfut(AI_TITLE), qfut(AI_TOOLTIP), ":/prefsmenu/spref_medialibrary.png", SPrefsAi );
 
     qobject_cast<QToolButton*>(mapper->mapping(SPrefsInterface))->setChecked(true);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -1053,6 +1187,137 @@ SPrefsPanel::SPrefsPanel( qt_intf_t *_p_intf, QWidget *_parent,
 
             break;
         }
+
+        /**************************************
+         * AI Panel Implementatoin            *
+         **************************************/
+        case SPrefsAi:
+        {
+            auto& ui = m_aiUI;
+            ui.setupUi(panel);
+            panel_label->setText(qtr("AI / Speech-to-Text Settings"));
+
+            configBool("stt", ui.sttActiveBox);
+
+            configGeneric<StringListConfigControl>("stt-loader",
+                                                   ui.sttLoaderLabel,
+                                                   ui.sttLoaderCombo);
+
+            /* "Disable" would duplicate the enable checkbox above. */
+            const int sttNoneIndex =
+                ui.sttLoaderCombo->findData(QStringLiteral("none"));
+            if (sttNoneIndex != -1) {
+                ui.sttLoaderCombo->removeItem(sttNoneIndex);
+            }
+
+            const bool sttActive = ui.sttActiveBox->isChecked();
+            for (QWidget *w : { static_cast<QWidget *>(ui.sttLoaderLabel),
+                                static_cast<QWidget *>(ui.sttLoaderCombo),
+                                static_cast<QWidget *>(ui.whisperGroupBox),
+                                static_cast<QWidget *>(ui.sttPreloadLabel),
+                                static_cast<QWidget *>(ui.sttPreloadButton) })
+            {
+                w->setEnabled(sttActive);
+                connect(ui.sttActiveBox, &QCheckBox::toggled, w, &QWidget::setEnabled);
+            }
+
+            configGeneric<StringListConfigControl>("whisper-model",
+                                                   ui.whisperModelLabel,
+                                                   ui.whisperModelCombo);
+
+            configGeneric<StringListConfigControl>("whisper-language",
+                                                   ui.whisperLanguageLabel,
+                                                   ui.whisperLanguageCombo);
+
+            configGeneric<StringListConfigControl>("whisper-translation",
+                                                   ui.whisperTranslationLabel,
+                                                   ui.whisperTranslationCombo);
+
+            configGeneric<IntegerConfigControl>("whisper-nthread",
+                                                ui.whisperThreadLabel,
+                                                ui.whisperThreadSpin);
+
+            configGeneric<IntegerConfigControl>("whisper-length",
+                                                ui.whisperLengthLabel,
+                                                ui.whisperLengthSpin);
+
+            /* Only the selected implementation's settings are relevant;
+             * "Automatic" leaves the choice to the module priority. */
+            auto sttLoaderSync = [combo = ui.sttLoaderCombo,
+                                  whisperBox = ui.whisperGroupBox]() {
+                const QString impl = combo->currentData().toString();
+                const bool automatic = impl.isEmpty()
+                                       || impl == QStringLiteral("any");
+                whisperBox->setVisible(automatic
+                                       || impl == QStringLiteral("whisper"));
+            };
+
+            connect(ui.sttLoaderCombo,
+                    QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+                    [sttLoaderSync](int) { sttLoaderSync(); });
+            sttLoaderSync();
+
+            /* Locate the models cache directory and list its content. */
+            QString modelsPath;
+            char *psz_cachedir = config_GetUserDir(VLC_CACHE_DIR);
+            if(psz_cachedir != NULL) {
+                modelsPath = QString("%1" DIR_SEP "models").arg(psz_cachedir);
+                free(psz_cachedir);
+            }
+
+            if(!modelsPath.isEmpty()) {
+                ui.aiModelsPathLabel->setText(
+                    QDir::toNativeSeparators(modelsPath));
+            }
+
+            QDir modelsDir(modelsPath);
+            ui.aiModelsTable->init(modelsDir);
+
+            /* Re-scan the directory on demand. */
+            connect(ui.aiModelsReloadButton, &QPushButton::clicked, this,
+                     [table = ui.aiModelsTable, modelsDir]() {
+                table->init(modelsDir);
+            });
+
+            /* Preload the model into the player's input resource so a later
+             * playback reuses the already-loaded speech-to-text context. */
+            auto *preload = new SttPreloadState{ this, ui.sttPreloadButton,
+                                                 ui.sttPreloadProgress };
+            m_sttPreload = preload;
+
+            connect(ui.sttPreloadButton, &QPushButton::clicked, this,
+                    [this, preload]() {
+                if (p_intf->p_player == nullptr) {
+                    return;
+                }
+
+                if (preload->loading) {
+                    /* Acting as a Cancel button: abort the running load. */
+                    preload->cancel.store(true);
+                    preload->button->setEnabled(false);
+                    preload->button->setText(qtr("Cancelling…"));
+                    return;
+                }
+
+                preload->cancel.store(false);
+                preload->loading = true;
+                preload->button->setText(qtr("Cancel"));
+                preload->progress->setVisible(true);
+                preload->progress->setRange(0, 0);
+                preload->progress->setFormat(qtr("Loading model…"));
+
+                if (vlc_player_PreloadSttCtx(p_intf->p_player, &stt_preload_cbs,
+                                             preload) != VLC_SUCCESS) {
+                    preload->loading = false;
+                    preload->button->setText(qtr("Load now"));
+                    preload->progress->setRange(0, 100);
+                    preload->progress->setValue(0);
+                    preload->progress->setFormat(qtr("Model loading failed"));
+                }
+            });
+
+            break;
+        }
     }
 
     panel_layout->addWidget( panel_label );
@@ -1120,6 +1385,17 @@ SPrefsPanel::~SPrefsPanel()
 {
     if (!m_isApplied)
         clean();
+
+    if (m_sttPreload != nullptr) {
+        auto *preload = static_cast<SttPreloadState *>(m_sttPreload);
+        /* Signal cancellation before detaching: vlc_player_DetachSttCtx()
+         * blocks until the loader aborts, so the loader's confirm/abort
+         * callbacks must not try to marshal back onto this (blocked) thread. */
+        preload->cancel.store(true);
+        if (p_intf->p_player != nullptr)
+            vlc_player_DetachSttCtx(p_intf->p_player, m_sttPreload);
+        delete preload;
+    }
 
     qDeleteAll( controls ); controls.clear();
     free( lang );
@@ -1327,7 +1603,15 @@ void SPrefsPanel::apply()
     {
         mlFoldersEditor->commit();
         mlBannedFoldersEditor->commit();
+        break;
     }
+
+    case SPrefsAi:
+    {
+        m_aiUI.aiModelsTable->commit();
+        break;
+    }
+
     }
 }
 

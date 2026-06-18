@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <author>Gabriel Lafond Thenaille</author>
+ <class>SPrefsAi</class>
+ <widget class="QWidget" name="SPrefsAi">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>700</width>
+    <height>535</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QLabel" name="restartNoticeLabel">
+     <property name="text">
+      <string>VLC needs to be restarted for some changes to take effect</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="sttActiveBox">
+     <property name="text">
+      <string>Enable speech-to-text</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QGridLayout" name="sttLoaderLayout">
+     <item row="0" column="0">
+      <widget class="QLabel" name="sttLoaderLabel">
+       <property name="minimumSize">
+        <size>
+         <width>250</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Implementation</string>
+       </property>
+       <property name="buddy">
+        <cstring>sttLoaderCombo</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QComboBox" name="sttLoaderCombo"/>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="whisperGroupBox">
+     <property name="title">
+      <string>Speech-to-Text (Whisper)</string>
+     </property>
+     <layout class="QGridLayout" name="whisperGridLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="whisperModelLabel">
+        <property name="minimumSize">
+         <size>
+          <width>250</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Model name</string>
+        </property>
+        <property name="buddy">
+         <cstring>whisperModelCombo</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="whisperModelCombo"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="whisperLanguageLabel">
+        <property name="minimumSize">
+         <size>
+          <width>250</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Language</string>
+        </property>
+        <property name="buddy">
+         <cstring>whisperLanguageCombo</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="whisperLanguageCombo">
+        <property name="maxVisibleItems">
+         <number>12</number>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="whisperTranslationLabel">
+        <property name="minimumSize">
+         <size>
+          <width>250</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Translation language</string>
+        </property>
+        <property name="buddy">
+         <cstring>whisperTranslationCombo</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="whisperTranslationCombo">
+        <property name="maxVisibleItems">
+         <number>12</number>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="whisperThreadLabel">
+        <property name="minimumSize">
+         <size>
+          <width>250</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Number of threads</string>
+        </property>
+        <property name="buddy">
+         <cstring>whisperThreadSpin</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QSpinBox" name="whisperThreadSpin">
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="minimum">
+         <number>0</number>
+        </property>
+        <property name="maximum">
+         <number>999</number>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="whisperLengthLabel">
+        <property name="minimumSize">
+         <size>
+          <width>250</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Sample length (ms)</string>
+        </property>
+        <property name="buddy">
+         <cstring>whisperLengthSpin</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QSpinBox" name="whisperLengthSpin">
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="suffix">
+         <string> ms</string>
+        </property>
+        <property name="minimum">
+         <number>5000</number>
+        </property>
+        <property name="maximum">
+         <number>40000</number>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <layout class="QGridLayout" name="sttPreloadLayout">
+     <item row="0" column="0">
+      <widget class="QLabel" name="sttPreloadLabel">
+       <property name="minimumSize">
+        <size>
+         <width>250</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Preload the model into memory</string>
+       </property>
+       <property name="buddy">
+        <cstring>sttPreloadButton</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QPushButton" name="sttPreloadButton">
+       <property name="text">
+        <string>Load now</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0" colspan="2">
+      <widget class="QProgressBar" name="sttPreloadProgress">
+       <property name="visible">
+        <bool>false</bool>
+       </property>
+       <property name="value">
+        <number>0</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="aiModelsGroupBox">
+     <property name="title">
+      <string>Downloaded models</string>
+     </property>
+     <layout class="QVBoxLayout" name="aiModelsLayout">
+      <item>
+       <layout class="QHBoxLayout" name="aiModelsHeaderLayout">
+        <item>
+         <widget class="QLabel" name="aiModelsPathLabel">
+          <property name="textInteractionFlags">
+           <set>Qt::TextSelectableByMouse</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="aiModelsHeaderSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QPushButton" name="aiModelsReloadButton">
+          <property name="text">
+           <string>⟳</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="AiModelsTable" name="aiModelsTable">
+        <property name="editTriggers">
+         <set>QAbstractItemView::NoEditTriggers</set>
+        </property>
+        <property name="selectionMode">
+         <enum>QAbstractItemView::NoSelection</enum>
+        </property>
+        <property name="showGrid">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>0</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>AiModelsTable</class>
+   <extends>QTableWidget</extends>
+   <header>dialogs/preferences/aimodelstable.hpp</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>sttActiveBox</tabstop>
+  <tabstop>sttLoaderCombo</tabstop>
+  <tabstop>whisperModelCombo</tabstop>
+  <tabstop>whisperLanguageCombo</tabstop>
+  <tabstop>whisperTranslationCombo</tabstop>
+  <tabstop>whisperThreadSpin</tabstop>
+  <tabstop>whisperLengthSpin</tabstop>
+  <tabstop>sttPreloadButton</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>
