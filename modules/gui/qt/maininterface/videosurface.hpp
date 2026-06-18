@@ -43,7 +43,7 @@ class VideoSurfaceProvider : public QObject
     QPointer<VideoSurface> m_videoSurface;
 
 public:
-    VideoSurfaceProvider(bool threadedSurfaceUpdates = false, QObject* parent = nullptr);
+    VideoSurfaceProvider(MainCtx* mainCtx, bool threadedSurfaceUpdates = false, QObject* parent = nullptr);
     virtual ~VideoSurfaceProvider() {}
 
     void enable(vlc_window_t* voutWindow);
@@ -54,7 +54,18 @@ public:
     bool hasVideoEmbed() const;
 
     QPointer<VideoSurface> videoSurface() { return m_videoSurface; }
-    void setVideoSurface(QPointer<VideoSurface> videoSurface) { m_videoSurface = videoSurface; }
+    void setVideoSurface(QPointer<VideoSurface> videoSurface)
+    {
+        m_videoSurface = videoSurface;
+        if (isEnabled() && !videoSurface)
+        {
+            if (m_receivedInitialSurfacePropertiesChange)
+            {
+                m_receivedInitialSurfacePropertiesChange = false;
+                startUsingInterfaceWindowAsVideoSurface();
+            }
+        }
+    }
 
     bool supportsThreadedSurfaceUpdates() const { return m_threadedSurfaceUpdates; };
 
@@ -79,9 +90,27 @@ public slots:
                                     const std::optional<qreal>& scale);
 
 protected:
+    void startUsingInterfaceWindowAsVideoSurface();
+    void stopUsingInterfaceWindowAsVideoSurface();
+
+private slots:
+    void onSurfacePropertiesChangedInternal(const std::optional<QSizeF>& size,
+                                            const std::optional<QPointF>& position,
+                                            const std::optional<qreal>& scale);
+    void changeSurfacePropertiesBasedOnWindowSize();
+
+protected:
     vlc_window_t* m_voutWindow = nullptr;
     bool m_videoEmbed = false;
     bool m_threadedSurfaceUpdates = false;
+    const QPointer<MainCtx> m_mainCtx;
+
+private:
+    QMetaObject::Connection m_windowWidthChangeConnection;
+    QMetaObject::Connection m_windowHeightChangeConnection;
+    QMetaObject::Connection m_windowDprChangeConnection;
+    bool m_receivedInitialSurfacePropertiesChange = false;
+    const QPointer<const QWindow> m_mainWindow;
 };
 
 

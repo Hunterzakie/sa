@@ -28,10 +28,14 @@
 
 #include "maininterface/mainctx.hpp"
 
-VideoSurfaceProvider::VideoSurfaceProvider(bool threadedSurfaceUpdates, QObject* parent)
+VideoSurfaceProvider::VideoSurfaceProvider(MainCtx *mainCtx, bool threadedSurfaceUpdates, QObject* parent)
     : QObject(parent)
     , m_threadedSurfaceUpdates(threadedSurfaceUpdates)
+    , m_mainCtx(mainCtx)
+    , m_mainWindow(mainCtx->intfMainWindow())
 {
+    assert(m_mainCtx);
+    assert(m_mainWindow);
 }
 
 bool VideoSurfaceProvider::isEnabled()
@@ -48,11 +52,19 @@ void VideoSurfaceProvider::enable(vlc_window_t* voutWindow)
 {
     assert(voutWindow);
     m_voutWindow = voutWindow;
+
+    if (!m_receivedInitialSurfacePropertiesChange)
+    {
+        startUsingInterfaceWindowAsVideoSurface();
+    }
+
     emit videoEnabledChanged(true);
 }
 
 void VideoSurfaceProvider::disable()
 {
+    stopUsingInterfaceWindowAsVideoSurface();
+
     setVideoEmbed(false);
     m_voutWindow = nullptr;
     emit videoEnabledChanged(false);
@@ -112,11 +124,57 @@ void VideoSurfaceProvider::onSurfacePropertiesChanged(const std::optional<QSizeF
                                                       const std::optional<QPointF>& position,
                                                       const std::optional<qreal>& scale)
 {
+    if (!m_receivedInitialSurfacePropertiesChange)
+    {
+        stopUsingInterfaceWindowAsVideoSurface();
+        m_receivedInitialSurfacePropertiesChange = true;
+    }
+
+    onSurfacePropertiesChangedInternal(size, position, scale);
+}
+
+void VideoSurfaceProvider::startUsingInterfaceWindowAsVideoSurface()
+{
+    assert(m_mainWindow);
+    assert(!m_windowWidthChangeConnection);
+    assert(!m_windowHeightChangeConnection);
+    assert(!m_windowDprChangeConnection);
+    m_windowWidthChangeConnection = connect(m_mainWindow, &QWindow::widthChanged, this, &VideoSurfaceProvider::changeSurfacePropertiesBasedOnWindowSize);
+    m_windowHeightChangeConnection = connect(m_mainWindow, &QWindow::heightChanged, this, &VideoSurfaceProvider::changeSurfacePropertiesBasedOnWindowSize);
+    m_windowDprChangeConnection = connect(m_mainCtx, &MainCtx::intfDevicePixelRatioChanged, this, &VideoSurfaceProvider::changeSurfacePropertiesBasedOnWindowSize);
+
+    changeSurfacePropertiesBasedOnWindowSize();
+}
+
+void VideoSurfaceProvider::stopUsingInterfaceWindowAsVideoSurface()
+{
+    disconnect(m_windowHeightChangeConnection);
+    disconnect(m_windowWidthChangeConnection);
+    disconnect(m_windowDprChangeConnection);
+}
+
+void VideoSurfaceProvider::onSurfacePropertiesChangedInternal(const std::optional<QSizeF> &size,
+                                                              const std::optional<QPointF> &position,
+                                                              const std::optional<qreal> &scale)
+{
     emit surfacePropertiesChanged(size, position, scale);
     if (m_voutWindow && size)
         vlc_window_ReportSize(m_voutWindow, std::ceil(size->width()), std::ceil(size->height()));
 }
 
+void VideoSurfaceProvider::changeSurfacePropertiesBasedOnWindowSize()
+{
+    assert(m_mainWindow);
+    assert(m_voutWindow);
+
+    const auto size = m_mainWindow->size();
+    const auto position = QPointF(0.0, 0.0);
+    const auto dpr = m_mainWindow->devicePixelRatio();
+
+    qDebug() << "Calling VideoSurfaceProvider::onSurfacePropertiesChanged() with interface main window properties:" << size << position << dpr;
+
+    onSurfacePropertiesChangedInternal(size * dpr, QPointF(0.0, 0.0), dpr);
+}
 
 VideoSurface::VideoSurface(QQuickItem* parent)
     : ViewBlockingRectangle(parent)
