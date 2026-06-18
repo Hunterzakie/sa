@@ -45,6 +45,7 @@
 #define SUBPIC_TITLE    N_( "Subtitles / OSD" )
 #define HOTKEYS_TITLE   N_( "Hotkeys" )
 #define ML_TITLE        N_( "Media Library" )
+#define AI_TITLE        N_( "AI" )
 
 /*  - Tooltip text -
  * These are used for simple prefs view tabs.
@@ -57,6 +58,7 @@
 #define INPUT_TOOLTIP   N_( "Input & Codec Settings" )
 #define HOTKEYS_TOOLTIP N_( "Hotkeys Settings" )
 #define ML_TOOLTIP      N_( "Media Library Settings" )
+#define AI_TOOLTIP      N_( "AI Settings" )
 
 /*  - Help text -
  * These are shown on advanced view panels.
