@@ -244,6 +244,37 @@ bool M3U8Parser::appendSegmentsFromPlaylistURI(vlc_object_t *p_obj, HLSRepresent
     return false;
 }
 
+/* Recover a 128-bit IV, tolerating a missing "0x", any case and trailing junk;
+ * empty if 16 bytes can't be recovered. */
+static std::vector<uint8_t> parseLiberalIV(const std::string &raw)
+{
+    auto hexval = [](char c) -> int {
+        if(c >= '0' && c <= '9') return c - '0';
+        if(c >= 'a' && c <= 'f') return c - 'a' + 10;
+        if(c >= 'A' && c <= 'F') return c - 'A' + 10;
+        return -1;
+    };
+
+    size_t i = 0, n = raw.size();
+    if(i + 1 < n && raw[i] == '0' && (raw[i + 1] == 'x' || raw[i + 1] == 'X'))
+        i += 2;
+
+    std::vector<uint8_t> iv;
+    while(i + 1 < n && iv.size() < 16)
+    {
+        int hi = hexval(raw[i]);
+        int lo = hexval(raw[i + 1]);
+        if(hi < 0 || lo < 0)
+            break;
+        iv.push_back(static_cast<uint8_t>((hi << 4) | lo));
+        i += 2;
+    }
+
+    if(iv.size() != 16)
+        iv.clear();
+    return iv;
+}
+
 static bool parseEncryption(const AttributesTag *keytag, const Url &playlistUrl,
                             CommonEncryption &encryption)
 {
@@ -261,11 +292,12 @@ static bool parseEncryption(const AttributesTag *keytag, const Url &playlistUrl,
         }
 
         encryption.uri = keyurl.toString();
+        encryption.iv.clear();
 
         if(keytag->getAttributeByName("IV"))
         {
-            encryption.iv.clear();
-            encryption.iv = keytag->getAttributeByName("IV")->hexSequence();
+            /* empty if unrecoverable; prepareChunk() then derives the IV */
+            encryption.iv = parseLiberalIV(keytag->getAttributeByName("IV")->value);
         }
         return true;
     }
