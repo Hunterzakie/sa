@@ -748,6 +748,11 @@ static int BossCallback(vlc_object_t *p_this,
     [_defaultNotificationCenter removeObserver:self];
 }
 
+- (vlc_player_t *)p_player
+{
+    return _p_player;
+}
+
 - (void)setShowLyrics:(BOOL)showLyrics
 {
     if (_showLyrics == showLyrics) {

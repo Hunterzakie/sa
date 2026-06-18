@@ -31,6 +31,8 @@
 #import <Sparkle/Sparkle.h>                        //for o_intf_last_updateLabel
 #endif
 
+#import <stdatomic.h>
+
 #import <vlc_configuration.h>
 #import <vlc_actions.h>
 #import <vlc_interface.h>
@@ -39,6 +41,8 @@
 #import <vlc_plugin.h>
 #import <vlc_config_cat.h>
 #import <vlc_aout.h>
+#import <vlc_player.h>
+#import <vlc_stt.h>
 
 #import "extensions/NSScreen+VLCAdditions.h"
 #import "extensions/NSString+Helpers.h"
@@ -50,6 +54,8 @@
 #import "library/VLCLibraryController.h"
 #import "library/VLCLibraryModel.h"
 #import "library/VLCLibraryDataTypes.h"
+#import "playqueue/VLCPlayQueueController.h"
+#import "playqueue/VLCPlayerController.h"
 #import "playqueue/VLCPlayQueueTableCellView.h"
 #import "views/VLCPlaybackEndViewController.h"
 #import "windows/video/VLCMainVideoViewController.h"
@@ -135,6 +141,38 @@ static NSString* VLCOSDSettingToolbarIdentifier = @"Subtitles Settings Item Iden
 static NSString* VLCInputSettingToolbarIdentifier = @"Input Settings Item Identifier";
 static NSString* VLCMediaLibrarySettingToolbarIdentifier = @"Media Library Settings Item Identifier";
 static NSString* VLCHotkeysSettingToolbarIdentifier = @"Hotkeys Settings Item Identifier";
+static NSString* VLCAISettingToolbarIdentifier = @"AI Settings Item Identifier";
+
+/*
+ * Speech-to-text preload state, shared between the controller (main thread) and
+ * the loader thread that drives the vlc_stt_ctx callbacks.
+ *
+ * The struct outlives individual callbacks: it is allocated when the AI pane is
+ * first set up and freed in -dealloc, after the loader has been detached. Only
+ * @ref cancel is touched from the loader thread (atomically); @ref loading is
+ * read/written from the main thread only. @ref controller is an unretained
+ * back-reference used by the C callbacks to reach the Objective-C controller;
+ * it stays valid because the controller detaches the loader before being
+ * deallocated.
+ */
+typedef struct {
+    void *controller;       /* (__bridge VLCSimplePrefsController *) */
+    atomic_bool cancel;     /* set true before vlc_player_DetachSttCtx() */
+    bool loading;           /* main-thread only: button acts as Cancel */
+} ai_preload_state_t;
+
+static const char *ai_preload_status_text(enum vlc_stt_ctx_status status)
+{
+    switch (status) {
+        case vlc_stt_ctx_status_downloading: return N_("Downloading model…");
+        case vlc_stt_ctx_status_extracting:  return N_("Extracting model…");
+        case vlc_stt_ctx_status_hashing:     return N_("Verifying model…");
+        case vlc_stt_ctx_status_loading:     return N_("Loading model…");
+        case vlc_stt_ctx_status_done:        return N_("Model ready");
+        case vlc_stt_ctx_status_error:       return N_("Model loading failed");
+    }
+    return "";
+}
 
 @interface VLCMediaLibraryFolderManagementController : NSObject <NSTableViewDelegate, NSTableViewDataSource>
 {
@@ -159,6 +197,20 @@ static NSString* VLCHotkeysSettingToolbarIdentifier = @"Hotkeys Settings Item Id
 
 @end
 
+@interface VLCAIModelsManagementController : NSObject <NSTableViewDelegate, NSTableViewDataSource>
+
+@property (readwrite, weak) NSTableView *tableView;
+@property (readwrite, weak) NSTableColumn *nameColumn;
+@property (readwrite, weak) NSTableColumn *sizeColumn;
+@property (readwrite, weak) NSButton *removeButton;
+@property (readwrite, copy) NSString *modelsPath;
+
+- (void)reload;             // re-scan the directory, clear staged deletions
+- (void)commitDeletions;    // delete staged paths (called on Save)
+- (IBAction)removeSelected:(id)sender; // stage the selected model for deletion
+
+@end
+
 @interface VLCSimplePrefsController() <NSToolbarDelegate, NSWindowDelegate>
 {
     BOOL _audioSettingChanged;
@@ -167,6 +219,7 @@ static NSString* VLCHotkeysSettingToolbarIdentifier = @"Hotkeys Settings Item Id
     BOOL _osdSettingChanged;
     BOOL _inputSettingChanged;
     BOOL _hotkeyChanged;
+    BOOL _aiSettingChanged;
 
     NSOpenPanel *_selectFolderPanel;
     NSArray *_hotkeyDescriptions;
@@ -175,10 +228,100 @@ static NSString* VLCHotkeysSettingToolbarIdentifier = @"Hotkeys Settings Item Id
     NSMutableArray *_hotkeySettings;
     NSString *_keyInTransition;
     VLCMediaLibraryFolderManagementController *_mediaLibraryManagementController;
+    VLCAIModelsManagementController *_aiModelsController;
+    ai_preload_state_t *_aiPreload;
 
     intf_thread_t *p_intf;
 }
+
+- (void)updateAISttControlsEnabled;
+- (void)updateAIWhisperBoxVisibility;
+- (void)setupAIModelsControllerIfNeeded;
+- (void)aiPreloadDidFinishWithStatus:(enum vlc_stt_ctx_status)status;
+- (void)aiPreloadProgressWithStatus:(enum vlc_stt_ctx_status)status
+                            position:(int64_t)position
+                               total:(int64_t)total;
 @end
+
+#pragma mark -
+#pragma mark Speech-to-text preload callbacks
+
+/* Terminal callback. Called with the ctx lock held; must not block or
+ * re-acquire it, so we only marshal asynchronously onto the main thread. */
+static void ai_preload_loaded(struct vlc_stt_ctx *ctx,
+                              enum vlc_stt_ctx_status status, void *opaque)
+{
+    VLC_UNUSED(ctx);
+    ai_preload_state_t *st = opaque;
+    /* Weak so a callback that is still queued when the controller is
+     * deallocated becomes a no-op instead of a use-after-free. */
+    __weak VLCSimplePrefsController *weakCtrl = (__bridge VLCSimplePrefsController *)st->controller;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        VLCSimplePrefsController *ctrl = weakCtrl;
+        [ctrl aiPreloadDidFinishWithStatus:status];
+    });
+}
+
+/* Progress callback. Marshalled asynchronously; never blocks the loader. */
+static void ai_preload_progress(struct vlc_stt_ctx *ctx,
+                                enum vlc_stt_ctx_status status, int64_t position,
+                                int64_t total, const char *description,
+                                void *opaque)
+{
+    VLC_UNUSED(ctx); VLC_UNUSED(description);
+    ai_preload_state_t *st = opaque;
+    __weak VLCSimplePrefsController *weakCtrl = (__bridge VLCSimplePrefsController *)st->controller;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        VLCSimplePrefsController *ctrl = weakCtrl;
+        [ctrl aiPreloadProgressWithStatus:status position:position total:total];
+    });
+}
+
+/* Confirmation callback. Called from the loader thread without the ctx lock;
+ * blocks until the user answers on the main thread. The cancel check avoids a
+ * deadlock when the main thread is itself blocked in vlc_player_DetachSttCtx(). */
+static bool ai_preload_confirm(struct vlc_stt_ctx *ctx, uint64_t download_size,
+                               const char *path, void *opaque)
+{
+    VLC_UNUSED(ctx);
+    ai_preload_state_t *st = opaque;
+    if (atomic_load(&st->cancel))
+        return false;
+
+    NSString *destination = path ? toNSStr(path) : @"";
+    NSString *informative = [NSString stringWithFormat:
+        _NS("VLC will download %llu MB to:\n%@"),
+        (unsigned long long)(download_size / 1000000), destination];
+
+    __block BOOL accepted = NO;
+    dispatch_semaphore_t sem = dispatch_semaphore_create(0);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSAlert *alert = [[NSAlert alloc] init];
+        alert.messageText = _NS("Download speech recognition model");
+        alert.informativeText = informative;
+        [alert addButtonWithTitle:_NS("Download")];
+        [alert addButtonWithTitle:_NS("Cancel")];
+        accepted = [alert runModal] == NSAlertFirstButtonReturn;
+        dispatch_semaphore_signal(sem);
+    });
+    dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
+    return accepted;
+}
+
+/* Abort poll. Cheap and non-blocking. */
+static bool ai_preload_abort(struct vlc_stt_ctx *ctx, void *opaque)
+{
+    VLC_UNUSED(ctx);
+    ai_preload_state_t *st = opaque;
+    return atomic_load(&st->cancel);
+}
+
+static const struct vlc_stt_ctx_callbacks ai_preload_cbs = {
+    ai_preload_loaded,
+    ai_preload_progress,
+    ai_preload_confirm,
+    ai_preload_abort,
+};
 
 @implementation VLCSimplePrefsController
 
@@ -305,6 +448,8 @@ create_toolbar_item(NSString *itemIdent, NSString *name, NSString *desc, NSStrin
         CreateToolbarItem(NSTR(ML_TITLE), NSTR(ML_TOOLTIP), @"NXHelpBacktrack", showMediaLibrarySettings);
     } else if ([itemIdent isEqual: VLCHotkeysSettingToolbarIdentifier]) {
         CreateToolbarItem(NSTR(HOTKEYS_TITLE), NSTR(HOTKEYS_TOOLTIP), @"VLCHotkeysCone", showHotkeySettings);
+    } else if ([itemIdent isEqual: VLCAISettingToolbarIdentifier]) {
+        CreateToolbarItem(NSTR(AI_TITLE), NSTR(AI_TOOLTIP), @"VLCInterfaceCone", showAISettings);
     }
 
     return toolbarItem;
@@ -323,6 +468,7 @@ create_toolbar_item(NSString *itemIdent, NSString *name, NSString *desc, NSStrin
                                    VLCInputSettingToolbarIdentifier,
                                    VLCMediaLibrarySettingToolbarIdentifier,
                                    VLCHotkeysSettingToolbarIdentifier,
+                                   VLCAISettingToolbarIdentifier,
                                    NSToolbarFlexibleSpaceItemIdentifier];
         } else {
             toolbarIdentifiers = @[VLCIntfSettingToolbarIdentifier,
@@ -331,6 +477,7 @@ create_toolbar_item(NSString *itemIdent, NSString *name, NSString *desc, NSStrin
                                    VLCOSDSettingToolbarIdentifier,
                                    VLCInputSettingToolbarIdentifier,
                                    VLCHotkeysSettingToolbarIdentifier,
+                                   VLCAISettingToolbarIdentifier,
                                    NSToolbarFlexibleSpaceItemIdentifier];
         }
     });
@@ -479,6 +626,24 @@ create_toolbar_item(NSString *itemIdent, NSString *name, NSString *desc, NSStrin
     [_mediaLibraryPresentTableColumn setTitle:_NS("Present")];
     [_mediaLibraryBannedTableColumn setTitle:_NS("Banned")];
     [_mediaLibraryPathTableColumn setTitle:_NS("Location")];
+
+    /* AI */
+    [_ai_restartNoticeLabel setStringValue: _NS("VLC needs to be restarted for some changes to take effect")];
+    [_ai_sttEnableCheckbox setTitle: _NS("Enable speech-to-text")];
+    [_ai_sttLoaderLabel setStringValue: _NS("Speech-To-Text implementation")];
+    [_ai_whisperBox setTitle: _NS("Speech-to-Text (Whisper)")];
+    [_ai_whisperModelLabel setStringValue: _NS("Model name")];
+    [_ai_whisperLanguageLabel setStringValue: _NS("Language")];
+    [_ai_whisperTranslationLabel setStringValue: _NS("Translation language")];
+    [_ai_whisperThreadLabel setStringValue: _NS("Number of threads")];
+    [_ai_whisperLengthLabel setStringValue: _NS("Sample length (ms)")];
+    [_ai_sttPreloadButton setTitle: _NS("Load now")];
+    [_ai_sttPreloadStatusLabel setStringValue: @""];
+    [_ai_modelsBox setTitle: _NS("Downloaded models")];
+    [_ai_modelsReloadButton setTitle: _NS("Reload")];
+    [_ai_modelsRemoveButton setTitle: _NS("Remove")];
+    [[_ai_modelsNameColumn headerCell] setStringValue: _NS("Name")];
+    [[_ai_modelsSizeColumn headerCell] setStringValue: _NS("Size")];
 
     /* generic stuff */
     [_showAllButton setTitle: _NS("Show All")];
@@ -736,11 +901,12 @@ create_toolbar_item(NSString *itemIdent, NSString *name, NSString *desc, NSStrin
     [_video_devicePopup addItemWithTitle: _NS("Default")];
     [[_video_devicePopup lastItem] setTag: 0];
     while (i < y) {
-        NSRect s_rect = [[[NSScreen screens] objectAtIndex:i] frame];
+        NSScreen * const screen = [[NSScreen screens] objectAtIndex:i];
+        NSRect s_rect = [screen frame];
         [_video_devicePopup addItemWithTitle:
          [NSString stringWithFormat: @"%@ %i (%ix%i)", _NS("Screen"), i+1,
                    (int)s_rect.size.width, (int)s_rect.size.height]];
-        [[_video_devicePopup lastItem] setTag: (int)[[[NSScreen screens] objectAtIndex:i] displayID]];
+        [[_video_devicePopup lastItem] setTag: (int)[screen displayID]];
         i++;
     }
     [_video_devicePopup selectItemAtIndex: 0];
@@ -857,6 +1023,35 @@ create_toolbar_item(NSString *itemIdent, NSString *name, NSString *desc, NSStrin
 
     [_hotkeys_listbox reloadData];
     [self setupButton:_hotkeys_mediakeysCheckbox forBoolValue: "macosx-mediakeys"];
+
+    /***************
+     * AI settings *
+     ***************/
+    [self setupButton:_ai_sttEnableCheckbox forBoolValue: "stt"];
+    [self setupButton:_ai_sttLoaderPopup forModuleList: "stt-loader"];
+
+    /* "none" would duplicate the enable checkbox above. */
+    NSInteger sttNoneIndex = [_ai_sttLoaderPopup indexOfItemWithRepresentedObject:@"none"];
+    if (sttNoneIndex != -1)
+        [_ai_sttLoaderPopup removeItemAtIndex:sttNoneIndex];
+
+    [self setupButton:_ai_whisperModelPopup forStringList: "whisper-model"];
+    [self setupButton:_ai_whisperLanguagePopup forStringList: "whisper-language"];
+    [self setupButton:_ai_whisperTranslationPopup forStringList: "whisper-translation"];
+
+    _ai_whisperThreadField.intValue = (int)config_GetInt("whisper-nthread");
+    _ai_whisperThreadStepper.intValue = _ai_whisperThreadField.intValue;
+    _ai_whisperThreadField.toolTip = NSTR(config_GetLabel("whisper-nthread"));
+    _ai_whisperThreadStepper.toolTip = _ai_whisperThreadField.toolTip;
+
+    _ai_whisperLengthField.intValue = (int)config_GetInt("whisper-length");
+    _ai_whisperLengthField.toolTip = NSTR(config_GetLabel("whisper-length"));
+
+    [self updateAISttControlsEnabled];
+    [self updateAIWhisperBoxVisibility];
+
+    [self setupAIModelsControllerIfNeeded];
+    [_aiModelsController reload];
 }
 
 #pragma mark -
@@ -1118,6 +1313,25 @@ static inline void save_string_list(intf_thread_t * __unused p_intf, id object, 
 
         config_PutInt("macosx-mediakeys", [_hotkeys_mediakeysCheckbox state]);
     }
+
+    /***************
+     * AI settings *
+     ***************/
+    if (_aiSettingChanged) {
+        config_PutInt("stt", _ai_sttEnableCheckbox.state == NSControlStateValueOn);
+        SaveModuleList(_ai_sttLoaderPopup, "stt-loader");
+        SaveStringList(_ai_whisperModelPopup,       "whisper-model");
+        SaveStringList(_ai_whisperLanguagePopup,    "whisper-language");
+        SaveStringList(_ai_whisperTranslationPopup, "whisper-translation");
+
+        config_PutInt("whisper-nthread", VLC_CLIP(_ai_whisperThreadField.intValue, 0, 999));
+        config_PutInt("whisper-length", VLC_CLIP(_ai_whisperLengthField.intValue, 5000, 40000));
+        _aiSettingChanged = NO;
+    }
+
+    /* Model deletions are staged in the controller and committed here on Save,
+     * regardless of _aiSettingChanged; cancelling the window never reaches this. */
+    [_aiModelsController commitDeletions];
 
     fixIntfSettings();
 
@@ -1544,6 +1758,197 @@ static inline void save_string_list(intf_thread_t * __unused p_intf, id object, 
     [self showSettingsForCategory:_mediaLibraryView];
 }
 
+#pragma mark -
+#pragma mark AI actions
+
+- (void)showAISettings
+{
+    [self showSettingsForCategory:_aiView];
+}
+
+- (void)updateAISttControlsEnabled
+{
+    const BOOL on = _ai_sttEnableCheckbox.state == NSControlStateValueOn;
+    _ai_sttLoaderLabel.enabled = on;
+    _ai_sttLoaderPopup.enabled = on;
+    _ai_whisperModelPopup.enabled = on;
+    _ai_whisperLanguagePopup.enabled = on;
+    _ai_whisperTranslationPopup.enabled = on;
+    _ai_whisperThreadField.enabled = on;
+    _ai_whisperThreadStepper.enabled = on;
+    _ai_whisperLengthField.enabled = on;
+    _ai_sttPreloadButton.enabled = on;
+    _ai_sttPreloadStatusLabel.enabled = on;
+}
+
+- (void)updateAIWhisperBoxVisibility
+{
+    /* Only the selected implementation's settings are relevant;
+     * "Automatic" leaves the choice to the module priority. */
+    NSString *impl = _ai_sttLoaderPopup.selectedItem.representedObject;
+    const BOOL visible = impl.length == 0
+                      || [impl isEqualToString:@"any"]
+                      || [impl isEqualToString:@"whisper"];
+    _ai_whisperBox.hidden = !visible;
+    /* A hidden view keeps its Auto Layout space: let the low priority
+     * constraint pull the preload row up under the loader popup instead. */
+    _ai_sttPreloadTopConstraint.active = visible;
+}
+
+- (void)setupAIModelsControllerIfNeeded
+{
+    if (_aiModelsController != nil)
+        return;
+
+    _aiModelsController = [[VLCAIModelsManagementController alloc] init];
+    _ai_modelsTableView.delegate = _aiModelsController;
+    _ai_modelsTableView.dataSource = _aiModelsController;
+    _aiModelsController.tableView = _ai_modelsTableView;
+    _aiModelsController.nameColumn = _ai_modelsNameColumn;
+    _aiModelsController.sizeColumn = _ai_modelsSizeColumn;
+    _aiModelsController.removeButton = _ai_modelsRemoveButton;
+
+    char *cachedir = config_GetUserDir(VLC_CACHE_DIR);
+    NSString *path = nil;
+    if (cachedir) {
+        path = [toNSStr(cachedir) stringByAppendingPathComponent:@"models"];
+        free(cachedir);
+    }
+    _aiModelsController.modelsPath = path;
+    _ai_modelsPathLabel.stringValue = path ?: @"";
+
+    _ai_modelsReloadButton.target = _aiModelsController;
+    _ai_modelsReloadButton.action = @selector(reload);
+
+    _ai_modelsRemoveButton.target = _aiModelsController;
+    _ai_modelsRemoveButton.action = @selector(removeSelected:);
+    _ai_modelsRemoveButton.enabled = NO;
+}
+
+- (IBAction)aiSettingChanged:(id)sender
+{
+    if (sender == _ai_sttEnableCheckbox)
+        [self updateAISttControlsEnabled];
+    if (sender == _ai_sttLoaderPopup)
+        [self updateAIWhisperBoxVisibility];
+    if (sender == _ai_whisperThreadStepper)
+        _ai_whisperThreadField.intValue = _ai_whisperThreadStepper.intValue;
+    if (sender == _ai_whisperThreadField)
+        _ai_whisperThreadStepper.intValue = _ai_whisperThreadField.intValue;
+    _aiSettingChanged = YES;
+}
+
+- (ai_preload_state_t *)aiPreloadState
+{
+    if (_aiPreload == NULL) {
+        _aiPreload = calloc(1, sizeof(*_aiPreload));
+        if (_aiPreload == NULL)
+            return NULL;
+        _aiPreload->controller = (__bridge void *)self;
+        atomic_init(&_aiPreload->cancel, false);
+        _aiPreload->loading = false;
+    }
+    return _aiPreload;
+}
+
+- (IBAction)aiPreloadAction:(id)sender
+{
+    VLC_UNUSED(sender);
+    vlc_player_t *player = VLCMain.sharedInstance.playQueueController.playerController.p_player;
+    if (player == NULL)
+        return;
+
+    ai_preload_state_t *st = [self aiPreloadState];
+    if (st == NULL)
+        return;
+
+    if (st->loading) {
+        /* Acting as a Cancel button: abort the running load. */
+        atomic_store(&st->cancel, true);
+        _ai_sttPreloadButton.enabled = NO;
+        _ai_sttPreloadButton.title = _NS("Cancelling…");
+        return;
+    }
+
+    atomic_store(&st->cancel, false);
+    st->loading = true;
+    _ai_sttPreloadButton.title = _NS("Cancel");
+    _ai_sttPreloadProgress.hidden = NO;
+    _ai_sttPreloadProgress.indeterminate = YES;
+    [_ai_sttPreloadProgress startAnimation:nil];
+    _ai_sttPreloadStatusLabel.stringValue = _NS("Loading model…");
+
+    if (vlc_player_PreloadSttCtx(player, &ai_preload_cbs, st) != VLC_SUCCESS) {
+        st->loading = false;
+        [_ai_sttPreloadProgress stopAnimation:nil];
+        _ai_sttPreloadProgress.indeterminate = NO;
+        _ai_sttPreloadProgress.doubleValue = 0;
+        _ai_sttPreloadButton.title = _NS("Load now");
+        _ai_sttPreloadStatusLabel.stringValue = _NS("Model loading failed");
+    }
+}
+
+- (void)aiPreloadProgressWithStatus:(enum vlc_stt_ctx_status)status
+                            position:(int64_t)position
+                               total:(int64_t)total
+{
+    if (_aiPreload == NULL || atomic_load(&_aiPreload->cancel))
+        return;
+
+    _ai_sttPreloadProgress.hidden = NO;
+    if (total > 0) {
+        [_ai_sttPreloadProgress stopAnimation:nil];
+        _ai_sttPreloadProgress.indeterminate = NO;
+        _ai_sttPreloadProgress.minValue = 0;
+        _ai_sttPreloadProgress.maxValue = 100;
+        _ai_sttPreloadProgress.doubleValue = (double)((position * 100) / total);
+    } else {
+        _ai_sttPreloadProgress.indeterminate = YES;
+        [_ai_sttPreloadProgress startAnimation:nil];
+    }
+    _ai_sttPreloadStatusLabel.stringValue = NSTR(ai_preload_status_text(status));
+}
+
+- (void)aiPreloadDidFinishWithStatus:(enum vlc_stt_ctx_status)status
+{
+    /* No cancel check here: the terminal callback is the only place that resets
+     * the button after a user-initiated cancel. The core never invokes it during
+     * teardown (vlc_stt_ctx_Loaded gates on ctx->cancelled). */
+    if (_aiPreload == NULL)
+        return;
+
+    _aiPreload->loading = false;
+    const BOOL ok = status == vlc_stt_ctx_status_done;
+    [_ai_sttPreloadProgress stopAnimation:nil];
+    _ai_sttPreloadProgress.indeterminate = NO;
+    _ai_sttPreloadProgress.minValue = 0;
+    _ai_sttPreloadProgress.maxValue = 100;
+    _ai_sttPreloadProgress.doubleValue = ok ? 100 : 0;
+    _ai_sttPreloadButton.enabled = _ai_sttEnableCheckbox.state == NSControlStateValueOn;
+    _ai_sttPreloadButton.title = _NS("Load now");
+    _ai_sttPreloadStatusLabel.stringValue = NSTR(ai_preload_status_text(status));
+}
+
+- (void)cleanupAIPreload
+{
+    if (_aiPreload == NULL)
+        return;
+
+    /* Signal cancellation before detaching: vlc_player_DetachSttCtx() blocks
+     * until the loader settles, so its confirm/abort callbacks must not try to
+     * marshal back onto this (blocked) main thread. */
+    atomic_store(&_aiPreload->cancel, true);
+    vlc_player_t *player = VLCMain.sharedInstance.playQueueController.playerController.p_player;
+    if (player != NULL)
+        vlc_player_DetachSttCtx(player, _aiPreload);
+    free(_aiPreload);
+    _aiPreload = NULL;
+}
+
+- (void)dealloc
+{
+    [self cleanupAIPreload];
+}
 
 @end
 
@@ -1675,6 +2080,211 @@ static inline void save_string_list(intf_thread_t * __unused p_intf, id object, 
 - (void)tableViewSelectionDidChange:(NSNotification *)notification
 {
     [self updateFolderButtonState];
+}
+
+@end
+
+#pragma mark -
+
+@implementation VLCAIModelsManagementController
+{
+    NSMutableArray<NSMutableDictionary *> *_rows;
+    NSMutableArray<NSString *> *_stagedDeletions;
+    BOOL _setupDone;
+}
+
+- (instancetype)init
+{
+    self = [super init];
+    if (self) {
+        _rows = [NSMutableArray array];
+        _stagedDeletions = [NSMutableArray array];
+    }
+    return self;
+}
+
+// on-disk size of a model entry: a single file or the recursive content of a
+// directory bundle (e.g. a .mlmodelc).
++ (long long)entrySizeAtURL:(NSURL *)url
+{
+    NSFileManager *fm = NSFileManager.defaultManager;
+    NSNumber *isDir = nil;
+    if (![url getResourceValue:&isDir forKey:NSURLIsDirectoryKey error:NULL])
+        return 0;
+
+    if (![isDir boolValue]) {
+        NSNumber *size = nil;
+        if ([url getResourceValue:&size forKey:NSURLTotalFileAllocatedSizeKey error:NULL] && size)
+            return size.longLongValue;
+        if ([url getResourceValue:&size forKey:NSURLFileSizeKey error:NULL] && size)
+            return size.longLongValue;
+        return 0;
+    }
+
+    long long total = 0;
+    NSDirectoryEnumerator *en =
+        [fm enumeratorAtURL:url
+ includingPropertiesForKeys:@[NSURLTotalFileAllocatedSizeKey, NSURLFileSizeKey, NSURLIsDirectoryKey]
+                    options:0
+               errorHandler:nil];
+    for (NSURL *child in en) {
+        NSNumber *childIsDir = nil;
+        if ([child getResourceValue:&childIsDir forKey:NSURLIsDirectoryKey error:NULL] && childIsDir.boolValue)
+            continue;
+        NSNumber *size = nil;
+        if ([child getResourceValue:&size forKey:NSURLTotalFileAllocatedSizeKey error:NULL] && size)
+            total += size.longLongValue;
+        else if ([child getResourceValue:&size forKey:NSURLFileSizeKey error:NULL] && size)
+            total += size.longLongValue;
+    }
+    return total;
+}
+
+// Qt-compatible 1024-based formatting with GB/MB/KB labels.
++ (NSString *)formatSize:(long long)bytes
+{
+    if (bytes >= 1024LL * 1024 * 1024)
+        return [NSString stringWithFormat:@"%.2f GB", bytes / (1024.0 * 1024 * 1024)];
+    if (bytes >= 1024 * 1024)
+        return [NSString stringWithFormat:@"%.1f MB", bytes / (1024.0 * 1024)];
+    if (bytes >= 1024)
+        return [NSString stringWithFormat:@"%.1f KB", bytes / 1024.0];
+    return [NSString stringWithFormat:@"%lld B", bytes];
+}
+
+- (void)setupOnce
+{
+    if (_setupDone)
+        return;
+    _setupDone = YES;
+
+    self.nameColumn.sortDescriptorPrototype =
+        [NSSortDescriptor sortDescriptorWithKey:@"name" ascending:YES selector:@selector(localizedCaseInsensitiveCompare:)];
+    self.sizeColumn.sortDescriptorPrototype =
+        [NSSortDescriptor sortDescriptorWithKey:@"size" ascending:YES];
+
+    self.tableView.allowsColumnSelection = NO;
+    self.tableView.allowsMultipleSelection = NO;
+    [self updateRemoveButtonEnabled];
+}
+
+- (void)updateRemoveButtonEnabled
+{
+    self.removeButton.enabled = !self.isEmpty && self.tableView.selectedRow >= 0;
+}
+
+- (void)reload
+{
+    [self setupOnce];
+    [_rows removeAllObjects];
+    [_stagedDeletions removeAllObjects];
+
+    if (self.modelsPath.length > 0) {
+        NSURL *dirURL = [NSURL fileURLWithPath:self.modelsPath isDirectory:YES];
+        NSArray<NSURL *> *children =
+            [NSFileManager.defaultManager contentsOfDirectoryAtURL:dirURL
+                                        includingPropertiesForKeys:@[NSURLIsDirectoryKey]
+                                                           options:NSDirectoryEnumerationSkipsHiddenFiles
+                                                             error:NULL];
+        for (NSURL *child in children) {
+            const long long bytes = [VLCAIModelsManagementController entrySizeAtURL:child];
+            [_rows addObject:[@{
+                @"name": child.lastPathComponent,
+                @"path": child.path,
+                @"size": @(bytes),
+                @"sizeText": [VLCAIModelsManagementController formatSize:bytes],
+            } mutableCopy]];
+        }
+    }
+
+    [self sortRows];
+    [self.tableView reloadData];
+    [self updateRemoveButtonEnabled];
+}
+
+- (void)sortRows
+{
+    NSArray *descriptors = self.tableView.sortDescriptors;
+    if (descriptors.count == 0)
+        descriptors = @[[NSSortDescriptor sortDescriptorWithKey:@"name" ascending:YES
+                                                       selector:@selector(localizedCaseInsensitiveCompare:)]];
+    [_rows sortUsingDescriptors:descriptors];
+}
+
+- (void)commitDeletions
+{
+    NSFileManager *fm = NSFileManager.defaultManager;
+    for (NSString *path in _stagedDeletions) {
+        NSError *error = nil;
+        if (![fm removeItemAtPath:path error:&error])
+            msg_Warn(getIntf(), "could not delete model '%s': %s",
+                     path.UTF8String, error.localizedDescription.UTF8String);
+    }
+    [_stagedDeletions removeAllObjects];
+}
+
+- (BOOL)isEmpty
+{
+    return _rows.count == 0;
+}
+
+- (IBAction)removeSelected:(id)sender
+{
+    VLC_UNUSED(sender);
+    if (self.isEmpty)
+        return;
+    const NSInteger row = self.tableView.selectedRow;
+    if (row < 0 || row >= (NSInteger)_rows.count)
+        return;
+
+    NSString *path = _rows[row][@"path"];
+    if (path.length > 0)
+        [_stagedDeletions addObject:path];
+    [_rows removeObjectAtIndex:row];
+    [self.tableView reloadData];
+    [self updateRemoveButtonEnabled];
+}
+
+#pragma mark NSTableView data source / delegate
+
+- (NSInteger)numberOfRowsInTableView:(NSTableView *)tableView
+{
+    return self.isEmpty ? 1 : (NSInteger)_rows.count;
+}
+
+- (id)tableView:(NSTableView *)tableView
+    objectValueForTableColumn:(NSTableColumn *)tableColumn
+                          row:(NSInteger)row
+{
+    if (self.isEmpty) {
+        if (tableColumn == self.nameColumn)
+            return _NS("No models found");
+        return @"";
+    }
+
+    if (tableColumn == self.nameColumn)
+        return _rows[row][@"name"];
+    if (tableColumn == self.sizeColumn)
+        return _rows[row][@"sizeText"];
+    return @"";
+}
+
+- (BOOL)tableView:(NSTableView *)tableView shouldSelectRow:(NSInteger)row
+{
+    return !self.isEmpty;
+}
+
+- (void)tableViewSelectionDidChange:(NSNotification *)notification
+{
+    [self updateRemoveButtonEnabled];
+}
+
+- (void)tableView:(NSTableView *)tableView sortDescriptorsDidChange:(NSArray<NSSortDescriptor *> *)oldDescriptors
+{
+    if (self.isEmpty)
+        return;
+    [self sortRows];
+    [tableView reloadData];
 }
 
 @end
