@@ -112,7 +112,7 @@ ModalDialog {
                 Widgets.ButtonExt {
                     id: okBtn
                     Layout.fillWidth: true
-                    Layout.preferredHeight: VLCStyle.icon_normal
+                    
                     visible: okBtn.text !== ""
 
                     onClicked: root.accept()

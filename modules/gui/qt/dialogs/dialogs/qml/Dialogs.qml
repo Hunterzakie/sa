@@ -341,7 +341,7 @@ Item {
 
         footer: FocusScope {
             id: loginButtons
-            implicitHeight: VLCStyle.icon_normal
+             implicitHeight: VLCStyle.icon_normal + VLCStyle.margin_normal
 
             readonly property ColorContext colorContext: ColorContext {
                 id: loginFooterTheme
@@ -357,7 +357,8 @@ Item {
                     anchors.fill: parent
                     anchors.leftMargin: VLCStyle.margin_xxsmall
                     anchors.rightMargin: VLCStyle.margin_xxsmall
-
+                    anchors.bottomMargin: VLCStyle.margin_small
+                    
                     Widgets.TextToolButton {
                         id: loginCancel
                         Layout.fillWidth: true

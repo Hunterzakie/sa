@@ -98,7 +98,7 @@ Window {
 
             Layout.fillWidth: true
             Layout.minimumHeight: VLCStyle.icon_normal
-            Layout.preferredHeight: VLCStyle.icon_normal
+                
             standardButtons: DialogButtonBox.Ok | DialogButtonBox.Cancel
 
             background: null
