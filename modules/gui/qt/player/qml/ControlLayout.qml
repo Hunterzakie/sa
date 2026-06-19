@@ -41,7 +41,7 @@ FocusScope {
         delayed: true
         when: controlLayout._componentCompleted
         value: {
-            const count = repeater.count
+            const count = repeater.effectiveCount
 
             if (count === 0)
                 return 0
@@ -66,7 +66,7 @@ FocusScope {
         when: controlLayout._componentCompleted
         value: {
             let maximumWidth = 0
-            const count = repeater.count
+            const count = repeater.effectiveCount
 
             for (let i = 0; i < count; ++i) {
                 const item = repeater.itemAt(i)
@@ -111,7 +111,7 @@ FocusScope {
     implicitHeight: rowLayout.implicitHeight
 
     Navigation.navigable: {
-        for (let i = 0; i < repeater.count; ++i) {
+        for (let i = 0; i < repeater.effectiveCount; ++i) {
             const item = repeater.itemAt(i).item
 
             if (item && item.focus) {

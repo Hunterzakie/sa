@@ -45,12 +45,15 @@ Repeater {
     }
 
     onItemRemoved: (index, item) => {
+        --repeater._effectiveCount
+
+        if (!item)
+            return
+
         // NOTE: We update the 'navigation chain' after removing the item.
         item.removeNavigation()
 
         item.recoverFocus(index)
-
-        --repeater._effectiveCount
     }
 
     delegate: Loader {
