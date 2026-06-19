@@ -166,47 +166,99 @@ Item {
             }
         }
 
-        Loader {
-            id: viewLoader
+        readonly property Item currentView: _currentView
 
-            anchors.fill: parent
+        property Item _currentView
+        property var _currentViewIncubator
+        property url _oldViewUrl
 
-            focus: true
-            // If there is depth buffer, clipping is not necessary:
-            clip: _extendedFrameVisible && !effect.hasDepthBuffer
+        Component.onDestruction: {
+            if (_currentViewIncubator) {
+                // NOTE: `clear()` is not invokable.
+                _currentViewIncubator.forceCompletion()
+                _currentViewIncubator = null
+            }
+        }
 
-            source: {
-                // priority applies accross modes
-                // minimal > player > medialib
-                // MEDIALIB_MODE flag should always be set
+        readonly property int effectiveMainInterfaceMode: MainCtx.effectiveMainInterfaceMode
 
-                switch (MainCtx.effectiveMainInterfaceMode) {
-                case MainCtx.MAININTERFACE_MODE_MINIMAL:
-                    return "qrc:///qt/qml/VLC/Player/MinimalView.qml"
-                case  MainCtx.MAININTERFACE_MODE_PLAYER:
-                    return "qrc:///qt/qml/VLC/Player/Player.qml"
-                default:
-                    console.error("unexpected interface mode", MainCtx.effectiveMainInterfaceMode)
-                case MainCtx.MAININTERFACE_MODE_MAINDISPLAY:
-                    return "qrc:///qt/qml/VLC/MainInterface/MainDisplay.qml"
-                }
+        // FIXME: Use `Loader` when it introduces `retainWhileLoading`, like `Image`:
+        onEffectiveMainInterfaceModeChanged: {
+            let url
+
+            switch (effectiveMainInterfaceMode) {
+            case MainCtx.MAININTERFACE_MODE_MINIMAL:
+                url = "qrc:///qt/qml/VLC/Player/MinimalView.qml"
+                break
+            case  MainCtx.MAININTERFACE_MODE_PLAYER:
+                url = "qrc:///qt/qml/VLC/Player/Player.qml"
+                break
+            default:
+                console.error("unexpected interface mode", MainCtx.effectiveMainInterfaceMode)
+            case MainCtx.MAININTERFACE_MODE_MAINDISPLAY:
+                url = "qrc:///qt/qml/VLC/MainInterface/MainDisplay.qml"
             }
 
-            // Note that `VideoSurface` does not need to be ready for us to display the video.
-            // Interface clear color is transparent in video embedding case, and we use the
-            // interface window as the "video surface" until `VideoSurface` becomes ready.
-            asynchronous: true
+            if (url === _oldViewUrl)
+                return
 
-            onLoaded: {
-                // Sadly the way `Loader` handles this is not compatible with what we want to
-                // have. When asynchronous is true, switching modes causes visual twitching
-                // because `Loader` first unloads the current item, and then asynchronously
-                // loads the new item.
-                // TODO: Investigate whether ditching the `Loader` and start manually loading
-                //       the item is worth it.
-                // TODO: Get rid of this if `Loader` starts providing `retainWhileLoading`,
-                //       similar to `Image`.
-                viewLoader.asynchronous = false
+            _oldViewUrl = url
+
+            if (_currentViewIncubator) {
+                // NOTE: `QQmlIncubator::clear()` is not invokable.
+                _currentViewIncubator.forceCompletion()
+                _currentViewIncubator = null
+            }
+
+            const component = Qt.createComponent(url)
+
+            // No object parent, owned by the JS engine:
+            _currentViewIncubator = component.incubateObject(g_mainInterface, { // If there is depth buffer, clipping is not necessary:
+                                                                                'clip': Qt.binding(() => root._extendedFrameVisible && !effect.hasDepthBuffer),
+                                                                                'anchors.fill': g_mainInterface } )
+
+            switch (_currentViewIncubator.status) {
+            case Component.Loading: {
+                _currentViewIncubator.onStatusChanged = function(status) {
+                    console.assert(status === Component.Ready || status === Component.Error)
+                    if (status === Component.Ready) {
+                        // New view is ready, we can make the old view invisible and asynchronously destroy it:
+                        if (g_mainInterface._currentView) {
+                            g_mainInterface._currentView.visible = false
+                            Qt.callLater((item) => {
+                                console.assert(item)
+                                item.destroy()
+                            }, g_mainInterface._currentView)
+                        }
+                        g_mainInterface._currentView = g_mainInterface._currentViewIncubator.object
+                        g_mainInterface._currentViewIncubator = null
+                    } else if (status === Component.Error) {
+                        console.error("Creation of %1 failed".arg(url))
+                        g_mainInterface._currentViewIncubator = null
+                    }
+                }
+                break
+            }
+            case Component.Ready: {
+                // New view is (already) ready, we can make the old view invisible and asynchronously destroy it:
+                if (_currentView) {
+                    _currentView.visible = false
+                    Qt.callLater((item) => {
+                        console.assert(item)
+                        item.destroy()
+                    }, _currentView)
+                }
+                _currentView = _currentViewIncubator.object
+                _currentViewIncubator = null
+                break
+            }
+            case Component.Error: {
+                console.error("Creation of %1 failed".arg(url))
+                _currentViewIncubator = null
+                break
+            }
+            default:
+                break
             }
         }
 
