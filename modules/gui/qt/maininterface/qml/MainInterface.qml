@@ -191,6 +191,23 @@ Item {
                     return "qrc:///qt/qml/VLC/MainInterface/MainDisplay.qml"
                 }
             }
+
+            // Note that `VideoSurface` does not need to be ready for us to display the video.
+            // Interface clear color is transparent in video embedding case, and we use the
+            // interface window as the "video surface" until `VideoSurface` becomes ready.
+            asynchronous: true
+
+            onLoaded: {
+                // Sadly the way `Loader` handles this is not compatible with what we want to
+                // have. When asynchronous is true, switching modes causes visual twitching
+                // because `Loader` first unloads the current item, and then asynchronously
+                // loads the new item.
+                // TODO: Investigate whether ditching the `Loader` and start manually loading
+                //       the item is worth it.
+                // TODO: Get rid of this if `Loader` starts providing `retainWhileLoading`,
+                //       similar to `Image`.
+                viewLoader.asynchronous = false
+            }
         }
 
         Loader {
