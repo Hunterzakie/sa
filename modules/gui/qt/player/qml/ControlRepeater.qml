@@ -34,9 +34,14 @@ Repeater {
     ///incomming signal to request all menu and popup to close
     signal forceUnlock()
 
+    readonly property int effectiveCount: _effectiveCount
+    property int _effectiveCount: 0
+
     // NOTE: We apply the 'navigation chain' after adding the item.
     onItemAdded: (index, item) => {
         item.applyNavigation()
+
+        ++repeater._effectiveCount
     }
 
     onItemRemoved: (index, item) => {
@@ -44,6 +49,8 @@ Repeater {
         item.removeNavigation()
 
         item.recoverFocus(index)
+
+        --repeater._effectiveCount
     }
 
     delegate: Loader {
