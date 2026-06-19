@@ -365,13 +365,10 @@ deinterlace_sources = files(
         'deinterlace/algo_phosphor.c',
         'deinterlace/algo_ivtc.c',
     )
-if cdata.has('HAVE_X86ASM')
-    deinterlace_sources+=files('deinterlace/yadif_x86.asm')
-endif
+
 vlc_modules += {
     'name' : 'deinterlace',
     'sources' : deinterlace_sources,
-    'include_directories' : include_directories('../../extras/include/x86'),
     'link_with' : [deinterlacecommon_lib]
 }
 
