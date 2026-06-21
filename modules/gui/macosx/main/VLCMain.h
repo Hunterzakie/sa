@@ -66,6 +66,7 @@ extern NSString * const kVLCPreferencesVersion;
 @class VLCPlayQueueController;
 @class VLCVideoOutputProvider;
 @class VLCDetachedAudioWindow;
+@class VLCHotkeysController;
 
 @interface VLCMain : NSObject
 
@@ -79,6 +80,7 @@ extern NSString * const kVLCPreferencesVersion;
 @property (readonly) VLCConvertAndSaveWindowController *convertAndSaveWindow;
 @property (readonly) VLCCoreDialogProvider *coreDialogProvider;
 @property (readonly) VLCExtensionsManager *extensionsManager;
+@property (readonly) VLCHotkeysController *hotkeysController;
 @property (readonly) VLCLogWindowController *debugMsgPanel;
 @property (readonly) VLCLibraryController *libraryController;
 @property (readonly) VLCLibraryWindow *libraryWindow;

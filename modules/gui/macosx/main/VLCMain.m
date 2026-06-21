@@ -46,6 +46,8 @@
 
 #include <Metal/Metal.h>
 
+#import "coreinteraction/VLCHotkeysController.h"
+
 #import "extensions/NSString+Helpers.h"
 
 #import "library/VLCLibraryController.h"
@@ -126,6 +128,7 @@ NSString * const kVLCPreferencesVersion = @"VLCPreferencesVersion";
     VLCConvertAndSaveWindowController *_convertAndSaveWindow;
     VLCClickerManager *_clickerManager;
     VLCDetachedAudioWindow *_detachedAudioWindow;
+    VLCHotkeysController *_hotkeysController;
 
     bool _interfaceIsTerminating; /* Makes sure applicationWillTerminate will be called only once */
 }
@@ -293,6 +296,8 @@ static VLCMain *sharedInstance = nil;
         // Load them here already to apply stored profiles
         _videoEffectsPanel = [[VLCVideoEffectsWindowController alloc] init];
         _audioEffectsPanel = [[VLCAudioEffectsWindowController alloc] init];
+        
+        _hotkeysController = [[VLCHotkeysController alloc] init];
 
         if ([NSApp currentSystemPresentationOptions] & NSApplicationPresentationFullScreen)
             [_playQueueController.playerController setFullscreen:YES];
