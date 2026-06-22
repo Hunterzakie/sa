@@ -23,6 +23,11 @@ endif
 if HAVE_EMSCRIPTEN
 AM_CFLAGS += -sMAIN_MODULE=1
 endif
+if ENABLE_QT
+if QT_QML_DEBUG
+AM_CFLAGS += -DQT_QML_DEBUG
+endif
+endif
 
 #
 # Main VLC executable
