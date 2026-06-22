@@ -15,6 +15,7 @@
 #include <vlc_cpu.h>
 #include <checkasm/checkasm.h>
 
+void test_yadif(void);
 const char vlc_module_name[] = "vlc-checkasm";
 
 int main(int argc, const char *argv[])
@@ -36,8 +37,10 @@ int main(int argc, const char *argv[])
     };
 #endif
     CheckasmTest tests[] = {
-        {0}, // Sentinel
+        { "yadif", test_yadif }, 
+        {NULL, NULL} // Sentinel
     };
+    printf("Debug: Number of tests = %zu\n", sizeof(tests)/sizeof(tests[0]) - 1);
     CheckasmConfig config = {
         .cpu_flags = cpu_flags,
         .tests = tests,

@@ -610,7 +610,7 @@ if !HAVE_EMSCRIPTEN
 noinst_LTLIBRARIES = libtest_checkasm.la
 
 libtest_checkasm_la_SOURCES = \
-    checkasm/ext/src/arm/checkasm_32.S \
+	checkasm/ext/src/arm/checkasm_32.S \
     checkasm/ext/src/arm/checkasm_64.S \
     checkasm/ext/src/arm/cpu.c \
     checkasm/ext/src/loongarch/checkasm.S \
@@ -645,7 +645,21 @@ libtest_checkasm_la_SOURCES += checkasm/ext/src/x86/checkasm.asm
 endif
 
 noinst_PROGRAMS += vlc-checkasm
-vlc_checkasm_SOURCES = checkasm/checkasm.c
+vlc_checkasm_SOURCES = \
+	checkasm/checkasm.c \
+	checkasm/yadif.c
+
 vlc_checkasm_CPPFLAGS = $(AM_CPPFLAGS) -I$(srcdir)/checkasm/ext/include -I$(top_srcdir)/include
 vlc_checkasm_LDADD = libtest_checkasm.la -lm $(LIBVLCCORE)
+
+if HAVE_X86ASM
+checkasm/vlc_checkasm-yadif_x86.o: $(top_srcdir)/modules/video_filter/deinterlace/yadif_x86.asm
+	$(X86ASM) $(X86ASMFLAGS) $(X86ASMDEFS) \
+		-I$(top_srcdir)/extras/include/ \
+		-I$(top_srcdir)/extras/include/x86/ \
+		-o $@ $<
+
+vlc_checkasm_LDADD += checkasm/vlc_checkasm-yadif_x86.o
+endif
+
 endif

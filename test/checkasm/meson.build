@@ -32,14 +32,21 @@ libcheckasm = static_library(
 
 checkasm_sources = files(
     'checkasm.c',
+    'yadif.c'
 )
+
+if host_machine.cpu_family() in ['x86', 'x86_64'] and cdata.has('HAVE_X86ASM')
+    checkasm_sources += files('../../modules/video_filter/deinterlace/yadif_x86.asm')
+endif
+
 m_dep = cc.find_library('m', required: false)
 checkasm_exe = executable(
     'vlc-checkasm',
     checkasm_sources,
     link_with: [libvlccore, libcheckasm],
     dependencies:  [m_dep],
-    include_directories: [vlc_include_dirs, include_directories('ext/include')],
+    include_directories: [vlc_include_dirs, include_directories('ext/include'),
+    include_directories('../../extras/include/x86')],
     install: false,
     build_by_default: false,
 )
