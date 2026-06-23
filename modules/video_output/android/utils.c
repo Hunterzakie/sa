@@ -659,7 +659,7 @@ AWindowHandler_new(vlc_object_t *obj, vlc_window_t *wnd, awh_events_t *p_events)
 
     AWindowHandler *p_awh;
     JNIEnv *p_env;
-    JavaVM *p_jvm = var_InheritAddress(obj, "android-jvm");
+    JavaVM *p_jvm = vlc_android_GetJVM();
     jobject jobj = var_InheritAddress(obj, "drawable-androidwindow");
 
     if (!p_jvm)

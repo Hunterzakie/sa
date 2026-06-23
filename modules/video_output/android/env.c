@@ -71,7 +71,7 @@ android_getEnvCommon(vlc_object_t *p_obj, JavaVM *jvm, const char *psz_name)
     if (env == NULL)
     {
         if (!jvm)
-            jvm = var_InheritAddress(p_obj, "android-jvm");
+            jvm = vlc_android_GetJVM();
 
         if (!jvm)
             return NULL;

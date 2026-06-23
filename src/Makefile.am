@@ -646,6 +646,12 @@ fourcc_tables.h: fourcc_gen$(BUILDEXEEXT)
 	$(AM_V_GEN)$(builddir)/fourcc_gen$(BUILDEXEEXT) > $@.tmp
 	$(AM_V_at)mv -f -- $@.tmp $@
 
+libvlc_android_la_SOURCES = android/android.c
+libvlc_android_la_LDFLAGS = -avoid-version
+if HAVE_ANDROID
+lib_LTLIBRARIES += libvlc_android.la
+endif
+
 # Unit/regression tests
 #
 check_PROGRAMS = \

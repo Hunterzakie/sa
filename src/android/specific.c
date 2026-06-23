@@ -2,6 +2,7 @@
  * specific.c: stubs for Android OS-specific initialization
  *****************************************************************************
  * Copyright © 2016 VLC authors and VideoLAN
+ * Copyright © 2023-2026 Alexandre Janniaux <ajanni@videolabs.io>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by
@@ -23,6 +24,7 @@
 #endif
 
 #include <assert.h>
+#include <dlfcn.h>
 #include <errno.h>
 
 #include <vlc_common.h>
@@ -30,6 +32,7 @@
 #include <vlc_fs.h>
 #include "../libvlc.h"
 #include "../config/configuration.h"
+#include "modules/modules.h"
 
 #include <string.h>
 #include <jni.h>
@@ -76,93 +79,6 @@ get_java_string(JNIEnv *env, jclass clazz, const char *psz_name)
     return psz_strdup;
 }
 
-void
-JNI_OnUnload(JavaVM* vm, void* reserved)
-{
-    (void) reserved;
-
-    for (size_t i = 0; i < GENERIC_DIR_COUNT; ++i)
-        free(ppsz_generic_names[i]);
-
-    JNIEnv* env = NULL;
-    if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_2) != JNI_OK)
-        return;
-
-    if (fields.Environment.clazz)
-        (*env)->DeleteGlobalRef(env, fields.Environment.clazz);
-
-    if (fields.System.clazz)
-        (*env)->DeleteGlobalRef(env, fields.System.clazz);
-}
-
-/* This function is called when the libvlcore dynamic library is loaded via the
- * java.lang.System.loadLibrary method. Therefore, s_jvm will be already set
- * when libvlc_InternalInit is called. */
-jint
-JNI_OnLoad(JavaVM *vm, void *reserved)
-{
-    s_jvm = vm;
-    JNIEnv* env = NULL;
-
-    if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_2) != JNI_OK)
-        return -1;
-
-    jclass clazz = (*env)->FindClass(env, "android/os/Environment");
-    if ((*env)->ExceptionCheck(env))
-        return -1;
-
-    static const char *ppsz_env_names[GENERIC_DIR_COUNT] = {
-        NULL,                   /* VLC_DESKTOP_DIR */
-        "DIRECTORY_DOWNLOADS",  /* VLC_DOWNLOAD_DIR */
-        NULL,                   /* VLC_TEMPLATES_DIR */
-        NULL,                   /* VLC_PUBLICSHARE_DIR */
-        "DIRECTORY_DOCUMENTS",  /* VLC_DOCUMENTS_DIR */
-        "DIRECTORY_MUSIC",      /* VLC_MUSIC_DIR */
-        "DIRECTORY_PICTURES",   /* VLC_PICTURES_DIR */
-        "DIRECTORY_MOVIES",     /* VLC_VIDEOS_DIR */
-        "DIRECTORY_SCREENSHOTS",/* VLC_SNAPSHOTS_DIR */
-    };
-    for (size_t i = 0; i < GENERIC_DIR_COUNT; ++i)
-    {
-        if (ppsz_env_names[i] != NULL)
-            ppsz_generic_names[i] = get_java_string(env, clazz,
-                                                   ppsz_env_names[i]);
-    }
-
-    fields.Environment.clazz = (*env)->NewGlobalRef(env, clazz);
-    fields.Environment.getExternalStoragePublicDirectory =
-        (*env)->GetStaticMethodID(env, clazz,
-                                  "getExternalStoragePublicDirectory",
-                                  "(Ljava/lang/String;)Ljava/io/File;");
-    if ((*env)->ExceptionCheck(env))
-        goto error;
-    (*env)->DeleteLocalRef(env, clazz);
-
-    clazz = (*env)->FindClass(env, "java/io/File");
-    fields.File.getAbsolutePath =
-        (*env)->GetMethodID(env, clazz, "getAbsolutePath",
-                           "()Ljava/lang/String;");
-    if ((*env)->ExceptionCheck(env))
-        goto error;
-    (*env)->DeleteLocalRef(env, clazz);
-
-    clazz = (*env)->FindClass(env, "java/lang/System");
-    if ((*env)->ExceptionCheck(env))
-        goto error;
-    fields.System.clazz = (*env)->NewGlobalRef(env, clazz);
-    fields.System.getProperty =
-        (*env)->GetStaticMethodID(env, clazz, "getProperty",
-                                  "(Ljava/lang/String;)Ljava/lang/String;");
-    (*env)->DeleteLocalRef(env, clazz);
-
-    return JNI_VERSION_1_2;
-
-error:
-    if (clazz)
-        (*env)->DeleteLocalRef(env, clazz);
-    JNI_OnUnload(vm, reserved);
-    return -1;
-}
 
 void
 system_Init(void)
@@ -170,12 +86,131 @@ system_Init(void)
 }
 
 void
+system_End(void)
+{
+    for (size_t i = 0; i < GENERIC_DIR_COUNT; ++i)
+    {
+        free(ppsz_generic_names[i]);
+        ppsz_generic_names[i] = NULL;
+    }
+
+    void *env_ptr = NULL;
+    if (s_jvm == NULL
+     || (*s_jvm)->GetEnv(s_jvm, &env_ptr, JNI_VERSION_1_2) != JNI_OK)
+        return;
+    JNIEnv* env = env_ptr;
+
+    if (fields.Environment.clazz)
+    {
+        (*env)->DeleteGlobalRef(env, fields.Environment.clazz);
+        fields.Environment.clazz = NULL;
+    }
+
+    if (fields.System.clazz)
+    {
+        (*env)->DeleteGlobalRef(env, fields.System.clazz);
+        fields.System.clazz = NULL;
+    }
+}
+
+void
 system_Configure(libvlc_int_t *p_libvlc, int i_argc, const char *const pp_argv[])
 {
     (void)i_argc; (void)pp_argv;
-    assert(s_jvm != NULL);
-    var_Create(p_libvlc, "android-jvm", VLC_VAR_ADDRESS);
-    var_SetAddress(p_libvlc, "android-jvm", s_jvm);
+
+    /* libvlc_android.a has been linked into the application and is loaded by
+     * the Java application (via System.loadLibrary), so its JNI_OnLoad has
+     * already captured the JavaVM. Look the accessor up in the global symbol
+     * scope. If it cannot be found, JNI support stays completely disabled. */
+    JavaVM *(*get_jvm)(void) =
+        (JavaVM *(*)(void))vlc_dlsym(RTLD_DEFAULT, "vlc_android_GetJVM");
+    if (get_jvm == NULL)
+    {
+        /* In a build with dynamic plugins, the helper library is
+         * compiled into a shared libvlc_android.so library,
+         * loaded by the application. On Android, its symbols are not in the
+         * core's global lookup scope (RTLD_DEFAULT), so resolve them through
+         * the already-loaded library's own handle.
+         * Don't fetch it manually if it wasn't laoded by the user. */
+        void *handle = dlopen("libvlc_android.so", RTLD_NOW | RTLD_NOLOAD);
+        if (handle != NULL)
+        {
+            get_jvm = (JavaVM * (*)(void)) dlsym(handle, "vlc_android_GetJVM");
+            dlclose(handle);
+        }
+    }
+    if (get_jvm == NULL)
+        return;
+
+    s_jvm = get_jvm();
+    if (s_jvm == NULL)
+        return;
+
+    JNIEnv* env = NULL;
+    jclass clazz = NULL;
+
+    /* The JNI class references and directory names below are process-global and
+     * only need to be set up once, even if several libvlc instances are
+     * created. system_End() releases them. */
+    if (fields.Environment.clazz == NULL)
+    {
+        void *env_ptr = NULL;
+        if ((*s_jvm)->GetEnv(s_jvm, &env_ptr, JNI_VERSION_1_2) != JNI_OK)
+            return;
+        env = env_ptr;
+
+        clazz = (*env)->FindClass(env, "android/os/Environment");
+        if ((*env)->ExceptionCheck(env))
+            return;
+
+        static const char *ppsz_env_names[GENERIC_DIR_COUNT] = {
+            NULL,                   /* VLC_DESKTOP_DIR */
+            "DIRECTORY_DOWNLOADS",  /* VLC_DOWNLOAD_DIR */
+            NULL,                   /* VLC_TEMPLATES_DIR */
+            NULL,                   /* VLC_PUBLICSHARE_DIR */
+            "DIRECTORY_DOCUMENTS",  /* VLC_DOCUMENTS_DIR */
+            "DIRECTORY_MUSIC",      /* VLC_MUSIC_DIR */
+            "DIRECTORY_PICTURES",   /* VLC_PICTURES_DIR */
+            "DIRECTORY_MOVIES",     /* VLC_VIDEOS_DIR */
+            "DIRECTORY_SCREENSHOTS",/* VLC_SNAPSHOTS_DIR */
+        };
+        for (size_t i = 0; i < GENERIC_DIR_COUNT; ++i)
+        {
+            if (ppsz_env_names[i] != NULL)
+                ppsz_generic_names[i] = get_java_string(env, clazz,
+                                                       ppsz_env_names[i]);
+        }
+
+        fields.Environment.clazz = (*env)->NewGlobalRef(env, clazz);
+        fields.Environment.getExternalStoragePublicDirectory =
+            (*env)->GetStaticMethodID(env, clazz,
+                                      "getExternalStoragePublicDirectory",
+                                      "(Ljava/lang/String;)Ljava/io/File;");
+        if ((*env)->ExceptionCheck(env))
+            goto error;
+        (*env)->DeleteLocalRef(env, clazz);
+
+        clazz = (*env)->FindClass(env, "java/io/File");
+        fields.File.getAbsolutePath =
+            (*env)->GetMethodID(env, clazz, "getAbsolutePath",
+                               "()Ljava/lang/String;");
+        if ((*env)->ExceptionCheck(env))
+            goto error;
+        (*env)->DeleteLocalRef(env, clazz);
+
+        clazz = (*env)->FindClass(env, "java/lang/System");
+        if ((*env)->ExceptionCheck(env))
+            goto error;
+        fields.System.clazz = (*env)->NewGlobalRef(env, clazz);
+        fields.System.getProperty =
+            (*env)->GetStaticMethodID(env, clazz, "getProperty",
+                                      "(Ljava/lang/String;)Ljava/lang/String;");
+        (*env)->DeleteLocalRef(env, clazz);
+    }
+    return;
+error:
+    if (clazz)
+        (*env)->DeleteLocalRef(env, clazz);
 }
 
 static char *config_GetHomeDir(const char *psz_dir, const char *psz_default_dir)
@@ -203,9 +238,13 @@ fallback:
 
 static JNIEnv *get_env(bool *p_detach)
 {
-    JNIEnv *env;
-    if ((*s_jvm)->GetEnv(s_jvm, (void **)&env, JNI_VERSION_1_2) != JNI_OK)
+    JNIEnv *env = NULL;
+
+    void *env_ptr;
+    if ((*s_jvm)->GetEnv(s_jvm, &env_ptr, JNI_VERSION_1_2) != JNI_OK)
     {
+        env = env_ptr;
+
         /* attach the thread to the Java VM */
         JavaVMAttachArgs args;
 

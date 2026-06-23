@@ -39,7 +39,7 @@ typedef struct variable_t variable_t;
  */
 void system_Init      ( void );
 void system_Configure ( libvlc_int_t *, int, const char *const [] );
-#if defined(_WIN32) || defined(__OS2__)
+#if defined(_WIN32) || defined(__OS2__) || defined(__ANDROID__)
 void system_End(void);
 #endif
 void vlc_CPU_dump(vlc_object_t *);

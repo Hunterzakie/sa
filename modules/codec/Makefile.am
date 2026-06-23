@@ -498,7 +498,8 @@ libmediacodec_plugin_la_SOURCES = codec/omxil/mediacodec.c codec/omxil/mediacode
 	codec/omxil/mediacodec_jni.c codec/omxil/mediacodec_ndk.c codec/omxil/utils.c \
 	codec/omxil/omxil_utils.h codec/omxil/qcom.c codec/omxil/qcom.h
 libmediacodec_plugin_la_LIBADD = libchroma_copy.la libvlc_hxxxhelper.la \
-	libandroid_utils.la $(LIBDL) $(GLES2_LIBS) $(EGL_LIBS) -lmediandk
+	libandroid_utils.la $(LIBDL) $(GLES2_LIBS) $(EGL_LIBS) -lmediandk \
+	../src/libvlc_android.la
 codec_PLUGINS += $(LTLIBomxil)
 EXTRA_LTLIBRARIES += libomxil_plugin.la
 if HAVE_ANDROID

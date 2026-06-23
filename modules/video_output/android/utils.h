@@ -46,6 +46,8 @@
 /* AWH backed by a Android SurfaceView */
 #define AWH_CAPS_SURFACE_VIEW 0x2
 
+JavaVM* vlc_android_GetJVM(void);
+
 /*
  * AImageReader function pointers
  */
