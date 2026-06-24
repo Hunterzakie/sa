@@ -179,17 +179,3 @@ typedef struct cdrom_readlong_s
 #define READ_CD_RAW_MODE2 0xF0
 #define READ_CD_USERDATA 0x10
 
-/*****************************************************************************
- * Local Prototypes
- *****************************************************************************/
-
-#if defined( __APPLE__ )
-static CDTOC *darwin_getTOC( struct vlc_cd_s * );
-static int    darwin_getNumberOfTracks( CDTOC *, int, int *, int * );
-
-#elif defined( _WIN32 )
-static int    win32_vcd_open( const char *, struct vlc_cd_s *);
-
-#elif defined( __OS2__ )
-static int    os2_vcd_open( const char *, struct vlc_cd_s *);
-#endif

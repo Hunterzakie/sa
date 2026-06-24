@@ -148,6 +148,16 @@ exit_free:
  * Prototypes
  *****************************************************************************/
 static void ioctl_Close( vlc_cd_t * );
+#if defined( __APPLE__ )
+static CDTOC *darwin_getTOC( struct vlc_cd_s * );
+static int    darwin_getNumberOfTracks( CDTOC *, int, int *, int * );
+
+#elif defined( _WIN32 )
+static int    win32_vcd_open( const char *, struct vlc_cd_s *);
+
+#elif defined( __OS2__ )
+static int    os2_vcd_open( const char *, struct vlc_cd_s *);
+#endif
 static int OpenCueImage( vlc_cd_t *, const char * );
 
 static void image_Close( vlc_cd_t *p_vlc_cd )
