@@ -612,12 +612,7 @@ static int ioctl_ReadSectors( vlc_cd_t *p_vlc_cd,
                        int i_sector, uint8_t *p_buffer, int i_nb, int i_type )
 {
     vlc_object_t *p_this = p_vlc_cd->p_obj;
-    uint8_t *p_block;
-
-    if( i_type == VCD_TYPE )
-        p_block = vlc_alloc( i_nb, CD_RAW_SECTOR_SIZE );
-    else
-        p_block = p_buffer;
+    uint8_t *p_block = p_buffer;
 
     if( p_vlc_cd->i_vcdimage_handle != -1 )
     {
@@ -842,29 +837,12 @@ static int ioctl_ReadSectors( vlc_cd_t *p_vlc_cd,
 #endif
     }
 
-    /* For VCDs, we don't want to keep the header and footer of the
-     * sectors read */
-    if( i_type == VCD_TYPE )
-    {
-        for( int i = 0; i < i_nb; i++ )
-        {
-            memcpy( p_buffer + i * CD_ROM_XA_MODE2_FORM2_DATA_SIZE,
-                    p_block + i * CD_RAW_SECTOR_SIZE + CD_ROM_XA_SECTOR_HEADER_SIZE,
-                    CD_ROM_XA_MODE2_FORM2_DATA_SIZE );
-        }
-        free( p_block );
-    }
-
     return( 0 );
 
 error:
-    if( i_type == VCD_TYPE )
-        free( p_block );
     return( -1 );
 
 unrecoverable:
-    if( i_type == VCD_TYPE )
-        free( p_block );
     return( -2 );
 }
 

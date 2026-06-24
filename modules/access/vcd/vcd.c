@@ -399,10 +399,10 @@ static block_t *Block( stream_t *p_access, bool *restrict eof )
     }
 
     /* Do the actual reading */
-    if( i_blocks < 0 || !( p_block = block_Alloc( i_blocks * VCD_DATA_SIZE ) ) )
+    if( i_blocks < 0 || !( p_block = block_Alloc( i_blocks * CD_RAW_SECTOR_SIZE ) ) )
     {
         msg_Err( p_access, "cannot get a new block of size: %i",
-                 i_blocks * VCD_DATA_SIZE );
+                 i_blocks * CD_RAW_SECTOR_SIZE );
         return NULL;
     }
 
@@ -425,6 +425,16 @@ static block_t *Block( stream_t *p_access, bool *restrict eof )
         p_sys->i_sector++;
         return NULL;
     }
+
+    /* For VCDs, we don't want to keep the header and footer of the
+     * sectors read */
+    for( int i = 0; i < i_blocks; i++ )
+    {
+        memmove( &p_block->p_buffer[i * CD_ROM_XA_MODE2_FORM2_DATA_SIZE],
+                 &p_block->p_buffer[i * CD_RAW_SECTOR_SIZE + CD_ROM_XA_SECTOR_HEADER_SIZE],
+                 CD_ROM_XA_MODE2_FORM2_DATA_SIZE );
+    }
+    p_block->i_buffer = i_blocks * CD_ROM_XA_MODE2_FORM2_DATA_SIZE;
 
     /* Update seekpoints */
     for( int i_read = 0; i_read < i_blocks; i_read++ )
@@ -486,7 +496,7 @@ static int EntryPoints( stream_t *p_access )
 {
     access_sys_t *p_sys = p_access->p_sys;
     const vlc_cd_toc_t *p_toc = p_sys->p_toc;
-    uint8_t      sector[VCD_DATA_SIZE];
+    uint8_t      sector[CD_RAW_SECTOR_SIZE];
 
     entries_sect_t entries;
     int i_nb;
@@ -498,7 +508,7 @@ static int EntryPoints( stream_t *p_access )
         msg_Err( p_access, "could not read entry points sector" );
         return VLC_EGENERIC;
     }
-    memcpy( &entries, sector, CD_ROM_MODE1_DATA_SIZE );
+    memcpy( &entries, &sector[CD_ROM_XA_SECTOR_HEADER_SIZE], CD_ROM_MODE1_DATA_SIZE );
 
     i_nb = GetWBE( &entries.i_entries_nb );
     if( i_nb == 0 || i_nb > 500 /* See 6.3.2 */ )
