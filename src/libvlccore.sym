@@ -249,6 +249,7 @@ libvlc_InternalPlay
 libvlc_InternalCleanup
 libvlc_InternalCreate
 libvlc_InternalDestroy
+libvlc_InternalHttpBearerStore
 libvlc_InternalInit
 libvlc_Quit
 libvlc_SetExitHandler
@@ -558,6 +559,7 @@ vlc_config_subcat_GetAt
 vlc_credential_init
 vlc_credential_clean
 vlc_credential_get
+vlc_credential_get_bearer
 vlc_credential_store
 vlc_dialog_display_error
 vlc_dialog_display_error_va

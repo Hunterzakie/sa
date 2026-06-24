@@ -171,6 +171,9 @@ int vlc_http_msg_add_cookies(struct vlc_http_msg *,
                              struct vlc_http_cookie_jar_t *);
 
 char *vlc_http_msg_get_basic_realm(const struct vlc_http_msg *);
+char *vlc_http_msg_get_bearer_realm(const struct vlc_http_msg *);
+char *vlc_http_msg_get_bearer_scope(const struct vlc_http_msg *);
+char *vlc_http_msg_get_bearer_error(const struct vlc_http_msg *);
 
 /**
  * Adds Basic credentials.

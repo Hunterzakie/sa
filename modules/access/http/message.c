@@ -1002,6 +1002,34 @@ char *vlc_http_msg_get_basic_realm(const struct vlc_http_msg *m)
     return vlc_http_get_token_value(auth, "realm");
 }
 
+static char *vlc_http_msg_get_bearer_param(const struct vlc_http_msg *m,
+                                           const char *param)
+{
+    const char *auth = vlc_http_msg_get_token(m, "WWW-Authenticate", "Bearer");
+    if (auth == NULL)
+        return NULL;
+
+    auth += sizeof("Bearer") - 1;
+    auth += strspn(auth, " "); /* 1*SP */
+
+    return vlc_http_get_token_value(auth, param);
+}
+
+char *vlc_http_msg_get_bearer_realm(const struct vlc_http_msg *m)
+{
+    return vlc_http_msg_get_bearer_param(m, "realm");
+}
+
+char *vlc_http_msg_get_bearer_scope(const struct vlc_http_msg *m)
+{
+    return vlc_http_msg_get_bearer_param(m, "scope");
+}
+
+char *vlc_http_msg_get_bearer_error(const struct vlc_http_msg *m)
+{
+    return vlc_http_msg_get_bearer_param(m, "error");
+}
+
 int vlc_http_msg_add_creds_basic(struct vlc_http_msg *m, bool proxy,
                                  const char *username, const char *password)
 {

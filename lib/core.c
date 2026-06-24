@@ -28,10 +28,14 @@
 #include <vlc_modules.h>
 #include <vlc/vlc.h>
 
+#include <vlc_keystore.h>
 #include <vlc_preparser.h>
 #include <vlc_interface.h>
+#include <vlc_url.h>
 
 #include <stdarg.h>
+#include <string.h>
+#include <strings.h>
 #include <limits.h>
 #include <assert.h>
 
@@ -141,6 +145,52 @@ void libvlc_set_app_id(libvlc_instance_t *p_i, const char *id,
     var_SetString(p_libvlc, "app-id", id ? id : "");
     var_SetString(p_libvlc, "app-version", version ? version : "");
     var_SetString(p_libvlc, "app-icon-name", icon ? icon : "");
+}
+
+/* RFC 6750 section 2.1: b64token = 1*( ALPHA / DIGIT / "-" / "." / "_" / "~"
+ *                                / "+" / "/" ) *"=" */
+static bool is_valid_bearer_token(const char *psz_token)
+{
+    static const char b64token_chars[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+        "0123456789-._~+/";
+    size_t i_body = strspn(psz_token, b64token_chars);
+    if (i_body == 0)
+        return false;
+    return psz_token[i_body + strspn(psz_token + i_body, "=")] == '\0';
+}
+
+int libvlc_set_http_bearer(libvlc_instance_t *p_i,
+                           const char *origin, const char *realm,
+                           const char *scope, const char *token)
+{
+    if (origin == NULL)
+        return -1;
+    if (token != NULL && !is_valid_bearer_token(token))
+        return -1;
+
+    vlc_url_t url;
+    vlc_UrlParse(&url, origin);
+
+    int ret = -1;
+    if (url.psz_protocol == NULL || url.psz_host == NULL
+     || url.psz_host[0] == '\0'
+     || (strcasecmp(url.psz_protocol, "http") != 0
+      && strcasecmp(url.psz_protocol, "https") != 0))
+        goto out;
+
+    uint16_t port = url.i_port;
+    if (port == 0)
+        port = (strcasecmp(url.psz_protocol, "https") == 0) ? 443 : 80;
+
+    ret = libvlc_InternalHttpBearerStore(p_i->p_libvlc_int,
+                                         url.psz_protocol, url.psz_host,
+                                         port, realm, scope,
+                                         token) == VLC_SUCCESS
+          ? 0 : -1;
+out:
+    vlc_UrlClean(&url);
+    return ret;
 }
 
 const char * libvlc_get_version(void)

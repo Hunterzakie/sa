@@ -230,6 +230,32 @@ void libvlc_set_app_id( libvlc_instance_t *p_instance, const char *id,
                         const char *version, const char *icon );
 
 /**
+ * Sets a HTTP bearer token for an origin.
+ *
+ * The token is sent as the Authorization header on subsequent HTTP requests
+ * whose origin (scheme, host, port) matches the supplied one. When the
+ * server replies with a 401 advertising a Bearer challenge, the token is
+ * picked when its stored realm matches the challenge's realm (or both are
+ * absent) and its stored scope covers the requested scope (RFC 6750).
+ *
+ * The token is held only for the lifetime of p_instance.
+ *
+ * \param p_instance LibVLC instance
+ * \param origin origin URL, e.g. "https://www.example.com" or
+ *               "https://api.example.com:8443"
+ * \param realm optional realm the token is valid for, or NULL
+ * \param scope optional space-separated list of granted scopes, or NULL
+ * \param token bearer token, or NULL to remove a previously set token
+ *              for the matching origin/realm/scope
+ *
+ * \return 0 on success, -1 on error
+ */
+LIBVLC_API
+int libvlc_set_http_bearer( libvlc_instance_t *p_instance,
+                            const char *origin, const char *realm,
+                            const char *scope, const char *token );
+
+/**
  * Retrieve libvlc version.
  *
  * Example: "1.1.0-git The Luggage"

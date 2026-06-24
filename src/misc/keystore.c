@@ -502,6 +502,198 @@ vlc_credential_get(vlc_credential *p_credential, vlc_object_t *p_parent,
     return is_credential_valid(p_credential) ? 0 : -ENOENT;
 }
 
+/* RFC 6749 section 3.3: scope is one or more space-separated tokens. Returns true
+ * if the granted set covers every token in the required set. NULL or empty
+ * required set is always covered. */
+static bool
+scope_set_contains(const char *psz_set, const char *psz_token, size_t i_len)
+{
+    while (*psz_set != '\0')
+    {
+        psz_set += strspn(psz_set, " ");
+        const size_t i_slen = strcspn(psz_set, " ");
+        if (i_slen == 0)
+            break;
+        if (i_slen == i_len && memcmp(psz_set, psz_token, i_len) == 0)
+            return true;
+        psz_set += i_slen;
+    }
+    return false;
+}
+
+static bool
+scope_covers(const char *psz_granted, const char *psz_required)
+{
+    if (psz_required == NULL || *psz_required == '\0')
+        return true;
+    if (psz_granted == NULL)
+        return false;
+
+    while (*psz_required != '\0')
+    {
+        psz_required += strspn(psz_required, " ");
+        const size_t i_len = strcspn(psz_required, " ");
+        if (i_len == 0)
+            break;
+        if (!scope_set_contains(psz_granted, psz_required, i_len))
+            return false;
+        psz_required += i_len;
+    }
+    return true;
+}
+
+static const char *
+bearer_take_first_entry(vlc_credential *p_credential,
+                        vlc_keystore_entry *p_entries, unsigned int i_count)
+{
+    for (unsigned int i = 0; i < i_count; ++i)
+    {
+        vlc_keystore_entry *p_entry = &p_entries[i];
+        if (p_entry->p_secret == NULL || p_entry->i_secret_len == 0
+         || p_entry->p_secret[p_entry->i_secret_len - 1] != '\0')
+            continue;
+        const char *psz_authtype = p_entry->ppsz_values[KEY_AUTHTYPE];
+        if (psz_authtype == NULL || strcasecmp(psz_authtype, "Bearer") != 0)
+            continue;
+        if (!scope_covers(p_entry->ppsz_values[KEY_SCOPE],
+                          p_credential->psz_scope))
+            continue;
+
+        if (p_credential->i_entries_count > 0)
+            vlc_keystore_release_entries(p_credential->p_entries,
+                                         p_credential->i_entries_count);
+        p_credential->p_entries = p_entries;
+        p_credential->i_entries_count = i_count;
+        p_credential->psz_authtype = psz_authtype;
+        p_credential->psz_realm = p_entry->ppsz_values[KEY_REALM];
+        p_credential->psz_scope = p_entry->ppsz_values[KEY_SCOPE];
+        return (const char *)p_entry->p_secret;
+    }
+    vlc_keystore_release_entries(p_entries, i_count);
+    return NULL;
+}
+
+static const char *
+bearer_lookup(vlc_credential *p_credential, vlc_keystore *p_keystore,
+              char *psz_port, bool b_have_port)
+{
+    const vlc_url_t *p_url = p_credential->p_url;
+    const char *ppsz_values[KEY_MAX] = { 0 };
+    ppsz_values[KEY_PROTOCOL] = p_url->psz_protocol;
+    ppsz_values[KEY_SERVER] = p_url->psz_host;
+    ppsz_values[KEY_REALM] = p_credential->psz_realm;
+    ppsz_values[KEY_AUTHTYPE] = "Bearer";
+    if (b_have_port)
+        ppsz_values[KEY_PORT] = psz_port;
+
+    vlc_keystore_entry *p_entries;
+    unsigned int i_count = vlc_keystore_find(p_keystore, ppsz_values, &p_entries);
+    const char *psz_token = NULL;
+    if (i_count > 0)
+        psz_token = bearer_take_first_entry(p_credential, p_entries, i_count);
+
+    /* A token stored without realm should also satisfy a challenge that
+     * advertises a realm; retry without the realm filter. */
+    if (psz_token == NULL && ppsz_values[KEY_REALM] != NULL)
+    {
+        ppsz_values[KEY_REALM] = NULL;
+        i_count = vlc_keystore_find(p_keystore, ppsz_values, &p_entries);
+        if (i_count > 0)
+            psz_token = bearer_take_first_entry(p_credential, p_entries, i_count);
+    }
+    return psz_token;
+}
+
+#undef vlc_credential_get_bearer
+int
+vlc_credential_get_bearer(vlc_credential *p_credential, vlc_object_t *p_parent)
+{
+    assert(p_credential && p_parent);
+    const vlc_url_t *p_url = p_credential->p_url;
+
+    if (!is_url_valid(p_url))
+    {
+        msg_Err(p_parent, "vlc_credential_get_bearer: invalid url");
+        return -EINVAL;
+    }
+
+    p_credential->psz_token = NULL;
+    /* Caller's psz_scope is the requested set; preserve it across lookups. */
+    const char *psz_required_scope = p_credential->psz_scope;
+
+    char psz_port[21];
+    bool b_have_port = protocol_set_port(p_url, psz_port);
+
+    vlc_keystore *p_memory = get_memory_keystore(p_parent);
+    const char *psz_token = NULL;
+    if (p_memory != NULL)
+    {
+        p_credential->psz_scope = psz_required_scope;
+        psz_token = bearer_lookup(p_credential, p_memory, psz_port, b_have_port);
+    }
+
+    if (psz_token == NULL)
+    {
+        if (p_credential->p_keystore == NULL)
+            p_credential->p_keystore = vlc_keystore_create(p_parent);
+        if (p_credential->p_keystore != NULL)
+        {
+            p_credential->psz_scope = psz_required_scope;
+            psz_token = bearer_lookup(p_credential, p_credential->p_keystore,
+                                      psz_port, b_have_port);
+        }
+    }
+
+    if (psz_token == NULL)
+    {
+        p_credential->psz_scope = psz_required_scope;
+        return -ENOENT;
+    }
+
+    p_credential->psz_token = psz_token;
+    p_credential->b_from_keystore = true;
+    return 0;
+}
+
+int
+libvlc_InternalHttpBearerStore(libvlc_int_t *p_libvlc,
+                               const char *psz_protocol,
+                               const char *psz_host, uint16_t i_port,
+                               const char *psz_realm, const char *psz_scope,
+                               const char *psz_token)
+{
+    assert(p_libvlc && psz_protocol && psz_host);
+
+    vlc_keystore *p_keystore = libvlc_priv(p_libvlc)->p_memory_keystore;
+    if (p_keystore == NULL)
+        return VLC_EGENERIC;
+
+    char psz_port[21];
+    sprintf(psz_port, "%" PRIu16, i_port);
+
+    const char *ppsz_values[KEY_MAX] = { 0 };
+    ppsz_values[KEY_PROTOCOL] = psz_protocol;
+    ppsz_values[KEY_SERVER] = psz_host;
+    ppsz_values[KEY_PORT] = psz_port;
+    ppsz_values[KEY_REALM] = psz_realm;
+    ppsz_values[KEY_SCOPE] = psz_scope;
+    ppsz_values[KEY_AUTHTYPE] = "Bearer";
+
+    vlc_keystore_remove(p_keystore, ppsz_values);
+
+    if (psz_token == NULL)
+        return VLC_SUCCESS;
+
+    char *psz_label;
+    if (asprintf(&psz_label, "LibVLC bearer for %s://%s:%s",
+                 psz_protocol, psz_host, psz_port) == -1)
+        return VLC_ENOMEM;
+    int i_ret = vlc_keystore_store(p_keystore, ppsz_values,
+                                   (const uint8_t *)psz_token, -1, psz_label);
+    free(psz_label);
+    return i_ret;
+}
+
 #undef vlc_credential_store
 bool
 vlc_credential_store(vlc_credential *p_credential, vlc_object_t *p_parent)
@@ -557,6 +749,7 @@ vlc_credential_store(vlc_credential *p_credential, vlc_object_t *p_parent)
     ppsz_values[KEY_PATH] = psz_path;
     ppsz_values[KEY_REALM] = p_credential->psz_realm;
     ppsz_values[KEY_AUTHTYPE] = p_credential->psz_authtype;
+    ppsz_values[KEY_SCOPE] = p_credential->psz_scope;
 
     char psz_port[21];
     if (protocol_set_port(p_url, psz_port))

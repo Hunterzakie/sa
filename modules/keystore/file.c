@@ -87,6 +87,7 @@ static const char *const ppsz_keys[] = {
     "port",
     "realm",
     "authtype",
+    "scope",
 };
 static_assert(sizeof(ppsz_keys)/sizeof(*ppsz_keys) == KEY_MAX, "key mismatch");
 

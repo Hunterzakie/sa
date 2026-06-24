@@ -190,6 +190,22 @@ static int Open(vlc_object_t *obj)
     if (sys->resource == NULL)
         goto error;
 
+    /* Try a bearer token from the keystore first; the server may accept it
+     * outright. We don't yet know what realm/scope the server expects, so
+     * look up by origin only. */
+    if (vlc_credential_get_bearer(&crd, obj) == 0)
+    {
+        vlc_http_res_set_bearer(sys->resource, crd.psz_token);
+        /* The bearer lookup leaves authtype/realm/scope set to the matched
+         * entry's values (and the token pointer aliasing freed entries on
+         * the next find). Clear them so the upfront Basic lookup below is
+         * not filtered to authtype=Bearer. */
+        crd.psz_authtype = NULL;
+        crd.psz_realm = NULL;
+        crd.psz_scope = NULL;
+        crd.psz_token = NULL;
+    }
+
     ret = vlc_credential_get(&crd, obj, NULL, NULL, NULL, NULL);
     if (ret == 0)
         vlc_http_res_set_login(sys->resource,
@@ -201,24 +217,88 @@ static int Open(vlc_object_t *obj)
 
     int status = vlc_http_res_get_status(sys->resource);
 
-    while (status == 401) /* authentication */
+    char *psz_bearer_realm = NULL;
+    char *psz_bearer_scope = NULL;
+    char *psz_last_scope = NULL;
+
+    /* 401 -> Basic and/or Bearer challenge.
+     * 403 -> Bearer challenge only (insufficient_scope, RFC 6750 section 3.1). */
+    while (status == 401 || status == 403)
     {
-        crd.psz_authtype = "Basic";
+        const bool b_bearer_challenge =
+            vlc_http_res_has_bearer_challenge(sys->resource);
+        if (status == 403 && !b_bearer_challenge)
+            break;
+
         free(psz_realm);
-        psz_realm = vlc_http_res_get_basic_realm(sys->resource);
+        psz_realm = (status == 401)
+            ? vlc_http_res_get_basic_realm(sys->resource) : NULL;
 
-        if (psz_realm == NULL)
-            break;
-        crd.psz_realm = psz_realm;
-        if (vlc_credential_get(&crd, obj, NULL, NULL, _("HTTP authentication"),
-                               _("Please enter a valid login name and "
-                                 "a password for realm %s."), crd.psz_realm) != 0)
+        bool b_progress = false;
+
+        /* Bearer: re-query the keystore only when the challenge advertises
+         * a scope we haven't tried yet. The same scope on a subsequent
+         * challenge means the keystore would just hand us the same token. */
+        if (b_bearer_challenge)
+        {
+            free(psz_bearer_realm);
+            free(psz_bearer_scope);
+            psz_bearer_realm = vlc_http_res_get_bearer_realm(sys->resource);
+            psz_bearer_scope = vlc_http_res_get_bearer_scope(sys->resource);
+
+            const bool b_same_scope =
+                (psz_last_scope == NULL && psz_bearer_scope == NULL)
+             || (psz_last_scope != NULL && psz_bearer_scope != NULL
+              && strcmp(psz_last_scope, psz_bearer_scope) == 0);
+
+            if (!b_same_scope)
+            {
+                crd.psz_authtype = "Bearer";
+                crd.psz_realm = psz_bearer_realm;
+                crd.psz_scope = psz_bearer_scope;
+                if (vlc_credential_get_bearer(&crd, obj) == 0)
+                {
+                    vlc_http_res_set_bearer(sys->resource, crd.psz_token);
+                    b_progress = true;
+                }
+                else
+                {
+                    /* No matching token; drop any stale bearer we sent. */
+                    vlc_http_res_set_bearer(sys->resource, NULL);
+                }
+                free(psz_last_scope);
+                psz_last_scope = psz_bearer_scope != NULL
+                    ? strdup(psz_bearer_scope) : NULL;
+            }
+        }
+
+        /* Basic: prompt for username/password if challenged. */
+        if (psz_realm != NULL)
+        {
+            crd.psz_authtype = "Basic";
+            crd.psz_realm = psz_realm;
+            crd.psz_scope = NULL;
+            if (vlc_credential_get(&crd, obj, NULL, NULL,
+                                   _("HTTP authentication"),
+                                   _("Please enter a valid login name and "
+                                     "a password for realm %s."),
+                                   crd.psz_realm) == 0)
+            {
+                vlc_http_res_set_login(sys->resource,
+                                       crd.psz_username, crd.psz_password);
+                b_progress = true;
+            }
+        }
+
+        if (!b_progress)
             break;
 
-        vlc_http_res_set_login(sys->resource,
-                               crd.psz_username, crd.psz_password);
         status = vlc_http_res_get_status(sys->resource);
     }
+
+    free(psz_bearer_realm);
+    free(psz_bearer_scope);
+    free(psz_last_scope);
 
     if (status < 0)
     {
