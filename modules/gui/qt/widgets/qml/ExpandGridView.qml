@@ -355,14 +355,6 @@ FocusScope {
         function onIntfScaleFactorChanged() { flickable.layout(true) }
     }
 
-    // Animations
-
-    PropertyAnimation {
-        id: animateContentY;
-        target: flickable;
-        properties: "contentY"
-    }
-
     // Functions
 
     // layouts such that views indexes are preserved during a resize
@@ -550,10 +542,25 @@ FocusScope {
     }
 
     function animateFlickableContentY( newContentY ) {
-        animateContentY.stop()
-        animateContentY.duration = VLCStyle.duration_long
-        animateContentY.to = newContentY
-        animateContentY.start()
+        contentYBehavior.enabled = true
+
+        // FIXME: This is necessary because this function is called multiple times in a quick succession with
+        //        the same target value, while contentY becomes 0 interim before the animation from the initial
+        //        call completes. Ideally this should not be necessary, but it is needed because we do not
+        //        want to animate to the target from 0:
+        if (contentYBehaviorAnimation.running && (contentYBehavior.targetValue == newContentY)) {
+            flickable.contentY = flickable.contentY // This stops the behavior animation.
+        }
+
+        flickable.contentY = newContentY
+        contentYBehavior.enabled = false
+    }
+
+    function animateFlickableToContainItem(item: Item) {
+        console.assert(item)
+        contentYBehavior.enabled = true
+        Helpers.positionFlickableToContainItem(flickable, item)
+        contentYBehavior.enabled = false
     }
 
     // Private
@@ -810,6 +817,19 @@ FocusScope {
             // feature for non-touch cases, so disable it here and enable
             // it if touch is detected through the hover handler:
             MainCtx.setFiltersChildMouseEvents(this, false)
+        }
+
+        Behavior on contentY {
+            id: contentYBehavior
+
+            enabled: false
+
+            // NOTE: Usage of `SmoothedAnimation` is intentional here.
+            SmoothedAnimation {
+                id: contentYBehaviorAnimation
+                duration: VLCStyle.duration_long
+                easing.type: Easing.InOutSine
+            }
         }
 
         HoverHandler {

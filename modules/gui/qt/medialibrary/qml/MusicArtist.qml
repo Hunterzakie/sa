@@ -576,6 +576,12 @@ FocusScope {
                 x: 0
                 width: gridView_id.width
                 onRetract: gridView_id.retract()
+                onCurrentItemChanged: (item /* : Item */) => {
+                    if (!gridView_id.isAnimating && item) {
+                        gridView_id.animateFlickableToContainItem(item)
+                    }
+                }
+
                 Navigation.parentItem: root
 
                 Navigation.cancelAction: function() {
