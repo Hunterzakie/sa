@@ -587,11 +587,18 @@ typedef struct
      * binauralizer audio filter).
      */
     bool headphones;
+    /**
+     * Synchronized lyrics for this audio stream, or NULL. Borrowed pointer,
+     * only valid during filter pipeline creation; consumed by the
+     * visualization lyric overlay via aout_filter_GetSylt().
+     */
+    const vlc_sylt_t *sylt;
 } aout_filters_cfg_t;
 
 #define AOUT_FILTERS_CFG_INIT (aout_filters_cfg_t) \
     { .remap = AOUT_CHAN_REMAP_INIT, \
       .headphones = false, \
+      .sylt = NULL, \
     };
 
 typedef struct aout_filters aout_filters_t;
@@ -620,6 +627,17 @@ VLC_API void     aout_FiltersChangeViewpoint(aout_filters_t *, const vlc_viewpoi
  * be freed via vout_Close().
  */
 VLC_API vout_thread_t *aout_filter_GetVout(filter_t *, const video_format_t *);
+
+/**
+ * Get the synchronized lyrics associated with a visualization audio filter.
+ *
+ * @warning Should only be called from the probe function (Open).
+ *
+ * @return borrowed, read-only lyrics pointer, or NULL if none is available.
+ * The data is only guaranteed valid for the duration of the call; consumers
+ * must copy what they need.
+ */
+VLC_API const vlc_sylt_t *aout_filter_GetSylt(filter_t *);
 
 /** @} */
 

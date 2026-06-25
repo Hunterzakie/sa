@@ -160,6 +160,7 @@ struct vlc_aout_stream_cfg
     struct vlc_clock_t *clock;
     const char *str_id;
     const audio_replay_gain_t *replay_gain;
+    const vlc_sylt_t *sylt;
 };
 
 vlc_aout_stream *vlc_aout_stream_New(audio_output_t *p_aout,
