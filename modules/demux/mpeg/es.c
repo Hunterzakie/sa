@@ -501,6 +501,37 @@ static int OpenCommon( demux_t *p_demux,
     es_format_t *p_fmt = &p_sys->p_packetizer->fmt_out;
     replay_gain_Merge( &p_fmt->audio_replay_gain, &p_sys->audio_replay_gain );
 
+    /* Carry the first (default) SYLT track in the audio ES format, the same
+     * way replay gain is carried, so audio-side consumers (the visualization
+     * lyric overlay) receive it through es_format without a side channel. */
+    if( p_fmt->i_cat == AUDIO_ES && p_sys->sylt.i_count > 0 )
+    {
+        const sylt_track_t *p_tk = &p_sys->sylt.p_track[0];
+        if( p_tk->i_count > 0 )
+        {
+            vlc_sylt_entry_t *p_entries =
+                calloc( p_tk->i_count, sizeof(*p_entries) );
+            if( p_entries != NULL )
+            {
+                size_t n = 0;
+                for( size_t i = 0; i < p_tk->i_count; i++ )
+                {
+                    if( p_tk->p_entry[i].psz_text == NULL )
+                        continue;
+                    char *psz_text = strdup( p_tk->p_entry[i].psz_text );
+                    if( psz_text == NULL )
+                        continue;
+                    p_entries[n].i_time = p_tk->p_entry[i].i_start;
+                    p_entries[n].psz_text = psz_text;
+                    n++;
+                }
+                vlc_sylt_Clean( &p_fmt->sylt );
+                p_fmt->sylt.p_entries = p_entries;
+                p_fmt->sylt.i_count = n;
+            }
+        }
+    }
+
     /* Register one SPU ES per SYLT language track */
     for( size_t i = 0; i < p_sys->sylt.i_count; i++ )
     {
