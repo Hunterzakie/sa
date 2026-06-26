@@ -182,8 +182,6 @@ typedef struct cdrom_readlong_s
 /*****************************************************************************
  * Local Prototypes
  *****************************************************************************/
-static int    OpenVCDImage( const char *, struct vlc_cd_s * );
-static void   CloseVCDImage( struct vlc_cd_s * );
 
 #if defined( __APPLE__ )
 static CDTOC *darwin_getTOC( struct vlc_cd_s * );
