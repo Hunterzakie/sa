@@ -1635,6 +1635,9 @@ $(QML_MODULE_QMLDIR):
 	--singletons $(libqml_module_$(@D)_a_Singleton_QML) \
 	--typeinfo=plugins.qmltypes
 
+# qmldir must remain because `qmlcachegen` needs it:
+.PRECIOUS: %/qmldir
+
 %/metatypes.moc.json: $(filter %.moc.cpp, $(nodist_libqt_plugin_la_SOURCES)) %/qmldir
 	$(AM_V_GEN)$(PYTHON3) $(srcdir)/scripts/collectmetatypejson.py \
 	-o $@ \
