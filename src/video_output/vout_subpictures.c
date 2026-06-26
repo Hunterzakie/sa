@@ -1025,7 +1025,7 @@ static struct subpicture_region_rendered *SpuRenderRegion(spu_t *spu,
                                 apply_scale ? scale_size : spu_scale_unit());
 
     /* Handle overlapping subtitles when possible */
-    if (subpic->b_subtitle && !region->b_absolute)
+    if ((subpic->b_subtitle || subpic->b_title) && !region->b_absolute)
         SpuAreaFixOverlap(dst_area, subtitle_area, subtitle_area_count,
                           i_align);
 
@@ -1372,11 +1372,18 @@ static vlc_render_subpicture *SpuRenderSubpictures(spu_t *spu,
     else
         subtitle_area = subtitle_area_buffer;
 
-    {
+    /* Process the title after other subpictures are processed
+     * so overlap with subtitles is avoided */
+    for (int iteration = 0; iteration < 2; iteration++) {
         /* Process all subpictures and regions (in the right order) */
         for (size_t index = 0; index < i_subpicture; index++) {
             const spu_render_entry_t *entry = &p_entries[index];
             subpicture_t *subpic = entry->subpic;
+
+            if (iteration == 0 && subpic->b_title)
+                continue;
+            if (iteration == 1 && !subpic->b_title)
+                continue;
 
             subpicture_region_t *region;
 

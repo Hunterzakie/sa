@@ -92,16 +92,15 @@ static void OSDTextDestroy(subpicture_t *subpic)
     free(sys);
 }
 
-void vout_OSDText(vout_thread_t *vout, int channel,
+static subpicture_t *OSDTextCreate(vout_thread_t *vout, int channel,
                    int position, vlc_tick_t duration, const char *text)
 {
-    assert( (position & ~SUBPICTURE_ALIGN_MASK) == 0);
     if (!var_InheritBool(vout, "osd") || duration <= 0)
-        return;
+        return NULL;
 
     osd_spu_updater_sys_t *sys = malloc(sizeof(*sys));
     if (!sys)
-        return;
+        return NULL;
     sys->position = position;
     sys->text     = strdup(text);
 
@@ -119,7 +118,7 @@ void vout_OSDText(vout_thread_t *vout, int channel,
     if (!subpic) {
         free(sys->text);
         free(sys);
-        return;
+        return NULL;
     }
 
     subpic->i_channel  = channel;
@@ -128,7 +127,28 @@ void vout_OSDText(vout_thread_t *vout, int channel,
     subpic->b_ephemer  = true;
     subpic->b_fade     = true;
 
-    vout_PutSubpicture(vout, subpic);
+    return subpic;
+}
+
+void vout_OSDText(vout_thread_t *vout, int channel,
+                   int position, vlc_tick_t duration, const char *text)
+{
+    assert( (position & ~SUBPICTURE_ALIGN_MASK) == 0);
+    subpicture_t *subpic = OSDTextCreate(vout, channel, position, duration, text);
+    if (subpic) {
+        vout_PutSubpicture(vout, subpic);
+    }
+}
+
+void vout_OSDTitle(vout_thread_t *vout, int channel,
+                   int position, vlc_tick_t duration, const char *title)
+{
+    assert( (position & ~SUBPICTURE_ALIGN_MASK) == 0);
+    subpicture_t *subpic = OSDTextCreate(vout, channel, position, duration, title);
+    if (subpic) {
+        subpic->b_title = true;
+        vout_PutSubpicture(vout, subpic);
+    }
 }
 
 void vout_OSDMessageVa(vout_thread_t *vout, int channel,

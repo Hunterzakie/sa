@@ -53,6 +53,7 @@ subpicture_t *subpicture_New( const subpicture_updater_t *p_upd )
     p_subpic->i_order    = 0;
     p_subpic->b_fade     = false;
     p_subpic->b_subtitle = false;
+    p_subpic->b_title    = false;
     p_subpic->i_alpha    = 0xFF;
     vlc_spu_regions_init(&p_subpic->regions);
 

@@ -300,7 +300,7 @@ void vout_DisplayTitle(vout_thread_t *vout, const char *title)
     if (!sys->title.show)
         return;
 
-    vout_OSDText(vout, VOUT_SPU_CHANNEL_OSD, sys->title.position,
+    vout_OSDTitle(vout, VOUT_SPU_CHANNEL_OSD, sys->title.position,
                  VLC_TICK_FROM_MS(sys->title.timeout), title);
 }
 

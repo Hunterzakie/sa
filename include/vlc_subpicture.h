@@ -269,6 +269,7 @@ struct subpicture_t
     bool            b_fade;                               /**< enable fading */
     bool            b_subtitle;      /**< subtitle with timestamps relative to
                                                                   the video */
+    bool            b_title;       /**< OSD video title (filename) overlay */
     /**@}*/
 
     /** \name Display properties
