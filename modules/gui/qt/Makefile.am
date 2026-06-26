@@ -1690,8 +1690,11 @@ cachegen_verbose_ = $(cachegen_verbose__$(AM_DEFAULT_VERBOSITY))
 cachegen_verbose_0 = @echo " CACHEGEN " $@;
 cachegen_verbose__0 = $(cachegen_verbose_0)
 
+# We need to use --bare because we need to support cross compilation:
+QML_CACHEGEN_EXTRA_ARGS = --bare -I $(QT_QML_DIRECTORY)
+
 if HAVE_QT67
-QML_CACHEGEN_EXTRA_ARGS=--validate-basic-blocks
+QML_CACHEGEN_EXTRA_ARGS += --validate-basic-blocks
 endif
 
 # Each .qml/.js/.mjs is compiled with its module's res.qrc as prerequisite. The
