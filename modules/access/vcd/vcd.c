@@ -380,7 +380,7 @@ static block_t *Block( stream_t *p_access, bool *restrict eof )
     /* Check end of title */
     while( p_sys->i_sector >= p_toc->p_sectors[VCD_DATA_TRACK_OFFSET + p_sys->i_current_title + 1].i_lba )
     {
-        if( VCD_DATA_TRACK_OFFSET + p_sys->i_current_title + 1 >= USABLE_TITLES(p_toc->i_tracks) )
+        if( p_sys->i_current_title + 1 >= USABLE_TITLES(p_toc->i_tracks) )
         {
             *eof = true;
             return NULL;
