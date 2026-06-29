@@ -869,7 +869,6 @@ static void *Thread( void *obj )
     Q_INIT_RESOURCE( qmake_QtQml_Base );
 #endif
     Q_INIT_RESOURCE( qmake_QtQml_Models );
-    Q_INIT_RESOURCE( qmake_QtQml_WorkerScript );
     Q_INIT_RESOURCE( qmake_QtQuick );
     Q_INIT_RESOURCE( qmake_QtQuick_Window );
     Q_INIT_RESOURCE( qmake_QtQuick_Controls );

@@ -4381,7 +4381,6 @@ AS_IF([test "${enable_qt}" != "no"], [
             --qtconf "${with_qtconf}" \
             --modules \
             QtQml.Models="" \
-            QtQml.WorkerScript="" \
             QtQuick.Layouts="" \
             QtQuick.Window="" \
             QtQuick.Controls="" \

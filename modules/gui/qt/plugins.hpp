@@ -53,7 +53,6 @@
     Q_IMPORT_QML_PLUGIN(QtQuickTemplates2Plugin)
     Q_IMPORT_QML_PLUGIN(QtQmlModelsPlugin)
     Q_IMPORT_QML_PLUGIN(QtQmlPlugin)
-    Q_IMPORT_QML_PLUGIN(QtQmlWorkerScriptPlugin)
 #if QT_VERSION < QT_VERSION_CHECK(6, 8, 0)
     Q_IMPORT_QML_PLUGIN(QtQmlMetaPlugin)
 #endif
