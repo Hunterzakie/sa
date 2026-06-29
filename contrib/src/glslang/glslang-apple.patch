@@ -1,0 +1,21 @@
+--- glslang/glslang/Include/InfoSink.h.orig	2026-06-29 18:04:48.855038446 +0200
++++ glslang/glslang/Include/InfoSink.h	2026-06-29 18:05:16.105708120 +0200
+@@ -104,16 +104,8 @@
+             snprintf(locText, maxSize, ":%d", loc.line);
+         }
+ 
+-        if(loc.getFilename() == nullptr && shaderFileName != nullptr && absolute) {
+-            append(std::filesystem::absolute(shaderFileName).string());
+-        } else {
+-            std::string location = loc.getStringNameOrNum(false);
+-            if (absolute) {
+-                append(std::filesystem::absolute(location).string());
+-            } else {
+-                append(location);
+-            }
+-        }
++        std::string location = loc.getStringNameOrNum(false);
++        append(location);
+ 
+         append(locText);
+         append(": ");

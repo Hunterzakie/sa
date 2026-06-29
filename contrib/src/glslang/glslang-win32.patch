@@ -1,13 +1,13 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 6a43f6ff..55914a73 100644
+index 3c6fa8a79..709d62b95 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -144,7 +144,7 @@ if(ENABLE_GLSLANG_WEBMIN)
+@@ -135,7 +135,7 @@ if(ENABLE_HLSL)
  endif()
  
  if(WIN32)
 -    set(CMAKE_DEBUG_POSTFIX "d")
 +    #set(CMAKE_DEBUG_POSTFIX "d")
-     option(OVERRIDE_MSVCCRT "Overrides runtime of MSVC " ON)
-     if(MSVC AND OVERRIDE_MSVCCRT)
-         include(ChooseMSVCCRT.cmake)
+     add_compile_definitions(GLSLANG_OSINCLUDE_WIN32)
+ elseif(UNIX OR ANDROID)
+     add_compile_definitions(GLSLANG_OSINCLUDE_UNIX)

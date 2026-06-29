@@ -1,6 +1,6 @@
 # glslang
 
-GLSLANG_VERSION := 12.3.1
+GLSLANG_VERSION := 16.3.0
 GLSLANG_URL := $(GITHUB)/KhronosGroup/glslang/archive/refs/tags/$(GLSLANG_VERSION).tar.gz
 
 # glslang doesn't export a pkg-config file, so we check the header manually
@@ -25,10 +25,11 @@ $(TARBALLS)/glslang-$(GLSLANG_VERSION).tar.gz:
 glslang: glslang-$(GLSLANG_VERSION).tar.gz .sum-glslang
 	$(UNPACK)
 	$(APPLY) $(SRC)/glslang/glslang-win32.patch
-	$(APPLY) $(SRC)/glslang/spirv-add-missing-cstdint-include.patch
+	$(APPLY) $(SRC)/glslang/glslang-apple.patch
 	$(MOVE)
 
-GLSLANG_CONF := -DENABLE_GLSLANG_BINARIES=OFF -DENABLE_CTEST=OFF
+GLSLANG_CONF := -DENABLE_GLSLANG_BINARIES=OFF -DENABLE_CTEST=OFF \
+	-DENABLE_OPT=OFF
 
 .glslang: glslang toolchain.cmake
 	$(CMAKECLEAN)
