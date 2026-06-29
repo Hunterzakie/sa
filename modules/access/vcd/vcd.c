@@ -219,7 +219,7 @@ static int Open( vlc_object_t *p_this )
     }
 
     /* Starting title/chapter and sector */
-    if( i_title > USABLE_TITLES(p_sys->p_toc->i_tracks) )
+    if( i_title >= USABLE_TITLES(p_sys->p_toc->i_tracks) )
         i_title = 0;
     if( (unsigned)i_chapter >= p_sys->titles[i_title].count )
         i_chapter = 0;
