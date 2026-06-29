@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jean-Baptiste Kempf <jb@videolan.org>
+Date: Mon, 29 Jun 2026 18:25:00 +0000
+Subject: [PATCH] convert: add libc float parse fallback
+
+On AppleOS, libc++ may not provide floating point std::from_chars, and release
+archives do not include the fast_float submodule. Fall back to strtof
+and strtod when fast_float is unavailable.
+
+And since we're using tarballs, git submodule update does not work here.
+---
+ src/convert.cc | 22 ++++++++++++++++++----
+ 1 file changed, 18 insertions(+), 4 deletions(-)
+
+diff --git a/src/convert.cc b/src/convert.cc
+index 07adf63..9d972f4 100644
+--- a/src/convert.cc
++++ b/src/convert.cc
+@@ -16,8 +16,11 @@
+  */
+ 
++#include <cerrno>
+ #include <charconv>
++#include <cstdlib>
+ #include <limits>
++#include <string>
+ #include <system_error>
+ 
+ #if __has_include(<fast_float/fast_float.h>)
+@@ -87,10 +90,21 @@ static inline bool from_chars(pl_str str, T &n, Args ...args)
+     } else {
+         constexpr bool is_fp = std::is_same_v<float, T> || std::is_same_v<double, T>;
+         static_assert(is_fp, "Not implemented!");
+ #if !__has_include(<fast_float/fast_float.h>)
+-        static_assert(!is_fp, "<fast_float/fast_float.h> is required, but not " \
+-                              "found. Please run `git submodule update --init`" \
+-                              " or provide <fast_float/fast_float.h>");
++        static_assert(sizeof...(Args) == 0, "Unexpected arguments for libc float parser");
++        std::string tmp((const char *) str.buf, str.len);
++        char *end = nullptr;
++        errno = 0;
++
++        if constexpr (std::is_same_v<float, T>) {
++            n = strtof(tmp.c_str(), &end);
++        } else {
++            n = strtod(tmp.c_str(), &end);
++        }
++
++        return errno != ERANGE && end == tmp.c_str() + tmp.size();
+ #else
+         // FIXME: Fallback for libc++, as it does not implement floating-point
+         // variant of std::from_chars. Remove this when appropriate.
+         auto [ptr, ec] = fast_float::from_chars((const char *) str.buf,
+-- 
+2.51.0
+

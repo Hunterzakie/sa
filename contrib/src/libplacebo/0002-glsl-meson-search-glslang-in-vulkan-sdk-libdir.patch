@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jean-Baptiste Kempf <jb@videolan.org>
+Date: Mon, 29 Jun 2026 15:15:00 +0000
+Subject: [PATCH] glsl/meson: search glslang in vulkan-sdk libdir
+
+SPIRV is searched in the vulkan-sdk lib directory, but glslang is not.
+This breaks contrib cross builds where glslang is installed in the contrib
+prefix instead of a compiler default library path.
+---
+ src/glsl/meson.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/glsl/meson.build b/src/glsl/meson.build
+index a9d42d3..59e87c4 100644
+--- a/src/glsl/meson.build
++++ b/src/glsl/meson.build
+@@ -59,7 +59,7 @@ elif not glslang_req.disabled()
+ 
+     # Glslang 15.0.0 moved some code around, add also linking to glslang, while
+     # this is not needed for older versions, it will still work.
+-    glslang_deps += cxx.find_library('glslang', required: required, static: static)
++    glslang_deps += cxx.find_library('glslang', required: required, static: static, dirs: vulkan_lib_dirs)
+ 
+     if static
+       glslang_deps += [
+-- 
+2.51.0
+

@@ -10,28 +10,26 @@ We need this to support building inside a virtualenv.
  2 files changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/meson.build b/meson.build
-index 2ea819b2..c1404ee9 100644
+index 4a9305d2..d71613f5 100644
 --- a/meson.build
 +++ b/meson.build
-@@ -320,7 +320,7 @@ add_project_link_arguments(link_args, language: 'c')
+@@ -464,7 +464,7 @@ add_project_link_arguments(link_args, language: ['c', 'cpp'])
  fs = import('fs')
  libm = cc.find_library('m', required: false)
  thirdparty = meson.project_source_root()/'3rdparty'
 -python = import('python').find_installation()
 +python = import('python').find_installation(get_option('python-path'))
  python_env = environment()
- python_env.append('PYTHONPATH', thirdparty/'jinja'/'src')
- python_env.append('PYTHONPATH', thirdparty/'markupsafe'/'src')
+ python_env.append('PYTHONPATH', thirdparty/'jinja/src')
+ python_env.append('PYTHONPATH', thirdparty/'markupsafe/src')
 diff --git a/meson_options.txt b/meson_options.txt
-index ce88b3bf..853d1347 100644
+index 7e56bc98..caa8154b 100644
 --- a/meson_options.txt
 +++ b/meson_options.txt
-@@ -44,3 +44,5 @@ option('unwind', type: 'feature', value: 'auto',
- 
+@@ -57,2 +57,4 @@ option('xxhash', type: 'feature', value: 'auto',
  option('debug-abort', type: 'boolean', value: false,
         description: 'abort() on most runtime errors (only for debugging purposes)')
 +
 +option('python-path', type: 'string', description: 'Path to python3 executable')
 -- 
 2.38.0
-
