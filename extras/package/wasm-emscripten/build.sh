@@ -131,7 +131,7 @@ mkdir -p "$VLC_SRCPATH"/contrib/contrib-emscripten
 cd "$VLC_SRCPATH"/contrib/contrib-emscripten
 
 diagnostic "vlc contribs: bootstrap"
-../bootstrap --disable-disc --disable-sout --disable-net \
+../bootstrap --disable-disc --disable-sout --disable-net --enable-librist \
             --disable-aom --disable-faad2 --disable-chromaprint \
             --disable-mad --disable-nvcodec \
             --disable-tremor --disable-theora \
