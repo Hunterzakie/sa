@@ -38,15 +38,15 @@
 #include <sys/xattr.h>
 #include <time.h>
 
-NSString * const VLCPlaybackOrderChanged = @"VLCPlaybackOrderChanged";
-NSString * const VLCPlaybackRepeatChanged = @"VLCPlaybackRepeatChanged";
-NSString * const VLCPlaybackHasPreviousChanged = @"VLCPlaybackHasPreviousChanged";
-NSString * const VLCPlaybackHasNextChanged = @"VLCPlaybackHasNextChanged";
-NSString * const VLCPlayQueueCurrentItemIndexChanged = @"VLCPlayQueueCurrentItemIndexChanged";
-NSString * const VLCPlayQueueItemsAdded = @"VLCPlayQueueItemsAdded";
-NSString * const VLCPlayQueueItemsRemoved = @"VLCPlayQueueItemsRemoved";
+NSString *const VLCPlaybackOrderChanged = @"VLCPlaybackOrderChanged";
+NSString *const VLCPlaybackRepeatChanged = @"VLCPlaybackRepeatChanged";
+NSString *const VLCPlaybackHasPreviousChanged = @"VLCPlaybackHasPreviousChanged";
+NSString *const VLCPlaybackHasNextChanged = @"VLCPlaybackHasNextChanged";
+NSString *const VLCPlayQueueCurrentItemIndexChanged = @"VLCPlayQueueCurrentItemIndexChanged";
+NSString *const VLCPlayQueueItemsAdded = @"VLCPlayQueueItemsAdded";
+NSString *const VLCPlayQueueItemsRemoved = @"VLCPlayQueueItemsRemoved";
 
-NSString * const VLCLibraryPlayQueueModeDefaultsKey = @"VLCLibraryPlayQueueMode";
+NSString *const VLCLibraryPlayQueueModeDefaultsKey = @"VLCLibraryPlayQueueMode";
 
 @interface VLCPlayQueueController ()
 {
@@ -60,7 +60,9 @@ NSString * const VLCLibraryPlayQueueModeDefaultsKey = @"VLCLibraryPlayQueueMode"
 - (void)playQueueAdded:(NSArray *)items atIndex:(size_t)insertionIndex count:(size_t)numberOfItems;
 - (void)playQueueMovedIndex:(size_t)index toTarget:(size_t)target numberOfItems:(size_t)count;
 - (void)playQueueRemovedItemsAtIndex:(size_t)index count:(size_t)numberOfItems;
-- (void)playQueueUpdatedForIndex:(size_t)firstUpdatedIndex items:(vlc_playlist_item_t *const *)items count:(size_t)numberOfItems;
+- (void)playQueueUpdatedForIndex:(size_t)firstUpdatedIndex
+                           items:(vlc_playlist_item_t *const *)items
+                           count:(size_t)numberOfItems;
 - (void)playQueuePlaybackRepeatUpdated:(enum vlc_playlist_playback_repeat)currentRepeatMode;
 - (void)playQueuePlaybackOrderUpdated:(enum vlc_playlist_playback_order)currentOrder;
 - (void)currentPlayQueueItemIndexChanged:(size_t)index;
@@ -73,130 +75,132 @@ NSString * const VLCLibraryPlayQueueModeDefaultsKey = @"VLCLibraryPlayQueueMode"
 #pragma mark -
 #pragma mark core callbacks
 
-static void
-cb_playlist_items_reset(vlc_playlist_t *const __unused playlist,
-                        vlc_playlist_item_t *const items[],
-                        size_t numberOfItems,
-                        void *p_data)
+static void cb_playlist_items_reset(vlc_playlist_t *const __unused playlist,
+                                    vlc_playlist_item_t *const items[],
+                                    size_t numberOfItems,
+                                    void *p_data)
 {
-    NSMutableArray * const array = [NSMutableArray arrayWithCapacity:numberOfItems];
+    NSMutableArray *const array = [NSMutableArray arrayWithCapacity:numberOfItems];
     for (size_t i = 0; i < numberOfItems; i++) {
-        VLCPlayQueueItem * const item = [[VLCPlayQueueItem alloc] initWithPlaylistItem:items[i]];
+        VLCPlayQueueItem *const item = [[VLCPlayQueueItem alloc] initWithPlaylistItem:items[i]];
         [array addObject:item];
     }
     dispatch_async(dispatch_get_main_queue(), ^{
-        VLCPlayQueueController * const playQueueController = (__bridge VLCPlayQueueController *)p_data;
+        VLCPlayQueueController *const playQueueController =
+            (__bridge VLCPlayQueueController *)p_data;
         [playQueueController playQueueResetWithItems:array];
     });
 }
 
-static void
-cb_playlist_items_added(vlc_playlist_t *const __unused playlist,
-                        size_t insertionIndex,
-                        vlc_playlist_item_t *const items[],
-                        size_t numberOfAddedItems,
-                        void *p_data)
+static void cb_playlist_items_added(vlc_playlist_t *const __unused playlist,
+                                    size_t insertionIndex,
+                                    vlc_playlist_item_t *const items[],
+                                    size_t numberOfAddedItems,
+                                    void *p_data)
 {
-    NSMutableArray * const array = [NSMutableArray arrayWithCapacity:numberOfAddedItems];
+    NSMutableArray *const array = [NSMutableArray arrayWithCapacity:numberOfAddedItems];
     for (size_t i = 0; i < numberOfAddedItems; i++) {
-        VLCPlayQueueItem * const item = [[VLCPlayQueueItem alloc] initWithPlaylistItem:items[i]];
+        VLCPlayQueueItem *const item = [[VLCPlayQueueItem alloc] initWithPlaylistItem:items[i]];
         [array addObject:item];
     }
     dispatch_async(dispatch_get_main_queue(), ^{
-        VLCPlayQueueController * const playQueueController = (__bridge VLCPlayQueueController *)p_data;
+        VLCPlayQueueController *const playQueueController =
+            (__bridge VLCPlayQueueController *)p_data;
         [playQueueController playQueueAdded:array atIndex:insertionIndex count:numberOfAddedItems];
     });
 }
 
-static void
-cb_playlist_items_moved(vlc_playlist_t *const __unused playlist,
-                        size_t index,
-                        size_t numberOfMovedItems,
-                        size_t target,
-                        void *p_data)
+static void cb_playlist_items_moved(vlc_playlist_t *const __unused playlist,
+                                    size_t index,
+                                    size_t numberOfMovedItems,
+                                    size_t target,
+                                    void *p_data)
 {
     dispatch_async(dispatch_get_main_queue(), ^{
-        VLCPlayQueueController * const playQueueController = (__bridge VLCPlayQueueController *)p_data;
-        [playQueueController playQueueMovedIndex:index toTarget:target numberOfItems:numberOfMovedItems];
+        VLCPlayQueueController *const playQueueController =
+            (__bridge VLCPlayQueueController *)p_data;
+        [playQueueController playQueueMovedIndex:index
+                                        toTarget:target
+                                   numberOfItems:numberOfMovedItems];
     });
 }
 
-static void
-cb_playlist_items_removed(vlc_playlist_t *const __unused playlist,
-                          size_t index,
-                          size_t count,
-                          void *p_data)
+static void cb_playlist_items_removed(vlc_playlist_t *const __unused playlist,
+                                      size_t index,
+                                      size_t count,
+                                      void *p_data)
 {
     dispatch_async(dispatch_get_main_queue(), ^{
-        VLCPlayQueueController * const playQueueController = (__bridge VLCPlayQueueController *)p_data;
+        VLCPlayQueueController *const playQueueController =
+            (__bridge VLCPlayQueueController *)p_data;
         [playQueueController playQueueRemovedItemsAtIndex:index count:count];
     });
 }
 
-static void
-cb_playlist_items_updated(vlc_playlist_t *const __unused playlist,
-                          size_t firstUpdatedIndex,
-                          vlc_playlist_item_t *const items[],
-                          size_t numberOfUpdatedItems,
-                          void *p_data)
+static void cb_playlist_items_updated(vlc_playlist_t *const __unused playlist,
+                                      size_t firstUpdatedIndex,
+                                      vlc_playlist_item_t *const items[],
+                                      size_t numberOfUpdatedItems,
+                                      void *p_data)
 {
     dispatch_async(dispatch_get_main_queue(), ^{
-        VLCPlayQueueController * const playQueueController = (__bridge VLCPlayQueueController *)p_data;
-        [playQueueController playQueueUpdatedForIndex:firstUpdatedIndex items:items count:numberOfUpdatedItems];
+        VLCPlayQueueController *const playQueueController =
+            (__bridge VLCPlayQueueController *)p_data;
+        [playQueueController playQueueUpdatedForIndex:firstUpdatedIndex
+                                                items:items
+                                                count:numberOfUpdatedItems];
     });
 }
 
-static void
-cb_playlist_playback_repeat_changed(vlc_playlist_t *const __unused playlist,
-                                    enum vlc_playlist_playback_repeat repeat,
-                                    void *p_data)
+static void cb_playlist_playback_repeat_changed(vlc_playlist_t *const __unused playlist,
+                                                enum vlc_playlist_playback_repeat repeat,
+                                                void *p_data)
 {
     dispatch_async(dispatch_get_main_queue(), ^{
-        VLCPlayQueueController * const playQueueController = (__bridge VLCPlayQueueController *)p_data;
+        VLCPlayQueueController *const playQueueController =
+            (__bridge VLCPlayQueueController *)p_data;
         [playQueueController playQueuePlaybackRepeatUpdated:repeat];
     });
 }
 
-static void
-cb_playlist_playback_order_changed(vlc_playlist_t *const __unused playlist,
-                                   enum vlc_playlist_playback_order order,
-                                   void *p_data)
+static void cb_playlist_playback_order_changed(vlc_playlist_t *const __unused playlist,
+                                               enum vlc_playlist_playback_order order,
+                                               void *p_data)
 {
     dispatch_async(dispatch_get_main_queue(), ^{
-        VLCPlayQueueController * const playQueueController = (__bridge VLCPlayQueueController *)p_data;
+        VLCPlayQueueController *const playQueueController =
+            (__bridge VLCPlayQueueController *)p_data;
         [playQueueController playQueuePlaybackOrderUpdated:order];
     });
 }
 
-static void
-cb_playlist_current_item_index_changed(vlc_playlist_t *const __unused playlist,
-                                 ssize_t index,
-                                 void *p_data)
+static void cb_playlist_current_item_index_changed(vlc_playlist_t *const __unused playlist,
+                                                   ssize_t index,
+                                                   void *p_data)
 {
     dispatch_async(dispatch_get_main_queue(), ^{
-        VLCPlayQueueController * const playQueueController = (__bridge VLCPlayQueueController *)p_data;
+        VLCPlayQueueController *const playQueueController =
+            (__bridge VLCPlayQueueController *)p_data;
         [playQueueController currentPlayQueueItemIndexChanged:index];
     });
 }
 
 static void
-cb_playlist_has_prev_changed(vlc_playlist_t *const __unused playlist,
-                             bool has_prev,
-                             void *p_data)
+cb_playlist_has_prev_changed(vlc_playlist_t *const __unused playlist, bool has_prev, void *p_data)
 {
     dispatch_async(dispatch_get_main_queue(), ^{
-        VLCPlayQueueController * const playQueueController = (__bridge VLCPlayQueueController *)p_data;
+        VLCPlayQueueController *const playQueueController =
+            (__bridge VLCPlayQueueController *)p_data;
         [playQueueController playQueueHasPreviousItem:has_prev];
     });
 }
 
 static void
-cb_playlist_has_next_changed(vlc_playlist_t *const __unused playlist,
-                             bool has_next,
-                             void *p_data)
+cb_playlist_has_next_changed(vlc_playlist_t *const __unused playlist, bool has_next, void *p_data)
 {
     dispatch_async(dispatch_get_main_queue(), ^{
-        VLCPlayQueueController * const playQueueController = (__bridge VLCPlayQueueController *)p_data;
+        VLCPlayQueueController *const playQueueController =
+            (__bridge VLCPlayQueueController *)p_data;
         [playQueueController playQueueHasNextItem:has_next];
     });
 }
@@ -208,7 +212,8 @@ cb_playlist_media_stopped_action_changed(vlc_playlist_t *const __unused p_playli
 {
     VLC_UNUSED(p_playlist);
     dispatch_async(dispatch_get_main_queue(), ^{
-        VLCPlayQueueController * const playQueueController = (__bridge VLCPlayQueueController *)p_data;
+        VLCPlayQueueController *const playQueueController =
+            (__bridge VLCPlayQueueController *)p_data;
         [playQueueController stopActionChanged:newAction];
     });
 }
@@ -254,14 +259,13 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
             [NSUserDefaults.standardUserDefaults boolForKey:VLCLibraryPlayQueueModeDefaultsKey];
         _playbackOrder = vlc_playlist_GetPlaybackOrder(_p_playlist);
         _playbackRepeat = vlc_playlist_GetPlaybackRepeat(_p_playlist);
-        _playlistListenerID = vlc_playlist_AddListener(_p_playlist,
-                                                       &playlist_callbacks,
-                                                       (__bridge void *)self,
-                                                       YES);
+        _playlistListenerID =
+            vlc_playlist_AddListener(_p_playlist, &playlist_callbacks, (__bridge void *)self, YES);
         vlc_playlist_Unlock(_p_playlist);
         _playQueueModel = [[VLCPlayQueueModel alloc] init];
         _playQueueModel.playQueueController = self;
-        _playerController = [[VLCPlayerController alloc] initWithPlayer:vlc_playlist_GetPlayer(_p_playlist)];
+        _playerController =
+            [[VLCPlayerController alloc] initWithPlayer:vlc_playlist_GetPlayer(_p_playlist)];
     }
     return self;
 }
@@ -270,9 +274,9 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
 {
     /* Handle sleep notification */
     [NSWorkspace.sharedWorkspace.notificationCenter addObserver:self
-                                                           selector:@selector(computerWillSleep:)
-                                                               name:NSWorkspaceWillSleepNotification
-                                                             object:nil];
+                                                       selector:@selector(computerWillSleep:)
+                                                           name:NSWorkspaceWillSleepNotification
+                                                         object:nil];
 
     // respect playlist-autostart
     if (var_GetBool(getIntf(), "playlist-autostart")) {
@@ -339,7 +343,9 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
     [_defaultNotificationCenter postNotificationName:VLCPlayQueueItemsRemoved object:self];
 }
 
-- (void)playQueueUpdatedForIndex:(size_t)firstUpdatedIndex items:(vlc_playlist_item_t *const *)items count:(size_t)numberOfItems
+- (void)playQueueUpdatedForIndex:(size_t)firstUpdatedIndex
+                           items:(vlc_playlist_item_t *const *)items
+                           count:(size_t)numberOfItems
 {
     vlc_playlist_Lock(_p_playlist);
     for (size_t i = 0; i < numberOfItems; i++) {
@@ -353,7 +359,6 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
     vlc_playlist_Unlock(_p_playlist);
 
     [_playQueueDataSource playQueueUpdated];
-
 }
 
 - (void)playQueuePlaybackRepeatUpdated:(enum vlc_playlist_playback_repeat)currentRepeatMode
@@ -372,7 +377,8 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
 {
     _currentPlayQueueIndex = index;
     [_playQueueDataSource scrollToCurrentPlayQueueItem];
-    [_defaultNotificationCenter postNotificationName:VLCPlayQueueCurrentItemIndexChanged object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayQueueCurrentItemIndexChanged
+                                              object:self];
 }
 
 - (void)playQueueHasPreviousItem:(BOOL)hasPrevious
@@ -389,15 +395,15 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
 
 #pragma mark - controller functions for use within the UI
 
-- (void)addPlayQueueItems:(NSArray <VLCOpenInputMetadata *> *)array
+- (void)addPlayQueueItems:(NSArray<VLCOpenInputMetadata *> *)array
 {
     BOOL b_autoplay = var_InheritBool(getIntf(), "macosx-autoplay");
     [self addPlayQueueItems:array atPosition:NSUIntegerMax startPlayback:b_autoplay];
 }
 
-- (void)addPlayQueueItems:(NSArray <VLCOpenInputMetadata *> *)itemArray
-              atPosition:(size_t)insertionIndex
-           startPlayback:(BOOL)startPlayback
+- (void)addPlayQueueItems:(NSArray<VLCOpenInputMetadata *> *)itemArray
+               atPosition:(size_t)insertionIndex
+            startPlayback:(BOOL)startPlayback
 {
     /* note: we don't add the item as cached data to the model here
      * because this will be done asynchronously through the callback */
@@ -426,15 +432,15 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
         if (insertionIndex == NSUIntegerMax) {
             actualInsertionIndex = vlc_playlist_Count(_p_playlist);
         }
-        ret = vlc_playlist_Insert(_p_playlist,
-                                  actualInsertionIndex,
-                                  &p_input,
-                                  1);
+        ret = vlc_playlist_Insert(_p_playlist, actualInsertionIndex, &p_input, 1);
 
         if (ret != VLC_SUCCESS) {
             msg_Err(p_intf, "failed to insert input item at insertion index: %zu", insertionIndex);
         } else {
-            msg_Dbg(p_intf, "Added item %s at insertion index: %zu", [itemURLString UTF8String], insertionIndex);
+            msg_Dbg(p_intf,
+                    "Added item %s at insertion index: %zu",
+                    [itemURLString UTF8String],
+                    insertionIndex);
         }
 
         if (i == 0 && startPlayback) {
@@ -450,7 +456,9 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
     }
 }
 
-- (int)addInputItem:(input_item_t *)p_inputItem atPosition:(size_t)insertionIndex startPlayback:(BOOL)startPlayback
+- (int)addInputItem:(input_item_t *)p_inputItem
+         atPosition:(size_t)insertionIndex
+      startPlayback:(BOOL)startPlayback
 {
     if (p_inputItem == NULL) {
         return VLC_EINVAL;
@@ -493,7 +501,7 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
 
     __block vlc_playlist_item_t **items = calloc(indexes.count, sizeof(vlc_playlist_item_t *));
     __block NSUInteger pos = 0;
-    [indexes enumerateIndexesUsingBlock:^(const NSUInteger idx, BOOL * const __unused stop) {
+    [indexes enumerateIndexesUsingBlock:^(const NSUInteger idx, BOOL *const __unused stop) {
         VLCPlayQueueItem *item = [self->_playQueueModel playQueueItemAtIndex:idx];
         items[pos++] = item.playlistItem;
     }];
@@ -515,7 +523,8 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
     vlc_playlist_Unlock(_p_playlist);
 }
 
-- (int)sortByKey:(enum vlc_playlist_sort_key)sortKey andOrder:(enum vlc_playlist_sort_order)sortOrder
+- (int)sortByKey:(enum vlc_playlist_sort_key)sortKey
+        andOrder:(enum vlc_playlist_sort_order)sortOrder
 {
     struct vlc_playlist_sort_criterion sortCriterion = { sortKey, sortOrder };
     int returnValue = VLC_SUCCESS;
@@ -589,7 +598,8 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
 
 - (void)setPlaybackOrder:(enum vlc_playlist_playback_order)playbackOrder
 {
-    // Set the ivar first and then we will receive whatever has been applied via vlc_playlist_SetPlaybackOrder
+    // Set the ivar first and then we will receive whatever has been applied via
+    // vlc_playlist_SetPlaybackOrder
     [self playQueuePlaybackOrderUpdated:playbackOrder];
 
     vlc_playlist_Lock(_p_playlist);
@@ -599,7 +609,8 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
 
 - (void)setPlaybackRepeat:(enum vlc_playlist_playback_repeat)playbackRepeat
 {
-    // Set the ivar first and then we will receive whatever has been applied via vlc_playlist_SetPlaybackRepeat
+    // Set the ivar first and then we will receive whatever has been applied via
+    // vlc_playlist_SetPlaybackRepeat
     [self playQueuePlaybackRepeatUpdated:playbackRepeat];
 
     vlc_playlist_Lock(_p_playlist);
@@ -652,47 +663,52 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
     input_item_t *p_input;
     BOOL b_rem = FALSE, b_dir = FALSE, b_writable = FALSE;
     NSString *uri, *name, *path;
-    NSURL * url;
+    NSURL *url;
     NSArray *optionsArray;
 
     /* Get the item */
     uri = itemMetadata.MRLString;
-    url = [NSURL URLWithString: uri];
+    url = [NSURL URLWithString:uri];
     path = [url path];
     name = itemMetadata.itemName;
     optionsArray = itemMetadata.playbackOptions;
 
-    if ([[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&b_dir]
-        && b_dir &&
+    if ([[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&b_dir] && b_dir &&
         [NSWorkspace.sharedWorkspace getFileSystemInfoForPath:path
-                                                    isRemovable:&b_rem
-                                                     isWritable:&b_writable
-                                                  isUnmountable:NULL
-                                                    description:NULL
-                                                           type:NULL]
+                                                  isRemovable:&b_rem
+                                                   isWritable:&b_writable
+                                                isUnmountable:NULL
+                                                  description:NULL
+                                                         type:NULL]
         && b_rem && !b_writable && [url isFileURL]) {
-
         NSString *diskType = getVolumeTypeFromMountPath(path);
-        msg_Dbg(p_intf, "detected optical media of type %s in the file input", [diskType UTF8String]);
+        msg_Dbg(p_intf,
+                "detected optical media of type %s in the file input",
+                [diskType UTF8String]);
 
-        if ([diskType isEqualToString: kVLCMediaDVD])
-            uri = [NSString stringWithFormat: @"dvdnav://%@", getBSDNodeFromMountPath(path)];
-        else if ([diskType isEqualToString: kVLCMediaAudioDVD])
-            uri = [NSString stringWithFormat: @"dvda://%@", getBSDNodeFromMountPath(path)];
-        else if ([diskType isEqualToString: kVLCMediaVideoTSFolder])
-            uri = [NSString stringWithFormat: @"dvdnav://%@", path];
-        else if ([diskType isEqualToString: kVLCMediaAudioCD])
-            uri = [NSString stringWithFormat: @"cdda://%@", getBSDNodeFromMountPath(path)];
-        else if ([diskType isEqualToString: kVLCMediaVCD])
-            uri = [NSString stringWithFormat: @"vcd://%@#0:0", getBSDNodeFromMountPath(path)];
-        else if ([diskType isEqualToString: kVLCMediaSVCD])
-            uri = [NSString stringWithFormat: @"vcd://%@@0:0", getBSDNodeFromMountPath(path)];
-        else if ([diskType isEqualToString: kVLCMediaBD] || [diskType isEqualToString: kVLCMediaBDMVFolder])
-            uri = [NSString stringWithFormat: @"bluray://%@", path];
+        if ([diskType isEqualToString:kVLCMediaDVD])
+            uri = [NSString stringWithFormat:@"dvdnav://%@", getBSDNodeFromMountPath(path)];
+        else if ([diskType isEqualToString:kVLCMediaAudioDVD])
+            uri = [NSString stringWithFormat:@"dvda://%@", getBSDNodeFromMountPath(path)];
+        else if ([diskType isEqualToString:kVLCMediaVideoTSFolder])
+            uri = [NSString stringWithFormat:@"dvdnav://%@", path];
+        else if ([diskType isEqualToString:kVLCMediaAudioCD])
+            uri = [NSString stringWithFormat:@"cdda://%@", getBSDNodeFromMountPath(path)];
+        else if ([diskType isEqualToString:kVLCMediaVCD])
+            uri = [NSString stringWithFormat:@"vcd://%@#0:0", getBSDNodeFromMountPath(path)];
+        else if ([diskType isEqualToString:kVLCMediaSVCD])
+            uri = [NSString stringWithFormat:@"vcd://%@@0:0", getBSDNodeFromMountPath(path)];
+        else if ([diskType isEqualToString:kVLCMediaBD] ||
+                 [diskType isEqualToString:kVLCMediaBDMVFolder])
+            uri = [NSString stringWithFormat:@"bluray://%@", path];
         else
-            msg_Warn(getIntf(), "unknown disk type, treating %s as regular input", [path UTF8String]);
+            msg_Warn(getIntf(),
+                     "unknown disk type, treating %s as regular input",
+                     [path UTF8String]);
 
-        p_input = input_item_New([uri UTF8String], [[[NSFileManager defaultManager] displayNameAtPath:path] UTF8String]);
+        p_input =
+            input_item_New([uri UTF8String],
+                           [[[NSFileManager defaultManager] displayNameAtPath:path] UTF8String]);
     } else {
         p_input = input_item_New([uri fileSystemRepresentation], name ? [name UTF8String] : NULL);
     }
@@ -703,7 +719,9 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
     if (optionsArray) {
         NSUInteger count = [optionsArray count];
         for (NSUInteger i = 0; i < count; i++)
-            input_item_AddOption(p_input, [[optionsArray objectAtIndex:i] UTF8String], VLC_INPUT_OPTION_TRUSTED);
+            input_item_AddOption(p_input,
+                                 [[optionsArray objectAtIndex:i] UTF8String],
+                                 VLC_INPUT_OPTION_TRUSTED);
     }
 
     /* Recent documents menu */
@@ -717,7 +735,7 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
         vlc_medialibrary_t *ml = vlc_ml_instance_get(getIntf());
         if (ml != NULL) {
             const char *psz_uri = uri.UTF8String;
-            vlc_ml_media_t * ml_media = vlc_ml_get_media_by_mrl(ml, psz_uri);
+            vlc_ml_media_t *ml_media = vlc_ml_get_media_by_mrl(ml, psz_uri);
             if (ml_media == NULL) {
                 // create new entry if we don't have it yet
                 ml_media = vlc_ml_new_stream(ml, psz_uri);
@@ -756,10 +774,11 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
     html.fileExtension = @"html";
     html.moduleName = @"export-html";
 
-    return @[xspf, m3u, m3u8, html];
+    return @[ xspf, m3u, m3u8, html ];
 }
 
-- (int)exportPlaylistToPath:(NSString *)path exportModule:(VLCPlaylistExportModuleDescription *)exportModule
+- (int)exportPlaylistToPath:(NSString *)path
+               exportModule:(VLCPlaylistExportModuleDescription *)exportModule
 {
     vlc_playlist_Lock(_p_playlist);
     int ret = vlc_playlist_Export(_p_playlist,
@@ -776,7 +795,8 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
 
 - (void)setActionAfterStop:(enum vlc_playlist_media_stopped_action)actionAfterStop
 {
-    // Set the ivar first and then we will receive whatever has been enabled via actionAfterStopChanged
+    // Set the ivar first and then we will receive whatever has been enabled via
+    // actionAfterStopChanged
     [self stopActionChanged:actionAfterStop];
 
     vlc_playlist_Lock(_p_playlist);

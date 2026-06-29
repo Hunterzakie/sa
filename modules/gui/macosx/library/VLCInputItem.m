@@ -35,9 +35,9 @@
 NSString *VLCInputItemParsingSucceeded = @"VLCInputItemParsingSucceeded";
 NSString *VLCInputItemParsingFailed = @"VLCInputItemParsingFailed";
 NSString *VLCInputItemSubtreeAdded = @"VLCInputItemSubtreeAdded";
-NSString * const VLCInputItemCommonDataDifferingFlagString = @"<differing>";
+NSString *const VLCInputItemCommonDataDifferingFlagString = @"<differing>";
 
-@interface VLCInputItem()
+@interface VLCInputItem ()
 {
     input_item_parser_id_t *_p_parserID;
 }
@@ -65,8 +65,7 @@ static void cb_subtree_added(input_item_t *p_item, input_item_node_t *p_node, vo
     });
 }
 
-static const struct input_item_parser_cbs_t parserCallbacks =
-{
+static const struct input_item_parser_cbs_t parserCallbacks = {
     .on_ended = cb_parsing_ended,
     .on_subtree_added = cb_subtree_added,
 };
@@ -75,12 +74,12 @@ static const struct input_item_parser_cbs_t parserCallbacks =
 
 + (nullable instancetype)inputItemFromURL:(NSURL *)url
 {
-    const char * const psz_uri = url.absoluteString.UTF8String;
-    const char * const psz_name = url.lastPathComponent.stringByDeletingPathExtension.UTF8String;
-    input_item_t * const p_input_item = input_item_New(psz_uri, psz_name);
+    const char *const psz_uri = url.absoluteString.UTF8String;
+    const char *const psz_name = url.lastPathComponent.stringByDeletingPathExtension.UTF8String;
+    input_item_t *const p_input_item = input_item_New(psz_uri, psz_name);
     if (p_input_item == NULL)
         return nil;
-    VLCInputItem * const inputItem = [[VLCInputItem alloc] initWithInputItem:p_input_item];
+    VLCInputItem *const inputItem = [[VLCInputItem alloc] initWithInputItem:p_input_item];
     input_item_Release(p_input_item);
     return inputItem;
 }
@@ -127,7 +126,7 @@ static const struct input_item_parser_cbs_t parserCallbacks =
     return returnValue;
 }
 
--(void)setTitle:(NSString *)title
+- (void)setTitle:(NSString *)title
 {
     input_item_SetTitle(_vlcInputItem, [title UTF8String]);
 }
@@ -353,7 +352,7 @@ static const struct input_item_parser_cbs_t parserCallbacks =
     return returnValue;
 }
 
-- (NSString*)path
+- (NSString *)path
 {
     if (!_vlcInputItem->b_net) {
         char *psz_url = input_item_GetURI(_vlcInputItem);
@@ -380,7 +379,7 @@ static const struct input_item_parser_cbs_t parserCallbacks =
         return @[];
     }
 
-    NSMutableArray * const names = [NSMutableArray arrayWithCapacity:i_count];
+    NSMutableArray *const names = [NSMutableArray arrayWithCapacity:i_count];
     for (unsigned i = 0; i < i_count; i++) {
         [names addObject:toNSStr(ppsz_names[i])];
         free(ppsz_names[i]);
@@ -392,8 +391,8 @@ static const struct input_item_parser_cbs_t parserCallbacks =
 
 - (nullable NSString *)extraMetaForKey:(NSString *)key
 {
-    char * const psz_value = input_item_GetMetaExtra(_vlcInputItem, [key UTF8String]);
-    NSString * const returnValue = toNSStr(psz_value);
+    char *const psz_value = input_item_GetMetaExtra(_vlcInputItem, [key UTF8String]);
+    NSString *const returnValue = toNSStr(psz_value);
     free(psz_value);
     return returnValue;
 }
@@ -421,7 +420,6 @@ static const struct input_item_parser_cbs_t parserCallbacks =
 
 - (void)setArtworkURL:(NSURL *)artworkURL
 {
-
     if (artworkURL != nil) {
         input_item_SetArtworkURL(_vlcInputItem, artworkURL.absoluteString.UTF8String);
     } else {
@@ -433,7 +431,7 @@ static const struct input_item_parser_cbs_t parserCallbacks =
 {
     const struct input_item_parser_cfg cfg = {
         .cbs = &parserCallbacks,
-        .cbs_data = (__bridge void *) self,
+        .cbs_data = (__bridge void *)self,
     };
 
     if (_p_parserID)
@@ -484,46 +482,47 @@ static const struct input_item_parser_cbs_t parserCallbacks =
     return input_item_WriteMeta(VLC_OBJECT(getIntf()), _vlcInputItem);
 }
 
-- (void)thumbnailWithSize:(NSSize)size completionHandler:(void(^)(NSImage * image))completionHandler
+- (void)thumbnailWithSize:(NSSize)size completionHandler:(void (^)(NSImage *image))completionHandler
 {
     if (self.isStream) {
         completionHandler(nil);
         return;
     }
 
-    char * const psz_url = input_item_GetURI(_vlcInputItem);
+    char *const psz_url = input_item_GetURI(_vlcInputItem);
     if (psz_url == NULL) {
         completionHandler(nil);
         return;
     }
 
-    char * const psz_path = vlc_uri2path(psz_url);
+    char *const psz_path = vlc_uri2path(psz_url);
     free(psz_url);
     if (psz_path == NULL) {
         completionHandler(nil);
         return;
     }
 
-    NSString * const path = toNSStr(psz_path);
+    NSString *const path = toNSStr(psz_path);
     free(psz_path);
 
-    [NSImage quickLookPreviewForLocalPath:path 
+    [NSImage quickLookPreviewForLocalPath:path
                                  withSize:size
-                        completionHandler:^(NSImage * image) {
-        if (image) {
-            completionHandler(image);
-            return;
-        }
+                        completionHandler:^(NSImage *image) {
+                            if (image) {
+                                completionHandler(image);
+                                return;
+                            }
 
-        NSImage * const workspaceImage = [NSWorkspace.sharedWorkspace iconForFile:path];
-        if (workspaceImage) {
-            image.size = size;
-            completionHandler(image);
-            return;
-        }
+                            NSImage *const workspaceImage =
+                                [NSWorkspace.sharedWorkspace iconForFile:path];
+                            if (workspaceImage) {
+                                image.size = size;
+                                completionHandler(image);
+                                return;
+                            }
 
-        completionHandler(nil);
-    }];
+                            completionHandler(nil);
+                        }];
 }
 
 - (void)moveToTrash
@@ -532,17 +531,15 @@ static const struct input_item_parser_cbs_t parserCallbacks =
         return;
     }
 
-    NSURL * const pathUrl = [NSURL URLWithString:self.path];
+    NSURL *const pathUrl = [NSURL URLWithString:self.path];
     if (pathUrl == nil) {
         return;
     }
 
-    [NSFileManager.defaultManager trashItemAtURL:pathUrl
-                                resultingItemURL:nil
-                                           error:nil];
-    
-    VLCLibraryController * const libraryController = VLCMain.sharedInstance.libraryController;
-    [libraryController reloadMediaLibraryFoldersForInputItems:@[self]];
+    [NSFileManager.defaultManager trashItemAtURL:pathUrl resultingItemURL:nil error:nil];
+
+    VLCLibraryController *const libraryController = VLCMain.sharedInstance.libraryController;
+    [libraryController reloadMediaLibraryFoldersForInputItems:@[ self ]];
 }
 
 - (void)revealInFinder
@@ -556,16 +553,16 @@ static const struct input_item_parser_cbs_t parserCallbacks =
         return;
     }
 
-    [NSWorkspace.sharedWorkspace activateFileViewerSelectingURLs:@[pathUrl]];
+    [NSWorkspace.sharedWorkspace activateFileViewerSelectingURLs:@[ pathUrl ]];
 }
 
 - (nullable NSArray<NSString *> *)options
 {
     const int i_options = _vlcInputItem->i_options;
-    NSMutableArray * const options = [NSMutableArray arrayWithCapacity:i_options];
+    NSMutableArray *const options = [NSMutableArray arrayWithCapacity:i_options];
     for (NSUInteger i = 0; i < i_options; ++i) {
-        const char * const psz_option = _vlcInputItem->ppsz_options[i];
-        NSString * const option = NSTR(psz_option);
+        const char *const psz_option = _vlcInputItem->ppsz_options[i];
+        NSString *const option = NSTR(psz_option);
         [options addObject:option];
     }
     return options.copy;
@@ -573,72 +570,69 @@ static const struct input_item_parser_cbs_t parserCallbacks =
 
 @end
 
-
-NSDictionary<NSString *, id> *commonInputItemData(NSArray<VLCInputItem *> * const inputItems)
+NSDictionary<NSString *, id> *commonInputItemData(NSArray<VLCInputItem *> *const inputItems)
 {
     if (inputItems.count == 0) {
-        return @{};
+        return @ { };
     }
 
-    VLCInputItem * const firstInputItem = inputItems.firstObject;
+    VLCInputItem *const firstInputItem = inputItems.firstObject;
 
     if (inputItems.count == 1) {
-        return @{@"inputItem": firstInputItem};
+        return @ { @"inputItem" : firstInputItem };
     }
 
     NSMutableDictionary<NSString *, id> *const commonData = [[NSMutableDictionary alloc] init];
 
-#define PERFORM_ACTION_PER_INPUTITEM_NSSTRING_PROP(action)                                  \
-action(MRL);                                                                                \
-action(decodedMRL);                                                                         \
-action(title);                                                                              \
-action(artist);                                                                             \
-action(album);                                                                              \
-action(trackNumber);                                                                        \
-action(trackTotal);                                                                         \
-action(genre);                                                                              \
-action(date);                                                                               \
-action(episode);                                                                            \
-action(actors);                                                                             \
-action(director);                                                                           \
-action(showName);                                                                           \
-action(copyright);                                                                          \
-action(publisher);                                                                          \
-action(nowPlaying);                                                                         \
-action(language);                                                                           \
-action(contentDescription);                                                                 \
-action(encodedBy);
+#define PERFORM_ACTION_PER_INPUTITEM_NSSTRING_PROP(action)                                         \
+    action(MRL);                                                                                   \
+    action(decodedMRL);                                                                            \
+    action(title);                                                                                 \
+    action(artist);                                                                                \
+    action(album);                                                                                 \
+    action(trackNumber);                                                                           \
+    action(trackTotal);                                                                            \
+    action(genre);                                                                                 \
+    action(date);                                                                                  \
+    action(episode);                                                                               \
+    action(actors);                                                                                \
+    action(director);                                                                              \
+    action(showName);                                                                              \
+    action(copyright);                                                                             \
+    action(publisher);                                                                             \
+    action(nowPlaying);                                                                            \
+    action(language);                                                                              \
+    action(contentDescription);                                                                    \
+    action(encodedBy);
 
-#define PERFORM_ACTION_PER_INPUTITEM_PROP(action)                                           \
-PERFORM_ACTION_PER_INPUTITEM_NSSTRING_PROP(action)                                          \
-action(artworkURL);
+#define PERFORM_ACTION_PER_INPUTITEM_PROP(action)                                                  \
+    PERFORM_ACTION_PER_INPUTITEM_NSSTRING_PROP(action)                                             \
+    action(artworkURL);
 
-#define CREATE_DIFFER_BOOL(prop)                                                            \
-BOOL differing_##prop = NO;
+#define CREATE_DIFFER_BOOL(prop) BOOL differing_##prop = NO;
 
-#define CREATE_PROP_VAR(prop)                                                               \
-NSString * const firstItem_##prop = firstInputItem.prop;
+#define CREATE_PROP_VAR(prop) NSString *const firstItem_##prop = firstInputItem.prop;
 
-#define UPDATE_IF_DIFFERING_BOOL(prop)                                                          \
-differing_##prop = differing_##prop || ![inputItem.prop isEqualToString:firstItem_##prop];
+#define UPDATE_IF_DIFFERING_BOOL(prop)                                                             \
+    differing_##prop = differing_##prop || ![inputItem.prop isEqualToString:firstItem_##prop];
 
-#define ADD_PROP_TO_DICT(prop)                                                              \
-NSString * firstItemValue_##prop = firstItem_##prop == nil ? @"" : firstItem_##prop;        \
-NSString * const value_##prop =                                                             \
-    differing_##prop ? VLCInputItemCommonDataDifferingFlagString : firstItemValue_##prop;   \
-[commonData setObject:value_##prop forKey:[NSString stringWithUTF8String:#prop]];           \
+#define ADD_PROP_TO_DICT(prop)                                                                     \
+    NSString *firstItemValue_##prop = firstItem_##prop == nil ? @"" : firstItem_##prop;            \
+    NSString *const value_##prop =                                                                 \
+        differing_##prop ? VLCInputItemCommonDataDifferingFlagString : firstItemValue_##prop;      \
+    [commonData setObject:value_##prop forKey:[NSString stringWithUTF8String:#prop]];
 
     PERFORM_ACTION_PER_INPUTITEM_PROP(CREATE_DIFFER_BOOL);
     PERFORM_ACTION_PER_INPUTITEM_NSSTRING_PROP(CREATE_PROP_VAR);
     // Since artworkURL is a URL, we have to handle it differently
-    NSString * const firstItem_artworkURL = firstInputItem.artworkURL.absoluteString;
+    NSString *const firstItem_artworkURL = firstInputItem.artworkURL.absoluteString;
 
     // Skip first item
     for (uint i = 1; i < inputItems.count; ++i) {
-        VLCInputItem * const inputItem = inputItems[i];
+        VLCInputItem *const inputItem = inputItems[i];
 
         PERFORM_ACTION_PER_INPUTITEM_NSSTRING_PROP(UPDATE_IF_DIFFERING_BOOL);
-        NSString * const inputItem_artworkURL = inputItem.artworkURL.absoluteString;
+        NSString *const inputItem_artworkURL = inputItem.artworkURL.absoluteString;
         differing_artworkURL |= ![inputItem_artworkURL isEqualToString:firstItem_artworkURL];
     }
 
@@ -652,7 +646,6 @@ NSString * const value_##prop =                                                 
 
     return [commonData copy];
 }
-
 
 @interface VLCInputNode ()
 {
@@ -682,7 +675,11 @@ NSString * const value_##prop =                                                 
         inputItemName = toNSStr(_vlcInputItemNode->p_item->psz_name);
     else
         inputItemName = @"p_item == nil";
-    return [NSString stringWithFormat:@"%@: node: %p input name: %@, number of children: %i", NSStringFromClass([self class]),_vlcInputItemNode, inputItemName, self.numberOfChildren];
+    return [NSString stringWithFormat:@"%@: node: %p input name: %@, number of children: %i",
+                                      NSStringFromClass([self class]),
+                                      _vlcInputItemNode,
+                                      inputItemName,
+                                      self.numberOfChildren];
 }
 
 - (void)clearChildrenCache
@@ -707,12 +704,14 @@ NSString * const value_##prop =                                                 
     if (_vlcInputItemNode == NULL) {
         return nil;
     }
-    NSMutableArray *mutableArray = [[NSMutableArray alloc] initWithCapacity:_vlcInputItemNode->i_children];
+    NSMutableArray *mutableArray =
+        [[NSMutableArray alloc] initWithCapacity:_vlcInputItemNode->i_children];
     for (int i = 0; i < _vlcInputItemNode->i_children; i++) {
         if (_vlcInputItemNode->pp_children == NULL) {
             break;
         }
-        VLCInputNode *inputNode = [[VLCInputNode alloc] initWithInputNode:_vlcInputItemNode->pp_children[i]];
+        VLCInputNode *inputNode =
+            [[VLCInputNode alloc] initWithInputNode:_vlcInputItemNode->pp_children[i]];
         if (inputNode) {
             [mutableArray addObject:inputNode];
         }

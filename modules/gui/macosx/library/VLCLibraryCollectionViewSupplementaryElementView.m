@@ -25,7 +25,8 @@
 #import "extensions/NSColor+VLCAdditions.h"
 #import "extensions/NSView+VLCAdditions.h"
 
-NSString *VLCLibrarySupplementaryElementViewIdentifier = @"VLCLibrarySupplementaryElementViewIdentifier";
+NSString *VLCLibrarySupplementaryElementViewIdentifier =
+    @"VLCLibrarySupplementaryElementViewIdentifier";
 
 @implementation VLCLibraryCollectionViewSupplementaryElementView
 

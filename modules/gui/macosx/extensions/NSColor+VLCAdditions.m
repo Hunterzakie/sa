@@ -80,7 +80,7 @@
 
 + (NSColor *)VLClibraryProgressIndicatorBackgroundColor
 {
-    return [NSColor colorWithRed:37./255. green:41./255. blue:44./255. alpha:.8];
+    return [NSColor colorWithRed:37. / 255. green:41. / 255. blue:44. / 255. alpha:.8];
 }
 
 + (NSColor *)VLCSliderFillColor

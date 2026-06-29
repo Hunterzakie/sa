@@ -51,7 +51,7 @@
  *  Holds all specific outlets, actions and code for the main window controls bar.
  *****************************************************************************/
 
-@interface VLCMainWindowControlsBar()
+@interface VLCMainWindowControlsBar ()
 {
     NSImage *_alwaysMuteImage;
 
@@ -68,9 +68,9 @@
 
     if (@available(macOS 26.0, *)) {
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 260000
-        NSGlassEffectView * const glassEffectView = [[NSGlassEffectView alloc] init];
+        NSGlassEffectView *const glassEffectView = [[NSGlassEffectView alloc] init];
         glassEffectView.translatesAutoresizingMaskIntoConstraints = NO;
-        self.bottomBarView.subviews = @[glassEffectView];
+        self.bottomBarView.subviews = @[ glassEffectView ];
         glassEffectView.contentView = self.dropView;
         [glassEffectView applyConstraintsToFillSuperview];
         glassEffectView.cornerRadius = CGFLOAT_MAX;
@@ -98,26 +98,26 @@
                                name:VLCPlayerStateChanged
                              object:nil];
 
-    [self.stopButton setToolTip: _NS("Stop")];
+    [self.stopButton setToolTip:_NS("Stop")];
     self.stopButton.accessibilityLabel = self.stopButton.toolTip;
-    
-    [self.volumeUpButton setToolTip: _NS("Full Volume")];
+
+    [self.volumeUpButton setToolTip:_NS("Full Volume")];
     self.volumeUpButton.accessibilityLabel = self.volumeUpButton.toolTip;
 
     if (@available(macOS 11.0, *)) {
         _alwaysMuteImage = [NSImage imageWithSystemSymbolName:@"speaker.minus.fill"
                                      accessibilityDescription:_NS("Mute")];
 
-        [self.stopButton setImage: [NSImage imageWithSystemSymbolName:@"stop.fill"
-                                             accessibilityDescription:_NS("Stop")]];
-        [self.volumeUpButton setImage: [NSImage imageWithSystemSymbolName:@"speaker.plus.fill"
-                                                 accessibilityDescription:_NS("Volume up")]];
+        [self.stopButton setImage:[NSImage imageWithSystemSymbolName:@"stop.fill"
+                                            accessibilityDescription:_NS("Stop")]];
+        [self.volumeUpButton setImage:[NSImage imageWithSystemSymbolName:@"speaker.plus.fill"
+                                                accessibilityDescription:_NS("Volume up")]];
     } else {
         _alwaysMuteImage = NSImage.VLCVolumeOffTemplateImage;
 
-        [self.stopButton setImage: imageFromRes(@"stop")];
-        [self.stopButton setAlternateImage: imageFromRes(@"stop-pressed")];
-        [self.volumeUpButton setImage: imageFromRes(@"VLCVolumeOnTemplate")];
+        [self.stopButton setImage:imageFromRes(@"stop")];
+        [self.stopButton setAlternateImage:imageFromRes(@"stop-pressed")];
+        [self.volumeUpButton setImage:imageFromRes(@"VLCVolumeOnTemplate")];
     }
 
     [self updateMuteVolumeButtonImage];
@@ -125,32 +125,33 @@
     [self playbackStateChanged:nil];
     [self.stopButton setHidden:YES];
 
-    [self.timeField setAlignment: NSTextAlignmentCenter];
-    [self.trailingTimeField setAlignment: NSTextAlignmentCenter];
+    [self.timeField setAlignment:NSTextAlignmentCenter];
+    [self.trailingTimeField setAlignment:NSTextAlignmentCenter];
 
     [self.thumbnailTrackingView setViewToHide:_openMainVideoViewButtonOverlay];
 
     if (@available(macOS 10.14, *)) {
         [NSApplication.sharedApplication addObserver:self
-                                        forKeyPath:@"effectiveAppearance"
-                                            options:NSKeyValueObservingOptionNew
-                                            context:nil];
+                                          forKeyPath:@"effectiveAppearance"
+                                             options:NSKeyValueObservingOptionNew
+                                             context:nil];
     }
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath
                       ofObject:(id)object
-                        change:(NSDictionary<NSKeyValueChangeKey,id> *)change
+                        change:(NSDictionary<NSKeyValueChangeKey, id> *)change
                        context:(void *)context
 {
     if (@available(macOS 26.0, *)) {
         return;
     } else if (@available(macOS 10.14, *)) {
-        NSAppearance * const appearance = change[NSKeyValueChangeNewKey];
-        const BOOL isDark = [appearance.name isEqualToString:NSAppearanceNameDarkAqua] || 
-                            [appearance.name isEqualToString:NSAppearanceNameVibrantDark];
-        self.visualEffectView.layer.borderColor = isDark ?
-            NSColor.VLCDarkSubtleBorderColor.CGColor : NSColor.VLCLightSubtleBorderColor.CGColor;
+        NSAppearance *const appearance = change[NSKeyValueChangeNewKey];
+        const BOOL isDark = [appearance.name isEqualToString:NSAppearanceNameDarkAqua] ||
+            [appearance.name isEqualToString:NSAppearanceNameVibrantDark];
+        self.visualEffectView.layer.borderColor = isDark
+            ? NSColor.VLCDarkSubtleBorderColor.CGColor
+            : NSColor.VLCLightSubtleBorderColor.CGColor;
     }
 }
 
@@ -194,28 +195,31 @@
 {
     [super updateVolumeSlider:aNotification];
     BOOL b_muted = _playerController.mute;
-    [self.volumeUpButton setEnabled: !b_muted];
+    [self.volumeUpButton setEnabled:!b_muted];
 }
 
 - (void)updateCurrentItemDisplayControls:(NSNotification *)aNotification
 {
     [super updateCurrentItemDisplayControls:aNotification];
 
-    VLCInputItem * const inputItem = _playerController.currentMedia;
+    VLCInputItem *const inputItem = _playerController.currentMedia;
     if (!inputItem) {
         return;
     }
 
-    NSFont * const boldSystemFont = [NSFont boldSystemFontOfSize:12.];
-    NSDictionary<NSString *, id> * const boldAttribute = @{NSFontAttributeName: boldSystemFont};
+    NSFont *const boldSystemFont = [NSFont boldSystemFontOfSize:12.];
+    NSDictionary<NSString *, id> *const boldAttribute = @{ NSFontAttributeName : boldSystemFont };
 
-    NSMutableAttributedString * const displayString = [[NSMutableAttributedString alloc] initWithString:inputItem.name attributes:boldAttribute];
+    NSMutableAttributedString *const displayString =
+        [[NSMutableAttributedString alloc] initWithString:inputItem.name attributes:boldAttribute];
 
     if (inputItem.artist.length != 0) {
-        NSAttributedString * const separator = [[NSAttributedString alloc] initWithString:@" · " attributes:boldAttribute];
+        NSAttributedString *const separator =
+            [[NSAttributedString alloc] initWithString:@" · " attributes:boldAttribute];
         [displayString appendAttributedString:separator];
 
-        NSAttributedString * const artistString = [[NSAttributedString alloc] initWithString:inputItem.artist];
+        NSAttributedString *const artistString =
+            [[NSAttributedString alloc] initWithString:inputItem.artist];
         [displayString appendAttributedString:artistString];
     }
 
@@ -248,16 +252,18 @@
     self.nextButton.enabled = b_seekable || _playQueueController.hasNextPlayQueueItem;
     [self updateCurrentItemDisplayControls:notification];
 
-    VLCMediaLibraryMediaItem * const currentMlItem = _playerController.currentMediaLibraryItem;
+    VLCMediaLibraryMediaItem *const currentMlItem = _playerController.currentMediaLibraryItem;
     self.favoriteButton.hidden = currentMlItem == nil;
-    self.favoriteButton.state = currentMlItem.favorited ? NSControlStateValueOn : NSControlStateValueOff;
-    self.favoriteButton.toolTip = currentMlItem.favorited ? _NS("Unmark as Favorite") : _NS("Mark as Favorite");
+    self.favoriteButton.state =
+        currentMlItem.favorited ? NSControlStateValueOn : NSControlStateValueOff;
+    self.favoriteButton.toolTip =
+        currentMlItem.favorited ? _NS("Unmark as Favorite") : _NS("Mark as Favorite");
 }
 
 - (void)toggleFavorite:(id)sender
 {
     const NSControlStateValue buttonStartState = self.favoriteButton.state;
-    VLCMediaLibraryMediaItem * const mediaItem = [_playerController currentMediaLibraryItem];
+    VLCMediaLibraryMediaItem *const mediaItem = [_playerController currentMediaLibraryItem];
     if (mediaItem == nil || [mediaItem toggleFavorite] != VLC_SUCCESS)
         self.favoriteButton.state = buttonStartState;
 }

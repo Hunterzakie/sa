@@ -30,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class VLCLibraryModel;
 
-extern NSString * const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotification;
+extern NSString *const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotification;
 
 typedef NS_ENUM(NSUInteger, VLCLibraryFavoritesSection) {
     VLCLibraryFavoritesSectionAllFavorites = 0,
@@ -42,7 +42,8 @@ typedef NS_ENUM(NSUInteger, VLCLibraryFavoritesSection) {
     VLCLibraryFavoritesSectionCount
 };
 
-@interface VLCLibraryFavoritesDataSource : NSObject <VLCLibraryCollectionViewDataSource, VLCLibraryMasterDetailViewTableViewDataSource>
+@interface VLCLibraryFavoritesDataSource
+    : NSObject<VLCLibraryCollectionViewDataSource, VLCLibraryMasterDetailViewTableViewDataSource>
 
 @property (readwrite, weak) VLCLibraryModel *libraryModel;
 @property (readwrite, weak) NSCollectionView *collectionView;

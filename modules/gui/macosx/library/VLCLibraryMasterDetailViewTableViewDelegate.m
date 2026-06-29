@@ -32,20 +32,24 @@
 - (void)tableViewSelectionDidChange:(NSNotification *)notification
 {
     NSParameterAssert(notification);
-    NSTableView * const tableView = (NSTableView *)notification.object;
+    NSTableView *const tableView = (NSTableView *)notification.object;
     NSAssert(tableView, @"Must be a valid table view");
 
-    if (![tableView.dataSource conformsToProtocol:@protocol(VLCLibraryMasterDetailViewTableViewDataSource)]) {
+    if (![tableView.dataSource
+            conformsToProtocol:@protocol(VLCLibraryMasterDetailViewTableViewDataSource)]) {
         return;
     }
 
-    NSObject<VLCLibraryMasterDetailViewTableViewDataSource> * const masterDetailViewDataSource =
+    NSObject<VLCLibraryMasterDetailViewTableViewDataSource> *const masterDetailViewDataSource =
         (NSObject<VLCLibraryMasterDetailViewTableViewDataSource> *)tableView.dataSource;
 
     if (tableView == masterDetailViewDataSource.masterTableView) {
         [masterDetailViewDataSource.detailTableView reloadData];
-        if ([masterDetailViewDataSource respondsToSelector:@selector(updateHeaderInTableView:forMasterSelection:)]) {
-            [masterDetailViewDataSource updateHeaderInTableView:masterDetailViewDataSource.detailTableView forMasterSelection:tableView];
+        if ([masterDetailViewDataSource
+                respondsToSelector:@selector(updateHeaderInTableView:forMasterSelection:)]) {
+            [masterDetailViewDataSource
+                updateHeaderInTableView:masterDetailViewDataSource.detailTableView
+                     forMasterSelection:tableView];
         }
     }
 }
@@ -57,11 +61,12 @@
                    fallbackTitle:(NSString *)fallbackTitle
                   fallbackDetail:(NSString *)fallbackDetail
 {
-    if (![tableView.dataSource conformsToProtocol:@protocol(VLCLibraryMasterDetailViewTableViewDataSource)]) {
+    if (![tableView.dataSource
+            conformsToProtocol:@protocol(VLCLibraryMasterDetailViewTableViewDataSource)]) {
         return;
     }
 
-    NSObject<VLCLibraryMasterDetailViewTableViewDataSource> * const masterDetailViewDataSource =
+    NSObject<VLCLibraryMasterDetailViewTableViewDataSource> *const masterDetailViewDataSource =
         (NSObject<VLCLibraryMasterDetailViewTableViewDataSource> *)tableView.dataSource;
 
     if (tableView != masterDetailViewDataSource.detailTableView) {
@@ -72,6 +77,5 @@
                                             fallbackTitle:fallbackTitle
                                            fallbackDetail:fallbackDetail];
 }
-
 
 @end

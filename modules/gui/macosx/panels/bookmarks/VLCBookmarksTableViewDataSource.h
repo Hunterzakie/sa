@@ -26,11 +26,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class VLCBookmark;
 
-extern NSString * const VLCBookmarksTableViewCellIdentifier;
+extern NSString *const VLCBookmarksTableViewCellIdentifier;
 
-extern NSString * const VLCBookmarksTableViewNameTableColumnIdentifier;
-extern NSString * const VLCBookmarksTableViewDescriptionTableColumnIdentifier;
-extern NSString * const VLCBookmarksTableViewTimeTableColumnIdentifier;
+extern NSString *const VLCBookmarksTableViewNameTableColumnIdentifier;
+extern NSString *const VLCBookmarksTableViewDescriptionTableColumnIdentifier;
+extern NSString *const VLCBookmarksTableViewTimeTableColumnIdentifier;
 
 @interface VLCBookmarksTableViewDataSource : NSObject<NSTableViewDataSource>
 

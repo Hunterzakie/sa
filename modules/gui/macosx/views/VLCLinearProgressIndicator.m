@@ -23,7 +23,7 @@
 #import "VLCLinearProgressIndicator.h"
 #import "extensions/NSColor+VLCAdditions.h"
 
-@interface VLCLinearProgressIndicator()
+@interface VLCLinearProgressIndicator ()
 {
     NSView *_foregroundView;
 }

@@ -78,14 +78,14 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
 
 - (void)mouseDown:(NSEvent *)theEvent
 {
-    [NSNotificationCenter.defaultCenter postNotificationName: VLCOpenTextFieldWasClicked
-                                                        object: self];
-    [super mouseDown: theEvent];
+    [NSNotificationCenter.defaultCenter postNotificationName:VLCOpenTextFieldWasClicked
+                                                      object:self];
+    [super mouseDown:theEvent];
 }
 
 @end
 
-@interface VLCOpenWindowController()
+@interface VLCOpenWindowController ()
 {
     VLCOutput *_output;
     BOOL b_outputNibLoaded;
@@ -100,9 +100,9 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
     BOOL b_dvdaPlayingAsVideo;
     NSView *_currentOpticalMediaView;
     NSImageView *_currentOpticalMediaIconView;
-    NSMutableArray <VLCOpenBlockDeviceDescription *>*_allMediaDevices;
-    NSArray <VLCOpenBlockDeviceDescription *>*_opticalDevices;
-    NSMutableArray <VLCOpenBlockDeviceDescription *>*_specialMediaFolders;
+    NSMutableArray<VLCOpenBlockDeviceDescription *> *_allMediaDevices;
+    NSArray<VLCOpenBlockDeviceDescription *> *_opticalDevices;
+    NSMutableArray<VLCOpenBlockDeviceDescription *> *_specialMediaFolders;
     NSString *_filePath;
     NSString *_fileSlavePath;
     NSString *_subPath;
@@ -129,7 +129,7 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
 {
     _output = [VLCOutput new];
 
-    [self.window setCollectionBehavior: NSWindowCollectionBehaviorFullScreenAuxiliary];
+    [self.window setCollectionBehavior:NSWindowCollectionBehaviorFullScreenAuxiliary];
 
     [self initStrings];
 
@@ -148,158 +148,175 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
     [self setupSubtitlesPanel];
 
     NSNotificationCenter *notificationCenter = NSNotificationCenter.defaultCenter;
-    [notificationCenter addObserver: self
-                           selector: @selector(openNetInfoChanged:)
-                               name: NSControlTextDidChangeNotification
-                             object: _netUDPPortTextField];
-    [notificationCenter addObserver: self
-                           selector: @selector(openNetInfoChanged:)
-                               name: NSControlTextDidChangeNotification
-                             object: _netUDPMAddressTextField];
-    [notificationCenter addObserver: self
-                           selector: @selector(openNetInfoChanged:)
-                               name: NSControlTextDidChangeNotification
-                             object: _netUDPMPortTextField];
-    [notificationCenter addObserver: self
-                           selector: @selector(openNetInfoChanged:)
-                               name: NSControlTextDidChangeNotification
-                             object: _netHTTPURLTextField];
+    [notificationCenter addObserver:self
+                           selector:@selector(openNetInfoChanged:)
+                               name:NSControlTextDidChangeNotification
+                             object:_netUDPPortTextField];
+    [notificationCenter addObserver:self
+                           selector:@selector(openNetInfoChanged:)
+                               name:NSControlTextDidChangeNotification
+                             object:_netUDPMAddressTextField];
+    [notificationCenter addObserver:self
+                           selector:@selector(openNetInfoChanged:)
+                               name:NSControlTextDidChangeNotification
+                             object:_netUDPMPortTextField];
+    [notificationCenter addObserver:self
+                           selector:@selector(openNetInfoChanged:)
+                               name:NSControlTextDidChangeNotification
+                             object:_netHTTPURLTextField];
 
-    [notificationCenter addObserver: self
-                           selector: @selector(screenFPSfieldChanged:)
-                               name: NSControlTextDidChangeNotification
-                             object: _screenFPSTextField];
+    [notificationCenter addObserver:self
+                           selector:@selector(screenFPSfieldChanged:)
+                               name:NSControlTextDidChangeNotification
+                             object:_screenFPSTextField];
 
     /* register clicks on text fields */
-    [notificationCenter addObserver: self
-                           selector: @selector(textFieldWasClicked:)
-                               name: VLCOpenTextFieldWasClicked
-                             object: nil];
+    [notificationCenter addObserver:self
+                           selector:@selector(textFieldWasClicked:)
+                               name:VLCOpenTextFieldWasClicked
+                             object:nil];
 
     /* we want to be notified about removed or added media */
     _allMediaDevices = [[NSMutableArray alloc] init];
     _specialMediaFolders = [[NSMutableArray alloc] init];
     _displayInfos = [[NSMutableArray alloc] init];
     NSNotificationCenter *sharedNotificationCenter = NSWorkspace.sharedWorkspace.notificationCenter;
-    [sharedNotificationCenter addObserver:self selector:@selector(scanOpticalMedia:) name:NSWorkspaceDidMountNotification object:nil];
-    [sharedNotificationCenter addObserver:self selector:@selector(scanOpticalMedia:) name:NSWorkspaceDidUnmountNotification object:nil];
+    [sharedNotificationCenter addObserver:self
+                                 selector:@selector(scanOpticalMedia:)
+                                     name:NSWorkspaceDidMountNotification
+                                   object:nil];
+    [sharedNotificationCenter addObserver:self
+                                 selector:@selector(scanOpticalMedia:)
+                                     name:NSWorkspaceDidUnmountNotification
+                                   object:nil];
 
     [self qtkToggleUIElements:nil];
     [self updateMediaSelector:NO];
     [self scanOpticalMedia:nil];
 
-    [self setMRL: @""];
+    [self setMRL:@""];
 }
 
 - (void)initStrings
 {
-    [self.window setTitle: _NS("Open Source")];
-    [_mrlButtonLabel setTitle: _NS("Media Resource Locator (MRL)")];
+    [self.window setTitle:_NS("Open Source")];
+    [_mrlButtonLabel setTitle:_NS("Media Resource Locator (MRL)")];
 
-    [_okButton setTitle: _NS("Open")];
-    [_cancelButton setTitle: _NS("Cancel")];
+    [_okButton setTitle:_NS("Open")];
+    [_cancelButton setTitle:_NS("Cancel")];
 
     [_outputCheckbox setTitle:_NS("Stream output")];
     [_outputSettingsButton setTitle:_NS("Settings...")];
 
     _tabView.accessibilityLabel = _NS("Choose media input type");
-    [[_tabView tabViewItemAtIndex: 0] setLabel: _NS("File")];
-    [[_tabView tabViewItemAtIndex: 1] setLabel: _NS("Disc")];
-    [[_tabView tabViewItemAtIndex: 2] setLabel: _NS("Network")];
-    [[_tabView tabViewItemAtIndex: 3] setLabel: _NS("Capture")];
-    [_fileNameLabel setStringValue: @""];
-    [_fileNameStubLabel setStringValue: _NS("Choose a file")];
-    [_fileIconWell setImage: NSImage.VLCGenericImage];
-    [_fileBrowseButton setTitle: _NS("Browse...")];
+    [[_tabView tabViewItemAtIndex:0] setLabel:_NS("File")];
+    [[_tabView tabViewItemAtIndex:1] setLabel:_NS("Disc")];
+    [[_tabView tabViewItemAtIndex:2] setLabel:_NS("Network")];
+    [[_tabView tabViewItemAtIndex:3] setLabel:_NS("Capture")];
+    [_fileNameLabel setStringValue:@""];
+    [_fileNameStubLabel setStringValue:_NS("Choose a file")];
+    [_fileIconWell setImage:NSImage.VLCGenericImage];
+    [_fileBrowseButton setTitle:_NS("Browse...")];
     _fileBrowseButton.accessibilityLabel = _NS("Select a file for playback");
-    [_fileTreatAsPipeButton setTitle: _NS("Treat as a pipe rather than as a file")];
-    [_fileTreatAsPipeButton setHidden: NO];
-    [_fileSlaveCheckbox setTitle: _NS("Play another media synchronously")];
-    [_fileSelectSlaveButton setTitle: _NS("Choose...")];
-    _fileBrowseButton.accessibilityLabel = _NS("Select another file to play in sync with the previously selected file");
-    [_fileSlaveFilenameLabel setStringValue: @""];
-    [_fileSlaveIconWell setImage: NULL];
-    [_fileSubtitlesFilenameLabel setStringValue: @""];
-    [_fileSubtitlesIconWell setImage: NULL];
-    [_fileCustomTimingCheckbox setTitle: _NS("Custom playback")];
-    [_fileStartTimeLabel setStringValue: _NS("Start time")];
-    [_fileStartTimeTextField setStringValue: @""];
-    [_fileStopTimeLabel setStringValue: _NS("Stop time")];
-    [_fileStopTimeTextField setStringValue: @""];
+    [_fileTreatAsPipeButton setTitle:_NS("Treat as a pipe rather than as a file")];
+    [_fileTreatAsPipeButton setHidden:NO];
+    [_fileSlaveCheckbox setTitle:_NS("Play another media synchronously")];
+    [_fileSelectSlaveButton setTitle:_NS("Choose...")];
+    _fileBrowseButton.accessibilityLabel =
+        _NS("Select another file to play in sync with the previously selected file");
+    [_fileSlaveFilenameLabel setStringValue:@""];
+    [_fileSlaveIconWell setImage:NULL];
+    [_fileSubtitlesFilenameLabel setStringValue:@""];
+    [_fileSubtitlesIconWell setImage:NULL];
+    [_fileCustomTimingCheckbox setTitle:_NS("Custom playback")];
+    [_fileStartTimeLabel setStringValue:_NS("Start time")];
+    [_fileStartTimeTextField setStringValue:@""];
+    [_fileStopTimeLabel setStringValue:_NS("Stop time")];
+    [_fileStopTimeTextField setStringValue:@""];
 
     [_discSelectorPopup removeAllItems];
-    [_discSelectorPopup setHidden: NO];
+    [_discSelectorPopup setHidden:NO];
     NSString *oVideoTS = _NS("Open VIDEO_TS / BDMV folder");
-    [_discNoDiscLabel setStringValue: _NS("Insert Disc")];
-    [_discNoDiscVideoTSButton setTitle: oVideoTS];
-    [_discAudioCDLabel setStringValue: _NS("Audio CD")];
-    [_discAudioCDTrackCountLabel setStringValue: @""];
-    [_discAudioCDVideoTSButton setTitle: oVideoTS];
-    [_discDVDLabel setStringValue: @""];
-    [_discDVDDisableMenusButton setTitle: _NS("Disable DVD menus")];
-    [_discDVDVideoTSButton setTitle: oVideoTS];
-    [_discDVDwomenusLabel setStringValue: @""];
-    [_discDVDwomenusEnableMenusButton setTitle: _NS("Enable DVD menus")];
-    [_discDVDwomenusVideoTSButton setTitle: oVideoTS];
-    [_discDVDwomenusTitleLabel setStringValue: _NS("Title")];
-    [_discDVDwomenusChapterLabel setStringValue: _NS("Chapter")];
-    [_discVCDTitleLabel setStringValue: _NS("Title")];
-    [_discVCDChapterLabel setStringValue: _NS("Chapter")];
-    [_discVCDVideoTSButton setTitle: oVideoTS];
-    [_discBDVideoTSButton setTitle: oVideoTS];
+    [_discNoDiscLabel setStringValue:_NS("Insert Disc")];
+    [_discNoDiscVideoTSButton setTitle:oVideoTS];
+    [_discAudioCDLabel setStringValue:_NS("Audio CD")];
+    [_discAudioCDTrackCountLabel setStringValue:@""];
+    [_discAudioCDVideoTSButton setTitle:oVideoTS];
+    [_discDVDLabel setStringValue:@""];
+    [_discDVDDisableMenusButton setTitle:_NS("Disable DVD menus")];
+    [_discDVDVideoTSButton setTitle:oVideoTS];
+    [_discDVDwomenusLabel setStringValue:@""];
+    [_discDVDwomenusEnableMenusButton setTitle:_NS("Enable DVD menus")];
+    [_discDVDwomenusVideoTSButton setTitle:oVideoTS];
+    [_discDVDwomenusTitleLabel setStringValue:_NS("Title")];
+    [_discDVDwomenusChapterLabel setStringValue:_NS("Chapter")];
+    [_discVCDTitleLabel setStringValue:_NS("Title")];
+    [_discVCDChapterLabel setStringValue:_NS("Chapter")];
+    [_discVCDVideoTSButton setTitle:oVideoTS];
+    [_discBDVideoTSButton setTitle:oVideoTS];
 
-    [_netUDPPortLabel setStringValue: _NS("Port")];
-    [_netUDPMAddressLabel setStringValue: _NS("IP Address")];
-    [_netUDPMPortLabel setStringValue: _NS("Port")];
-    [_netHTTPURLLabel setStringValue: _NS("URL")];
-    [_netHelpLabel setStringValue: _NS("To Open a usual network stream (HTTP, RTSP, RTMP, MMS, FTP, etc.), just enter the URL in the field above. If you want to open a RTP or UDP stream, press the button below.")];
-    [_netHelpUDPLabel setStringValue: _NS("If you want to open a multicast stream, enter the respective IP address given by the stream provider. In unicast mode, VLC will use your machine's IP automatically.\n\nTo open a stream using a different protocol, just press Cancel to close this sheet.")];
-    _netHTTPURLTextField.accessibilityLabel = _NS("Enter a stream URL here. To open RTP or UDP streams, use the respective button below.");
-    [_netUDPCancelButton setTitle: _NS("Cancel")];
-    [_netUDPOKButton setTitle: _NS("Open")];
-    [_netOpenUDPButton setTitle: _NS("Open RTP/UDP Stream")];
-    [_netUDPModeLabel setStringValue: _NS("Mode")];
-    [_netUDPProtocolLabel setStringValue: _NS("Protocol")];
-    [_netUDPAddressLabel setStringValue: _NS("Address")];
+    [_netUDPPortLabel setStringValue:_NS("Port")];
+    [_netUDPMAddressLabel setStringValue:_NS("IP Address")];
+    [_netUDPMPortLabel setStringValue:_NS("Port")];
+    [_netHTTPURLLabel setStringValue:_NS("URL")];
+    [_netHelpLabel setStringValue:_NS("To Open a usual network stream (HTTP, RTSP, RTMP, MMS, FTP, "
+                                      "etc.), just enter the URL in the field above. If you want "
+                                      "to open a RTP or UDP stream, press the button below.")];
+    [_netHelpUDPLabel
+        setStringValue:_NS("If you want to open a multicast stream, enter the respective IP "
+                           "address given by the stream provider. In unicast mode, VLC will use "
+                           "your machine's IP automatically.\n\nTo open a stream using a different "
+                           "protocol, just press Cancel to close this sheet.")];
+    _netHTTPURLTextField.accessibilityLabel = _NS(
+        "Enter a stream URL here. To open RTP or UDP streams, use the respective button below.");
+    [_netUDPCancelButton setTitle:_NS("Cancel")];
+    [_netUDPOKButton setTitle:_NS("Open")];
+    [_netOpenUDPButton setTitle:_NS("Open RTP/UDP Stream")];
+    [_netUDPModeLabel setStringValue:_NS("Mode")];
+    [_netUDPProtocolLabel setStringValue:_NS("Protocol")];
+    [_netUDPAddressLabel setStringValue:_NS("Address")];
 
-    [[_netModeMatrix cellAtRow:0 column:0] setTitle: _NS("Unicast")];
-    [[_netModeMatrix cellAtRow:1 column:0] setTitle: _NS("Multicast")];
+    [[_netModeMatrix cellAtRow:0 column:0] setTitle:_NS("Unicast")];
+    [[_netModeMatrix cellAtRow:1 column:0] setTitle:_NS("Multicast")];
 
-    [_netUDPPortTextField setIntegerValue: 0];
-    [_netUDPPortStepper setIntegerValue: 0];
+    [_netUDPPortTextField setIntegerValue:0];
+    [_netUDPPortStepper setIntegerValue:0];
 
     [_captureModePopup removeAllItems];
-    [_captureModePopup addItemWithTitle: _NS("Input Devices")];
-    [_captureModePopup addItemWithTitle: _NS("Screen")];
-    [_screenFPSLabel setStringValue: [NSString stringWithFormat:@"%@:",_NS("Frames per second")]];
-    [_screenLabel setStringValue: [NSString stringWithFormat:@"%@:",_NS("Screen")]];
-    [_screenLeftLabel setStringValue: [NSString stringWithFormat:@"%@:",_NS("Subscreen left")]];
-    [_screenTopLabel setStringValue: [NSString stringWithFormat:@"%@:",_NS("Subscreen top")]];
-    [_screenWidthLabel setStringValue: [NSString stringWithFormat:@"%@:",_NS("Subscreen width")]];
-    [_screenHeightLabel setStringValue: [NSString stringWithFormat:@"%@:",_NS("Subscreen height")]];
-    [_screenFollowMouseCheckbox setTitle: _NS("Follow the mouse")];
-    [_screenqtkAudioCheckbox setTitle: _NS("Capture Audio")];
+    [_captureModePopup addItemWithTitle:_NS("Input Devices")];
+    [_captureModePopup addItemWithTitle:_NS("Screen")];
+    [_screenFPSLabel setStringValue:[NSString stringWithFormat:@"%@:", _NS("Frames per second")]];
+    [_screenLabel setStringValue:[NSString stringWithFormat:@"%@:", _NS("Screen")]];
+    [_screenLeftLabel setStringValue:[NSString stringWithFormat:@"%@:", _NS("Subscreen left")]];
+    [_screenTopLabel setStringValue:[NSString stringWithFormat:@"%@:", _NS("Subscreen top")]];
+    [_screenWidthLabel setStringValue:[NSString stringWithFormat:@"%@:", _NS("Subscreen width")]];
+    [_screenHeightLabel setStringValue:[NSString stringWithFormat:@"%@:", _NS("Subscreen height")]];
+    [_screenFollowMouseCheckbox setTitle:_NS("Follow the mouse")];
+    [_screenqtkAudioCheckbox setTitle:_NS("Capture Audio")];
 }
 
 - (void)setupSubtitlesPanel
 {
     int i_index;
-    module_config_t * p_item;
+    module_config_t *p_item;
 
     [self initSubtitlesPanelStrings];
 
-    [[_fileSubDelayTextField formatter] setFormat:[NSString stringWithFormat:@"#,##0.000 %@", _NS("s")]];
-    [[_fileSubFPSTextField formatter] setFormat:[NSString stringWithFormat:@"#,##0.000 %@", _NS("fps")]];
+    [[_fileSubDelayTextField formatter]
+        setFormat:[NSString stringWithFormat:@"#,##0.000 %@", _NS("s")]];
+    [[_fileSubFPSTextField formatter]
+        setFormat:[NSString stringWithFormat:@"#,##0.000 %@", _NS("fps")]];
     self.fileSubFps = 1.0;
 
     p_item = config_FindConfig("subsdec-encoding");
 
     if (p_item) {
         for (int i = 0; i < p_item->list_count; i++) {
-            [_fileSubEncodingPopup addItemWithTitle: NSTR(p_item->list_text[i])];
-            [[_fileSubEncodingPopup lastItem] setRepresentedObject:[NSString stringWithFormat:@"%s", p_item->list.psz[i]]];
+            [_fileSubEncodingPopup addItemWithTitle:NSTR(p_item->list_text[i])];
+            [[_fileSubEncodingPopup lastItem]
+                setRepresentedObject:[NSString stringWithFormat:@"%s", p_item->list.psz[i]]];
             if (p_item->value.psz && !strcmp(p_item->value.psz, p_item->list.psz[i]))
-                [_fileSubEncodingPopup selectItem: [_fileSubEncodingPopup lastItem]];
+                [_fileSubEncodingPopup selectItem:[_fileSubEncodingPopup lastItem]];
         }
 
         if ([_fileSubEncodingPopup indexOfSelectedItem] < 0)
@@ -310,36 +327,36 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
 
     if (p_item) {
         for (i_index = 0; i_index < p_item->list_count; i_index++)
-            [_fileSubAlignPopup addItemWithTitle: NSTR(p_item->list_text[i_index])];
+            [_fileSubAlignPopup addItemWithTitle:NSTR(p_item->list_text[i_index])];
 
-        [_fileSubAlignPopup selectItemAtIndex: p_item->value.i];
+        [_fileSubAlignPopup selectItemAtIndex:p_item->value.i];
     }
 }
 
 - (void)initSubtitlesPanelStrings
 {
-    [_fileSubCheckbox setTitle: _NS("Add subtitle file")];
-    [_fileSubPathLabel setStringValue: _NS("Choose a file")];
-    [_fileSubPathLabel setHidden: NO];
-    [_fileSubPathTextField setStringValue: @""];
-    [_fileSubSettingsButton setTitle: _NS("Choose...")];
+    [_fileSubCheckbox setTitle:_NS("Add subtitle file")];
+    [_fileSubPathLabel setStringValue:_NS("Choose a file")];
+    [_fileSubPathLabel setHidden:NO];
+    [_fileSubPathTextField setStringValue:@""];
+    [_fileSubSettingsButton setTitle:_NS("Choose...")];
     _fileSubSettingsButton.accessibilityLabel = _NS("Setup subtitle playback details");
     _fileBrowseButton.accessibilityLabel = _NS("Select a file for playback");
-    [_fileSubBrowseButton setTitle: _NS("Browse...")];
+    [_fileSubBrowseButton setTitle:_NS("Browse...")];
     _fileSubBrowseButton.accessibilityLabel = _NS("Select a subtitle file");
-    [_fileSubOverrideCheckbox setTitle: _NS("Override parameters")];
-    [_fileSubDelayLabel setStringValue: _NS("Delay")];
-    [_fileSubDelayStepper setEnabled: NO];
-    [_fileSubFPSLabel setStringValue: _NS("FPS")];
-    [_fileSubFPSStepper setEnabled: NO];
-    [_fileSubEncodingLabel setStringValue: _NS("Subtitle encoding")];
+    [_fileSubOverrideCheckbox setTitle:_NS("Override parameters")];
+    [_fileSubDelayLabel setStringValue:_NS("Delay")];
+    [_fileSubDelayStepper setEnabled:NO];
+    [_fileSubFPSLabel setStringValue:_NS("FPS")];
+    [_fileSubFPSStepper setEnabled:NO];
+    [_fileSubEncodingLabel setStringValue:_NS("Subtitle encoding")];
     [_fileSubEncodingPopup removeAllItems];
-    [_fileSubAlignLabel setStringValue: _NS("Subtitle alignment")];
+    [_fileSubAlignLabel setStringValue:_NS("Subtitle alignment")];
     [_fileSubAlignPopup removeAllItems];
-    [_fileSubOKButton setStringValue: _NS("OK")];
+    [_fileSubOKButton setStringValue:_NS("OK")];
     _fileSubOKButton.accessibilityLabel = _NS("Dismiss the subtitle setup dialog");
-    [_fileSubFontBox setTitle: _NS("Font Properties")];
-    [_fileSubFileBox setTitle: _NS("Subtitle File")];
+    [_fileSubFontBox setTitle:_NS("Font Properties")];
+    [_fileSubFileBox setTitle:_NS("Subtitle File")];
 }
 
 #pragma mark - property handling
@@ -349,15 +366,16 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
     if (!newMRL)
         newMRL = @"";
 
-    NSString * const trimmedMRL = [newMRL stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+    NSString *const trimmedMRL =
+        [newMRL stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
     _MRL = trimmedMRL;
 
     dispatch_async(dispatch_get_main_queue(), ^{
         [self.mrlTextField setStringValue:self.MRL];
         if ([self.MRL length] > 0)
-            [self.okButton setEnabled: YES];
+            [self.okButton setEnabled:YES];
         else
-            [self.okButton setEnabled: NO];
+            [self.okButton setEnabled:NO];
     });
 }
 
@@ -381,10 +399,10 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
     // Delay this to allow the full animation to run inside the modal event loop
     dispatch_async(dispatch_get_main_queue(), ^{
         [_tabView selectTabViewItemWithIdentifier:identifier];
-        [_fileSubCheckbox setState: NSOffState];
+        [_fileSubCheckbox setState:NSOffState];
     });
 
-    NSModalResponse i_result = [NSApp runModalForWindow: self.window];
+    NSModalResponse i_result = [NSApp runModalForWindow:self.window];
     [self.window close];
 
     // Check if dialog was canceled or stopped (NSModalResponseStop)
@@ -410,12 +428,12 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
         [self addStreamOutputOptionsToArray:options];
     }
     if ([_fileSlaveCheckbox state] && _fileSlavePath)
-        [options addObject: [NSString stringWithFormat: @"input-slave=%@", _fileSlavePath]];
-    if ([[[_tabView selectedTabViewItem] identifier] isEqualToString: VLCOpenCaptureTabViewId]) {
-        if ([[[_captureModePopup selectedItem] title] isEqualToString: _NS("Screen")]) {
+        [options addObject:[NSString stringWithFormat:@"input-slave=%@", _fileSlavePath]];
+    if ([[[_tabView selectedTabViewItem] identifier] isEqualToString:VLCOpenCaptureTabViewId]) {
+        if ([[[_captureModePopup selectedItem] title] isEqualToString:_NS("Screen")]) {
             [self addScreenRecordingOptionsToArray:options];
-        }
-        else if ([[[_captureModePopup selectedItem] title] isEqualToString: _NS("Input Devices")]) {
+        } else if ([[[_captureModePopup selectedItem] title]
+                       isEqualToString:_NS("Input Devices")]) {
             [self avDeviceOptionsToArray:options];
         }
     }
@@ -423,39 +441,42 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
     /* apply the options to our item(s) */
     inputMetadata.playbackOptions = options;
 
-    [VLCMain.sharedInstance.playQueueController addPlayQueueItems:@[inputMetadata]];
+    [VLCMain.sharedInstance.playQueueController addPlayQueueItems:@[ inputMetadata ]];
 }
 
 - (void)addSubtitleOptionsToArray:(NSMutableArray *)options
 {
-    [options addObject: [NSString stringWithFormat: @"sub-file=%@", _subPath]];
+    [options addObject:[NSString stringWithFormat:@"sub-file=%@", _subPath]];
     if ([_fileSubOverrideCheckbox state] == NSOnState) {
-        [options addObject: [NSString stringWithFormat: @"sub-delay=%f", ([self fileSubDelay] * 10)]];
-        [options addObject: [NSString stringWithFormat: @"sub-fps=%f", [self fileSubFps]]];
+        [options addObject:[NSString stringWithFormat:@"sub-delay=%f", ([self fileSubDelay] * 10)]];
+        [options addObject:[NSString stringWithFormat:@"sub-fps=%f", [self fileSubFps]]];
     }
-    [options addObject: [NSString stringWithFormat:
-                         @"subsdec-encoding=%@", [[_fileSubEncodingPopup selectedItem] representedObject]]];
-    [options addObject: [NSString stringWithFormat:
-                         @"subsdec-align=%li", [_fileSubAlignPopup indexOfSelectedItem]]];
+    [options addObject:[NSString stringWithFormat:@"subsdec-encoding=%@",
+                                                  [[_fileSubEncodingPopup selectedItem]
+                                                      representedObject]]];
+    [options addObject:[NSString stringWithFormat:@"subsdec-align=%li",
+                                                  [_fileSubAlignPopup indexOfSelectedItem]]];
 }
 
 - (void)addTimingOptionsToArray:(NSMutableArray *)options
 {
-    NSInteger startTime = [NSString timeInSecondsFromStringWithColons:[_fileStartTimeTextField stringValue]];
+    NSInteger startTime =
+        [NSString timeInSecondsFromStringWithColons:[_fileStartTimeTextField stringValue]];
     if (startTime > 0) {
-        [options addObject: [NSString stringWithFormat:@"start-time=%li", startTime]];
+        [options addObject:[NSString stringWithFormat:@"start-time=%li", startTime]];
     }
 
-    NSInteger stopTime = [NSString timeInSecondsFromStringWithColons:[_fileStopTimeTextField stringValue]];
+    NSInteger stopTime =
+        [NSString timeInSecondsFromStringWithColons:[_fileStopTimeTextField stringValue]];
     if (stopTime > 0) {
-        [options addObject: [NSString stringWithFormat:@"stop-time=%li", stopTime]];
+        [options addObject:[NSString stringWithFormat:@"stop-time=%li", stopTime]];
     }
 }
 
 - (void)addStreamOutputOptionsToArray:(NSMutableArray *)options
 {
     for (NSString *item in [_output soutMRL])
-        [options addObject: [NSString stringWithString: item]];
+        [options addObject:[NSString stringWithString:item]];
 }
 
 - (void)addScreenRecordingOptionsToArray:(NSMutableArray *)options
@@ -463,25 +484,33 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
     NSInteger selected_index = [_screenPopup indexOfSelectedItem];
     VLCOpenDisplayInformation *displayInformation = [_displayInfos objectAtIndex:selected_index];
 
-    [options addObject: [NSString stringWithFormat: @"screen-fps=%f", [_screenFPSTextField floatValue]]];
-    [options addObject: [NSString stringWithFormat: @"screen-display-id=%i", displayInformation.displayID]];
-    [options addObject: [NSString stringWithFormat: @"screen-left=%i", [_screenLeftTextField intValue]]];
-    [options addObject: [NSString stringWithFormat: @"screen-top=%i", [_screenTopTextField intValue]]];
-    [options addObject: [NSString stringWithFormat: @"screen-width=%i", [_screenWidthTextField intValue]]];
-    [options addObject: [NSString stringWithFormat: @"screen-height=%i", [_screenHeightTextField intValue]]];
+    [options
+        addObject:[NSString stringWithFormat:@"screen-fps=%f", [_screenFPSTextField floatValue]]];
+    [options addObject:[NSString
+                           stringWithFormat:@"screen-display-id=%i", displayInformation.displayID]];
+    [options
+        addObject:[NSString stringWithFormat:@"screen-left=%i", [_screenLeftTextField intValue]]];
+    [options
+        addObject:[NSString stringWithFormat:@"screen-top=%i", [_screenTopTextField intValue]]];
+    [options
+        addObject:[NSString stringWithFormat:@"screen-width=%i", [_screenWidthTextField intValue]]];
+    [options addObject:[NSString stringWithFormat:@"screen-height=%i",
+                                                  [_screenHeightTextField intValue]]];
     if ([_screenFollowMouseCheckbox intValue] == YES)
-        [options addObject: @"screen-follow-mouse"];
+        [options addObject:@"screen-follow-mouse"];
     else
-        [options addObject: @"no-screen-follow-mouse"];
+        [options addObject:@"no-screen-follow-mouse"];
     if ([_screenqtkAudioCheckbox state] && _avCurrentAudioDeviceUID)
-        [options addObject: [NSString stringWithFormat: @"input-slave=avaudiocapture://%@", _avCurrentAudioDeviceUID]];
+        [options addObject:[NSString stringWithFormat:@"input-slave=avaudiocapture://%@",
+                                                      _avCurrentAudioDeviceUID]];
 }
 
 - (void)avDeviceOptionsToArray:(NSMutableArray *)options
 {
     if ([_qtkVideoCheckbox state]) {
         if ([_qtkAudioCheckbox state] && _avCurrentAudioDeviceUID)
-            [options addObject: [NSString stringWithFormat: @"input-slave=avaudiocapture://%@", _avCurrentAudioDeviceUID]];
+            [options addObject:[NSString stringWithFormat:@"input-slave=avaudiocapture://%@",
+                                                          _avCurrentAudioDeviceUID]];
     }
 }
 
@@ -491,67 +520,69 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
 {
     NSString *identifier = [tabViewItem identifier];
 
-    if ([identifier isEqualToString: VLCOpenFileTabViewId])
-        [self openFilePathChanged: nil];
-    else if ([identifier isEqualToString: VLCOpenDiscTabViewId])
-        [self scanOpticalMedia: nil];
-    else if ([identifier isEqualToString: VLCOpenNetworkTabViewId]) {
-        [self openNetInfoChanged: nil];
+    if ([identifier isEqualToString:VLCOpenFileTabViewId])
+        [self openFilePathChanged:nil];
+    else if ([identifier isEqualToString:VLCOpenDiscTabViewId])
+        [self scanOpticalMedia:nil];
+    else if ([identifier isEqualToString:VLCOpenNetworkTabViewId]) {
+        [self openNetInfoChanged:nil];
         [_netHTTPURLTextField selectText:nil];
-    } else if ([identifier isEqualToString: VLCOpenCaptureTabViewId])
-        [self openCaptureModeChanged: nil];
+    } else if ([identifier isEqualToString:VLCOpenCaptureTabViewId])
+        [self openCaptureModeChanged:nil];
 }
 
 - (IBAction)expandMRLfieldAction:(id)sender
 {
-    [NSAnimationContext runAnimationRespectingPreferencesWithChanges:^(NSAnimationContext * const __unused context) {
-        if ([_mrlButton state] == NSOffState) {
-            self.mrlViewHeightConstraint.animator.constant = 0;
-            self.mrlBox.hidden = YES;
-        } else {
-            self.mrlViewHeightConstraint.animator.constant = 39;
-            self.mrlBox.hidden = NO;
+    [NSAnimationContext
+        runAnimationRespectingPreferencesWithChanges:^(NSAnimationContext *const __unused context) {
+            if ([_mrlButton state] == NSOffState) {
+                self.mrlViewHeightConstraint.animator.constant = 0;
+                self.mrlBox.hidden = YES;
+            } else {
+                self.mrlViewHeightConstraint.animator.constant = 39;
+                self.mrlBox.hidden = NO;
+            }
         }
-    } completionHandler: nil];
+                                   completionHandler:nil];
 }
 
 - (void)openFileGeneric
 {
-    [self openFilePathChanged: nil];
-    [self openTarget: VLCOpenFileTabViewId];
+    [self openFilePathChanged:nil];
+    [self openTarget:VLCOpenFileTabViewId];
 }
 
 - (void)openDisc
 {
-    @synchronized (self) {
+    @synchronized(self) {
         [_specialMediaFolders removeAllObjects];
     }
 
-    [self scanOpticalMedia: nil];
-    [self openTarget: VLCOpenDiscTabViewId];
+    [self scanOpticalMedia:nil];
+    [self openTarget:VLCOpenDiscTabViewId];
 }
 
 - (void)openNet
 {
-    [self openNetInfoChanged: nil];
-    [self openTarget: VLCOpenNetworkTabViewId];
+    [self openNetInfoChanged:nil];
+    [self openTarget:VLCOpenNetworkTabViewId];
     [_netHTTPURLTextField selectText:nil];
 }
 
 - (void)openCapture
 {
-    [self openCaptureModeChanged: nil];
-    [self openTarget: VLCOpenCaptureTabViewId];
+    [self openCaptureModeChanged:nil];
+    [self openTarget:VLCOpenCaptureTabViewId];
 }
 
 - (void)openFileWithAction:(void (^)(NSArray *files))action
 {
     NSOpenPanel *openPanel = [NSOpenPanel openPanel];
-    [openPanel setAllowsMultipleSelection: YES];
-    [openPanel setCanChooseDirectories: YES];
+    [openPanel setAllowsMultipleSelection:YES];
+    [openPanel setCanChooseDirectories:YES];
     [openPanel setAllowedFileTypes:[NSString extensionsArrayFromVLCStyleString:EXTENSIONS_MEDIA]];
-    [openPanel setTitle: _NS("Open File")];
-    [openPanel setPrompt: _NS("Open")];
+    [openPanel setTitle:_NS("Open File")];
+    [openPanel setPrompt:_NS("Open")];
 
     if ([openPanel runModal] == NSModalResponseOK) {
         NSArray *URLs = [openPanel URLs];
@@ -559,7 +590,7 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
         NSMutableArray *values = [NSMutableArray arrayWithCapacity:count];
         NSMutableArray *array = [NSMutableArray arrayWithCapacity:count];
         for (NSURL *url in URLs)
-            [values addObject: [url path]];
+            [values addObject:[url path]];
         [values sortUsingSelector:@selector(caseInsensitiveCompare:)];
 
         for (NSString *filepath in values) {
@@ -583,7 +614,9 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
     }
 
     if (!b_outputNibLoaded) {
-        b_outputNibLoaded = [[NSBundle mainBundle] loadNibNamed:@"StreamOutput" owner:_output topLevelObjects:nil];
+        b_outputNibLoaded = [[NSBundle mainBundle] loadNibNamed:@"StreamOutput"
+                                                          owner:_output
+                                                topLevelObjects:nil];
     }
 
     [self.window beginSheet:_output.outputSheet completionHandler:nil];
@@ -601,83 +634,88 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
         [[NSFileManager defaultManager] fileExistsAtPath:_filePath isDirectory:&b_dir];
 
         char *psz_uri = vlc_path2uri([_filePath UTF8String], "file");
-        if (!psz_uri) return;
+        if (!psz_uri)
+            return;
 
         NSMutableString *mrlString = [NSMutableString stringWithUTF8String:psz_uri];
         NSRange offile = [mrlString rangeOfString:@"file"];
         free(psz_uri);
 
         if (b_dir)
-            [mrlString replaceCharactersInRange:offile withString: @"directory"];
+            [mrlString replaceCharactersInRange:offile withString:@"directory"];
         else if (b_stream)
-            [mrlString replaceCharactersInRange:offile withString: @"stream"];
+            [mrlString replaceCharactersInRange:offile withString:@"stream"];
 
-        [_fileNameLabel setStringValue: [[NSFileManager defaultManager] displayNameAtPath:_filePath]];
-        [_fileNameStubLabel setHidden: YES];
-        [_fileTreatAsPipeButton setHidden: NO];
-        [_fileIconWell setImage: [NSWorkspace.sharedWorkspace iconForFile: _filePath]];
-        [_fileIconWell setHidden: NO];
-        [self setMRL: mrlString];
+        [_fileNameLabel
+            setStringValue:[[NSFileManager defaultManager] displayNameAtPath:_filePath]];
+        [_fileNameStubLabel setHidden:YES];
+        [_fileTreatAsPipeButton setHidden:NO];
+        [_fileIconWell setImage:[NSWorkspace.sharedWorkspace iconForFile:_filePath]];
+        [_fileIconWell setHidden:NO];
+        [self setMRL:mrlString];
     } else {
-        [_fileNameLabel setStringValue: @""];
-        [_fileNameStubLabel setHidden: NO];
-        [_fileTreatAsPipeButton setHidden: YES];
-        [_fileIconWell setImage: NSImage.VLCGenericImage];
-        [self setMRL: @""];
+        [_fileNameLabel setStringValue:@""];
+        [_fileNameStubLabel setHidden:NO];
+        [_fileTreatAsPipeButton setHidden:YES];
+        [_fileIconWell setImage:NSImage.VLCGenericImage];
+        [self setMRL:@""];
     }
 }
 
 - (IBAction)openFileBrowse:(id)sender
 {
     NSOpenPanel *openPanel = [NSOpenPanel openPanel];
-    [openPanel setAllowsMultipleSelection: NO];
-    [openPanel setCanChooseDirectories: YES];
+    [openPanel setAllowsMultipleSelection:NO];
+    [openPanel setCanChooseDirectories:YES];
     [openPanel setAllowedFileTypes:[NSString extensionsArrayFromVLCStyleString:EXTENSIONS_MEDIA]];
-    [openPanel setTitle: _NS("Open File")];
-    [openPanel setPrompt: _NS("Open")];
-    [openPanel beginSheetModalForWindow:[sender window] completionHandler:^(NSInteger returnCode) {
-        if (returnCode == NSModalResponseOK) {
-            self->_filePath = [[[openPanel URLs] firstObject] path];
-            [self openFilePathChanged: nil];
-        }
-    }];
+    [openPanel setTitle:_NS("Open File")];
+    [openPanel setPrompt:_NS("Open")];
+    [openPanel beginSheetModalForWindow:[sender window]
+                      completionHandler:^(NSInteger returnCode) {
+                          if (returnCode == NSModalResponseOK) {
+                              self->_filePath = [[[openPanel URLs] firstObject] path];
+                              [self openFilePathChanged:nil];
+                          }
+                      }];
 }
 
 - (IBAction)openFileStreamChanged:(id)sender
 {
-    [self openFilePathChanged: nil];
+    [self openFilePathChanged:nil];
 }
 
 - (IBAction)inputSlaveAction:(id)sender
 {
     if (sender == _fileSlaveCheckbox)
-        [_fileSelectSlaveButton setEnabled: [_fileSlaveCheckbox state]];
+        [_fileSelectSlaveButton setEnabled:[_fileSlaveCheckbox state]];
     else {
         NSOpenPanel *openPanel;
         openPanel = [NSOpenPanel openPanel];
-        [openPanel setCanChooseFiles: YES];
-        [openPanel setCanChooseDirectories: NO];
-        [openPanel setAllowedFileTypes:[NSString extensionsArrayFromVLCStyleString:EXTENSIONS_MEDIA]];
+        [openPanel setCanChooseFiles:YES];
+        [openPanel setCanChooseDirectories:NO];
+        [openPanel
+            setAllowedFileTypes:[NSString extensionsArrayFromVLCStyleString:EXTENSIONS_MEDIA]];
         if ([openPanel runModal] == NSModalResponseOK) {
             _fileSlavePath = [[[openPanel URLs] firstObject] path];
         }
     }
     if (_fileSlavePath && [_fileSlaveCheckbox state] == NSOnState) {
-        [_fileSlaveFilenameLabel setStringValue: [[NSFileManager defaultManager] displayNameAtPath:_fileSlavePath]];
-        [_fileSlaveIconWell setImage: [NSWorkspace.sharedWorkspace iconForFile: _fileSlavePath]];
+        [_fileSlaveFilenameLabel
+            setStringValue:[[NSFileManager defaultManager] displayNameAtPath:_fileSlavePath]];
+        [_fileSlaveIconWell setImage:[NSWorkspace.sharedWorkspace iconForFile:_fileSlavePath]];
     } else {
-        [_fileSlaveFilenameLabel setStringValue: @""];
-        [_fileSlaveIconWell setImage: NULL];
+        [_fileSlaveFilenameLabel setStringValue:@""];
+        [_fileSlaveIconWell setImage:NULL];
     }
 }
 
 - (IBAction)fileTimeCustomization:(id)sender
 {
     BOOL b_value = [_fileCustomTimingCheckbox state];
-    [_fileStartTimeTextField setEnabled: b_value];
-    [_fileStartTimeLabel setEnabled: b_value];
-    [_fileStopTimeTextField setEnabled: b_value];
-    [_fileStopTimeLabel setEnabled: b_value];
+    [_fileStartTimeTextField setEnabled:b_value];
+    [_fileStartTimeLabel setEnabled:b_value];
+    [_fileStopTimeTextField setEnabled:b_value];
+    [_fileStopTimeLabel setEnabled:b_value];
 }
 
 #pragma mark -
@@ -686,30 +724,31 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
 - (void)showOpticalMediaView:(NSView *)theView withIcon:(NSImage *)icon
 {
     NSRect viewRect = [theView frame];
-    [theView setFrame: NSMakeRect(233, 0, viewRect.size.width, viewRect.size.height)];
-    [theView setAutoresizesSubviews: YES];
+    [theView setFrame:NSMakeRect(233, 0, viewRect.size.width, viewRect.size.height)];
+    [theView setAutoresizesSubviews:YES];
 
-    NSView *opticalTabView = [[_tabView tabViewItemAtIndex: [_tabView indexOfTabViewItemWithIdentifier:VLCOpenDiscTabViewId]] view];
+    NSView *opticalTabView = [[_tabView
+        tabViewItemAtIndex:[_tabView indexOfTabViewItemWithIdentifier:VLCOpenDiscTabViewId]] view];
     if (_currentOpticalMediaView) {
-        [[opticalTabView animator] replaceSubview: _currentOpticalMediaView with: theView];
+        [[opticalTabView animator] replaceSubview:_currentOpticalMediaView with:theView];
     } else {
-        [[opticalTabView animator] addSubview: theView];
+        [[opticalTabView animator] addSubview:theView];
     }
     _currentOpticalMediaView = theView;
 
     NSImageView *imageView = [[NSImageView alloc] init];
-    [imageView setFrame: NSMakeRect(53, 61, 128, 128)];
-    [icon setSize: NSMakeSize(128,128)];
-    [imageView setImage: icon];
+    [imageView setFrame:NSMakeRect(53, 61, 128, 128)];
+    [icon setSize:NSMakeSize(128, 128)];
+    [imageView setImage:icon];
     if (_currentOpticalMediaIconView) {
-        [[opticalTabView animator] replaceSubview: _currentOpticalMediaIconView with: imageView];
+        [[opticalTabView animator] replaceSubview:_currentOpticalMediaIconView with:imageView];
     } else {
-        [[opticalTabView animator] addSubview: imageView];
+        [[opticalTabView animator] addSubview:imageView];
     }
     _currentOpticalMediaIconView = imageView;
-    [_currentOpticalMediaView setNeedsDisplay: YES];
-    [_currentOpticalMediaIconView setNeedsDisplay: YES];
-    [opticalTabView setNeedsDisplay: YES];
+    [_currentOpticalMediaView setNeedsDisplay:YES];
+    [_currentOpticalMediaIconView setNeedsDisplay:YES];
+    [opticalTabView setNeedsDisplay:YES];
     [opticalTabView displayIfNeeded];
 }
 
@@ -726,43 +765,62 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
     if (!b_currentDiscIsDVDA)
         [_discDVDDisableMenusButton setTitle:_NS("Disable DVD menus")];
 
-    if ([diskType isEqualToString: kVLCMediaDVD] || [diskType isEqualToString: kVLCMediaVideoTSFolder]) {
-        [_discDVDLabel setStringValue: [[NSFileManager defaultManager] displayNameAtPath:opticalDevicePath]];
-        [_discDVDwomenusLabel setStringValue: [_discDVDLabel stringValue]];
+    if ([diskType isEqualToString:kVLCMediaDVD] ||
+        [diskType isEqualToString:kVLCMediaVideoTSFolder]) {
+        [_discDVDLabel
+            setStringValue:[[NSFileManager defaultManager] displayNameAtPath:opticalDevicePath]];
+        [_discDVDwomenusLabel setStringValue:[_discDVDLabel stringValue]];
 
         if (!b_nodvdmenus) {
-            [self setMRL: [NSString stringWithFormat: @"dvdnav://%@", devicePath]];
-            [self showOpticalMediaView: _discDVDView withIcon:mediaIcon];
+            [self setMRL:[NSString stringWithFormat:@"dvdnav://%@", devicePath]];
+            [self showOpticalMediaView:_discDVDView withIcon:mediaIcon];
         } else {
-            [self setMRL: [NSString stringWithFormat: @"dvdread://%@#%i:%i-", devicePath, [_discDVDwomenusTitleTextField intValue], [_discDVDwomenusChapterTextField intValue]]];
-            [self showOpticalMediaView: _discDVDwomenusView withIcon:mediaIcon];
+            [self setMRL:[NSString stringWithFormat:@"dvdread://%@#%i:%i-",
+                                                    devicePath,
+                                                    [_discDVDwomenusTitleTextField intValue],
+                                                    [_discDVDwomenusChapterTextField intValue]]];
+            [self showOpticalMediaView:_discDVDwomenusView withIcon:mediaIcon];
         }
-    } else if ([diskType isEqualToString: kVLCMediaAudioDVD]) {
-        [_discDVDLabel setStringValue: [fileManager displayNameAtPath:opticalDevicePath]];
+    } else if ([diskType isEqualToString:kVLCMediaAudioDVD]) {
+        [_discDVDLabel setStringValue:[fileManager displayNameAtPath:opticalDevicePath]];
         [_discDVDDisableMenusButton setTitle:_NS("Play as DVD-Video")];
         [self setMRL:[NSString stringWithFormat:@"dvda://%@", devicePath]];
         [self showOpticalMediaView:_discDVDView withIcon:mediaIcon];
-    } else if ([diskType isEqualToString: kVLCMediaAudioCD]) {
-        [_discAudioCDLabel setStringValue: [fileManager displayNameAtPath: opticalDevicePath]];
-        [_discAudioCDTrackCountLabel setStringValue: [NSString stringWithFormat:_NS("%i tracks"), [[fileManager subpathsOfDirectoryAtPath: opticalDevicePath error:NULL] count] - 1]]; // minus .TOC.plist
-        [self showOpticalMediaView: _discAudioCDView withIcon: mediaIcon];
-        [self setMRL: [NSString stringWithFormat: @"cdda://%@", devicePath]];
-    } else if ([diskType isEqualToString: kVLCMediaVCD]) {
-        [_discVCDLabel setStringValue: [fileManager displayNameAtPath: opticalDevicePath]];
-        [self showOpticalMediaView: _discVCDView withIcon: mediaIcon];
-        [self setMRL: [NSString stringWithFormat: @"vcd://%@#%i:%i", devicePath, [_discVCDTitleTextField intValue], [_discVCDChapterTextField intValue]]];
-    } else if ([diskType isEqualToString: kVLCMediaSVCD]) {
-        [_discVCDLabel setStringValue: [fileManager displayNameAtPath: opticalDevicePath]];
-        [self showOpticalMediaView: _discVCDView withIcon: mediaIcon];
-        [self setMRL: [NSString stringWithFormat: @"vcd://%@@%i:%i", devicePath, [_discVCDTitleTextField intValue], [_discVCDChapterTextField intValue]]];
-    } else if ([diskType isEqualToString: kVLCMediaBD] || [diskType isEqualToString: kVLCMediaBDMVFolder]) {
-        [_discBDLabel setStringValue: [fileManager displayNameAtPath: opticalDevicePath]];
-        [self showOpticalMediaView: _discBDView withIcon: mediaIcon];
-        [self setMRL: [NSString stringWithFormat: @"bluray://%@", opticalDevicePath]];
+    } else if ([diskType isEqualToString:kVLCMediaAudioCD]) {
+        [_discAudioCDLabel setStringValue:[fileManager displayNameAtPath:opticalDevicePath]];
+        [_discAudioCDTrackCountLabel
+            setStringValue:[NSString
+                               stringWithFormat:_NS("%i tracks"),
+                                                [[fileManager
+                                                    subpathsOfDirectoryAtPath:opticalDevicePath
+                                                                        error:NULL] count]
+                                                    - 1]]; // minus .TOC.plist
+        [self showOpticalMediaView:_discAudioCDView withIcon:mediaIcon];
+        [self setMRL:[NSString stringWithFormat:@"cdda://%@", devicePath]];
+    } else if ([diskType isEqualToString:kVLCMediaVCD]) {
+        [_discVCDLabel setStringValue:[fileManager displayNameAtPath:opticalDevicePath]];
+        [self showOpticalMediaView:_discVCDView withIcon:mediaIcon];
+        [self setMRL:[NSString stringWithFormat:@"vcd://%@#%i:%i",
+                                                devicePath,
+                                                [_discVCDTitleTextField intValue],
+                                                [_discVCDChapterTextField intValue]]];
+    } else if ([diskType isEqualToString:kVLCMediaSVCD]) {
+        [_discVCDLabel setStringValue:[fileManager displayNameAtPath:opticalDevicePath]];
+        [self showOpticalMediaView:_discVCDView withIcon:mediaIcon];
+        [self setMRL:[NSString stringWithFormat:@"vcd://%@@%i:%i",
+                                                devicePath,
+                                                [_discVCDTitleTextField intValue],
+                                                [_discVCDChapterTextField intValue]]];
+    } else if ([diskType isEqualToString:kVLCMediaBD] ||
+               [diskType isEqualToString:kVLCMediaBDMVFolder]) {
+        [_discBDLabel setStringValue:[fileManager displayNameAtPath:opticalDevicePath]];
+        [self showOpticalMediaView:_discBDView withIcon:mediaIcon];
+        [self setMRL:[NSString stringWithFormat:@"bluray://%@", opticalDevicePath]];
     } else {
         msg_Warn(getIntf(), "unknown disk type, no idea what to display");
 
-        [self showOpticalMediaView: _discNoDiscView withIcon: [NSImage imageNamed:NSImageNameApplicationIcon]];
+        [self showOpticalMediaView:_discNoDiscView
+                          withIcon:[NSImage imageNamed:NSImageNameApplicationIcon]];
     }
 }
 
@@ -770,20 +828,18 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
 {
     NSString *path = [url path];
     NSString *type = getVolumeTypeFromMountPath(path);
-    NSImage *image = [NSWorkspace.sharedWorkspace iconForFile: path];
+    NSImage *image = [NSWorkspace.sharedWorkspace iconForFile:path];
     NSString *devicePath;
 
     // BDMV path must not end with BDMV directory
-    if ([type isEqualToString: kVLCMediaBDMVFolder]) {
-        if ([[path lastPathComponent] isEqualToString: @"BDMV"]) {
+    if ([type isEqualToString:kVLCMediaBDMVFolder]) {
+        if ([[path lastPathComponent] isEqualToString:@"BDMV"]) {
             path = [path stringByDeletingLastPathComponent];
         }
     }
 
-    if ([type isEqualToString: kVLCMediaVideoTSFolder] ||
-        [type isEqualToString: kVLCMediaBD] ||
-        [type isEqualToString: kVLCMediaBDMVFolder] ||
-        [type isEqualToString: kVLCMediaUnknown])
+    if ([type isEqualToString:kVLCMediaVideoTSFolder] || [type isEqualToString:kVLCMediaBD] ||
+        [type isEqualToString:kVLCMediaBDMVFolder] || [type isEqualToString:kVLCMediaUnknown])
         devicePath = path;
     else
         devicePath = getBSDNodeFromMountPath(path);
@@ -800,12 +856,16 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
 - (void)scanDevices
 {
     @autoreleasepool {
-        NSArray *mountURLs = [[NSFileManager defaultManager] mountedVolumeURLsIncludingResourceValuesForKeys:@[NSURLVolumeIsRemovableKey] options:NSVolumeEnumerationSkipHiddenVolumes];
+        NSArray *mountURLs = [[NSFileManager defaultManager]
+            mountedVolumeURLsIncludingResourceValuesForKeys:@[ NSURLVolumeIsRemovableKey ]
+                                                    options:NSVolumeEnumerationSkipHiddenVolumes];
         NSMutableArray *o_result = [NSMutableArray array];
         for (NSURL *currentURL in mountURLs) {
-
             NSNumber *isRemovable = nil;
-            if (![currentURL getResourceValue:&isRemovable forKey:NSURLVolumeIsRemovableKey error:nil] || !isRemovable) {
+            if (![currentURL getResourceValue:&isRemovable
+                                       forKey:NSURLVolumeIsRemovableKey
+                                        error:nil]
+                || !isRemovable) {
                 msg_Warn(getIntf(), "Cannot find removable flag for mount point");
                 continue;
             }
@@ -813,11 +873,11 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
             if (!isRemovable.boolValue)
                 continue;
 
-            [o_result addObject: [self scanPath:currentURL]];
+            [o_result addObject:[self scanPath:currentURL]];
         }
 
-        @synchronized (self) {
-            _opticalDevices = [[NSArray alloc] initWithArray: o_result];
+        @synchronized(self) {
+            _opticalDevices = [[NSArray alloc] initWithArray:o_result];
         }
 
         [self updateMediaSelector:NO];
@@ -829,7 +889,7 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
     @autoreleasepool {
         VLCOpenBlockDeviceDescription *deviceDescription = [self scanPath:oPath];
 
-        @synchronized (self) {
+        @synchronized(self) {
             [_specialMediaFolders addObject:deviceDescription];
         }
 
@@ -848,7 +908,7 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
         [self->_allMediaDevices removeAllObjects];
         [self->_discSelectorPopup removeAllItems];
 
-        @synchronized (self) {
+        @synchronized(self) {
             [self->_allMediaDevices addObjectsFromArray:self->_opticalDevices];
             [self->_allMediaDevices addObjectsFromArray:self->_specialMediaFolders];
         }
@@ -856,60 +916,69 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
         NSUInteger count = [self->_allMediaDevices count];
         if (count > 0) {
             for (VLCOpenBlockDeviceDescription *deviceDescription in self->_allMediaDevices) {
-                [self->_discSelectorPopup addItemWithTitle: [[NSFileManager defaultManager] displayNameAtPath:deviceDescription.path]];
+                [self->_discSelectorPopup
+                    addItemWithTitle:[[NSFileManager defaultManager]
+                                         displayNameAtPath:deviceDescription.path]];
             }
 
             if ([self->_discSelectorPopup numberOfItems] <= 1)
-                [self->_discSelectorPopup setHidden: YES];
+                [self->_discSelectorPopup setHidden:YES];
             else
-                [self->_discSelectorPopup setHidden: NO];
+                [self->_discSelectorPopup setHidden:NO];
 
             // select newly added media folder
             if (selected)
-                [self->_discSelectorPopup selectItemAtIndex: [[self->_discSelectorPopup itemArray] count] - 1];
+                [self->_discSelectorPopup
+                    selectItemAtIndex:[[self->_discSelectorPopup itemArray] count] - 1];
 
             // only trigger MRL update if the tab view is active
-            if ([[[self->_tabView selectedTabViewItem] identifier] isEqualToString:VLCOpenDiscTabViewId])
+            if ([[[self->_tabView selectedTabViewItem] identifier]
+                    isEqualToString:VLCOpenDiscTabViewId])
                 [self discSelectorChanged:nil];
         } else {
             msg_Dbg(getIntf(), "no optical media found");
-            [self->_discSelectorPopup setHidden: YES];
+            [self->_discSelectorPopup setHidden:YES];
             [self setMRL:@""];
-            [self showOpticalMediaView: self->_discNoDiscView withIcon: [NSImage imageNamed: NSImageNameApplicationIcon]];
+            [self showOpticalMediaView:self->_discNoDiscView
+                              withIcon:[NSImage imageNamed:NSImageNameApplicationIcon]];
         }
     });
 }
 
 - (IBAction)discSelectorChanged:(id)sender
 {
-    [self showOpticalAtPath:[_allMediaDevices objectAtIndex:[_discSelectorPopup indexOfSelectedItem]]];
+    [self showOpticalAtPath:[_allMediaDevices
+                                objectAtIndex:[_discSelectorPopup indexOfSelectedItem]]];
 }
 
 - (IBAction)openSpecialMediaFolder:(id)sender
 {
     /* this is currently for VIDEO_TS and BDMV folders */
     NSOpenPanel *openPanel = [NSOpenPanel openPanel];
-    [openPanel setAllowsMultipleSelection: NO];
-    [openPanel setCanChooseDirectories: YES];
-    [openPanel setTitle: [sender title]];
-    [openPanel setPrompt: _NS("Open")];
+    [openPanel setAllowsMultipleSelection:NO];
+    [openPanel setCanChooseDirectories:YES];
+    [openPanel setTitle:[sender title]];
+    [openPanel setPrompt:_NS("Open")];
 
-    /* work-around for Mountain Lion, which treats folders called "BDMV" including an item named "INDEX.BDM"
-     * as a _FILE_. Don't ask, move on. There is nothing to see here */
-    [openPanel setCanChooseFiles: YES];
+    /* work-around for Mountain Lion, which treats folders called "BDMV" including an item named
+     * "INDEX.BDM" as a _FILE_. Don't ask, move on. There is nothing to see here */
+    [openPanel setCanChooseFiles:YES];
     [openPanel setAllowedFileTypes:[NSArray arrayWithObject:@"public.directory"]];
 
     if ([openPanel runModal] == NSModalResponseOK) {
         NSURL *path = openPanel.URL;
         if (path) {
-            [NSThread detachNewThreadSelector:@selector(scanSpecialPath:) toTarget:self withObject:path];
+            [NSThread detachNewThreadSelector:@selector(scanSpecialPath:)
+                                     toTarget:self
+                                   withObject:path];
         }
     }
 }
 
 - (IBAction)dvdreadOptionChanged:(id)sender
 {
-    NSString *devicePath = [[_allMediaDevices objectAtIndex:[_discSelectorPopup indexOfSelectedItem]] devicePath];
+    NSString *devicePath =
+        [[_allMediaDevices objectAtIndex:[_discSelectorPopup indexOfSelectedItem]] devicePath];
 
     if (sender == _discDVDDisableMenusButton && b_currentDiscIsDVDA) {
         b_dvdaPlayingAsVideo = !b_dvdaPlayingAsVideo;
@@ -925,40 +994,48 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
 
     if (sender == _discDVDwomenusEnableMenusButton) {
         b_nodvdmenus = NO;
-        [self setMRL: [NSString stringWithFormat: @"dvdnav://%@", devicePath]];
+        [self setMRL:[NSString stringWithFormat:@"dvdnav://%@", devicePath]];
         [self showOpticalMediaView:_discDVDView withIcon:[_currentOpticalMediaIconView image]];
         return;
     }
     if (sender == _discDVDDisableMenusButton) {
         b_nodvdmenus = YES;
-        [self showOpticalMediaView:_discDVDwomenusView withIcon:[_currentOpticalMediaIconView image]];
+        [self showOpticalMediaView:_discDVDwomenusView
+                          withIcon:[_currentOpticalMediaIconView image]];
     }
 
     if (sender == _discDVDwomenusTitleTextField)
-        [_discDVDwomenusTitleStepper setIntValue: [_discDVDwomenusTitleTextField intValue]];
+        [_discDVDwomenusTitleStepper setIntValue:[_discDVDwomenusTitleTextField intValue]];
     if (sender == _discDVDwomenusTitleStepper)
-        [_discDVDwomenusTitleTextField setIntValue: [_discDVDwomenusTitleStepper intValue]];
+        [_discDVDwomenusTitleTextField setIntValue:[_discDVDwomenusTitleStepper intValue]];
     if (sender == _discDVDwomenusChapterTextField)
-        [_discDVDwomenusChapterStepper setIntValue: [_discDVDwomenusChapterTextField intValue]];
+        [_discDVDwomenusChapterStepper setIntValue:[_discDVDwomenusChapterTextField intValue]];
     if (sender == _discDVDwomenusChapterStepper)
-        [_discDVDwomenusChapterTextField setIntValue: [_discDVDwomenusChapterStepper intValue]];
+        [_discDVDwomenusChapterTextField setIntValue:[_discDVDwomenusChapterStepper intValue]];
 
-    [self setMRL: [NSString stringWithFormat: @"dvdread://%@#%i:%i-", devicePath, [_discDVDwomenusTitleTextField intValue], [_discDVDwomenusChapterTextField intValue]]];
+    [self setMRL:[NSString stringWithFormat:@"dvdread://%@#%i:%i-",
+                                            devicePath,
+                                            [_discDVDwomenusTitleTextField intValue],
+                                            [_discDVDwomenusChapterTextField intValue]]];
 }
 
 - (IBAction)vcdOptionChanged:(id)sender
 {
     if (sender == _discVCDTitleTextField)
-        [_discVCDTitleStepper setIntValue: [_discVCDTitleTextField intValue]];
+        [_discVCDTitleStepper setIntValue:[_discVCDTitleTextField intValue]];
     if (sender == _discVCDTitleStepper)
-        [_discVCDTitleTextField setIntValue: [_discVCDTitleStepper intValue]];
+        [_discVCDTitleTextField setIntValue:[_discVCDTitleStepper intValue]];
     if (sender == _discVCDChapterTextField)
-        [_discVCDChapterStepper setIntValue: [_discVCDChapterTextField intValue]];
+        [_discVCDChapterStepper setIntValue:[_discVCDChapterTextField intValue]];
     if (sender == _discVCDChapterStepper)
-        [_discVCDChapterTextField setIntValue: [_discVCDChapterStepper intValue]];
+        [_discVCDChapterTextField setIntValue:[_discVCDChapterStepper intValue]];
 
-    NSString *devicePath = [[_allMediaDevices objectAtIndex:[_discSelectorPopup indexOfSelectedItem]] devicePath];
-    [self setMRL: [NSString stringWithFormat: @"vcd://%@@%i:%i", devicePath, [_discVCDTitleTextField intValue], [_discVCDChapterTextField intValue]]];
+    NSString *devicePath =
+        [[_allMediaDevices objectAtIndex:[_discSelectorPopup indexOfSelectedItem]] devicePath];
+    [self setMRL:[NSString stringWithFormat:@"vcd://%@@%i:%i",
+                                            devicePath,
+                                            [_discVCDTitleTextField intValue],
+                                            [_discVCDChapterTextField intValue]]];
 }
 
 #pragma mark -
@@ -967,28 +1044,28 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
 - (void)textFieldWasClicked:(NSNotification *)notification
 {
     if ([notification object] == _netUDPPortTextField)
-        [_netModeMatrix selectCellAtRow: 0 column: 0];
+        [_netModeMatrix selectCellAtRow:0 column:0];
     else if ([notification object] == _netUDPMAddressTextField ||
              [notification object] == _netUDPMPortTextField)
-        [_netModeMatrix selectCellAtRow: 1 column: 0];
+        [_netModeMatrix selectCellAtRow:1 column:0];
     else
-        [_netModeMatrix selectCellAtRow: 2 column: 0];
+        [_netModeMatrix selectCellAtRow:2 column:0];
 
-    [self openNetInfoChanged: nil];
+    [self openNetInfoChanged:nil];
 }
 
 - (IBAction)openNetModeChanged:(id)sender
 {
     if (sender == _netModeMatrix) {
         if ([[sender selectedCell] tag] == 0)
-            [self.window makeFirstResponder: _netUDPPortTextField];
+            [self.window makeFirstResponder:_netUDPPortTextField];
         else if ([[sender selectedCell] tag] == 1)
-            [self.window makeFirstResponder: _netUDPMAddressTextField];
+            [self.window makeFirstResponder:_netUDPMAddressTextField];
         else
             msg_Warn(getIntf(), "Unknown sender tried to change UDP/RTP mode");
     }
 
-    [self openNetInfoChanged: nil];
+    [self openNetInfoChanged:nil];
 }
 
 - (IBAction)openNetStepperChanged:(id)sender
@@ -996,19 +1073,18 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
     NSInteger i_tag = [sender tag];
 
     if (i_tag == 0) {
-        [_netUDPPortTextField setIntValue: [_netUDPPortStepper intValue]];
-        [NSNotificationCenter.defaultCenter postNotificationName: VLCOpenTextFieldWasClicked
-                                                            object: _netUDPPortTextField];
-        [self.window makeFirstResponder: _netUDPPortTextField];
-    }
-    else if (i_tag == 1) {
-        [_netUDPMPortTextField setIntValue: [_netUDPMPortStepper intValue]];
-        [NSNotificationCenter.defaultCenter postNotificationName: VLCOpenTextFieldWasClicked
-                                                            object: _netUDPMPortTextField];
-        [self.window makeFirstResponder: _netUDPMPortTextField];
+        [_netUDPPortTextField setIntValue:[_netUDPPortStepper intValue]];
+        [NSNotificationCenter.defaultCenter postNotificationName:VLCOpenTextFieldWasClicked
+                                                          object:_netUDPPortTextField];
+        [self.window makeFirstResponder:_netUDPPortTextField];
+    } else if (i_tag == 1) {
+        [_netUDPMPortTextField setIntValue:[_netUDPMPortStepper intValue]];
+        [NSNotificationCenter.defaultCenter postNotificationName:VLCOpenTextFieldWasClicked
+                                                          object:_netUDPMPortTextField];
+        [self.window makeFirstResponder:_netUDPMPortTextField];
     }
 
-    [self openNetInfoChanged: nil];
+    [self openNetInfoChanged:nil];
 }
 
 - (void)openNetInfoChanged:(NSNotification *)o_notification
@@ -1019,7 +1095,7 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
         NSString *mode;
         mode = [[_netModeMatrix selectedCell] title];
 
-        if ([mode isEqualToString: _NS("Unicast")]) {
+        if ([mode isEqualToString:_NS("Unicast")]) {
             int port = [_netUDPPortTextField intValue];
 
             if ([[_netUDPProtocolMatrix selectedCell] tag] == 0)
@@ -1028,25 +1104,24 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
                 mrlString = @"rtp://";
 
             if (port > 0) {
-                mrlString =
-                [mrlString stringByAppendingFormat: @"@:%i", port];
+                mrlString = [mrlString stringByAppendingFormat:@"@:%i", port];
             }
-        }
-        else if ([mode isEqualToString: _NS("Multicast")]) {
+        } else if ([mode isEqualToString:_NS("Multicast")]) {
             NSString *address = [_netUDPMAddressTextField stringValue];
             int port = [_netUDPMPortTextField intValue];
 
             if ([[_netUDPProtocolMatrix selectedCell] tag] == 0)
-                mrlString = [NSString stringWithFormat: @"udp://@%@", address];
+                mrlString = [NSString stringWithFormat:@"udp://@%@", address];
             else
-                mrlString = [NSString stringWithFormat: @"rtp://@%@", address];
+                mrlString = [NSString stringWithFormat:@"rtp://@%@", address];
 
             if (port > 0) {
-                mrlString = [mrlString stringByAppendingFormat: @":%i", port];
+                mrlString = [mrlString stringByAppendingFormat:@":%i", port];
             }
         }
     } else {
-        mrlString = [_netHTTPURLTextField.stringValue stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+        mrlString = [_netHTTPURLTextField.stringValue
+            stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
 
         // Fixup the user-provided URI
         const char *orig_uri = [mrlString UTF8String];
@@ -1059,23 +1134,20 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
         }
     }
 
-    [self setMRL: mrlString];
+    [self setMRL:mrlString];
 }
 
 - (IBAction)openNetUDPButtonAction:(id)sender
 {
     if (sender == _netOpenUDPButton) {
-        [self.window beginSheet:self.netUDPPanel
-              completionHandler:nil];
+        [self.window beginSheet:self.netUDPPanel completionHandler:nil];
         [self openNetInfoChanged:nil];
-    }
-    else if (sender == _netUDPCancelButton) {
-        [_netUDPPanel orderOut: sender];
-        [NSApp endSheet: _netUDPPanel];
-    }
-    else if (sender == _netUDPOKButton) {
+    } else if (sender == _netUDPCancelButton) {
+        [_netUDPPanel orderOut:sender];
+        [NSApp endSheet:_netUDPPanel];
+    } else if (sender == _netUDPOKButton) {
         NSString *mrlString;
-        if ([[[_netModeMatrix selectedCell] title] isEqualToString: _NS("Unicast")]) {
+        if ([[[_netModeMatrix selectedCell] title] isEqualToString:_NS("Unicast")]) {
             int port = [_netUDPPortTextField intValue];
 
             if ([[_netUDPProtocolMatrix selectedCell] tag] == 0)
@@ -1084,26 +1156,25 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
                 mrlString = @"rtp://";
 
             if (port > 0) {
-                mrlString = [mrlString stringByAppendingFormat: @"@:%i", port];
+                mrlString = [mrlString stringByAppendingFormat:@"@:%i", port];
             }
-        }
-        else if ([[[_netModeMatrix selectedCell] title] isEqualToString: _NS("Multicast")]) {
+        } else if ([[[_netModeMatrix selectedCell] title] isEqualToString:_NS("Multicast")]) {
             NSString *address = [_netUDPMAddressTextField stringValue];
             int port = [_netUDPMPortTextField intValue];
 
             if ([[_netUDPProtocolMatrix selectedCell] tag] == 0)
-                mrlString = [NSString stringWithFormat: @"udp://@%@", address];
+                mrlString = [NSString stringWithFormat:@"udp://@%@", address];
             else
-                mrlString = [NSString stringWithFormat: @"rtp://@%@", address];
+                mrlString = [NSString stringWithFormat:@"rtp://@%@", address];
 
             if (port > 0) {
-                mrlString = [mrlString stringByAppendingFormat: @":%i", port];
+                mrlString = [mrlString stringByAppendingFormat:@":%i", port];
             }
         }
-        [self setMRL: mrlString];
-        [_netHTTPURLTextField setStringValue: mrlString];
-        [_netUDPPanel orderOut: sender];
-        [NSApp endSheet: _netUDPPanel];
+        [self setMRL:mrlString];
+        [_netHTTPURLTextField setStringValue:mrlString];
+        [_netUDPPanel orderOut:sender];
+        [NSApp endSheet:_netUDPPanel];
     }
 }
 
@@ -1112,16 +1183,16 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
 
 - (IBAction)openCaptureModeChanged:(id)sender
 {
-    if ([[[_captureModePopup selectedItem] title] isEqualToString: _NS("Screen")]) {
+    if ([[[_captureModePopup selectedItem] title] isEqualToString:_NS("Screen")]) {
         [_captureTabView selectTabViewItemAtIndex:1];
 
-        [self setMRL: @"screen://"];
-        [_screenHeightTextField setIntegerValue: config_GetInt("screen-height")];
-        [_screenWidthTextField setIntegerValue: config_GetInt("screen-width")];
-        [_screenFPSTextField setFloatValue: config_GetFloat("screen-fps")];
-        [_screenLeftTextField setIntegerValue: config_GetInt("screen-left")];
-        [_screenTopTextField setIntegerValue: config_GetInt("screen-top")];
-        [_screenFollowMouseCheckbox setIntegerValue: config_GetInt("screen-follow-mouse")];
+        [self setMRL:@"screen://"];
+        [_screenHeightTextField setIntegerValue:config_GetInt("screen-height")];
+        [_screenWidthTextField setIntegerValue:config_GetInt("screen-width")];
+        [_screenFPSTextField setFloatValue:config_GetFloat("screen-fps")];
+        [_screenLeftTextField setIntegerValue:config_GetInt("screen-left")];
+        [_screenTopTextField setIntegerValue:config_GetInt("screen-top")];
+        [_screenFollowMouseCheckbox setIntegerValue:config_GetInt("screen-follow-mouse")];
 
         NSInteger screenIindex = config_GetInt("screen-index");
         NSInteger displayID = config_GetInt("screen-display-id");
@@ -1137,40 +1208,45 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
             if (!returnedError) {
                 [_displayInfos removeAllObjects];
                 [_screenPopup removeAllItems];
-                for (unsigned int i = 0; i < displayCount; i ++) {
+                for (unsigned int i = 0; i < displayCount; i++) {
                     displayInformation = [[VLCOpenDisplayInformation alloc] init];
                     displayInformation.displayID = ids[i];
                     NSRect displayBounds = CGDisplayBounds(displayInformation.displayID);
                     displayInformation.displayBounds = displayBounds;
-                    [_screenPopup addItemWithTitle: [NSString stringWithFormat:@"Screen %d (%dx%d)", i + 1, (int)displayBounds.size.width, (int)displayBounds.size.height]];
+                    [_screenPopup
+                        addItemWithTitle:[NSString
+                                             stringWithFormat:@"Screen %d (%dx%d)",
+                                                              i + 1,
+                                                              (int)displayBounds.size.width,
+                                                              (int)displayBounds.size.height]];
                     [_displayInfos addObject:displayInformation];
-                    if (i == 0 || displayID == displayInformation.displayID || screenIindex - 1 == i) {
-                        [_screenPopup selectItemAtIndex: i];
-                        [_screenLeftStepper setMaxValue: displayBounds.size.width];
-                        [_screenTopStepper setMaxValue: displayBounds.size.height];
-                        [_screenWidthStepper setMaxValue: displayBounds.size.width];
-                        [_screenHeightStepper setMaxValue: displayBounds.size.height];
+                    if (i == 0 || displayID == displayInformation.displayID
+                        || screenIindex - 1 == i) {
+                        [_screenPopup selectItemAtIndex:i];
+                        [_screenLeftStepper setMaxValue:displayBounds.size.width];
+                        [_screenTopStepper setMaxValue:displayBounds.size.height];
+                        [_screenWidthStepper setMaxValue:displayBounds.size.width];
+                        [_screenHeightStepper setMaxValue:displayBounds.size.height];
                     }
                 }
             }
             free(ids);
         }
-    }
-    else if ([[[_captureModePopup selectedItem] title] isEqualToString: _NS("Input Devices")]) {
+    } else if ([[[_captureModePopup selectedItem] title] isEqualToString:_NS("Input Devices")]) {
         [_captureTabView selectTabViewItemAtIndex:0];
 
-        [self setMRL: @""];
-        [self qtkToggleUIElements: nil];
+        [self setMRL:@""];
+        [self qtkToggleUIElements:nil];
     }
 }
 
 // Screen actions
 - (void)screenFPSfieldChanged:(NSNotification *)o_notification
 {
-    [_screenFPSStepper setFloatValue: [_screenFPSTextField floatValue]];
-    if ([[_screenFPSTextField stringValue] isEqualToString: @""])
-        [_screenFPSTextField setFloatValue: 1.0];
-    [self setMRL: @"screen://"];
+    [_screenFPSStepper setFloatValue:[_screenFPSTextField floatValue]];
+    if ([[_screenFPSTextField stringValue] isEqualToString:@""])
+        [_screenFPSTextField setFloatValue:1.0];
+    [self setMRL:@"screen://"];
 }
 
 - (IBAction)screenChanged:(id)sender
@@ -1182,12 +1258,12 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
     VLCOpenDisplayInformation *displayInformation = [_displayInfos objectAtIndex:selected_index];
     CGRect displayBounds = displayInformation.displayBounds;
 
-    [_screenLeftStepper setMaxValue: displayBounds.size.width];
-    [_screenTopStepper setMaxValue: displayBounds.size.height];
-    [_screenWidthStepper setMaxValue: displayBounds.size.width];
-    [_screenHeightStepper setMaxValue: displayBounds.size.height];
+    [_screenLeftStepper setMaxValue:displayBounds.size.width];
+    [_screenTopStepper setMaxValue:displayBounds.size.height];
+    [_screenWidthStepper setMaxValue:displayBounds.size.width];
+    [_screenHeightStepper setMaxValue:displayBounds.size.height];
 
-    [_screenqtkAudioPopup setEnabled: [_screenqtkAudioCheckbox state]];
+    [_screenqtkAudioPopup setEnabled:[_screenqtkAudioCheckbox state]];
 }
 
 - (IBAction)screenAudioChanged:(id)sender
@@ -1213,7 +1289,8 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
     if (selectedDevice < 0 || (unsigned)selectedDevice >= _avvideoDevices.count)
         return;
 
-    _avCurrentDeviceUID = [[(AVCaptureDevice *)[_avvideoDevices objectAtIndex:selectedDevice] uniqueID] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+    _avCurrentDeviceUID = [[(AVCaptureDevice *)[_avvideoDevices objectAtIndex:selectedDevice]
+        uniqueID] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
     [self updateInputDevicesUrl];
 }
 
@@ -1223,7 +1300,8 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
     if (selectedDevice < 0 || (unsigned)selectedDevice >= _avaudioDevices.count)
         return;
 
-    _avCurrentAudioDeviceUID = [[(AVCaptureDevice *)[_avaudioDevices objectAtIndex:selectedDevice] uniqueID] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+    _avCurrentAudioDeviceUID = [[(AVCaptureDevice *)[_avaudioDevices objectAtIndex:selectedDevice]
+        uniqueID] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
     [self updateInputDevicesUrl];
 }
 
@@ -1244,13 +1322,14 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
     if ([_fileSubCheckbox state] == NSOnState) {
         [_fileSubSettingsButton setEnabled:YES];
         if (_subPath) {
-            [_fileSubtitlesFilenameLabel setStringValue: [[NSFileManager defaultManager] displayNameAtPath:_subPath]];
-            [_fileSubtitlesIconWell setImage: [NSWorkspace.sharedWorkspace iconForFile:_subPath]];
+            [_fileSubtitlesFilenameLabel
+                setStringValue:[[NSFileManager defaultManager] displayNameAtPath:_subPath]];
+            [_fileSubtitlesIconWell setImage:[NSWorkspace.sharedWorkspace iconForFile:_subPath]];
         }
     } else {
         [_fileSubSettingsButton setEnabled:NO];
-        [_fileSubtitlesFilenameLabel setStringValue: @""];
-        [_fileSubtitlesIconWell setImage: NULL];
+        [_fileSubtitlesFilenameLabel setStringValue:@""];
+        [_fileSubtitlesIconWell setImage:NULL];
     }
 }
 
@@ -1261,42 +1340,44 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
 
 - (IBAction)subCloseSheet:(id)sender
 {
-    [self subsChanged: nil];
+    [self subsChanged:nil];
     [_fileSubSheet orderOut:sender];
-    [NSApp endSheet: _fileSubSheet];
+    [NSApp endSheet:_fileSubSheet];
 }
 
 - (IBAction)subFileBrowse:(id)sender
 {
     NSOpenPanel *openPanel = [NSOpenPanel openPanel];
-    [openPanel setAllowsMultipleSelection: NO];
-    [openPanel setAllowedFileTypes:[NSString extensionsArrayFromVLCStyleString:EXTENSIONS_SUBTITLE]];
-    [openPanel setTitle: _NS("Open File")];
-    [openPanel setPrompt: _NS("Open")];
+    [openPanel setAllowsMultipleSelection:NO];
+    [openPanel
+        setAllowedFileTypes:[NSString extensionsArrayFromVLCStyleString:EXTENSIONS_SUBTITLE]];
+    [openPanel setTitle:_NS("Open File")];
+    [openPanel setPrompt:_NS("Open")];
 
     if ([openPanel runModal] == NSModalResponseOK) {
         _subPath = [[[openPanel URLs] firstObject] path];
-        [_fileSubtitlesFilenameLabel setStringValue: [[NSFileManager defaultManager] displayNameAtPath:_subPath]];
-        [_fileSubPathTextField setStringValue: [_fileSubtitlesFilenameLabel stringValue]];
-        [_fileSubPathLabel setHidden: YES];
-        [_fileSubtitlesIconWell setImage: [NSWorkspace.sharedWorkspace iconForFile:_subPath]];
-        [_fileSubIconView setImage: [_fileSubtitlesIconWell image]];
+        [_fileSubtitlesFilenameLabel
+            setStringValue:[[NSFileManager defaultManager] displayNameAtPath:_subPath]];
+        [_fileSubPathTextField setStringValue:[_fileSubtitlesFilenameLabel stringValue]];
+        [_fileSubPathLabel setHidden:YES];
+        [_fileSubtitlesIconWell setImage:[NSWorkspace.sharedWorkspace iconForFile:_subPath]];
+        [_fileSubIconView setImage:[_fileSubtitlesIconWell image]];
     } else {
-        [_fileSubPathLabel setHidden: NO];
+        [_fileSubPathLabel setHidden:NO];
         [_fileSubPathTextField setStringValue:@""];
         [_fileSubtitlesFilenameLabel setStringValue:@""];
-        [_fileSubtitlesIconWell setImage: nil];
-        [_fileSubIconView setImage: nil];
+        [_fileSubtitlesIconWell setImage:nil];
+        [_fileSubIconView setImage:nil];
     }
 }
 
 - (IBAction)subOverride:(id)sender
 {
     BOOL b_state = [_fileSubOverrideCheckbox state];
-    [_fileSubDelayTextField setEnabled: b_state];
-    [_fileSubDelayStepper setEnabled: b_state];
-    [_fileSubFPSTextField setEnabled: b_state];
-    [_fileSubFPSStepper setEnabled: b_state];
+    [_fileSubDelayTextField setEnabled:b_state];
+    [_fileSubDelayStepper setEnabled:b_state];
+    [_fileSubFPSTextField setEnabled:b_state];
+    [_fileSubFPSStepper setEnabled:b_state];
 }
 
 #pragma mark -
@@ -1304,13 +1385,13 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
 
 - (IBAction)panelCancel:(id)sender
 {
-    [NSApp stopModalWithCode: 0];
+    [NSApp stopModalWithCode:0];
 }
 
 - (IBAction)panelOk:(id)sender
 {
     if ([[self MRL] length])
-        [NSApp stopModalWithCode: 1];
+        [NSApp stopModalWithCode:1];
     else
         vlc_assert_unreachable();
 }
@@ -1320,34 +1401,38 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
 - (void)updateVideoDevicesAndRepresentation
 {
     _avvideoDevices = [[AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo]
-                         arrayByAddingObjectsFromArray:[AVCaptureDevice devicesWithMediaType:AVMediaTypeMuxed]];
+        arrayByAddingObjectsFromArray:[AVCaptureDevice devicesWithMediaType:AVMediaTypeMuxed]];
 
     [_qtkVideoDevicePopup removeAllItems];
     msg_Dbg(getIntf(), "Found %lu video capture devices", _avvideoDevices.count);
 
     if (_avvideoDevices.count >= 1) {
         if (!_avCurrentDeviceUID)
-            _avCurrentDeviceUID = [[[AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo] uniqueID]
-                                   stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+            _avCurrentDeviceUID = [[[AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo]
+                uniqueID] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
 
         NSUInteger deviceCount = _avvideoDevices.count;
         for (NSUInteger ivideo = 0; ivideo < deviceCount; ivideo++) {
             AVCaptureDevice *avDevice = [_avvideoDevices objectAtIndex:ivideo];
             // allow same name for multiple times
-            [[_qtkVideoDevicePopup menu] addItemWithTitle:[avDevice localizedName] action:nil keyEquivalent:@""];
+            [[_qtkVideoDevicePopup menu] addItemWithTitle:[avDevice localizedName]
+                                                   action:nil
+                                            keyEquivalent:@""];
 
-            if ([[[avDevice uniqueID] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]] isEqualToString:_avCurrentDeviceUID])
+            if ([[[avDevice uniqueID]
+                    stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]]
+                    isEqualToString:_avCurrentDeviceUID])
                 [_qtkVideoDevicePopup selectItemAtIndex:ivideo];
         }
     } else {
-        [_qtkVideoDevicePopup addItemWithTitle: _NS("None")];
+        [_qtkVideoDevicePopup addItemWithTitle:_NS("None")];
     }
 }
 
 - (void)updateAudioDevicesAndRepresentation
 {
     _avaudioDevices = [[AVCaptureDevice devicesWithMediaType:AVMediaTypeAudio]
-                        arrayByAddingObjectsFromArray:[AVCaptureDevice devicesWithMediaType:AVMediaTypeMuxed]];
+        arrayByAddingObjectsFromArray:[AVCaptureDevice devicesWithMediaType:AVMediaTypeMuxed]];
 
     [_qtkAudioDevicePopup removeAllItems];
     [_screenqtkAudioPopup removeAllItems];
@@ -1355,8 +1440,9 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
 
     if (_avaudioDevices.count >= 1) {
         if (!_avCurrentAudioDeviceUID)
-            _avCurrentAudioDeviceUID = [[[AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio] uniqueID]
-                                        stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+            _avCurrentAudioDeviceUID =
+                [[[AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio] uniqueID]
+                    stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
 
         NSUInteger deviceCount = _avaudioDevices.count;
         for (NSUInteger iaudio = 0; iaudio < deviceCount; iaudio++) {
@@ -1364,17 +1450,23 @@ NSString *const VLCOpenTextFieldWasClicked = @"VLCOpenTextFieldWasClicked";
 
             // allow same name for multiple times
             NSString *localizedName = [avAudioDevice localizedName];
-            [[_qtkAudioDevicePopup menu] addItemWithTitle:localizedName action:nil keyEquivalent:@""];
-            [[_screenqtkAudioPopup menu] addItemWithTitle:localizedName action:nil keyEquivalent:@""];
+            [[_qtkAudioDevicePopup menu] addItemWithTitle:localizedName
+                                                   action:nil
+                                            keyEquivalent:@""];
+            [[_screenqtkAudioPopup menu] addItemWithTitle:localizedName
+                                                   action:nil
+                                            keyEquivalent:@""];
 
-            if ([[[avAudioDevice uniqueID] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]] isEqualToString:_avCurrentAudioDeviceUID]) {
+            if ([[[avAudioDevice uniqueID]
+                    stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]]
+                    isEqualToString:_avCurrentAudioDeviceUID]) {
                 [_qtkAudioDevicePopup selectItemAtIndex:iaudio];
                 [_screenqtkAudioPopup selectItemAtIndex:iaudio];
             }
         }
     } else {
-        [_qtkAudioDevicePopup addItemWithTitle: _NS("None")];
-        [_screenqtkAudioPopup addItemWithTitle: _NS("None")];
+        [_qtkAudioDevicePopup addItemWithTitle:_NS("None")];
+        [_screenqtkAudioPopup addItemWithTitle:_NS("None")];
     }
 }
 

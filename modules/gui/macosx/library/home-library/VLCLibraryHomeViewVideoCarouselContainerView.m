@@ -62,7 +62,7 @@
     } else {
         self.titleView.stringValue = groupDescriptor.name;
     }
- }
+}
 
 - (void)setVideoGroup:(VLCMediaLibraryParentGroupType)group
 {
@@ -70,7 +70,8 @@
         return;
     }
 
-    VLCLibraryVideoCollectionViewGroupDescriptor * const descriptor = [[VLCLibraryVideoCollectionViewGroupDescriptor alloc] initWithVLCVideoLibraryGroup:group];
+    VLCLibraryVideoCollectionViewGroupDescriptor *const descriptor =
+        [[VLCLibraryVideoCollectionViewGroupDescriptor alloc] initWithVLCVideoLibraryGroup:group];
     [self setGroupDescriptor:descriptor];
 }
 
@@ -80,7 +81,7 @@
         return;
     }
 
-    NSIndexPath * const indexPath = [self.dataSource indexPathForLibraryItem:libraryItem];
+    NSIndexPath *const indexPath = [self.dataSource indexPathForLibraryItem:libraryItem];
     if (indexPath == nil) {
         return;
     }

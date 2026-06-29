@@ -27,7 +27,8 @@
 - (void)drawWithFrame:(NSRect)cellFrame inView:(NSView *)controlView
 {
     // Intentionally do not call super to prevent AppKit from drawing its default background.
-    // The header view hosts its own background visuals (glass/effect/solid) and draws content there.
+    // The header view hosts its own background visuals (glass/effect/solid) and draws content
+    // there.
     [NSColor.clearColor setFill];
     NSRectFillUsingOperation(cellFrame, NSCompositingOperationClear);
 }

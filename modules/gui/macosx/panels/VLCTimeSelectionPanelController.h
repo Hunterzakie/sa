@@ -48,13 +48,14 @@
  * \param returnCode Result from panel. Can be NSModalResponseOK or NSModalResponseCancel.
  * \param returnTime Resulting time in seconds entered in panel.
  */
-typedef void(^TimeSelectionCompletionHandler)(NSInteger returnCode, int64_t returnTime);
+typedef void (^TimeSelectionCompletionHandler)(NSInteger returnCode, int64_t returnTime);
 
 /**
  * Shows the panel as a modal dialog with window as its owner.
  * \param window Parent window for the dialog.
  * \param handler Completion block.
  */
-- (void)runModalForWindow:(NSWindow *)window completionHandler:(TimeSelectionCompletionHandler)handler;
+- (void)runModalForWindow:(NSWindow *)window
+        completionHandler:(TimeSelectionCompletionHandler)handler;
 
 @end

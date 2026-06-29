@@ -37,44 +37,45 @@
 {
     [super tableViewSelectionDidChange:notification];
 
-    NSTableView * const tableView = (NSTableView *)notification.object;
+    NSTableView *const tableView = (NSTableView *)notification.object;
     if (![tableView.dataSource isKindOfClass:VLCLibraryFavoritesDataSource.class]) {
         return;
     }
 
-    VLCLibraryFavoritesDataSource * const favoritesDataSource = (VLCLibraryFavoritesDataSource *)tableView.dataSource;
+    VLCLibraryFavoritesDataSource *const favoritesDataSource =
+        (VLCLibraryFavoritesDataSource *)tableView.dataSource;
     if (tableView == favoritesDataSource.masterTableView) {
         [favoritesDataSource updateHeaderForMasterSelection];
     }
 }
 
 - (NSView *)tableView:(NSTableView *)tableView
-   viewForTableColumn:(NSTableColumn *)tableColumn
-                  row:(NSInteger)row
+    viewForTableColumn:(NSTableColumn *)tableColumn
+                   row:(NSInteger)row
 {
     if (![tableView.dataSource conformsToProtocol:@protocol(VLCLibraryTableViewDataSource)]) {
         return [super tableView:tableView viewForTableColumn:tableColumn row:row];
     }
 
-    NSObject<VLCLibraryTableViewDataSource> * const vlcDataSource = 
-        (NSObject<VLCLibraryTableViewDataSource>*)tableView.dataSource;
+    NSObject<VLCLibraryTableViewDataSource> *const vlcDataSource =
+        (NSObject<VLCLibraryTableViewDataSource> *)tableView.dataSource;
     NSAssert(vlcDataSource != nil, @"Should be a valid data source");
 
-    id<VLCMediaLibraryItemProtocol> const libraryItem =
-        [vlcDataSource libraryItemAtRow:row forTableView:tableView];
+    id<VLCMediaLibraryItemProtocol> const libraryItem = [vlcDataSource libraryItemAtRow:row
+                                                                           forTableView:tableView];
     if (libraryItem == nil)
         return nil;
 
-    VLCLibraryRepresentedItem * const representedItem = 
+    VLCLibraryRepresentedItem *const representedItem =
         [[VLCLibraryRepresentedItem alloc] initWithItem:libraryItem
                                              parentType:vlcDataSource.currentParentType];
 
     const BOOL isAlbum = [libraryItem isKindOfClass:VLCMediaLibraryAlbum.class];
 
-    NSString * const cellIdentifier =
+    NSString *const cellIdentifier =
         isAlbum ? VLCAudioLibraryCellIdentifier : VLCLibraryTableCellViewIdentifier;
-    NSView<VLCLibraryTableCellViewProtocol> * const cellView =
-        (NSView<VLCLibraryTableCellViewProtocol> *)[tableView makeViewWithIdentifier:cellIdentifier 
+    NSView<VLCLibraryTableCellViewProtocol> *const cellView =
+        (NSView<VLCLibraryTableCellViewProtocol> *)[tableView makeViewWithIdentifier:cellIdentifier
                                                                                owner:self];
     if (cellView == nil)
         return [super tableView:tableView viewForTableColumn:tableColumn row:row];
@@ -89,9 +90,9 @@
         return tableView.rowHeight;
     }
 
-    NSObject<VLCLibraryTableViewDataSource> * const vlcDataSource = 
-        (NSObject<VLCLibraryTableViewDataSource>*)tableView.dataSource;
-    id<VLCMediaLibraryItemProtocol> const libraryItem = [vlcDataSource libraryItemAtRow:row 
+    NSObject<VLCLibraryTableViewDataSource> *const vlcDataSource =
+        (NSObject<VLCLibraryTableViewDataSource> *)tableView.dataSource;
+    id<VLCMediaLibraryItemProtocol> const libraryItem = [vlcDataSource libraryItemAtRow:row
                                                                            forTableView:tableView];
 
     if ([libraryItem isKindOfClass:VLCMediaLibraryAlbum.class]) {

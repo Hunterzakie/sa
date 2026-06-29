@@ -68,7 +68,7 @@
     self.layer.borderColor = [NSColor selectedControlColor].CGColor;
 }
 
-- (NSDragOperation)draggingEntered:(id <NSDraggingInfo>)sender
+- (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender
 {
     const NSDragOperation operation = [super draggingEntered:sender];
     if (operation != NSDragOperationNone && self.drawBorder) {
@@ -77,17 +77,17 @@
     return operation;
 }
 
-- (void)draggingEnded:(id <NSDraggingInfo>)sender
+- (void)draggingEnded:(id<NSDraggingInfo>)sender
 {
     self.layer.borderWidth = 0.;
 }
 
-- (void)draggingExited:(id <NSDraggingInfo>)sender
+- (void)draggingExited:(id<NSDraggingInfo>)sender
 {
     self.layer.borderWidth = 0.;
 }
 
-- (void)concludeDragOperation:(id <NSDraggingInfo>)sender
+- (void)concludeDragOperation:(id<NSDraggingInfo>)sender
 {
     self.layer.borderWidth = 0.;
 }

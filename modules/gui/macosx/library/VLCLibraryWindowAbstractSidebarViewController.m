@@ -32,8 +32,7 @@
 
 @synthesize supportsItemCount = _supportsItemCount;
 
-- (instancetype)initWithLibraryWindow:(VLCLibraryWindow *)libraryWindow
-                              nibName:(NSString *)nibName
+- (instancetype)initWithLibraryWindow:(VLCLibraryWindow *)libraryWindow nibName:(NSString *)nibName
 {
     self = [super initWithNibName:nibName bundle:nil];
     if (self) {
@@ -57,11 +56,11 @@
 
 - (void)observeValueForKeyPath:(NSString *)keyPath
                       ofObject:(id)object
-                        change:(NSDictionary<NSKeyValueChangeKey,id> *)change
+                        change:(NSDictionary<NSKeyValueChangeKey, id> *)change
                        context:(void *)context
 {
     if ([keyPath isEqualToString:@"effectiveAppearance"]) {
-        NSAppearance * const effectiveAppearance = change[NSKeyValueChangeNewKey];
+        NSAppearance *const effectiveAppearance = change[NSKeyValueChangeNewKey];
         [self updateColorsBasedOnAppearance:effectiveAppearance];
     }
 }
@@ -72,7 +71,7 @@
     BOOL isDark = NO;
     if (@available(macOS 10.14, *)) {
         isDark = [appearance.name isEqualToString:NSAppearanceNameDarkAqua] ||
-                 [appearance.name isEqualToString:NSAppearanceNameVibrantDark];
+            [appearance.name isEqualToString:NSAppearanceNameVibrantDark];
     }
 
     // If we try to pull the view's effectiveAppearance we are going to get the previous

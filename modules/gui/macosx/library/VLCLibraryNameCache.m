@@ -30,7 +30,8 @@
 
 const NSUInteger kVLCMaximumLibraryNameCacheSize = 1024 * 1024 * 1; // 1MB
 
-@implementation VLCLibraryNameCache {
+@implementation VLCLibraryNameCache
+{
     NSCache<NSNumber *, NSString *> *_albumTitleCache;
     NSCache<NSNumber *, NSString *> *_albumArtistCache;
     NSCache<NSNumber *, NSString *> *_artistNameCache;
@@ -41,9 +42,7 @@ const NSUInteger kVLCMaximumLibraryNameCacheSize = 1024 * 1024 * 1; // 1MB
 {
     static VLCLibraryNameCache *instance = nil;
     static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        instance = [[VLCLibraryNameCache alloc] init];
-    });
+    dispatch_once(&onceToken, ^{ instance = [[VLCLibraryNameCache alloc] init]; });
     return instance;
 }
 
@@ -61,7 +60,7 @@ const NSUInteger kVLCMaximumLibraryNameCacheSize = 1024 * 1024 * 1; // 1MB
         _artistNameCache.totalCostLimit = kVLCMaximumLibraryNameCacheSize;
         _genreNameCache.totalCostLimit = kVLCMaximumLibraryNameCacheSize;
 
-        NSNotificationCenter * const center = NSNotificationCenter.defaultCenter;
+        NSNotificationCenter *const center = NSNotificationCenter.defaultCenter;
         [center addObserver:self
                    selector:@selector(handleAlbumUpdate:)
                        name:VLCLibraryModelAlbumUpdated
@@ -104,24 +103,24 @@ const NSUInteger kVLCMaximumLibraryNameCacheSize = 1024 * 1024 * 1; // 1MB
         return nil;
     }
 
-    NSNumber * const key = @(albumID);
-    NSString * const cached = [_albumTitleCache objectForKey:key];
+    NSNumber *const key = @(albumID);
+    NSString *const cached = [_albumTitleCache objectForKey:key];
     if (cached) {
         return cached;
     }
 
-    vlc_medialibrary_t * const p_ml = getMediaLibrary();
+    vlc_medialibrary_t *const p_ml = getMediaLibrary();
     if (!p_ml) {
         return nil;
     }
 
-    vlc_ml_album_t * const p_album = vlc_ml_get_album(p_ml, albumID);
+    vlc_ml_album_t *const p_album = vlc_ml_get_album(p_ml, albumID);
     if (!p_album) {
         return nil;
     }
 
-    NSString * const title = toNSStr(p_album->psz_title);
-    NSString * const artist = toNSStr(p_album->psz_artist);
+    NSString *const title = toNSStr(p_album->psz_title);
+    NSString *const artist = toNSStr(p_album->psz_artist);
 
     [_albumTitleCache setObject:title forKey:key];
     [_albumArtistCache setObject:artist forKey:key];
@@ -136,8 +135,8 @@ const NSUInteger kVLCMaximumLibraryNameCacheSize = 1024 * 1024 * 1; // 1MB
         return nil;
     }
 
-    NSNumber * const key = @(albumID);
-    NSString * const cached = [_albumArtistCache objectForKey:key];
+    NSNumber *const key = @(albumID);
+    NSString *const cached = [_albumArtistCache objectForKey:key];
     if (cached) {
         return cached;
     }
@@ -152,23 +151,23 @@ const NSUInteger kVLCMaximumLibraryNameCacheSize = 1024 * 1024 * 1; // 1MB
         return nil;
     }
 
-    NSNumber * const key = @(genreID);
-    NSString * const cached = [_genreNameCache objectForKey:key];
+    NSNumber *const key = @(genreID);
+    NSString *const cached = [_genreNameCache objectForKey:key];
     if (cached) {
         return cached;
     }
 
-    vlc_medialibrary_t * const p_ml = getMediaLibrary();
+    vlc_medialibrary_t *const p_ml = getMediaLibrary();
     if (!p_ml) {
         return nil;
     }
 
-    vlc_ml_genre_t * const p_genre = vlc_ml_get_genre(p_ml, genreID);
+    vlc_ml_genre_t *const p_genre = vlc_ml_get_genre(p_ml, genreID);
     if (!p_genre) {
         return nil;
     }
 
-    NSString * const name = toNSStr(p_genre->psz_name);
+    NSString *const name = toNSStr(p_genre->psz_name);
     [_genreNameCache setObject:name forKey:key];
 
     vlc_ml_genre_release(p_genre);
@@ -181,23 +180,23 @@ const NSUInteger kVLCMaximumLibraryNameCacheSize = 1024 * 1024 * 1; // 1MB
         return nil;
     }
 
-    NSNumber * const key = @(artistID);
-    NSString * const cached = [_artistNameCache objectForKey:key];
+    NSNumber *const key = @(artistID);
+    NSString *const cached = [_artistNameCache objectForKey:key];
     if (cached) {
         return cached;
     }
 
-    vlc_medialibrary_t * const p_ml = getMediaLibrary();
+    vlc_medialibrary_t *const p_ml = getMediaLibrary();
     if (!p_ml) {
         return nil;
     }
 
-    vlc_ml_artist_t * const p_artist = vlc_ml_get_artist(p_ml, artistID);
+    vlc_ml_artist_t *const p_artist = vlc_ml_get_artist(p_ml, artistID);
     if (!p_artist) {
         return nil;
     }
 
-    NSString * const name = toNSStr(p_artist->psz_name);
+    NSString *const name = toNSStr(p_artist->psz_name);
     [_artistNameCache setObject:name forKey:key];
 
     vlc_ml_artist_release(p_artist);

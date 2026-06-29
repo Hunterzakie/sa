@@ -38,7 +38,7 @@
     NSRect screenFrame = [[self screen] visibleFrame];
 
     NSRect topleftbase = NSMakeRect(0, [self frame].size.height, 0, 0);
-    NSPoint topleftscreen = [self convertRectToScreen: topleftbase].origin;
+    NSPoint topleftscreen = [self convertRectToScreen:topleftbase].origin;
 
     CGFloat f_width = size.width;
     CGFloat f_height = size.height;
@@ -49,8 +49,10 @@
 
     /* Calculate the window's new size */
     NSRect new_frame;
-    new_frame.size.width = [self frame].size.width - [self.videoViewController.view frame].size.width + f_width;
-    new_frame.size.height = [self frame].size.height - [self.videoViewController.view frame].size.height + f_height;
+    new_frame.size.width =
+        [self frame].size.width - [self.videoViewController.view frame].size.width + f_width;
+    new_frame.size.height =
+        [self frame].size.height - [self.videoViewController.view frame].size.height + f_height;
     new_frame.origin.x = topleftscreen.x;
     new_frame.origin.y = topleftscreen.y - new_frame.size.height;
 
@@ -90,14 +92,16 @@
 {
     _nativeVideoSize = size;
 
-    if (var_InheritBool(getIntf(), "macosx-video-autoresize") && !var_InheritBool(getIntf(), "video-wallpaper")) {
+    if (var_InheritBool(getIntf(), "macosx-video-autoresize")
+        && !var_InheritBool(getIntf(), "video-wallpaper")) {
         [self resizeWindow];
     }
 }
 
 - (NSSize)windowWillResize:(NSWindow *)window toSize:(NSSize)proposedFrameSize
 {
-    if (![self.playerController activeVideoPlayback] || self.nativeVideoSize.width == 0. || self.nativeVideoSize.height == 0. || window != self)
+    if (![self.playerController activeVideoPlayback] || self.nativeVideoSize.width == 0.
+        || self.nativeVideoSize.height == 0. || window != self)
         return proposedFrameSize;
 
     // needed when entering lion fullscreen mode
@@ -109,12 +113,17 @@
 
     if ([self.playerController aspectRatioIsLocked]) {
         NSRect videoWindowFrame = [self frame];
-        NSRect viewRect = [self.videoViewController.view convertRect:[self.videoViewController.view bounds] toView: nil];
+        NSRect viewRect =
+            [self.videoViewController.view convertRect:[self.videoViewController.view bounds]
+                                                toView:nil];
         NSRect contentRect = [self contentRectForFrameRect:videoWindowFrame];
-        CGFloat marginy = viewRect.origin.y + videoWindowFrame.size.height - contentRect.size.height;
+        CGFloat marginy =
+            viewRect.origin.y + videoWindowFrame.size.height - contentRect.size.height;
         CGFloat marginx = contentRect.size.width - viewRect.size.width;
 
-        proposedFrameSize.height = (proposedFrameSize.width - marginx) * self.nativeVideoSize.height / self.nativeVideoSize.width + marginy;
+        proposedFrameSize.height = (proposedFrameSize.width - marginx) * self.nativeVideoSize.height
+                / self.nativeVideoSize.width
+            + marginy;
     }
 
     return proposedFrameSize;

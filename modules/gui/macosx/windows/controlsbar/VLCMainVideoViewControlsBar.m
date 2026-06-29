@@ -82,9 +82,10 @@
 
     if (@available(macOS 26.0, *)) {
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 260000
-        _mainButtonsSymbolConfig = [NSImageSymbolConfiguration configurationWithPaletteColors:@[NSColor.whiteColor]];
+        _mainButtonsSymbolConfig =
+            [NSImageSymbolConfiguration configurationWithPaletteColors:@[ NSColor.whiteColor ]];
 
-        NSPointerArray * const buttons = NSPointerArray.weakObjectsPointerArray;
+        NSPointerArray *const buttons = NSPointerArray.weakObjectsPointerArray;
         [buttons addPointer:(__bridge void *)self.playButton];
         [buttons addPointer:(__bridge void *)self.backwardButton];
         [buttons addPointer:(__bridge void *)self.forwardButton];
@@ -101,14 +102,15 @@
         [buttons addPointer:(__bridge void *)self.pipButton];
         [buttons addPointer:(__bridge void *)self.muteVolumeButton];
         [buttons compact];
-        
-        for (NSButton * const button in buttons) {
+
+        for (NSButton *const button in buttons) {
             button.bordered = YES;
             button.borderShape = NSControlBorderShapeCapsule;
             button.bezelStyle = NSBezelStyleGlass;
             button.layer = [CALayer layer];
             button.image = [button.image imageWithSymbolConfiguration:_mainButtonsSymbolConfig];
-            button.alternateImage = [button.alternateImage imageWithSymbolConfiguration:_mainButtonsSymbolConfig];
+            button.alternateImage =
+                [button.alternateImage imageWithSymbolConfiguration:_mainButtonsSymbolConfig];
         }
 #endif
     }
@@ -116,11 +118,11 @@
     _playQueueController = VLCMain.sharedInstance.playQueueController;
     _playerController = _playQueueController.playerController;
 
-    VLCLibraryController * const libraryController = VLCMain.sharedInstance.libraryController;
+    VLCLibraryController *const libraryController = VLCMain.sharedInstance.libraryController;
     self.bookmarksButton.hidden = !libraryController.shouldUseMediaLibrary;
     self.bookmarksButton.enabled = libraryController.libraryModel != nil;
 
-    NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
     [notificationCenter addObserver:self
                            selector:@selector(floatOnTopChanged:)
                                name:VLCWindowFloatOnTopChangedNotificationName
@@ -176,7 +178,8 @@
     const BOOL lyricsAvailable = _playerController.lyricsAvailable;
     self.lyricsButton.enabled = lyricsAvailable;
     self.lyricsButton.hidden = !_playerController.currentMediaIsAudioOnly && !lyricsAvailable;
-    self.lyricsButton.state = _playerController.showLyrics ? NSControlStateValueOn : NSControlStateValueOff;
+    self.lyricsButton.state =
+        _playerController.showLyrics ? NSControlStateValueOn : NSControlStateValueOff;
 
     if (@available(macOS 26.0, *)) {
         self.lyricsButton.bezelColor =
@@ -189,18 +192,19 @@
 
 - (vout_thread_t *)windowVoutThread
 {
-    NSWindow * const window = self.floatOnTopButton.window;
+    NSWindow *const window = self.floatOnTopButton.window;
     if ([window isKindOfClass:VLCVideoWindowCommon.class]) {
-        vout_thread_t * const p_vout =
+        vout_thread_t *const p_vout =
             ((VLCVideoWindowCommon *)window).videoViewController.voutView.voutThread;
-        if (p_vout) return p_vout;
+        if (p_vout)
+            return p_vout;
     }
     return _playerController.mainVideoOutputThread;
 }
 
 - (void)updateFloatOnTopButton
 {
-    vout_thread_t * const voutThread = [self windowVoutThread];
+    vout_thread_t *const voutThread = [self windowVoutThread];
     if (voutThread == NULL) {
         return;
     }
@@ -232,16 +236,19 @@
     self.playbackRateButton.enabled = _playerController.rateChangable;
 
     if (@available(macOS 26.0, *)) {
-        NSMutableAttributedString * const colorTitle = [[NSMutableAttributedString alloc] initWithAttributedString:self.playbackRateButton.attributedTitle];
+        NSMutableAttributedString *const colorTitle = [[NSMutableAttributedString alloc]
+            initWithAttributedString:self.playbackRateButton.attributedTitle];
         const NSRange titleRange = NSMakeRange(0, colorTitle.length);
-        [colorTitle addAttribute:NSForegroundColorAttributeName value:NSColor.whiteColor range:titleRange];
+        [colorTitle addAttribute:NSForegroundColorAttributeName
+                           value:NSColor.whiteColor
+                           range:titleRange];
         self.playbackRateButton.attributedTitle = colorTitle;
     }
 }
 
 - (IBAction)openPlaybackRate:(id)sender
 {
-    NSSlider * const playbackRateSlider = [[NSSlider alloc] init];
+    NSSlider *const playbackRateSlider = [[NSSlider alloc] init];
     playbackRateSlider.frame = NSMakeRect(0, 0, 272, 17);
     playbackRateSlider.target = self;
     playbackRateSlider.action = @selector(rateSliderAction:);
@@ -258,15 +265,20 @@
     const CGFloat inset = 12.;
     const CGFloat verticalInset = inset / 2.;
     const NSSize sliderSize = playbackRateSlider.frame.size;
-    NSView * const containerView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, sliderSize.width + inset * 2, sliderSize.height + verticalInset * 2)];
-    playbackRateSlider.frame = NSMakeRect(inset, verticalInset, sliderSize.width, sliderSize.height);
+    NSView *const containerView =
+        [[NSView alloc] initWithFrame:NSMakeRect(0,
+                                                 0,
+                                                 sliderSize.width + inset * 2,
+                                                 sliderSize.height + verticalInset * 2)];
+    playbackRateSlider.frame =
+        NSMakeRect(inset, verticalInset, sliderSize.width, sliderSize.height);
     [containerView addSubview:playbackRateSlider];
 
-    NSMenuItem * const menuItem = [[NSMenuItem alloc] init];
+    NSMenuItem *const menuItem = [[NSMenuItem alloc] init];
     menuItem.title = _NS("Playback rate");
     menuItem.view = containerView;
 
-    NSMenu * const menu = [[NSMenu alloc] initWithTitle:_NS("Playback rate")];
+    NSMenu *const menu = [[NSMenu alloc] initWithTitle:_NS("Playback rate")];
     [menu addItem:menuItem];
     [menu popUpMenuPositioningItem:nil
                         atLocation:self.playbackRateButton.frame.origin
@@ -275,7 +287,7 @@
 
 - (IBAction)rateSliderAction:(id)sender
 {
-    NSSlider * const slider = (NSSlider *)sender;
+    NSSlider *const slider = (NSSlider *)sender;
     _playerController.playbackRate = pow(2, (double)slider.intValue / 17);
 }
 
@@ -286,7 +298,7 @@
 
 - (IBAction)openSubtitlesMenu:(id)sender
 {
-    NSMenu * const menu = VLCMain.sharedInstance.mainMenu.subtitlesMenu;
+    NSMenu *const menu = VLCMain.sharedInstance.mainMenu.subtitlesMenu;
     [menu popUpMenuPositioningItem:nil
                         atLocation:_subtitlesButton.frame.origin
                             inView:((NSView *)sender).superview];
@@ -294,7 +306,7 @@
 
 - (IBAction)openAudioMenu:(id)sender
 {
-    NSMenu * const menu = VLCMain.sharedInstance.mainMenu.audioMenu;
+    NSMenu *const menu = VLCMain.sharedInstance.mainMenu.audioMenu;
     [menu popUpMenuPositioningItem:nil
                         atLocation:_audioButton.frame.origin
                             inView:((NSView *)sender).superview];
@@ -302,7 +314,7 @@
 
 - (IBAction)openVideoMenu:(id)sender
 {
-    NSMenu * const menu = VLCMain.sharedInstance.mainMenu.videoMenu;
+    NSMenu *const menu = VLCMain.sharedInstance.mainMenu.videoMenu;
     [menu popUpMenuPositioningItem:nil
                         atLocation:self.videoButton.frame.origin
                             inView:((NSView *)sender).superview];
@@ -310,7 +322,7 @@
 
 - (IBAction)toggleFloatOnTop:(id)sender
 {
-    vout_thread_t * const p_vout = [self windowVoutThread];
+    vout_thread_t *const p_vout = [self windowVoutThread];
     if (!p_vout) {
         return;
     }
@@ -342,8 +354,10 @@
     if (@available(macOS 26.0, *)) {
         if (self.mainButtonsSymbolConfig == nil)
             return;
-        self.playButton.image = [self.playButton.image imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
-        self.playButton.alternateImage = [self.playButton.alternateImage imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
+        self.playButton.image =
+            [self.playButton.image imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
+        self.playButton.alternateImage = [self.playButton.alternateImage
+            imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
     }
 }
 
@@ -353,14 +367,22 @@
     if (@available(macOS 26.0, *)) {
         if (self.mainButtonsSymbolConfig == nil)
             return;
-        self.forwardButton.image = [self.forwardButton.image imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
-        self.forwardButton.alternateImage = [self.forwardButton.alternateImage imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
-        self.backwardButton.image = [self.backwardButton.image imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
-        self.backwardButton.alternateImage = [self.backwardButton.alternateImage imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
-        self.jumpForwardButton.image = [self.jumpForwardButton.image imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
-        self.jumpForwardButton.alternateImage = [self.jumpForwardButton.alternateImage imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
-        self.jumpBackwardButton.image = [self.jumpBackwardButton.image imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
-        self.jumpBackwardButton.alternateImage = [self.jumpBackwardButton.alternateImage imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
+        self.forwardButton.image =
+            [self.forwardButton.image imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
+        self.forwardButton.alternateImage = [self.forwardButton.alternateImage
+            imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
+        self.backwardButton.image =
+            [self.backwardButton.image imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
+        self.backwardButton.alternateImage = [self.backwardButton.alternateImage
+            imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
+        self.jumpForwardButton.image = [self.jumpForwardButton.image
+            imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
+        self.jumpForwardButton.alternateImage = [self.jumpForwardButton.alternateImage
+            imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
+        self.jumpBackwardButton.image = [self.jumpBackwardButton.image
+            imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
+        self.jumpBackwardButton.alternateImage = [self.jumpBackwardButton.alternateImage
+            imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
     }
 }
 
@@ -370,7 +392,8 @@
     if (@available(macOS 26.0, *)) {
         if (self.mainButtonsSymbolConfig == nil)
             return;
-        self.muteVolumeButton.image = [self.muteVolumeButton.image imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
+        self.muteVolumeButton.image =
+            [self.muteVolumeButton.image imageWithSymbolConfiguration:self.mainButtonsSymbolConfig];
     }
 }
 

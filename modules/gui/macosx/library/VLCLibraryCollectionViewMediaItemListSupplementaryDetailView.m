@@ -43,10 +43,11 @@
 
 #import "views/VLCImageView.h"
 
-NSString * const VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewIdentifier =
+NSString *const VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewIdentifier =
     @"VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewIdentifier";
-NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind =
-    @"VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewIdentifier";
+NSCollectionViewSupplementaryElementKind const
+    VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind =
+        @"VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewIdentifier";
 
 @interface VLCLibraryCollectionViewMediaItemListSupplementaryDetailView ()
 {
@@ -82,7 +83,7 @@ NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewMediaItem
 
     self.playButton.bezelColor = NSColor.VLCAccentColor;
 
-    NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
     [notificationCenter addObserver:self
                            selector:@selector(handleItemUpdated:)
                                name:VLCLibraryModelAlbumUpdated
@@ -105,14 +106,13 @@ NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewMediaItem
 {
     NSParameterAssert(notification);
     const id<VLCMediaLibraryItemProtocol> item = notification.object;
-    if (self.representedItem == nil ||
-        item == nil ||
-        ![self.representedItem.item.class isKindOfClass:item.class] ||
-        self.representedItem.item.libraryID != item.libraryID) {
+    if (self.representedItem == nil || item == nil
+        || ![self.representedItem.item.class isKindOfClass:item.class]
+        || self.representedItem.item.libraryID != item.libraryID) {
         return;
     }
 
-    VLCLibraryRepresentedItem * const representedItem = 
+    VLCLibraryRepresentedItem *const representedItem =
         [[VLCLibraryRepresentedItem alloc] initWithItem:item
                                              parentType:self.representedItem.parentType];
     self.representedItem = representedItem;
@@ -128,7 +128,7 @@ NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewMediaItem
     self.secondaryDetailTextButton.title = item.secondaryDetailString;
 
     NSUInteger itemCount = item.mediaItems.count;
-    NSMutableArray * const components = [NSMutableArray arrayWithCapacity:2];
+    NSMutableArray *const components = [NSMutableArray arrayWithCapacity:2];
 
     if ([item isKindOfClass:VLCMediaLibraryAlbum.class]) {
         const int year = [(VLCMediaLibraryAlbum *)item year];
@@ -153,18 +153,20 @@ NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewMediaItem
     }
 
     __weak typeof(self) weakSelf = self; // Prevent retain cycle
-    [VLCLibraryImageCache thumbnailForLibraryItem:item withCompletion:^(NSImage * const thumbnail) {
-        if (!weakSelf || weakSelf.representedItem.item != item) {
-            return;
-        }
-        weakSelf.artworkImageView.image = thumbnail;
-    }];
+    [VLCLibraryImageCache thumbnailForLibraryItem:item
+                                   withCompletion:^(NSImage *const thumbnail) {
+                                       if (!weakSelf || weakSelf.representedItem.item != item) {
+                                           return;
+                                       }
+                                       weakSelf.artworkImageView.image = thumbnail;
+                                   }];
 
-    [_tracksDataSource setRepresentedItem:item withCompletion:^{
-        if (weakSelf) {
-            [weakSelf.tableView reloadData];
-        }
-    }];
+    [_tracksDataSource setRepresentedItem:item
+                           withCompletion:^{
+                               if (weakSelf) {
+                                   [weakSelf.tableView reloadData];
+                               }
+                           }];
 }
 
 - (IBAction)playAction:(id)sender
@@ -184,7 +186,7 @@ NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewMediaItem
         return;
     }
 
-    VLCLibraryWindow * const libraryWindow = VLCMain.sharedInstance.libraryWindow;
+    VLCLibraryWindow *const libraryWindow = VLCMain.sharedInstance.libraryWindow;
     const id<VLCMediaLibraryItemProtocol> libraryItem = item.primaryActionableDetailLibraryItem;
     [libraryWindow presentLibraryItem:libraryItem];
 }
@@ -196,7 +198,7 @@ NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewMediaItem
         return;
     }
 
-    VLCLibraryWindow * const libraryWindow = VLCMain.sharedInstance.libraryWindow;
+    VLCLibraryWindow *const libraryWindow = VLCMain.sharedInstance.libraryWindow;
     const id<VLCMediaLibraryItemProtocol> libraryItem = item.secondaryActionableDetailLibraryItem;
     [libraryWindow presentLibraryItem:libraryItem];
 }

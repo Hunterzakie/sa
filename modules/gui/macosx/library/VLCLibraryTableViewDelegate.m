@@ -54,23 +54,30 @@
     return [VLCLibraryTableCellView fromNibWithOwner:self];
 }
 
-- (NSView *)tableView:(NSTableView *)tableView viewForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)row
+- (NSView *)tableView:(NSTableView *)tableView
+    viewForTableColumn:(NSTableColumn *)tableColumn
+                   row:(NSInteger)row
 {
     if (![tableView.dataSource conformsToProtocol:@protocol(VLCLibraryTableViewDataSource)]) {
         return nil;
     }
 
-    NSObject<VLCLibraryTableViewDataSource> * const vlcDataSource = (NSObject<VLCLibraryTableViewDataSource>*)tableView.dataSource;
+    NSObject<VLCLibraryTableViewDataSource> *const vlcDataSource =
+        (NSObject<VLCLibraryTableViewDataSource> *)tableView.dataSource;
     NSAssert(vlcDataSource != nil, @"Should be a valid data source");
 
-    NSView<VLCLibraryTableCellViewProtocol> * cellView = (NSView<VLCLibraryTableCellViewProtocol> *)[tableView makeViewWithIdentifier:self.cellViewIdentifier owner:self];
+    NSView<VLCLibraryTableCellViewProtocol> *cellView =
+        (NSView<VLCLibraryTableCellViewProtocol> *)[tableView
+            makeViewWithIdentifier:self.cellViewIdentifier
+                             owner:self];
 
     if (cellView == nil) {
         cellView = [self makeCellView];
         cellView.identifier = self.cellViewIdentifier;
     }
 
-    NSObject<VLCMediaLibraryItemProtocol> * const libraryItem = [vlcDataSource libraryItemAtRow:row forTableView:tableView];
+    NSObject<VLCMediaLibraryItemProtocol> *const libraryItem =
+        [vlcDataSource libraryItemAtRow:row forTableView:tableView];
     if (libraryItem != nil) {
         VLCLibraryRepresentedItem *representedItem = nil;
         if ([vlcDataSource respondsToSelector:@selector(representedItemAtRow:forTableView:)]) {
@@ -78,7 +85,7 @@
         }
 
         if (representedItem == nil) {
-            representedItem = 
+            representedItem =
                 [[VLCLibraryRepresentedItem alloc] initWithItem:libraryItem
                                                      parentType:vlcDataSource.currentParentType];
         }
@@ -95,39 +102,44 @@
         return @[];
     }
 
-    NSObject<VLCLibraryTableViewDataSource> * const vlcDataSource =
-        (NSObject<VLCLibraryTableViewDataSource>*)tableView.dataSource;
+    NSObject<VLCLibraryTableViewDataSource> *const vlcDataSource =
+        (NSObject<VLCLibraryTableViewDataSource> *)tableView.dataSource;
     NSAssert(vlcDataSource != nil, @"Should be a valid data source");
 
-    NSObject<VLCMediaLibraryItemProtocol> * const libraryItem =
+    NSObject<VLCMediaLibraryItemProtocol> *const libraryItem =
         [vlcDataSource libraryItemAtRow:row forTableView:tableView];
 
     if (edge == NSTableRowActionEdgeLeading) {
-        NSTableViewRowAction * const appendToPlayQueueAction =
-            [NSTableViewRowAction rowActionWithStyle:NSTableViewRowActionStyleRegular
-                                               title:_NS("Append to Play Queue")
-                                             handler:^(NSTableViewRowAction * const __unused action, const NSInteger __unused row) {
-                VLCLibraryController * const libraryController = VLCMain.sharedInstance.libraryController;
-                for (VLCMediaLibraryMediaItem * const mediaItem in libraryItem.mediaItems) {
-                    [libraryController appendItemToPlayQueue:mediaItem playImmediately:NO];
-                }
-        }];
+        NSTableViewRowAction *const appendToPlayQueueAction = [NSTableViewRowAction
+            rowActionWithStyle:NSTableViewRowActionStyleRegular
+                         title:_NS("Append to Play Queue")
+                       handler:^(NSTableViewRowAction *const __unused action,
+                                 const NSInteger __unused row) {
+                           VLCLibraryController *const libraryController =
+                               VLCMain.sharedInstance.libraryController;
+                           for (VLCMediaLibraryMediaItem *const mediaItem in libraryItem
+                                    .mediaItems) {
+                               [libraryController appendItemToPlayQueue:mediaItem
+                                                        playImmediately:NO];
+                           }
+                       }];
         appendToPlayQueueAction.backgroundColor = NSColor.VLCAccentColor;
-        return @[appendToPlayQueueAction];
+        return @[ appendToPlayQueueAction ];
     } else if (edge == NSTableRowActionEdgeTrailing) {
         const BOOL isFavorited = libraryItem.favorited;
-        NSString * const displayString =
+        NSString *const displayString =
             isFavorited ? _NS("Remove from Favorites") : _NS("Add to Favorites");
 
-        NSTableViewRowAction * const favoriteAction =
+        NSTableViewRowAction *const favoriteAction =
             [NSTableViewRowAction rowActionWithStyle:NSTableViewRowActionStyleRegular
                                                title:displayString
-                                             handler:^(NSTableViewRowAction * const __unused action, const NSInteger __unused row) {
-            [libraryItem setFavorite:!isFavorited];
-        }];
+                                             handler:^(NSTableViewRowAction *const __unused action,
+                                                       const NSInteger __unused row) {
+                                                 [libraryItem setFavorite:!isFavorited];
+                                             }];
         favoriteAction.backgroundColor =
             isFavorited ? NSColor.systemRedColor : NSColor.systemBlueColor;
-        return @[favoriteAction];
+        return @[ favoriteAction ];
     }
     return @[];
 }

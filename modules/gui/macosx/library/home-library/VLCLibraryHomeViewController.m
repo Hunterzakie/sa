@@ -63,41 +63,40 @@
 {
     self = [super initWithLibraryWindow:libraryWindow];
 
-    if(self) {
+    if (self) {
         [self setupPropertiesFromLibraryWindow:libraryWindow];
         [self setupGridViewController];
         [self setupHomePlaceholderView];
         [self setupHomeLibraryViews];
 
         NSNotificationCenter *notificationCenter = NSNotificationCenter.defaultCenter;
-        NSString *notificationNames[] =
-        {
-            VLCLibraryModelVideoMediaListReset,
-            VLCLibraryModelAudioMediaListReset,
-            VLCLibraryModelVideoMediaItemDeleted,
-            VLCLibraryModelAudioMediaItemDeleted,
+        NSString *notificationNames[] = {
+            VLCLibraryModelVideoMediaListReset,   VLCLibraryModelAudioMediaListReset,
+            VLCLibraryModelVideoMediaItemDeleted, VLCLibraryModelAudioMediaItemDeleted,
             VLCLibraryModelAllCachesDropped,
         };
 
-        for (size_t i = 0; i < ARRAY_SIZE(notificationNames); ++i) @autoreleasepool
-        {
-            [notificationCenter addObserver:self
-                                   selector:@selector(libraryModelUpdated:)
-                                       name:notificationNames[i]
-                                     object:nil];
+        for (size_t i = 0; i < ARRAY_SIZE(notificationNames); ++i)
+            @autoreleasepool {
+                [notificationCenter addObserver:self
+                                       selector:@selector(libraryModelUpdated:)
+                                           name:notificationNames[i]
+                                         object:nil];
 
-            NSString *startedNotification = [notificationNames[i] stringByAppendingString:VLCLongNotificationNameStartSuffix];
-            [notificationCenter addObserver:self
-                                   selector:@selector(libraryModelLongLoadStarted:)
-                                       name:startedNotification
-                                     object:nil];
+                NSString *startedNotification = [notificationNames[i]
+                    stringByAppendingString:VLCLongNotificationNameStartSuffix];
+                [notificationCenter addObserver:self
+                                       selector:@selector(libraryModelLongLoadStarted:)
+                                           name:startedNotification
+                                         object:nil];
 
-            NSString *finishedNotification = [notificationNames[i] stringByAppendingString:VLCLongNotificationNameFinishSuffix];
-            [notificationCenter addObserver:self
-                                   selector:@selector(libraryModelLongLoadFinished:)
-                                       name:finishedNotification
-                                     object:nil];
-        }
+                NSString *finishedNotification = [notificationNames[i]
+                    stringByAppendingString:VLCLongNotificationNameFinishSuffix];
+                [notificationCenter addObserver:self
+                                       selector:@selector(libraryModelLongLoadFinished:)
+                                           name:finishedNotification
+                                         object:nil];
+            }
 
         [notificationCenter addObserver:self
                                selector:@selector(librarySearchFieldDidChange:)
@@ -167,7 +166,8 @@
 
 - (void)updatePresentedView
 {
-    if (VLCMain.sharedInstance.libraryController.libraryModel.numberOfVideoMedia == 0) { // empty library
+    if (VLCMain.sharedInstance.libraryController.libraryModel.numberOfVideoMedia
+        == 0) { // empty library
         [self presentPlaceholderHomeLibraryView];
     } else if (self.isShowingSearchOverlay) {
         [self presentSearchOverlay];
@@ -179,7 +179,7 @@
 - (void)presentHomeView
 {
     // If the search field has text from a previous session, present search overlay
-    NSString * const searchText = self.libraryWindow.librarySearchField.stringValue;
+    NSString *const searchText = self.libraryWindow.librarySearchField.stringValue;
     if (searchText.length > 0) {
         [self showSearchOverlayForQuery:searchText];
         return;
@@ -189,9 +189,11 @@
 
 - (void)presentPlaceholderHomeLibraryView
 {
-    [self.libraryWindow displayLibraryPlaceholderViewWithImage:NSImage.VLCPlaceholderVideoImage
-                                              usingConstraints:self.placeholderImageViewSizeConstraints
-                                             displayingMessage:_NS("Your media will appear here.\nGo to the Browse section to add media you love.")];
+    [self.libraryWindow
+        displayLibraryPlaceholderViewWithImage:NSImage.VLCPlaceholderVideoImage
+                              usingConstraints:self.placeholderImageViewSizeConstraints
+                             displayingMessage:_NS("Your media will appear here.\nGo to the Browse "
+                                                   "section to add media you love.")];
 }
 
 - (void)presentHomeLibraryView
@@ -211,21 +213,20 @@
 - (void)libraryModelUpdated:(NSNotification *)aNotification
 {
     NSParameterAssert(aNotification);
-    VLCLibraryModel * const model = VLCMain.sharedInstance.libraryController.libraryModel;
+    VLCLibraryModel *const model = VLCMain.sharedInstance.libraryController.libraryModel;
     const NSUInteger videoCount = model.numberOfVideoMedia;
     const NSUInteger audioCount = model.numberOfAudioMedia;
 
-    NSArray<NSView *> * const targetViewSubViews = self.libraryTargetView.subviews;
+    NSArray<NSView *> *const targetViewSubViews = self.libraryTargetView.subviews;
     const BOOL emptyLibraryViewPresent = [targetViewSubViews containsObject:self.emptyLibraryView];
     const BOOL homeLibraryViewPresent = [targetViewSubViews containsObject:self.homeLibraryView];
-    if (self.libraryWindow.librarySegmentType == VLCLibraryHomeSegmentType &&
-        !self.isShowingSearchOverlay &&
-        ((videoCount == 0 && !emptyLibraryViewPresent) ||
-         (videoCount > 0 && !homeLibraryViewPresent) ||
-         (audioCount == 0 && !emptyLibraryViewPresent) ||
-         (audioCount > 0 && !homeLibraryViewPresent)) &&
-        !self.libraryWindow.embeddedVideoPlaybackActive) {
-
+    if (self.libraryWindow.librarySegmentType == VLCLibraryHomeSegmentType
+        && !self.isShowingSearchOverlay
+        && ((videoCount == 0 && !emptyLibraryViewPresent)
+            || (videoCount > 0 && !homeLibraryViewPresent)
+            || (audioCount == 0 && !emptyLibraryViewPresent)
+            || (audioCount > 0 && !homeLibraryViewPresent))
+        && !self.libraryWindow.embeddedVideoPlaybackActive) {
         [self updatePresentedView];
     }
 }
@@ -235,7 +236,8 @@
 - (VLCLibrarySearchViewController *)searchViewController
 {
     if (_searchViewController == nil) {
-        _searchViewController = [[VLCLibrarySearchViewController alloc] initWithLibraryWindow:self.libraryWindow];
+        _searchViewController =
+            [[VLCLibrarySearchViewController alloc] initWithLibraryWindow:self.libraryWindow];
     }
     return _searchViewController;
 }
@@ -244,12 +246,12 @@
 {
     NSParameterAssert(aNotification);
 
-    NSSearchField * const searchField = self.libraryWindow.librarySearchField;
+    NSSearchField *const searchField = self.libraryWindow.librarySearchField;
     if (aNotification.object != searchField && aNotification.object != searchField.currentEditor) {
         return;
     }
 
-    NSString * const searchString = searchField.stringValue ?: @"";
+    NSString *const searchString = searchField.stringValue ?: @"";
 
     if (searchString.length == 0) {
         [self hideSearchOverlay];
@@ -321,8 +323,8 @@
 - (VLCLibraryWindowToolbarDisplayFlags)toolbarDisplayFlags
 {
     if (self.isShowingSearchOverlay) {
-        return VLCLibraryWindowToolbarDisplayFlagLibrarySearchBar |
-               VLCLibraryWindowToolbarDisplayFlagToggleViewModeSegmentButton;
+        return VLCLibraryWindowToolbarDisplayFlagLibrarySearchBar
+            | VLCLibraryWindowToolbarDisplayFlagToggleViewModeSegmentButton;
     }
     return VLCLibraryWindowToolbarDisplayFlagLibrarySearchBar;
 }
@@ -331,14 +333,14 @@
 
 - (VLCLibraryViewModeSegment)viewMode
 {
-    VLCLibraryWindowPersistentPreferences * const prefs =
+    VLCLibraryWindowPersistentPreferences *const prefs =
         VLCLibraryWindowPersistentPreferences.sharedInstance;
     return self.isShowingSearchOverlay ? prefs.searchLibraryViewMode : prefs.homeLibraryViewMode;
 }
 
 - (void)setViewMode:(VLCLibraryViewModeSegment)viewMode
 {
-    VLCLibraryWindowPersistentPreferences * const prefs =
+    VLCLibraryWindowPersistentPreferences *const prefs =
         VLCLibraryWindowPersistentPreferences.sharedInstance;
     if (self.isShowingSearchOverlay) {
         prefs.searchLibraryViewMode = viewMode;

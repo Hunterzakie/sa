@@ -27,10 +27,10 @@
 /**
  Swaps out the implementation of the method at @c selector in Class @c cls
  with the implementation of that method from the superclass.
- 
+
  @param cls         The class which this selector belongs to
  @param selector    The selector of whom to swap the implementation
- 
+
  @note  The @c cls must be a subclass of another class and both
         must implement the @c selector for this function to work as expected!
  */
@@ -51,6 +51,7 @@ NSString *const NSAppearanceNameDarkAqua = @"NSAppearanceNameDarkAqua";
 
 #ifndef MAC_OS_X_VERSION_10_13
 
-NSString *const NSCollectionViewSupplementaryElementKind = @"NSCollectionViewSupplementaryElementKind";
+NSString *const NSCollectionViewSupplementaryElementKind =
+    @"NSCollectionViewSupplementaryElementKind";
 
 #endif

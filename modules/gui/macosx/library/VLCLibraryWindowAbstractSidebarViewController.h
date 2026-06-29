@@ -28,13 +28,13 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class VLCLibraryWindow;
 
-@interface VLCLibraryWindowAbstractSidebarViewController : NSViewController<VLCLibraryWindowSidebarChildViewController>
+@interface VLCLibraryWindowAbstractSidebarViewController
+    : NSViewController<VLCLibraryWindowSidebarChildViewController>
 
 @property (readonly, weak) VLCLibraryWindow *libraryWindow;
 @property (readwrite, weak) IBOutlet NSBox *titleSeparator;
 
-- (instancetype)initWithLibraryWindow:(VLCLibraryWindow *)libraryWindow
-                              nibName:(NSString *)nibName;
+- (instancetype)initWithLibraryWindow:(VLCLibraryWindow *)libraryWindow nibName:(NSString *)nibName;
 - (void)updateColorsBasedOnAppearance:(NSAppearance *)appearance;
 
 @end

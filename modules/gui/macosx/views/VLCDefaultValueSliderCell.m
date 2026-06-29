@@ -6,7 +6,7 @@
  * Authors: Marvin Scholz <epirat07 -at- gmail -dot- com>
  *
  * This file uses parts of code from the GNUstep NSSliderCell code:
- * 
+ *
  *   Copyright (C) 1996,1999 Free Software Foundation, Inc.
  *   Author: Ovidiu Predescu <ovidiu@net-community.com>
  *   Date: September 1997
@@ -33,7 +33,8 @@
 #import "library/VLCLibraryUIUnits.h"
 #import "main/CompatibilityFixes.h"
 
-@interface VLCDefaultValueSliderCell (){
+@interface VLCDefaultValueSliderCell ()
+{
     BOOL _isRTL;
     BOOL _isFlipped;
     double _defaultValue;
@@ -91,7 +92,6 @@
 {
     _defaultTickMarkColor = color;
     [[self controlView] setNeedsDisplay:YES];
-
 }
 
 - (NSColor *)defaultTickMarkColor
@@ -126,28 +126,28 @@
 #pragma clang diagnostic ignored "-Wpartial-availability"
 
 - (NSRect)knobRectFlipped:(BOOL)flipped forValue:(double)doubleValue
- {
-     NSRect resultRect;
-     NSRect trackRect = self.trackRect;
-     double val = [self normalizedValue:doubleValue] / 100;
+{
+    NSRect resultRect;
+    NSRect trackRect = self.trackRect;
+    double val = [self normalizedValue:doubleValue] / 100;
 
-     if (self.isVertical) {
-         resultRect.origin.x = -1;
-         resultRect.origin.y = (NSHeight(trackRect) - self.knobThickness) * val;
-         if (_isRTL)
-             resultRect.origin.y = (NSHeight(trackRect) - self.knobThickness) - resultRect.origin.y;
-     } else {
-         resultRect.origin.x = (NSWidth(trackRect) - self.knobThickness) * val;
-         resultRect.origin.y = -1;
-         if (_isRTL)
-             resultRect.origin.x = (NSWidth(trackRect) - self.knobThickness) - resultRect.origin.x;
-     }
+    if (self.isVertical) {
+        resultRect.origin.x = -1;
+        resultRect.origin.y = (NSHeight(trackRect) - self.knobThickness) * val;
+        if (_isRTL)
+            resultRect.origin.y = (NSHeight(trackRect) - self.knobThickness) - resultRect.origin.y;
+    } else {
+        resultRect.origin.x = (NSWidth(trackRect) - self.knobThickness) * val;
+        resultRect.origin.y = -1;
+        if (_isRTL)
+            resultRect.origin.x = (NSWidth(trackRect) - self.knobThickness) - resultRect.origin.x;
+    }
 
-     resultRect.size.height = self.knobThickness;
-     resultRect.size.width = self.knobThickness;
+    resultRect.size.height = self.knobThickness;
+    resultRect.size.width = self.knobThickness;
 
-     return [self.controlView backingAlignedRect:resultRect options:NSAlignAllEdgesNearest];
- }
+    return [self.controlView backingAlignedRect:resultRect options:NSAlignAllEdgesNearest];
+}
 
 #pragma mark -
 #pragma mark Overwritten super methods
@@ -159,17 +159,15 @@
 
     // Default tick mark
     if (_drawTickMarkForDefault && _defaultValue != DBL_MAX) {
-
         // Calculate rect for default tick mark
         const CGFloat tickThickness = VLCLibraryUIUnits.sliderTickThickness;
 
-        NSRect tickFrame = [self knobRectFlipped:_isFlipped
-                                        forValue:_defaultValue];
+        NSRect tickFrame = [self knobRectFlipped:_isFlipped forValue:_defaultValue];
 
         if ([self isVertical]) {
             CGFloat mid = NSMidY(tickFrame);
             tickFrame.origin.x = cellFrame.origin.x;
-            tickFrame.origin.y = mid - tickThickness/2.0;
+            tickFrame.origin.y = mid - tickThickness / 2.0;
             tickFrame.size.width = cellFrame.size.width;
             tickFrame.size.height = tickThickness;
         } else {
@@ -189,8 +187,8 @@
             tickFrame.size.width = tickThickness;
         }
 
-        NSAlignmentOptions alignOpts = NSAlignMinXOutward | NSAlignMinYOutward |
-                                       NSAlignWidthOutward | NSAlignMaxYOutward;
+        NSAlignmentOptions alignOpts =
+            NSAlignMinXOutward | NSAlignMinYOutward | NSAlignWidthOutward | NSAlignMaxYOutward;
         NSRect alignedRect = [[self controlView] backingAlignedRect:tickFrame options:alignOpts];
 
         // Draw default tick mark
@@ -227,7 +225,7 @@
     BOOL sliderMovingForward = (oldValue > newValue) ? NO : YES;
 
     // Calculate snap-threshhold
-    double thresh = 100 * (self.knobThickness/3) / self.trackRect.size.width;
+    double thresh = 100 * (self.knobThickness / 3) / self.trackRect.size.width;
 
     // Snap to default value
     if (_snapsToDefault && ABS(newValue - _normalizedDefaultValue) < thresh) {

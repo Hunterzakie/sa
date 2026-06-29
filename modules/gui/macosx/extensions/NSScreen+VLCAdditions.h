@@ -25,10 +25,10 @@
 
 @interface NSScreen (VLCAdditions)
 
-+ (NSScreen *)screenWithDisplayID: (CGDirectDisplayID)displayID;
++ (NSScreen *)screenWithDisplayID:(CGDirectDisplayID)displayID;
 - (BOOL)hasMenuBar;
 - (BOOL)hasDock;
-- (BOOL)isScreen: (NSScreen*)screen;
+- (BOOL)isScreen:(NSScreen *)screen;
 - (CGDirectDisplayID)displayID;
 - (void)blackoutOtherScreens;
 + (void)unblackoutScreens;

@@ -34,9 +34,9 @@
     return string;
 }
 
-- (BOOL)getObjectValue:(out id  _Nullable __autoreleasing *)obj
+- (BOOL)getObjectValue:(out id _Nullable __autoreleasing *)obj
              forString:(NSString *)string
-      errorDescription:(out NSString *__autoreleasing  _Nullable *)error
+      errorDescription:(out NSString *__autoreleasing _Nullable *)error
 {
     unsigned result = 0;
     NSScanner *scanner = [NSScanner scannerWithString:string];

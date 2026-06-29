@@ -58,24 +58,33 @@
 #import "views/VLCImageView.h"
 #import "views/VLCSubScrollView.h"
 
-NSString * const VLCLibrarySongsTableViewSongPlayingColumnIdentifier = @"VLCLibrarySongsTableViewSongPlayingColumnIdentifier";
-NSString * const VLCLibrarySongsTableViewTitleColumnIdentifier = @"VLCLibrarySongsTableViewTitleColumnIdentifier";
-NSString * const VLCLibrarySongsTableViewDurationColumnIdentifier = @"VLCLibrarySongsTableViewDurationColumnIdentifier";
-NSString * const VLCLibrarySongsTableViewArtistColumnIdentifier = @"VLCLibrarySongsTableViewArtistColumnIdentifier";
-NSString * const VLCLibrarySongsTableViewAlbumColumnIdentifier = @"VLCLibrarySongsTableViewAlbumColumnIdentifier";
-NSString * const VLCLibrarySongsTableViewGenreColumnIdentifier = @"VLCLibrarySongsTableViewGenreColumnIdentifier";
-NSString * const VLCLibrarySongsTableViewPlayCountColumnIdentifier = @"VLCLibrarySongsTableViewPlayCountColumnIdentifier";
-NSString * const VLCLibrarySongsTableViewYearColumnIdentifier = @"VLCLibrarySongsTableViewYearColumnIdentifier";
+NSString *const VLCLibrarySongsTableViewSongPlayingColumnIdentifier =
+    @"VLCLibrarySongsTableViewSongPlayingColumnIdentifier";
+NSString *const VLCLibrarySongsTableViewTitleColumnIdentifier =
+    @"VLCLibrarySongsTableViewTitleColumnIdentifier";
+NSString *const VLCLibrarySongsTableViewDurationColumnIdentifier =
+    @"VLCLibrarySongsTableViewDurationColumnIdentifier";
+NSString *const VLCLibrarySongsTableViewArtistColumnIdentifier =
+    @"VLCLibrarySongsTableViewArtistColumnIdentifier";
+NSString *const VLCLibrarySongsTableViewAlbumColumnIdentifier =
+    @"VLCLibrarySongsTableViewAlbumColumnIdentifier";
+NSString *const VLCLibrarySongsTableViewGenreColumnIdentifier =
+    @"VLCLibrarySongsTableViewGenreColumnIdentifier";
+NSString *const VLCLibrarySongsTableViewPlayCountColumnIdentifier =
+    @"VLCLibrarySongsTableViewPlayCountColumnIdentifier";
+NSString *const VLCLibrarySongsTableViewYearColumnIdentifier =
+    @"VLCLibrarySongsTableViewYearColumnIdentifier";
 
-NSString * const VLCLibraryTitleSortDescriptorKey = @"VLCLibraryTitleSortDescriptorKey";
-NSString * const VLCLibraryDurationSortDescriptorKey = @"VLCLibraryDurationSortDescriptorKey";
-NSString * const VLCLibraryArtistSortDescriptorKey = @"VLCLibraryArtistSortDescriptorKey";
-NSString * const VLCLibraryAlbumSortDescriptorKey = @"VLCLibraryAlbumSortDescriptorKey";
-NSString * const VLCLibraryPlayCountSortDescriptorKey = @"VLCLibraryPlayCountSortDescriptorKey";
-NSString * const VLCLibraryYearSortDescriptorKey = @"VLCLibraryYearSortDescriptorKey";
+NSString *const VLCLibraryTitleSortDescriptorKey = @"VLCLibraryTitleSortDescriptorKey";
+NSString *const VLCLibraryDurationSortDescriptorKey = @"VLCLibraryDurationSortDescriptorKey";
+NSString *const VLCLibraryArtistSortDescriptorKey = @"VLCLibraryArtistSortDescriptorKey";
+NSString *const VLCLibraryAlbumSortDescriptorKey = @"VLCLibraryAlbumSortDescriptorKey";
+NSString *const VLCLibraryPlayCountSortDescriptorKey = @"VLCLibraryPlayCountSortDescriptorKey";
+NSString *const VLCLibraryYearSortDescriptorKey = @"VLCLibraryYearSortDescriptorKey";
 // TODO: Add sorting by genre
 
-NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification = @"VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification";
+NSString *const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification =
+    @"VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification";
 
 @interface VLCLibraryAudioDataSource ()
 
@@ -109,7 +118,8 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
     _collectionSelectionTableView = collectionSelectionTableView;
     if (_collectionSelectionTableView != nil) {
         _collectionSelectionTableView.target = self;
-        _collectionSelectionTableView.doubleAction = @selector(collectionSelectionDoubleClickAction:);
+        _collectionSelectionTableView.doubleAction =
+            @selector(collectionSelectionDoubleClickAction:);
     }
 }
 
@@ -125,7 +135,7 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
 - (instancetype)init
 {
     self = [super init];
-    if(self) {
+    if (self) {
         _displayedCollectionUpdating = NO;
     }
 
@@ -134,19 +144,23 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
 
 - (void)currentlyPlayingItemChanged:(NSNotification *)aNotification
 {
-    VLCPlayerController * const playerController = VLCMain.sharedInstance.playQueueController.playerController;
-    VLCInputItem * const currentInputItem = playerController.currentMedia;
+    VLCPlayerController *const playerController =
+        VLCMain.sharedInstance.playQueueController.playerController;
+    VLCInputItem *const currentInputItem = playerController.currentMedia;
     if (!currentInputItem) {
         return;
     }
 
     if (self.currentParentType == VLCMediaLibraryParentGroupTypeAudioLibrary) {
-        NSString * const currentItemMrl = currentInputItem.MRL;
+        NSString *const currentItemMrl = currentInputItem.MRL;
 
-        const NSUInteger itemIndexInDisplayedCollection = [self.displayedCollection indexOfObjectPassingTest:^BOOL(id element, NSUInteger __unused idx, BOOL * const __unused stop) {
-            VLCMediaLibraryMediaItem * const mediaItem = (VLCMediaLibraryMediaItem *)element;
-            return [mediaItem.inputItem.MRL isEqualToString:currentItemMrl];
-        }];
+        const NSUInteger itemIndexInDisplayedCollection =
+            [self.displayedCollection indexOfObjectPassingTest:^BOOL(id element,
+                                                                     NSUInteger __unused idx,
+                                                                     BOOL *const __unused stop) {
+                VLCMediaLibraryMediaItem *const mediaItem = (VLCMediaLibraryMediaItem *)element;
+                return [mediaItem.inputItem.MRL isEqualToString:currentItemMrl];
+            }];
 
         if (itemIndexInDisplayedCollection != NSNotFound) {
             [self.songsTableView scrollRowToVisible:itemIndexInDisplayedCollection];
@@ -156,20 +170,20 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
 
 - (size_t)collectionToDisplayCount
 {
-    switch(_currentParentType) {
-    case VLCMediaLibraryParentGroupTypeAudioLibrary:
-        return self.libraryModel.numberOfAudioMedia;
-    case VLCMediaLibraryParentGroupTypeRecentAudios:
-        return self.libraryModel.numberOfRecentAudioMedia;
-    case VLCMediaLibraryParentGroupTypeAlbum:
-        return self.libraryModel.numberOfAlbums;
-    case VLCMediaLibraryParentGroupTypeArtist:
-        return self.libraryModel.numberOfArtists;
-    case VLCMediaLibraryParentGroupTypeGenre:
-        return self.libraryModel.numberOfGenres;
-    default:
-        NSAssert(NO, @"current parent type should not be unknown, no collection to display");
-        return 0;
+    switch (_currentParentType) {
+        case VLCMediaLibraryParentGroupTypeAudioLibrary:
+            return self.libraryModel.numberOfAudioMedia;
+        case VLCMediaLibraryParentGroupTypeRecentAudios:
+            return self.libraryModel.numberOfRecentAudioMedia;
+        case VLCMediaLibraryParentGroupTypeAlbum:
+            return self.libraryModel.numberOfAlbums;
+        case VLCMediaLibraryParentGroupTypeArtist:
+            return self.libraryModel.numberOfArtists;
+        case VLCMediaLibraryParentGroupTypeGenre:
+            return self.libraryModel.numberOfGenres;
+        default:
+            NSAssert(NO, @"current parent type should not be unknown, no collection to display");
+            return 0;
     }
 }
 
@@ -180,33 +194,33 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
 
 - (NSArray *)collectionToDisplay
 {
-    switch(_currentParentType) {
-    case VLCMediaLibraryParentGroupTypeAudioLibrary:
-        return self.libraryModel.listOfAudioMedia;
-    case VLCMediaLibraryParentGroupTypeRecentAudios:
-        return self.libraryModel.listOfRecentAudioMedia;
-    case VLCMediaLibraryParentGroupTypeAlbum:
-        return self.libraryModel.listOfAlbums;
-    case VLCMediaLibraryParentGroupTypeArtist:
-        return self.libraryModel.listOfArtists;
-    case VLCMediaLibraryParentGroupTypeGenre:
-        return self.libraryModel.listOfGenres;
-    default:
-        NSAssert(1, @"current parent type should not be unknown, no collection to display");
-        return nil;
+    switch (_currentParentType) {
+        case VLCMediaLibraryParentGroupTypeAudioLibrary:
+            return self.libraryModel.listOfAudioMedia;
+        case VLCMediaLibraryParentGroupTypeRecentAudios:
+            return self.libraryModel.listOfRecentAudioMedia;
+        case VLCMediaLibraryParentGroupTypeAlbum:
+            return self.libraryModel.listOfAlbums;
+        case VLCMediaLibraryParentGroupTypeArtist:
+            return self.libraryModel.listOfArtists;
+        case VLCMediaLibraryParentGroupTypeGenre:
+            return self.libraryModel.listOfGenres;
+        default:
+            NSAssert(1, @"current parent type should not be unknown, no collection to display");
+            return nil;
     }
 }
 
-- (void)libraryModelReset:(NSNotification * const)aNotification
+- (void)libraryModelReset:(NSNotification *const)aNotification
 {
-    if(self.libraryModel == nil) {
+    if (self.libraryModel == nil) {
         return;
     }
 
     [self reloadData];
 }
 
-- (void)libraryModelAudioMediaItemsReset:(NSNotification * const)aNotification
+- (void)libraryModelAudioMediaItemsReset:(NSNotification *const)aNotification
 {
     if (self.currentParentType != VLCMediaLibraryParentGroupTypeAudioLibrary
         && self.currentParentType != VLCMediaLibraryParentGroupTypeRecentAudios) {
@@ -216,7 +230,7 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
     [self libraryModelReset:aNotification];
 }
 
-- (void)libraryModelArtistsReset:(NSNotification * const)aNotification
+- (void)libraryModelArtistsReset:(NSNotification *const)aNotification
 {
     if (self.currentParentType != VLCMediaLibraryParentGroupTypeArtist) {
         return;
@@ -225,7 +239,7 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
     [self libraryModelReset:aNotification];
 }
 
-- (void)libraryModelAlbumsReset:(NSNotification * const)aNotification
+- (void)libraryModelAlbumsReset:(NSNotification *const)aNotification
 {
     if (self.currentParentType != VLCMediaLibraryParentGroupTypeAlbum) {
         return;
@@ -234,7 +248,7 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
     [self libraryModelReset:aNotification];
 }
 
-- (void)libraryModelGenresReset:(NSNotification * const)aNotification
+- (void)libraryModelGenresReset:(NSNotification *const)aNotification
 {
     if (self.currentParentType != VLCMediaLibraryParentGroupTypeGenre) {
         return;
@@ -243,20 +257,22 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
     [self libraryModelReset:aNotification];
 }
 
-- (void)libraryModelAudioItemUpdated:(NSNotification * const)aNotification
+- (void)libraryModelAudioItemUpdated:(NSNotification *const)aNotification
 {
     NSParameterAssert(aNotification);
-    NSParameterAssert([aNotification.object conformsToProtocol:@protocol(VLCMediaLibraryItemProtocol)]);
+    NSParameterAssert(
+        [aNotification.object conformsToProtocol:@protocol(VLCMediaLibraryItemProtocol)]);
 
-    if(self.libraryModel == nil) {
+    if (self.libraryModel == nil) {
         return;
     }
 
-    const id<VLCMediaLibraryItemProtocol> item = (id<VLCMediaLibraryItemProtocol>)aNotification.object;
+    const id<VLCMediaLibraryItemProtocol> item =
+        (id<VLCMediaLibraryItemProtocol>)aNotification.object;
     [self reloadDataForMediaLibraryItem:item];
 }
 
-- (void)libraryModelAudioMediaItemUpdated:(NSNotification * const)aNotification
+- (void)libraryModelAudioMediaItemUpdated:(NSNotification *const)aNotification
 {
     if (self.currentParentType != VLCMediaLibraryParentGroupTypeAudioLibrary
         && self.currentParentType != VLCMediaLibraryParentGroupTypeRecentAudios) {
@@ -266,7 +282,7 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
     [self libraryModelAudioItemUpdated:aNotification];
 }
 
-- (void)libraryModelArtistUpdated:(NSNotification * const)aNotification
+- (void)libraryModelArtistUpdated:(NSNotification *const)aNotification
 {
     if (self.currentParentType != VLCMediaLibraryParentGroupTypeArtist) {
         return;
@@ -275,7 +291,7 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
     [self libraryModelAudioItemUpdated:aNotification];
 }
 
-- (void)libraryModelAlbumUpdated:(NSNotification * const)aNotification
+- (void)libraryModelAlbumUpdated:(NSNotification *const)aNotification
 {
     if (self.currentParentType != VLCMediaLibraryParentGroupTypeAlbum) {
         return;
@@ -284,7 +300,7 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
     [self libraryModelAudioItemUpdated:aNotification];
 }
 
-- (void)libraryModelGenreUpdated:(NSNotification * const)aNotification
+- (void)libraryModelGenreUpdated:(NSNotification *const)aNotification
 {
     if (self.currentParentType != VLCMediaLibraryParentGroupTypeGenre) {
         return;
@@ -293,20 +309,22 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
     [self libraryModelAudioItemUpdated:aNotification];
 }
 
-- (void)libraryModelAudioItemDeleted:(NSNotification * const)aNotification
+- (void)libraryModelAudioItemDeleted:(NSNotification *const)aNotification
 {
     NSParameterAssert(aNotification);
-    NSParameterAssert([aNotification.object conformsToProtocol:@protocol(VLCMediaLibraryItemProtocol)]);
+    NSParameterAssert(
+        [aNotification.object conformsToProtocol:@protocol(VLCMediaLibraryItemProtocol)]);
 
-    if(self.libraryModel == nil) {
+    if (self.libraryModel == nil) {
         return;
     }
 
-    const id <VLCMediaLibraryItemProtocol> item = (id<VLCMediaLibraryItemProtocol>)aNotification.object;
+    const id<VLCMediaLibraryItemProtocol> item =
+        (id<VLCMediaLibraryItemProtocol>)aNotification.object;
     [self deleteDataForMediaLibraryItem:item];
 }
 
-- (void)libraryModelAudioMediaItemDeleted:(NSNotification * const)aNotification
+- (void)libraryModelAudioMediaItemDeleted:(NSNotification *const)aNotification
 {
     if (self.currentParentType != VLCMediaLibraryParentGroupTypeAudioLibrary
         && self.currentParentType != VLCMediaLibraryParentGroupTypeRecentAudios) {
@@ -316,7 +334,7 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
     [self libraryModelAudioItemDeleted:aNotification];
 }
 
-- (void)libraryModelArtistDeleted:(NSNotification * const)aNotification
+- (void)libraryModelArtistDeleted:(NSNotification *const)aNotification
 {
     if (self.currentParentType != VLCMediaLibraryParentGroupTypeArtist) {
         return;
@@ -325,7 +343,7 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
     [self libraryModelAudioItemDeleted:aNotification];
 }
 
-- (void)libraryModelAlbumDeleted:(NSNotification * const)aNotification
+- (void)libraryModelAlbumDeleted:(NSNotification *const)aNotification
 {
     if (self.currentParentType != VLCMediaLibraryParentGroupTypeAlbum) {
         return;
@@ -334,7 +352,7 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
     [self libraryModelAudioItemDeleted:aNotification];
 }
 
-- (void)libraryModelGenreDeleted:(NSNotification * const)aNotification
+- (void)libraryModelGenreDeleted:(NSNotification *const)aNotification
 {
     if (self.currentParentType != VLCMediaLibraryParentGroupTypeGenre) {
         return;
@@ -345,7 +363,7 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
 
 - (id<VLCMediaLibraryItemProtocol>)selectedCollectionViewItem
 {
-    NSIndexPath * const indexPath = self.collectionView.selectionIndexPaths.anyObject;
+    NSIndexPath *const indexPath = self.collectionView.selectionIndexPaths.anyObject;
     if (!indexPath) {
         return nil;
     }
@@ -355,8 +373,11 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
 
 - (NSUInteger)findSelectedItemNewIndex:(id<VLCMediaLibraryItemProtocol>)item
 {
-    return [self.displayedCollection indexOfObjectPassingTest:^BOOL(const id element, const NSUInteger __unused idx, BOOL * const __unused stop) {
-        const id<VLCMediaLibraryItemProtocol> itemElement = (id<VLCMediaLibraryItemProtocol>)element;
+    return [self.displayedCollection indexOfObjectPassingTest:^BOOL(const id element,
+                                                                    const NSUInteger __unused idx,
+                                                                    BOOL *const __unused stop) {
+        const id<VLCMediaLibraryItemProtocol> itemElement =
+            (id<VLCMediaLibraryItemProtocol>)element;
         return itemElement.libraryID == item.libraryID;
     }];
 }
@@ -370,7 +391,7 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
 
 - (void)connect
 {
-    NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
 
     [notificationCenter addObserver:self
                            selector:@selector(libraryModelAudioMediaItemsReset:)
@@ -447,19 +468,24 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
 {
     NSAssert(collectionView != nil, @"Collection view must not be nil");
 
-    [collectionView registerClass:[VLCLibraryCollectionViewItem class] forItemWithIdentifier:VLCLibraryCellIdentifier];
+    [collectionView registerClass:[VLCLibraryCollectionViewItem class]
+            forItemWithIdentifier:VLCLibraryCellIdentifier];
 
-    NSNib * const albumSupplementaryDetailView =
-        [[NSNib alloc] initWithNibNamed:@"VLCLibraryCollectionViewMediaItemListSupplementaryDetailView" bundle:nil];
+    NSNib *const albumSupplementaryDetailView = [[NSNib alloc]
+        initWithNibNamed:@"VLCLibraryCollectionViewMediaItemListSupplementaryDetailView"
+                  bundle:nil];
     [collectionView registerNib:albumSupplementaryDetailView
-      forSupplementaryViewOfKind:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind
-                  withIdentifier:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewIdentifier];
+        forSupplementaryViewOfKind:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind
+                    withIdentifier:
+                        VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewIdentifier];
 
-    NSNib * const mediaItemSupplementaryDetailView = 
-        [[NSNib alloc] initWithNibNamed:@"VLCLibraryCollectionViewMediaItemSupplementaryDetailView" bundle:nil];
+    NSNib *const mediaItemSupplementaryDetailView =
+        [[NSNib alloc] initWithNibNamed:@"VLCLibraryCollectionViewMediaItemSupplementaryDetailView"
+                                 bundle:nil];
     [collectionView registerNib:mediaItemSupplementaryDetailView
-      forSupplementaryViewOfKind:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind
-                  withIdentifier:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewIdentifier];
+        forSupplementaryViewOfKind:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind
+                    withIdentifier:
+                        VLCLibraryCollectionViewMediaItemSupplementaryDetailViewIdentifier];
 }
 
 - (void)setupSongsTableView
@@ -475,35 +501,44 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
 
 - (void)setupPrototypeSortDescriptorsForTableView:(NSTableView *)tableView
 {
-    for(NSTableColumn * const column in tableView.tableColumns) {
-        NSSortDescriptor * const columnSortDescriptor = [self sortDescriptorPrototypeForSongsTableViewColumnIdentifier:column.identifier];
+    for (NSTableColumn *const column in tableView.tableColumns) {
+        NSSortDescriptor *const columnSortDescriptor =
+            [self sortDescriptorPrototypeForSongsTableViewColumnIdentifier:column.identifier];
 
-        if(columnSortDescriptor) {
+        if (columnSortDescriptor) {
             column.sortDescriptorPrototype = columnSortDescriptor;
         }
     }
 }
 
-- (NSSortDescriptor *)sortDescriptorPrototypeForSongsTableViewColumnIdentifier:(NSString *)columnIdentifier
+- (NSSortDescriptor *)sortDescriptorPrototypeForSongsTableViewColumnIdentifier:
+    (NSString *)columnIdentifier
 {
     if ([columnIdentifier isEqualToString:VLCLibrarySongsTableViewTitleColumnIdentifier]) {
-        return [[NSSortDescriptor alloc] initWithKey:VLCLibraryTitleSortDescriptorKey ascending:true];
+        return [[NSSortDescriptor alloc] initWithKey:VLCLibraryTitleSortDescriptorKey
+                                           ascending:true];
 
-    } else if ([columnIdentifier isEqualToString:VLCLibrarySongsTableViewDurationColumnIdentifier]) {
-        return [[NSSortDescriptor alloc] initWithKey:VLCLibraryDurationSortDescriptorKey ascending:true];
+    } else if ([columnIdentifier
+                   isEqualToString:VLCLibrarySongsTableViewDurationColumnIdentifier]) {
+        return [[NSSortDescriptor alloc] initWithKey:VLCLibraryDurationSortDescriptorKey
+                                           ascending:true];
 
     } else if ([columnIdentifier isEqualToString:VLCLibrarySongsTableViewArtistColumnIdentifier]) {
-        return [[NSSortDescriptor alloc] initWithKey:VLCLibraryArtistSortDescriptorKey ascending:true];
+        return [[NSSortDescriptor alloc] initWithKey:VLCLibraryArtistSortDescriptorKey
+                                           ascending:true];
 
     } else if ([columnIdentifier isEqualToString:VLCLibrarySongsTableViewAlbumColumnIdentifier]) {
-        return [[NSSortDescriptor alloc] initWithKey:VLCLibraryAlbumSortDescriptorKey ascending:true];
+        return [[NSSortDescriptor alloc] initWithKey:VLCLibraryAlbumSortDescriptorKey
+                                           ascending:true];
 
-    } else if ([columnIdentifier isEqualToString:VLCLibrarySongsTableViewPlayCountColumnIdentifier]) {
-        return [[NSSortDescriptor alloc] initWithKey:VLCLibraryPlayCountSortDescriptorKey ascending:true];
+    } else if ([columnIdentifier
+                   isEqualToString:VLCLibrarySongsTableViewPlayCountColumnIdentifier]) {
+        return [[NSSortDescriptor alloc] initWithKey:VLCLibraryPlayCountSortDescriptorKey
+                                           ascending:true];
 
     } else if ([columnIdentifier isEqualToString:VLCLibrarySongsTableViewYearColumnIdentifier]) {
-        return [[NSSortDescriptor alloc] initWithKey:VLCLibraryYearSortDescriptorKey ascending:true];
-
+        return [[NSSortDescriptor alloc] initWithKey:VLCLibraryYearSortDescriptorKey
+                                           ascending:true];
     }
 
     return nil;
@@ -511,17 +546,20 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
 
 - (void)setupExistingSortForTableView:(NSTableView *)tableView
 {
-    VLCLibraryController * const libraryController = VLCMain.sharedInstance.libraryController;
+    VLCLibraryController *const libraryController = VLCMain.sharedInstance.libraryController;
     const vlc_ml_sorting_criteria_t existingSortCriteria = libraryController.lastSortingCriteria;
 
-    NSString * const sortDescriptorKey = [self sortDescriptorKeyFromVlcMlSortingCriteria:existingSortCriteria];
-    NSSortDescriptor * const sortDescriptor = [[NSSortDescriptor alloc] initWithKey:sortDescriptorKey
-                                                                          ascending:!libraryController.descendingLibrarySorting];
+    NSString *const sortDescriptorKey =
+        [self sortDescriptorKeyFromVlcMlSortingCriteria:existingSortCriteria];
+    NSSortDescriptor *const sortDescriptor =
+        [[NSSortDescriptor alloc] initWithKey:sortDescriptorKey
+                                    ascending:!libraryController.descendingLibrarySorting];
 
-    tableView.sortDescriptors = @[sortDescriptor];
+    tableView.sortDescriptors = @[ sortDescriptor ];
 }
 
-- (NSString *)sortDescriptorKeyFromVlcMlSortingCriteria:(vlc_ml_sorting_criteria_t)existingSortCriteria
+- (NSString *)sortDescriptorKeyFromVlcMlSortingCriteria:
+    (vlc_ml_sorting_criteria_t)existingSortCriteria
 {
     if (existingSortCriteria == VLC_ML_SORTING_DEFAULT) {
         return VLCLibraryTitleSortDescriptorKey;
@@ -540,15 +578,15 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
 
     } else if (existingSortCriteria == VLC_ML_SORTING_RELEASEDATE) {
         return VLCLibraryYearSortDescriptorKey;
-
     }
 
     return VLCLibraryTitleSortDescriptorKey;
 }
 
-- (void)resetLayoutsForOperation:(void(^)(void))operation
+- (void)resetLayoutsForOperation:(void (^)(void))operation
 {
-    VLCLibraryCollectionViewFlowLayout * const collectionViewFlowLayout = (VLCLibraryCollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
+    VLCLibraryCollectionViewFlowLayout *const collectionViewFlowLayout =
+        (VLCLibraryCollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
     if (collectionViewFlowLayout) {
         [collectionViewFlowLayout resetLayout];
     }
@@ -568,9 +606,11 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
             VLCLibraryAllAudioGroupsMediaLibraryItem *group;
 
             if (self->_currentParentType == VLCMediaLibraryParentGroupTypeGenre) {
-                group = [[VLCLibraryAllAudioGroupsMediaLibraryItem alloc] initWithDisplayString:_NS("All genres")];
+                group = [[VLCLibraryAllAudioGroupsMediaLibraryItem alloc]
+                    initWithDisplayString:_NS("All genres")];
             } else if (self->_currentParentType == VLCMediaLibraryParentGroupTypeArtist) {
-                group = [[VLCLibraryAllAudioGroupsMediaLibraryItem alloc] initWithDisplayString:_NS("All artists")];
+                group = [[VLCLibraryAllAudioGroupsMediaLibraryItem alloc]
+                    initWithDisplayString:_NS("All artists")];
             }
 
             NSAssert(group != nil, @"All items group should not be nil");
@@ -580,32 +620,44 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
         self->_displayedCollectionUpdating = NO;
 
         [self resetLayoutsForOperation:^{
-            NSAssert(self.collectionView == nil || self.collectionView.dataSource == self, @"Cannot reload a collection view with a different data source");
+            NSAssert(self.collectionView == nil || self.collectionView.dataSource == self,
+                     @"Cannot reload a collection view with a different data source");
             [self.collectionView reloadData];
 
-            NSAssert(self.gridModeListTableView == nil || self.gridModeListTableView.dataSource == self, @"Cannot reload a table view with a different data source");
+            NSAssert(self.gridModeListTableView == nil
+                         || self.gridModeListTableView.dataSource == self,
+                     @"Cannot reload a table view with a different data source");
             [self.gridModeListTableView reloadData];
 
-            NSAssert(self.collectionSelectionTableView == nil || self.collectionSelectionTableView.dataSource == self, @"Cannot reload a table view with a different data source");
+            NSAssert(self.collectionSelectionTableView == nil
+                         || self.collectionSelectionTableView.dataSource == self,
+                     @"Cannot reload a table view with a different data source");
             [self.collectionSelectionTableView reloadData];
 
-            NSAssert(self.songsTableView == nil || self.songsTableView.dataSource == self, @"Cannot reload a table view with a different data source");
+            NSAssert(self.songsTableView == nil || self.songsTableView.dataSource == self,
+                     @"Cannot reload a table view with a different data source");
             [self.songsTableView reloadData];
 
-            NSAssert(self.carouselView == nil || self.carouselView.dataSource == (id)self, @"Cannot reload a carousel view with a different data source");
+            NSAssert(self.carouselView == nil || self.carouselView.dataSource == (id)self,
+                     @"Cannot reload a carousel view with a different data source");
             [self.carouselView reloadData];
         }];
 
-        [NSNotificationCenter.defaultCenter postNotificationName:VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification object:self];
+        [NSNotificationCenter.defaultCenter
+            postNotificationName:VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
+                          object:self];
     });
 }
 
 - (NSUInteger)indexForMediaLibraryItemWithId:(const int64_t)itemId
 {
-    return [self.displayedCollection indexOfObjectPassingTest:^BOOL(const id<VLCMediaLibraryItemProtocol> item, const NSUInteger __unused idx, BOOL * const __unused stop) {
-        NSAssert(item != nil, @"Cache list should not contain nil items");
-        return item.libraryID == itemId;
-    }];
+    return [self.displayedCollection
+        indexOfObjectPassingTest:^BOOL(const id<VLCMediaLibraryItemProtocol> item,
+                                       const NSUInteger __unused idx,
+                                       BOOL *const __unused stop) {
+            NSAssert(item != nil, @"Cache list should not contain nil items");
+            return item.libraryID == itemId;
+        }];
 }
 
 - (void)reloadDataForMediaLibraryItem:(const id<VLCMediaLibraryItemProtocol>)item
@@ -618,17 +670,20 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
 
         [self.displayedCollection replaceObjectAtIndex:index withObject:item];
 
-        NSIndexPath * const indexPath = [NSIndexPath indexPathForItem:index inSection:0];
-        NSIndexSet * const rowIndexSet = [NSIndexSet indexSetWithIndex:index];
+        NSIndexPath *const indexPath = [NSIndexPath indexPathForItem:index inSection:0];
+        NSIndexSet *const rowIndexSet = [NSIndexSet indexSetWithIndex:index];
 
         const NSRange songsTableColumnRange = NSMakeRange(0, self->_songsTableView.numberOfColumns);
-        NSIndexSet * const songsTableColumnIndexSet = [NSIndexSet indexSetWithIndexesInRange:songsTableColumnRange];
+        NSIndexSet *const songsTableColumnIndexSet =
+            [NSIndexSet indexSetWithIndexesInRange:songsTableColumnRange];
 
         [self.collectionView reloadItemsAtIndexPaths:[NSSet setWithObject:indexPath]];
-        [self.songsTableView reloadDataForRowIndexes:rowIndexSet columnIndexes:songsTableColumnIndexSet];
+        [self.songsTableView reloadDataForRowIndexes:rowIndexSet
+                                       columnIndexes:songsTableColumnIndexSet];
 
-        // Don't update gridModeListSelectionCollectionView, let its VLCLibraryAudioGroupDataSource do it.
-        // Also don't update collectionSelectionTableView, as this will only show artists/genres/albums
+        // Don't update gridModeListSelectionCollectionView, let its VLCLibraryAudioGroupDataSource
+        // do it. Also don't update collectionSelectionTableView, as this will only show
+        // artists/genres/albums
 
         [self.carouselView reloadData];
     }];
@@ -642,16 +697,19 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
             return;
         }
 
-        NSIndexPath * const indexPath = [NSIndexPath indexPathForItem:index inSection:0];
-        NSIndexSet * const rowIndexSet = [NSIndexSet indexSetWithIndex:index];
+        NSIndexPath *const indexPath = [NSIndexPath indexPathForItem:index inSection:0];
+        NSIndexSet *const rowIndexSet = [NSIndexSet indexSetWithIndex:index];
 
-        [self.collectionView performBatchUpdates:^{
-            [self.displayedCollection removeObjectAtIndex:index];
-            [self.collectionView deleteItemsAtIndexPaths:[NSSet setWithObject:indexPath]];
-        } completionHandler:^(BOOL __unused finished) {
-            [self.songsTableView removeRowsAtIndexes:rowIndexSet withAnimation:NSTableViewAnimationSlideUp];
-            [self.carouselView reloadData];
-        }];
+        [self.collectionView
+            performBatchUpdates:^{
+                [self.displayedCollection removeObjectAtIndex:index];
+                [self.collectionView deleteItemsAtIndexPaths:[NSSet setWithObject:indexPath]];
+            }
+            completionHandler:^(BOOL __unused finished) {
+                [self.songsTableView removeRowsAtIndexes:rowIndexSet
+                                           withAnimation:NSTableViewAnimationSlideUp];
+                [self.carouselView reloadData];
+            }];
     }];
 }
 
@@ -698,8 +756,8 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
 
 - (BOOL)displayAllArtistsGenresTableEntry
 {
-    return self.currentParentType == VLCMediaLibraryParentGroupTypeGenre ||
-           self.currentParentType == VLCMediaLibraryParentGroupTypeArtist;
+    return self.currentParentType == VLCMediaLibraryParentGroupTypeGenre
+        || self.currentParentType == VLCMediaLibraryParentGroupTypeArtist;
 }
 
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)tableView
@@ -728,8 +786,9 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
 
 - (void)applySelectionForTableView:(NSTableView *)tableView
 {
-    if (tableView == nil ||
-        (tableView != self.collectionSelectionTableView && tableView != self.gridModeListTableView)) {
+    if (tableView == nil
+        || (tableView != self.collectionSelectionTableView
+            && tableView != self.gridModeListTableView)) {
         return;
     }
 
@@ -738,10 +797,10 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
         return;
     }
 
-    const BOOL shouldClearSelection = self.currentParentType == VLCMediaLibraryParentGroupTypeAudioLibrary ||
-                                      self.currentParentType == VLCMediaLibraryParentGroupTypeRecentAudios ||
-                                      selectedRow < 0 ||
-                                      self.displayedCollectionUpdating;
+    const BOOL shouldClearSelection =
+        self.currentParentType == VLCMediaLibraryParentGroupTypeAudioLibrary
+        || self.currentParentType == VLCMediaLibraryParentGroupTypeRecentAudios || selectedRow < 0
+        || self.displayedCollectionUpdating;
 
     const id<VLCMediaLibraryAudioGroupProtocol> selectedItem =
         shouldClearSelection ? nil : self.displayedCollection[selectedRow];
@@ -752,7 +811,8 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
     NSString *fallbackDetail = nil;
 
     if (selectedItem != nil) {
-        representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:selectedItem parentType:self.currentParentType];
+        representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:selectedItem
+                                                               parentType:self.currentParentType];
         fallbackDetail = selectedItem.primaryDetailString;
 
         if (self.displayAllArtistsGenresTableEntry && selectedRow == 0) {
@@ -770,7 +830,7 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
                                    fallbackDetail:fallbackDetail];
 }
 
-- (void)tableView:(NSTableView * const)tableView selectRowIndices:(NSIndexSet * const)indices
+- (void)tableView:(NSTableView *const)tableView selectRowIndices:(NSIndexSet *const)indices
 {
     NSParameterAssert(tableView);
 
@@ -791,12 +851,15 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
     [self applySelectionForTableView:tableView];
 }
 
-- (void)tableView:(NSTableView *)tableView sortDescriptorsDidChange:(NSArray<NSSortDescriptor *> *)oldDescriptors
+- (void)tableView:(NSTableView *)tableView
+    sortDescriptorsDidChange:(NSArray<NSSortDescriptor *> *)oldDescriptors
 {
-    const NSSortDescriptor * const sortDescriptor = tableView.sortDescriptors.firstObject;
-    const vlc_ml_sorting_criteria_t sortCriteria = [self sortDescriptorKeyToVlcMlSortingCriteria:sortDescriptor.key];
+    const NSSortDescriptor *const sortDescriptor = tableView.sortDescriptors.firstObject;
+    const vlc_ml_sorting_criteria_t sortCriteria =
+        [self sortDescriptorKeyToVlcMlSortingCriteria:sortDescriptor.key];
 
-    [VLCMain.sharedInstance.libraryController sortByCriteria:sortCriteria andDescending:!sortDescriptor.ascending];
+    [VLCMain.sharedInstance.libraryController sortByCriteria:sortCriteria
+                                               andDescending:!sortDescriptor.ascending];
     [self reloadData];
 }
 
@@ -819,7 +882,6 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
 
     } else if ([sortDescriptorKey isEqualToString:VLCLibraryYearSortDescriptorKey]) {
         return VLC_ML_SORTING_RELEASEDATE;
-
     }
 
     return VLC_ML_SORTING_DEFAULT;
@@ -827,7 +889,8 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
 
 - (id<NSPasteboardWriting>)tableView:(NSTableView *)tableView pasteboardWriterForRow:(NSInteger)row
 {
-    const id<VLCMediaLibraryItemProtocol> libraryItem = [self libraryItemAtRow:row forTableView:tableView];
+    const id<VLCMediaLibraryItemProtocol> libraryItem = [self libraryItemAtRow:row
+                                                                  forTableView:tableView];
 
     return [NSPasteboardItem pasteboardItemWithLibraryItem:libraryItem];
 }
@@ -836,29 +899,38 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
 
 - (void)groupSelectionDoubleClickAction:(id)sender
 {
-    NSTableView * const tableView = (NSTableView *)sender;
+    NSTableView *const tableView = (NSTableView *)sender;
     NSParameterAssert(tableView != nil);
 
     const NSInteger clickedRow = tableView.clickedRow;
     const id<VLCMediaLibraryItemProtocol> libraryItem = self.displayedCollection[clickedRow];
-    VLCLibraryRepresentedItem * const representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:libraryItem parentType:self.currentParentType];
+    VLCLibraryRepresentedItem *const representedItem =
+        [[VLCLibraryRepresentedItem alloc] initWithItem:libraryItem
+                                             parentType:self.currentParentType];
 
     [representedItem play];
 }
 
 - (void)collectionSelectionDoubleClickAction:(id)sender
 {
-    const id<VLCMediaLibraryItemProtocol> libraryItem = self.displayedCollection[self.collectionSelectionTableView.selectedRow];
-    VLCLibraryRepresentedItem * const representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:libraryItem parentType:self.currentParentType];
+    const id<VLCMediaLibraryItemProtocol> libraryItem =
+        self.displayedCollection[self.collectionSelectionTableView.selectedRow];
+    VLCLibraryRepresentedItem *const representedItem =
+        [[VLCLibraryRepresentedItem alloc] initWithItem:libraryItem
+                                             parentType:self.currentParentType];
 
     [representedItem play];
 }
 
 - (void)songDoubleClickAction:(id)sender
 {
-    NSAssert(_audioLibrarySegment == VLCAudioLibrarySongsSegment, @"Should not be possible to trigger this action from a non-song library view");
-    VLCMediaLibraryMediaItem * const mediaItem = self.displayedCollection[_songsTableView.selectedRow];
-    VLCLibraryRepresentedItem * const representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:mediaItem parentType:self.currentParentType];
+    NSAssert(_audioLibrarySegment == VLCAudioLibrarySongsSegment,
+             @"Should not be possible to trigger this action from a non-song library view");
+    VLCMediaLibraryMediaItem *const mediaItem =
+        self.displayedCollection[_songsTableView.selectedRow];
+    VLCLibraryRepresentedItem *const representedItem =
+        [[VLCLibraryRepresentedItem alloc] initWithItem:mediaItem
+                                             parentType:self.currentParentType];
 
     [representedItem play];
 }
@@ -879,49 +951,62 @@ NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification
 - (NSCollectionViewItem *)collectionView:(NSCollectionView *)collectionView
      itemForRepresentedObjectAtIndexPath:(NSIndexPath *)indexPath
 {
-    VLCLibraryCollectionViewItem * const viewItem = [collectionView makeItemWithIdentifier:VLCLibraryCellIdentifier forIndexPath:indexPath];
+    VLCLibraryCollectionViewItem *const viewItem =
+        [collectionView makeItemWithIdentifier:VLCLibraryCellIdentifier forIndexPath:indexPath];
     const id<VLCMediaLibraryItemProtocol> actualItem = self.displayedCollection[indexPath.item];
-    VLCLibraryRepresentedItem * const representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:actualItem parentType:_currentParentType];
+    VLCLibraryRepresentedItem *const representedItem =
+        [[VLCLibraryRepresentedItem alloc] initWithItem:actualItem parentType:_currentParentType];
 
     viewItem.representedItem = representedItem;
     return viewItem;
 }
 
 - (NSView *)collectionView:(NSCollectionView *)collectionView
-viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
-               atIndexPath:(NSIndexPath *)indexPath
+    viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
+                          atIndexPath:(NSIndexPath *)indexPath
 {
     if ([kind isEqualToString:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind]) {
+        VLCLibraryCollectionViewMediaItemListSupplementaryDetailView *const
+            albumSupplementaryDetailView = [collectionView
+                makeSupplementaryViewOfKind:kind
+                             withIdentifier:
+                                 VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind
+                               forIndexPath:indexPath];
 
-        VLCLibraryCollectionViewMediaItemListSupplementaryDetailView * const albumSupplementaryDetailView =
-            [collectionView makeSupplementaryViewOfKind:kind 
-                                         withIdentifier:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind
-                                           forIndexPath:indexPath];
-
-        VLCMediaLibraryAlbum * const album = self.displayedCollection[indexPath.item];
-        VLCLibraryRepresentedItem * const representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:album parentType:_currentParentType];
+        VLCMediaLibraryAlbum *const album = self.displayedCollection[indexPath.item];
+        VLCLibraryRepresentedItem *const representedItem =
+            [[VLCLibraryRepresentedItem alloc] initWithItem:album parentType:_currentParentType];
 
         albumSupplementaryDetailView.representedItem = representedItem;
         albumSupplementaryDetailView.selectedItem = [collectionView itemAtIndex:indexPath.item];
         albumSupplementaryDetailView.internalScrollView.scrollParentY = YES;
 
-        VLCLibraryCollectionViewFlowLayout *flowLayout = (VLCLibraryCollectionViewFlowLayout*)collectionView.collectionViewLayout;
+        VLCLibraryCollectionViewFlowLayout *flowLayout =
+            (VLCLibraryCollectionViewFlowLayout *)collectionView.collectionViewLayout;
         if (flowLayout != nil) {
             albumSupplementaryDetailView.layoutScrollDirection = flowLayout.scrollDirection;
         }
 
         return albumSupplementaryDetailView;
 
-    } else if ([kind isEqualToString:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind]) {
-
-        VLCLibraryCollectionViewMediaItemSupplementaryDetailView* mediaItemSupplementaryDetailView = [collectionView makeSupplementaryViewOfKind:kind withIdentifier:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind forIndexPath:indexPath];
+    } else if ([kind
+                   isEqualToString:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind]) {
+        VLCLibraryCollectionViewMediaItemSupplementaryDetailView *mediaItemSupplementaryDetailView =
+            [collectionView
+                makeSupplementaryViewOfKind:kind
+                             withIdentifier:
+                                 VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind
+                               forIndexPath:indexPath];
 
         const id<VLCMediaLibraryItemProtocol> actualItem = self.displayedCollection[indexPath.item];
-        VLCLibraryRepresentedItem * const representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:actualItem parentType:_currentParentType];
+        VLCLibraryRepresentedItem *const representedItem =
+            [[VLCLibraryRepresentedItem alloc] initWithItem:actualItem
+                                                 parentType:_currentParentType];
         mediaItemSupplementaryDetailView.representedItem = representedItem;
         mediaItemSupplementaryDetailView.selectedItem = [collectionView itemAtIndex:indexPath.item];
 
-        VLCLibraryCollectionViewFlowLayout *flowLayout = (VLCLibraryCollectionViewFlowLayout*)collectionView.collectionViewLayout;
+        VLCLibraryCollectionViewFlowLayout *flowLayout =
+            (VLCLibraryCollectionViewFlowLayout *)collectionView.collectionViewLayout;
         if (flowLayout != nil) {
             mediaItemSupplementaryDetailView.layoutScrollDirection = flowLayout.scrollDirection;
         }
@@ -960,7 +1045,9 @@ viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
     return self.displayedCollection.count;
 }
 
-- (NSView *)carousel:(iCarousel *)carousel viewForItemAtIndex:(NSInteger)index reusingView:(NSView *)view
+- (NSView *)carousel:(iCarousel *)carousel
+    viewForItemAtIndex:(NSInteger)index
+           reusingView:(NSView *)view
 {
     VLCLibraryCarouselViewItemView *carouselItemView = (VLCLibraryCarouselViewItemView *)view;
     if (carouselItemView == nil) {
@@ -972,31 +1059,33 @@ viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
         carouselItemView.frame = itemFrame;
     }
 
-    const id<VLCMediaLibraryItemProtocol> libraryItem = [self libraryItemAtRow:index forTableView:nil];
-    VLCLibraryRepresentedItem * const representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:libraryItem
-                                                                                             parentType:self.currentParentType];
+    const id<VLCMediaLibraryItemProtocol> libraryItem = [self libraryItemAtRow:index
+                                                                  forTableView:nil];
+    VLCLibraryRepresentedItem *const representedItem =
+        [[VLCLibraryRepresentedItem alloc] initWithItem:libraryItem
+                                             parentType:self.currentParentType];
     carouselItemView.representedItem = representedItem;
     return carouselItemView;
- }
+}
 
-- (NSArray<VLCLibraryRepresentedItem *> *)representedItemsAtIndexPaths:(NSSet<NSIndexPath *> *const)indexPaths
-                                                     forCollectionView:(NSCollectionView *)collectionView
+- (NSArray<VLCLibraryRepresentedItem *> *)
+    representedItemsAtIndexPaths:(NSSet<NSIndexPath *> *const)indexPaths
+               forCollectionView:(NSCollectionView *)collectionView
 {
-    NSMutableArray<VLCLibraryRepresentedItem *> * const representedItems =
+    NSMutableArray<VLCLibraryRepresentedItem *> *const representedItems =
         [NSMutableArray arrayWithCapacity:indexPaths.count];
-    
-    for (NSIndexPath * const indexPath in indexPaths) {
-        const id<VLCMediaLibraryItemProtocol> libraryItem = 
+
+    for (NSIndexPath *const indexPath in indexPaths) {
+        const id<VLCMediaLibraryItemProtocol> libraryItem =
             [self libraryItemAtIndexPath:indexPath forCollectionView:collectionView];
-        VLCLibraryRepresentedItem * const representedItem = 
-            [[VLCLibraryRepresentedItem alloc] initWithItem:libraryItem 
+        VLCLibraryRepresentedItem *const representedItem =
+            [[VLCLibraryRepresentedItem alloc] initWithItem:libraryItem
                                                  parentType:self.currentParentType];
         [representedItems addObject:representedItem];
     }
 
     return representedItems;
 }
-
 
 - (NSString *)supplementaryDetailViewKind
 {

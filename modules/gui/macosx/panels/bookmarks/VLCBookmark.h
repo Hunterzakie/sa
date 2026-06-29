@@ -35,7 +35,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readwrite) NSString *bookmarkName;
 @property (readwrite) NSString *bookmarkDescription;
 
-
 @end
 
 NS_ASSUME_NONNULL_END

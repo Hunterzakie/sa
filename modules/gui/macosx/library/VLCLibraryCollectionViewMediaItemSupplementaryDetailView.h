@@ -29,9 +29,11 @@ NS_ASSUME_NONNULL_BEGIN
 @class VLCImageView;
 
 extern NSString *const VLCLibraryCollectionViewMediaItemSupplementaryDetailViewIdentifier;
-extern NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind;
+extern NSCollectionViewSupplementaryElementKind const
+    VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind;
 
-@interface VLCLibraryCollectionViewMediaItemSupplementaryDetailView : VLCLibraryCollectionViewSupplementaryDetailView
+@interface VLCLibraryCollectionViewMediaItemSupplementaryDetailView
+    : VLCLibraryCollectionViewSupplementaryDetailView
 
 @property (readwrite, weak) IBOutlet NSTextField *mediaItemTitleTextField;
 @property (readwrite, weak) IBOutlet NSButton *mediaItemPrimaryDetailButton;

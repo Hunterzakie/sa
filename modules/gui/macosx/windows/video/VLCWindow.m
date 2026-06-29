@@ -36,7 +36,7 @@
  *  Missing extension to NSWindow
  *****************************************************************************/
 
-@interface VLCWindow()
+@interface VLCWindow ()
 {
     BOOL b_canBecomeKeyWindow;
     BOOL b_isset_canBecomeKeyWindow;
@@ -47,10 +47,15 @@
 
 @implementation VLCWindow
 
-- (id)initWithContentRect:(NSRect)contentRect styleMask:(NSWindowStyleMask)styleMask
-                  backing:(NSBackingStoreType)backingType defer:(BOOL)flag
+- (id)initWithContentRect:(NSRect)contentRect
+                styleMask:(NSWindowStyleMask)styleMask
+                  backing:(NSBackingStoreType)backingType
+                    defer:(BOOL)flag
 {
-    self = [super initWithContentRect:contentRect styleMask:styleMask backing:backingType defer:flag];
+    self = [super initWithContentRect:contentRect
+                            styleMask:styleMask
+                              backing:backingType
+                                defer:flag];
     if (self) {
         /* we don't want this window to be restored on relaunch */
         [self setRestorable:NO];
@@ -60,7 +65,7 @@
     return self;
 }
 
-- (void)setCanBecomeKeyWindow: (BOOL)canBecomeKey
+- (void)setCanBecomeKeyWindow:(BOOL)canBecomeKey
 {
     b_isset_canBecomeKeyWindow = YES;
     b_canBecomeKeyWindow = canBecomeKey;
@@ -74,7 +79,7 @@
     return [super canBecomeKeyWindow];
 }
 
-- (void)setCanBecomeMainWindow: (BOOL)canBecomeMain
+- (void)setCanBecomeMainWindow:(BOOL)canBecomeMain
 {
     b_isset_canBecomeMainWindow = YES;
     b_canBecomeMainWindow = canBecomeMain;
@@ -101,11 +106,10 @@
     __weak typeof(self) this = self;
 
     [NSAnimationContext runAnimationRespectingPreferencesWithDuration:0.9
-                                                              changes:^(NSAnimationContext * const __unused context) {
-        [[this animator] setAlphaValue:0.0];
-    } completionHandler:^{
-        [this close];
-    }];
+        changes:^(NSAnimationContext *const __unused context) {
+            [[this animator] setAlphaValue:0.0];
+        }
+        completionHandler:^{ [this close]; }];
 }
 
 - (void)orderOut:(id)sender animate:(BOOL)animate
@@ -122,11 +126,10 @@
     __weak typeof(self) this = self;
 
     [NSAnimationContext runAnimationRespectingPreferencesWithDuration:0.5
-                                                              changes:^(NSAnimationContext * const __unused context) {
-        [[this animator] setAlphaValue:0.0];
-    } completionHandler:^{
-        [this orderOut:self];
-    }];
+        changes:^(NSAnimationContext *const __unused context) {
+            [[this animator] setAlphaValue:0.0];
+        }
+        completionHandler:^{ [this orderOut:self]; }];
 }
 
 - (void)orderFront:(id)sender animate:(BOOL)animate
@@ -145,10 +148,13 @@
         return;
     }
 
-    [NSAnimationContext runAnimationRespectingPreferencesWithDuration:0.5
-                                                              changes:^(NSAnimationContext * const __unused context) {
-        [[self animator] setAlphaValue:1.0];
-    } completionHandler:nil];
+    [NSAnimationContext
+        runAnimationRespectingPreferencesWithDuration:0.5
+                                              changes:^(
+                                                  NSAnimationContext *const __unused context) {
+                                                  [[self animator] setAlphaValue:1.0];
+                                              }
+                                    completionHandler:nil];
 }
 
 - (BOOL)isInNativeFullscreen

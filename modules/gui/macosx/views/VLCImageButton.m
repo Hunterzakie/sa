@@ -29,7 +29,7 @@
 
 - (instancetype)initWithCoder:(NSCoder *)coder
 {
-    self =  [super initWithCoder:coder];
+    self = [super initWithCoder:coder];
     if (self) {
         _toggle = NO;
     }
@@ -38,14 +38,14 @@
 
 - (void)awakeFromNib
 {
-    [(NSButtonCell*)[self cell] setHighlightsBy:NSPushInCellMask];
-    [(NSButtonCell*)[self cell] setShowsStateBy:(_toggle) ? NSContentsCellMask : NSNoCellMask];
+    [(NSButtonCell *)[self cell] setHighlightsBy:NSPushInCellMask];
+    [(NSButtonCell *)[self cell] setShowsStateBy:(_toggle) ? NSContentsCellMask : NSNoCellMask];
 }
 
 - (void)setToggle:(BOOL)toggle
 {
     _toggle = toggle;
-    [(NSButtonCell*)[self cell] setShowsStateBy:(_toggle) ? NSContentsCellMask : NSNoCellMask];
+    [(NSButtonCell *)[self cell] setShowsStateBy:(_toggle) ? NSContentsCellMask : NSNoCellMask];
 }
 
 @end

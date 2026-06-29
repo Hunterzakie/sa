@@ -23,7 +23,7 @@
 #import <Cocoa/Cocoa.h>
 #include <vlc_interface.h>
 
-@interface VLCStatusBarIcon : NSObject <NSMenuDelegate>
+@interface VLCStatusBarIcon : NSObject<NSMenuDelegate>
 
 @property (readwrite, strong) NSStatusItem *statusItem;
 @property (readwrite, strong) IBOutlet NSMenu *vlcStatusBarIconMenu;

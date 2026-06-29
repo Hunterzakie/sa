@@ -24,7 +24,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-extern NSString * const VLCMediaLibraryFolderFSEvent;
+extern NSString *const VLCMediaLibraryFolderFSEvent;
 
 @interface VLCMediaLibraryFolderObserver : NSObject
 

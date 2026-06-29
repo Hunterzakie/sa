@@ -31,7 +31,8 @@
    - a saveChanges action
    - a revertChanges action
    - a redraw view action
-   - the children action should generate a list of the treeitems children (to be used by VLCPrefs datasource)
+   - the children action should generate a list of the treeitems children (to be used by VLCPrefs
+   datasource)
 
    The class is sort of a mix of wxwindows intfs, PrefsTreeCtrl and ConfigTreeData
 */
@@ -43,11 +44,11 @@
  *****************************************************************************/
 
 #ifdef HAVE_CONFIG_H
-# import "config.h"
+#import "config.h"
 #endif
 
-#import <stdlib.h>                                      /* malloc(), free() */
-#import <sys/param.h>                                    /* for MAXPATHLEN */
+#import <stdlib.h> /* malloc(), free() */
+#import <sys/param.h> /* for MAXPATHLEN */
 #import <string.h>
 
 #import <vlc_common.h>
@@ -63,7 +64,7 @@
 #import "preferences/VLCSimplePrefsController.h"
 #import "preferences/prefs_widgets.h"
 
-#define LEFTMARGIN  18
+#define LEFTMARGIN 18
 #define RIGHTMARGIN 18
 
 /* /!\ Warning: Unreadable code :/ */
@@ -89,7 +90,7 @@
 }
 @property (readwrite, weak) VLCPrefs *prefsViewController;
 
-- (id)initWithName:(NSString*)name;
+- (id)initWithName:(NSString *)name;
 
 - (NSInteger)numberOfChildren;
 - (VLCTreeItem *)childAtIndex:(NSInteger)i_index;
@@ -103,7 +104,8 @@
 
 @end
 
-enum VLCTreeBranchType {
+enum VLCTreeBranchType
+{
     CategoryBranch = 0,
     SubcategoryBranch = 1,
     PluginBranch = 2,
@@ -115,7 +117,7 @@ enum VLCTreeBranchType {
     enum vlc_config_cat _category;
     enum vlc_config_subcat _subcategory;
     /* for plugin type */
-    module_config_t * _configItems;
+    module_config_t *_configItems;
     unsigned int _configSize;
 }
 + (VLCTreeBranchItem *)newCategoryTreeBranch:(enum vlc_config_cat)category;
@@ -138,7 +140,7 @@ enum VLCTreeBranchType {
 /* individual options. */
 @interface VLCTreeLeafItem : VLCTreeItem
 {
-    module_config_t * _configItem;
+    module_config_t *_configItem;
 }
 + (VLCTreeLeafItem *)newTreeLeaf:(module_config_t *)configItem;
 - (id)initWithConfigItem:(module_config_t *)configItem;
@@ -147,7 +149,7 @@ enum VLCTreeBranchType {
 
 @interface VLCTreeMainItem : VLCTreeItem
 {
-    module_config_t * _configItems;
+    module_config_t *_configItems;
 }
 - (VLCTreeBranchItem *)childRepresentingCategory:(enum vlc_config_cat)category;
 @end
@@ -158,7 +160,7 @@ enum VLCTreeBranchType {
  * VLCPrefs implementation
  *****************************************************************************/
 
-@interface VLCPrefs()
+@interface VLCPrefs ()
 {
     VLCTreeMainItem *_rootTreeItem;
     NSView *o_emptyView;
@@ -182,54 +184,55 @@ enum VLCTreeBranchType {
 - (void)windowDidLoad
 
 {
-    [self.window setCollectionBehavior: NSWindowCollectionBehaviorFullScreenAuxiliary];
+    [self.window setCollectionBehavior:NSWindowCollectionBehaviorFullScreenAuxiliary];
     [self.window setHidesOnDeactivate:YES];
 
-    [self.window setTitle: _NS("Preferences")];
-    [_saveButton setTitle: _NS("Save")];
-    [_cancelButton setTitle: _NS("Cancel")];
-    [_resetButton setTitle: _NS("Reset All")];
-    [_showBasicButton setTitle: _NS("Show Basic")];
+    [self.window setTitle:_NS("Preferences")];
+    [_saveButton setTitle:_NS("Save")];
+    [_cancelButton setTitle:_NS("Cancel")];
+    [_resetButton setTitle:_NS("Reset All")];
+    [_showBasicButton setTitle:_NS("Show Basic")];
 
-    [_prefsView setBorderType: NSGrooveBorder];
-    [_prefsView setHasVerticalScroller: YES];
-    [_prefsView setDrawsBackground: NO];
-    [_prefsView setDocumentView: o_emptyView];
+    [_prefsView setBorderType:NSGrooveBorder];
+    [_prefsView setHasVerticalScroller:YES];
+    [_prefsView setDrawsBackground:NO];
+    [_prefsView setDocumentView:o_emptyView];
     [self.window layoutIfNeeded];
-    [_tree selectRowIndexes: [NSIndexSet indexSetWithIndex: 0] byExtendingSelection: NO];
+    [_tree selectRowIndexes:[NSIndexSet indexSetWithIndex:0] byExtendingSelection:NO];
 }
 
-- (void)setTitle: (NSString *) o_title_name
+- (void)setTitle:(NSString *)o_title_name
 {
-    [self.titleLabel setStringValue: o_title_name];
+    [self.titleLabel setStringValue:o_title_name];
 }
 
 - (void)showPrefsWithLevel:(NSInteger)iWindow_level
 {
-    [self.window setLevel: iWindow_level];
+    [self.window setLevel:iWindow_level];
     [self.window center];
     [self.window makeKeyAndOrderFront:self];
     [_rootTreeItem resetView];
 }
 
-- (IBAction)savePrefs: (id)sender
+- (IBAction)savePrefs:(id)sender
 {
     /* TODO: call savePrefs on Root item */
     [_rootTreeItem applyChanges];
     fixIntfSettings();
     config_SaveConfigFile(getIntf());
-    [NSNotificationCenter.defaultCenter postNotificationName:VLCConfigurationChangedNotification object:nil];
+    [NSNotificationCenter.defaultCenter postNotificationName:VLCConfigurationChangedNotification
+                                                      object:nil];
     [self.window orderOut:self];
 }
 
-- (IBAction)closePrefs: (id)sender
+- (IBAction)closePrefs:(id)sender
 {
     [self.window orderOut:self];
 }
 
-- (IBAction)showSimplePrefs: (id)sender
+- (IBAction)showSimplePrefs:(id)sender
 {
-    [self.window orderOut: self];
+    [self.window orderOut:self];
     [VLCMain.sharedInstance.simplePreferences showSimplePrefs];
 }
 
@@ -271,23 +274,28 @@ enum VLCTreeBranchType {
 
 - (id)outlineView:(NSOutlineView *)outlineView child:(NSInteger)index ofItem:(id)item
 {
-    return (item == nil) ? (id)[_rootTreeItem childAtIndex:index]: (id)[item childAtIndex:index];
+    return (item == nil) ? (id)[_rootTreeItem childAtIndex:index] : (id)[item childAtIndex:index];
 }
 
 - (id)outlineView:(NSOutlineView *)outlineView
-    objectValueForTableColumn:(NSTableColumn *)tableColumn byItem:(id)item
+    objectValueForTableColumn:(NSTableColumn *)tableColumn
+                       byItem:(id)item
 {
     return (item == nil) ? @"" : [item name];
 }
 
 #pragma mark -
 #pragma mark split view delegate
-- (CGFloat)splitView:(NSSplitView *)splitView constrainMaxCoordinate:(CGFloat)proposedMax ofSubviewAt:(NSInteger)dividerIndex
+- (CGFloat)splitView:(NSSplitView *)splitView
+    constrainMaxCoordinate:(CGFloat)proposedMax
+               ofSubviewAt:(NSInteger)dividerIndex
 {
     return 300.;
 }
 
-- (CGFloat)splitView:(NSSplitView *)splitView constrainMinCoordinate:(CGFloat)proposedMin ofSubviewAt:(NSInteger)dividerIndex
+- (CGFloat)splitView:(NSSplitView *)splitView
+    constrainMinCoordinate:(CGFloat)proposedMin
+               ofSubviewAt:(NSInteger)dividerIndex
 {
     return 100.;
 }
@@ -305,10 +313,10 @@ enum VLCTreeBranchType {
 @end
 
 #pragma mark -
-#pragma mark (Root class for all TreeItems)
+#pragma mark(Root class for all TreeItems)
 @implementation VLCTreeItem
 
-- (id)initWithName:(NSString*)name
+- (id)initWithName:(NSString *)name
 {
     self = [super init];
     if (self != nil)
@@ -319,7 +327,10 @@ enum VLCTreeBranchType {
 
 - (NSString *)description
 {
-    return [NSString stringWithFormat:@"%@: name: %@, number of children %li", NSStringFromClass([self class]), [self name], [self numberOfChildren]];
+    return [NSString stringWithFormat:@"%@: name: %@, number of children %li",
+                                      NSStringFromClass([self class]),
+                                      [self name],
+                                      [self numberOfChildren]];
 }
 
 - (VLCTreeItem *)childAtIndex:(NSInteger)i_index
@@ -343,23 +354,24 @@ enum VLCTreeBranchType {
     NSRect s_vrc;
     NSView *view;
 
-    [self.prefsViewController setTitle: [self name]];
-    s_vrc = [[prefsView contentView] bounds]; s_vrc.size.height -= 4;
-    view = [[VLCFlippedView alloc] initWithFrame: s_vrc];
-    [view setAutoresizingMask: NSViewWidthSizable | NSViewMinYMargin | NSViewMaxYMargin];
+    [self.prefsViewController setTitle:[self name]];
+    s_vrc = [[prefsView contentView] bounds];
+    s_vrc.size.height -= 4;
+    view = [[VLCFlippedView alloc] initWithFrame:s_vrc];
+    [view setAutoresizingMask:NSViewWidthSizable | NSViewMinYMargin | NSViewMaxYMargin];
 
     if (!_subviews) {
         _subviews = [[NSMutableArray alloc] initWithCapacity:10];
 
         NSUInteger count = [[self options] count];
         for (NSUInteger i = 0; i < count; i++) {
-            VLCTreeLeafItem * item = [[self options] objectAtIndex:i];
+            VLCTreeLeafItem *item = [[self options] objectAtIndex:i];
 
             VLCConfigControl *control;
             control = [VLCConfigControl newControl:[item configItem] withView:view];
             if (control) {
-                [control setAutoresizingMask: NSViewMaxYMargin | NSViewWidthSizable];
-                [_subviews addObject: control];
+                [control setAutoresizingMask:NSViewMaxYMargin | NSViewWidthSizable];
+                [_subviews addObject:control];
             }
         }
     }
@@ -374,13 +386,13 @@ enum VLCTreeBranchType {
     VLCConfigControl *widget;
     NSRect frame;
 
-    while((widget = [enumerator nextObject])) {
+    while ((widget = [enumerator nextObject])) {
         if (i_max_label < [widget labelSize])
             i_max_label = [widget labelSize];
     }
 
     enumerator = [_subviews objectEnumerator];
-    while((widget = [enumerator nextObject])) {
+    while ((widget = [enumerator nextObject])) {
         int i_widget;
 
         i_widget = [widget viewType];
@@ -389,7 +401,7 @@ enum VLCTreeBranchType {
         frame = [widget frame];
         frame.size.width = [view frame].size.width - LEFTMARGIN - RIGHTMARGIN;
         [widget setFrame:frame];
-        [widget alignWithXPosition: i_max_label];
+        [widget alignWithXPosition:i_max_label];
         i_yPos += [widget frame].size.height;
         i_lastItem = i_widget;
         [view addSubview:widget];
@@ -405,28 +417,27 @@ enum VLCTreeBranchType {
 {
     NSUInteger i;
     NSUInteger count = [_subviews count];
-    for (i = 0 ; i < count ; i++)
+    for (i = 0; i < count; i++)
         [[_subviews objectAtIndex:i] applyChanges];
 
     count = [_children count];
-    for (i = 0 ; i < count ; i++)
+    for (i = 0; i < count; i++)
         [[_children objectAtIndex:i] applyChanges];
 }
 
 - (void)resetView
 {
     NSUInteger count = [_subviews count];
-    for (NSUInteger i = 0 ; i < count ; i++)
+    for (NSUInteger i = 0; i < count; i++)
         [[_subviews objectAtIndex:i] resetValues];
 
     count = [_options count];
-    for (NSUInteger i = 0 ; i < count ; i++)
+    for (NSUInteger i = 0; i < count; i++)
         [[_options objectAtIndex:i] resetView];
 
     count = [_children count];
-    for (NSUInteger i = 0 ; i < count ; i++)
+    for (NSUInteger i = 0; i < count; i++)
         [[_children objectAtIndex:i] resetView];
-
 }
 
 - (NSMutableArray *)children
@@ -451,7 +462,7 @@ enum VLCTreeBranchType {
 {
     NSUInteger childrenCount = [[self children] count];
     for (int i = 0; i < childrenCount; i++) {
-        VLCTreeBranchItem * item = [[self children] objectAtIndex:i];
+        VLCTreeBranchItem *item = [[self children] objectAtIndex:i];
         if ([item branchType] == CategoryBranch && [item category] == category)
             return item;
     }
@@ -462,20 +473,22 @@ enum VLCTreeBranchType {
  * Loads children incrementally */
 - (NSMutableArray *)children
 {
-    if (_children) return _children;
+    if (_children)
+        return _children;
     _children = [[NSMutableArray alloc] init];
 
     /* List the modules */
     size_t count, i;
-    module_t ** modules = module_list_get(&count);
-    if (!modules) return nil;
+    module_t **modules = module_list_get(&count);
+    if (!modules)
+        return nil;
 
     /* Build a tree of the plugins */
     /* Add the capabilities */
     for (i = 0; i < count; i++) {
-        VLCTreeBranchItem * categoryItem = nil;
-        VLCTreeBranchItem * subcategoryItem = nil;
-        VLCTreeBranchItem * pluginItem = nil;
+        VLCTreeBranchItem *categoryItem = nil;
+        VLCTreeBranchItem *subcategoryItem = nil;
+        VLCTreeBranchItem *pluginItem = nil;
         module_config_t *p_configs = NULL;
         enum vlc_config_cat cat = CAT_UNKNOWN;
         enum vlc_config_subcat subcat = SUBCAT_UNKNOWN;
@@ -484,7 +497,7 @@ enum VLCTreeBranchType {
         bool pending_tree_node_creation = false;
         unsigned int confsize;
 
-        module_t * p_module = modules[i];
+        module_t *p_module = modules[i];
         bool mod_is_main = module_is_main(p_module);
 
         /* Exclude empty plugins (submodules don't have config */
@@ -493,7 +506,7 @@ enum VLCTreeBranchType {
             _configItems = module_config_get(p_module, &confsize);
             p_configs = _configItems;
         } else {
-            pluginItem = [VLCTreeBranchItem newPluginTreeBranch: p_module];
+            pluginItem = [VLCTreeBranchItem newPluginTreeBranch:p_module];
             if (!pluginItem)
                 continue;
             confsize = [pluginItem configSize];
@@ -504,7 +517,7 @@ enum VLCTreeBranchType {
             int configType = p_configs[j].i_type;
 
             if (configType == CONFIG_SUBCATEGORY) {
-                subcat = (enum vlc_config_subcat) p_configs[j].value.i;
+                subcat = (enum vlc_config_subcat)p_configs[j].value.i;
                 cat = vlc_config_cat_FromSubcat(subcat);
                 subcat_is_general = vlc_config_subcat_IsGeneral(subcat);
                 pending_tree_node_creation = true;
@@ -518,7 +531,8 @@ enum VLCTreeBranchType {
                 continue;
 
             VLCTreeLeafItem *new_leaf = [VLCTreeLeafItem newTreeLeaf:&p_configs[j]];
-            if (!new_leaf) continue;
+            if (!new_leaf)
+                continue;
 
             if (!plugin_node_added && pending_tree_node_creation) {
                 categoryItem = [self childRepresentingCategory:cat];
@@ -568,7 +582,7 @@ enum VLCTreeBranchType {
     for (unsigned i = 0; i < vlc_config_cat_Count(); i++) {
         // Try to find index of current cat
         for (NSUInteger j = index; j < childrenCount; j++) {
-            VLCTreeBranchItem * item = [[self children] objectAtIndex:j];
+            VLCTreeBranchItem *item = [[self children] objectAtIndex:j];
             if ([item category] == vlc_config_cat_GetAt(i)->id) {
                 if (j != index) {
                     [[self children] exchangeObjectAtIndex:j withObjectAtIndex:index];
@@ -580,13 +594,12 @@ enum VLCTreeBranchType {
     }
     // Sort second and third level nodes (mix of subcat and plugin nodes) alphabetically
     for (NSUInteger i = 0; i < [[self children] count]; i++) {
-        VLCTreeBranchItem * item_i = [[self children] objectAtIndex:i];
-        [[item_i children] sortUsingComparator: ^(id obj1, id obj2) {
-            return [[obj1 name] compare:[obj2 name]];
-        }];
+        VLCTreeBranchItem *item_i = [[self children] objectAtIndex:i];
+        [[item_i children]
+            sortUsingComparator:^(id obj1, id obj2) { return [[obj1 name] compare:[obj2 name]]; }];
         for (NSUInteger j = 0; j < [[item_i children] count]; j++) {
-            VLCTreeBranchItem * item_j = [[item_i children] objectAtIndex:j];
-            [[item_j children] sortUsingComparator: ^(id obj1, id obj2) {
+            VLCTreeBranchItem *item_j = [[item_i children] objectAtIndex:j];
+            [[item_j children] sortUsingComparator:^(id obj1, id obj2) {
                 return [[obj1 name] compare:[obj2 name]];
             }];
         }
@@ -627,7 +640,7 @@ enum VLCTreeBranchType {
 
 - (id)initWithCategory:(enum vlc_config_cat)category
 {
-    NSString * name = toNSStr(vlc_config_cat_GetName(category));
+    NSString *name = toNSStr(vlc_config_cat_GetName(category));
     if (self = [super initWithName:name]) {
         _branchType = CategoryBranch;
         _category = category;
@@ -641,7 +654,7 @@ enum VLCTreeBranchType {
 
 - (id)initWithSubcategory:(enum vlc_config_subcat)subcategory
 {
-    NSString * name = toNSStr(vlc_config_subcat_GetName(subcategory));
+    NSString *name = toNSStr(vlc_config_subcat_GetName(subcategory));
     if (self = [super initWithName:name]) {
         _branchType = SubcategoryBranch;
         _category = CAT_UNKNOWN;
@@ -655,7 +668,7 @@ enum VLCTreeBranchType {
 
 - (id)initWithPlugin:(module_t *)plugin
 {
-    NSString * name = NSTR(module_get_name(plugin, false));
+    NSString *name = NSTR(module_get_name(plugin, false));
     if (self = [super initWithName:name]) {
         _branchType = PluginBranch;
         _category = CAT_UNKNOWN;
@@ -678,7 +691,7 @@ enum VLCTreeBranchType {
     assert([self isKindOfClass:[VLCTreeBranchItem class]]);
     NSUInteger childrenCount = [[self children] count];
     for (NSUInteger i = 0; i < childrenCount; i++) {
-        VLCTreeBranchItem * item = [[self children] objectAtIndex:i];
+        VLCTreeBranchItem *item = [[self children] objectAtIndex:i];
         if ([item branchType] == SubcategoryBranch && [item subcategory] == subcategory)
             return item;
     }
@@ -719,7 +732,7 @@ enum VLCTreeBranchType {
     return [[[self class] alloc] initWithConfigItem:configItem];
 }
 
-- (id)initWithConfigItem: (module_config_t *) configItem
+- (id)initWithConfigItem:(module_config_t *)configItem
 {
     NSString *name = toNSStr(configItem->psz_name);
     self = [super initWithName:name];

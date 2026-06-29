@@ -23,7 +23,7 @@
 
 #import "extensions/NSString+Helpers.h"
 
-@interface VLCTimeSelectionPanelController()
+@interface VLCTimeSelectionPanelController ()
 {
     TimeSelectionCompletionHandler _completionHandler;
 }
@@ -43,12 +43,12 @@
 
 - (void)windowDidLoad
 {
-    [_cancelButton setTitle: _NS("Cancel")];
-    [_okButton setTitle: _NS("OK")];
-    [_secsLabel setStringValue: _NS("ss")];
-    [_minsLabel setStringValue: _NS("mm")];
-    [_hoursLabel setStringValue: _NS("hh")];
-    [_goToLabel setStringValue: _NS("Jump to Time")];
+    [_cancelButton setTitle:_NS("Cancel")];
+    [_okButton setTitle:_NS("OK")];
+    [_secsLabel setStringValue:_NS("ss")];
+    [_minsLabel setStringValue:_NS("mm")];
+    [_hoursLabel setStringValue:_NS("hh")];
+    [_goToLabel setStringValue:_NS("Jump to Time")];
 }
 
 - (void)controlTextDidChange:(NSNotification *)notification
@@ -63,12 +63,10 @@
     if (secsMax >= 3600) {
         [self setMinsMax:59];
         [self setSecsMax:59];
-    }
-    else if (secsMax >= 60) {
+    } else if (secsMax >= 60) {
         [self setMinsMax:(int)secsMax / 60];
         [self setSecsMax:59];
-    }
-    else {
+    } else {
         [self setSecsMax:secsMax];
         [self setMinsMax:0];
     }
@@ -81,9 +79,9 @@
     int hoursPos = minsPos / 60;
     minsPos = minsPos % 60;
 
-    [self setJumpSecsValue: secsPos];
-    [self setJumpMinsValue: minsPos];
-    [self setJumpHoursValue: hoursPos];
+    [self setJumpSecsValue:secsPos];
+    [self setJumpMinsValue:minsPos];
+    [self setJumpHoursValue:hoursPos];
 }
 
 - (int)getTimeInSecs
@@ -98,14 +96,16 @@
 - (IBAction)buttonPressed:(id)sender
 {
     [self.window orderOut:sender];
-    [NSApp endSheet: self.window];
+    [NSApp endSheet:self.window];
     int64_t timeInSec = [self getTimeInSecs];
 
     if (_completionHandler)
-        _completionHandler(sender == _okButton ? NSModalResponseOK : NSModalResponseCancel, timeInSec);
+        _completionHandler(sender == _okButton ? NSModalResponseOK : NSModalResponseCancel,
+                           timeInSec);
 }
 
-- (void)runModalForWindow:(NSWindow *)window completionHandler:(TimeSelectionCompletionHandler)handler
+- (void)runModalForWindow:(NSWindow *)window
+        completionHandler:(TimeSelectionCompletionHandler)handler
 {
     _completionHandler = handler;
     [window beginSheet:self.window completionHandler:nil];

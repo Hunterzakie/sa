@@ -26,7 +26,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface VLCLibraryTableViewDelegate : NSObject <NSTableViewDelegate>
+@interface VLCLibraryTableViewDelegate : NSObject<NSTableViewDelegate>
 
 @property (readwrite, assign) NSString *cellViewIdentifier;
 

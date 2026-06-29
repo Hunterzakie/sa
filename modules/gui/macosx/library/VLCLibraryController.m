@@ -40,9 +40,9 @@
 #import <vlc_media_library.h>
 #import <vlc_modules.h>
 
-typedef int (*folder_action_f)(vlc_medialibrary_t*, const char*);
+typedef int (*folder_action_f)(vlc_medialibrary_t *, const char *);
 
-@interface VLCLibraryController()
+@interface VLCLibraryController ()
 {
     vlc_medialibrary_t *_p_libraryInstance;
 }
@@ -63,11 +63,11 @@ typedef int (*folder_action_f)(vlc_medialibrary_t*, const char*);
         if (!_p_libraryInstance && self.shouldUseMediaLibrary) {
             msg_Info(getIntf(), "VLC runs without media library support");
 
-            NSUserDefaults * const defaults = NSUserDefaults.standardUserDefaults;
-            NSString * const suppressKey = @"VLCSuppressMediaLibraryFailedAlert";
+            NSUserDefaults *const defaults = NSUserDefaults.standardUserDefaults;
+            NSString *const suppressKey = @"VLCSuppressMediaLibraryFailedAlert";
             if (![defaults boolForKey:suppressKey]) {
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    NSAlert * const alert = [[NSAlert alloc] init];
+                    NSAlert *const alert = [[NSAlert alloc] init];
                     alert.messageText = _NS("Media Library Unavailable");
                     alert.informativeText = _NS("The media library module could not be loaded. "
                                                 "Library features such as browsing your media "
@@ -87,7 +87,8 @@ typedef int (*folder_action_f)(vlc_medialibrary_t*, const char*);
         }
 
         // Reset suppression so the alert reappears if a future load fails.
-        [NSUserDefaults.standardUserDefaults removeObjectForKey:@"VLCSuppressMediaLibraryFailedAlert"];
+        [NSUserDefaults.standardUserDefaults
+            removeObjectForKey:@"VLCSuppressMediaLibraryFailedAlert"];
         _libraryModel = [[VLCLibraryModel alloc] initWithLibrary:_p_libraryInstance];
         _unsorted = YES;
 
@@ -117,23 +118,22 @@ typedef int (*folder_action_f)(vlc_medialibrary_t*, const char*);
     }
     VLCPlayerController *playerController = aNotification.object;
     if (playerController.playerState == VLC_PLAYER_STATE_PLAYING) {
-        dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0), ^{
-            vlc_ml_pause_background(self->_p_libraryInstance);
-        });
+        dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0),
+                       ^{ vlc_ml_pause_background(self->_p_libraryInstance); });
     } else {
-        dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0), ^{
-            vlc_ml_resume_background(self->_p_libraryInstance);
-        });
+        dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0),
+                       ^{ vlc_ml_resume_background(self->_p_libraryInstance); });
     }
 }
 
 - (void)monitoredFolderChanged:(NSNotification *)notification
 {
-    NSURL * const folderURL = (NSURL *)notification.object;
+    NSURL *const folderURL = (NSURL *)notification.object;
     [self reloadFolderWithFileURL:folderURL];
 }
 
-- (int)appendItemToPlayQueue:(VLCMediaLibraryMediaItem *)mediaItem playImmediately:(BOOL)playImmediately
+- (int)appendItemToPlayQueue:(VLCMediaLibraryMediaItem *)mediaItem
+             playImmediately:(BOOL)playImmediately
 {
     if (!_p_libraryInstance) {
         return VLC_EACCES;
@@ -143,12 +143,15 @@ typedef int (*folder_action_f)(vlc_medialibrary_t*, const char*);
         msg_Err(getIntf(), "No input item found for media id %lli", mediaItem.libraryID);
         return VLC_ENOENT;
     }
-    int ret = [VLCMain.sharedInstance.playQueueController addInputItem:p_inputItem atPosition:-1 startPlayback:playImmediately];
+    int ret = [VLCMain.sharedInstance.playQueueController addInputItem:p_inputItem
+                                                            atPosition:-1
+                                                         startPlayback:playImmediately];
     input_item_Release(p_inputItem);
     return ret;
 }
 
-- (int)appendItemsToPlayQueue:(NSArray <VLCMediaLibraryMediaItem *> *)mediaItemArray playFirstItemImmediately:(BOOL)playFirstItemImmediately
+- (int)appendItemsToPlayQueue:(NSArray<VLCMediaLibraryMediaItem *> *)mediaItemArray
+     playFirstItemImmediately:(BOOL)playFirstItemImmediately
 {
     if (!_p_libraryInstance) {
         return VLC_EACCES;
@@ -216,12 +219,13 @@ typedef int (*folder_action_f)(vlc_medialibrary_t*, const char*);
 
 - (void)reloadMediaLibraryFoldersForInputItems:(NSArray<VLCInputItem *> *)inputItems
 {
-    NSArray<VLCMediaLibraryEntryPoint *> * const entryPoints = self.libraryModel.listOfMonitoredFolders;
-    NSMutableSet<NSString *> * const reloadMRLs = NSMutableSet.set;
-    NSMutableSet<VLCInputItem *> * const checkedInputItems = NSMutableSet.set;
+    NSArray<VLCMediaLibraryEntryPoint *> *const entryPoints =
+        self.libraryModel.listOfMonitoredFolders;
+    NSMutableSet<NSString *> *const reloadMRLs = NSMutableSet.set;
+    NSMutableSet<VLCInputItem *> *const checkedInputItems = NSMutableSet.set;
 
-    for (VLCMediaLibraryEntryPoint * const entryPoint in entryPoints) {
-        for (VLCInputItem * const inputItem in inputItems) {
+    for (VLCMediaLibraryEntryPoint *const entryPoint in entryPoints) {
+        for (VLCInputItem *const inputItem in inputItems) {
             if ([checkedInputItems containsObject:inputItem]) {
                 continue;
             }
@@ -234,8 +238,8 @@ typedef int (*folder_action_f)(vlc_medialibrary_t*, const char*);
         }
     }
 
-    for (NSString * const entryPointMRL in reloadMRLs) {
-        NSURL * const entryPointURL = [NSURL URLWithString:entryPointMRL];
+    for (NSString *const entryPointMRL in reloadMRLs) {
+        NSURL *const entryPointURL = [NSURL URLWithString:entryPointMRL];
         [self reloadFolderWithFileURL:entryPointURL];
     }
 }
@@ -252,8 +256,8 @@ typedef int (*folder_action_f)(vlc_medialibrary_t*, const char*);
 
 - (void)showCreatePlaylistDialogForPlayQueue
 {
-    VLCPlayQueueController * const playQueueController = VLCMain.sharedInstance.playQueueController;
-    NSArray<VLCPlayQueueItem *> * const items = playQueueController.playQueueModel.playQueueItems;
+    VLCPlayQueueController *const playQueueController = VLCMain.sharedInstance.playQueueController;
+    NSArray<VLCPlayQueueItem *> *const items = playQueueController.playQueueModel.playQueueItems;
     [self showCreatePlaylistDialogForPlayQueueItems:items];
 }
 
@@ -263,13 +267,15 @@ typedef int (*folder_action_f)(vlc_medialibrary_t*, const char*);
         return;
     }
 
-    NSString * const playlistName = [self runCreatePlaylistDialog];
+    NSString *const playlistName = [self runCreatePlaylistDialog];
     if (!playlistName) {
         return;
     }
 
     if (![self createPlaylistWithName:playlistName fromPlayQueueItems:items]) {
-        msg_Err(getIntf(), "Failed to create playlist '%s' from play queue items", playlistName.UTF8String);
+        msg_Err(getIntf(),
+                "Failed to create playlist '%s' from play queue items",
+                playlistName.UTF8String);
     }
 }
 
@@ -279,38 +285,41 @@ typedef int (*folder_action_f)(vlc_medialibrary_t*, const char*);
         return;
     }
 
-    NSString * const playlistName = [self runCreatePlaylistDialog];
+    NSString *const playlistName = [self runCreatePlaylistDialog];
     if (!playlistName) {
         return;
     }
 
     if (![self createPlaylistWithName:playlistName fromMediaItems:mediaItems]) {
-        msg_Err(getIntf(), "Failed to create playlist '%s' from media items", playlistName.UTF8String);
+        msg_Err(getIntf(),
+                "Failed to create playlist '%s' from media items",
+                playlistName.UTF8String);
     }
 }
 
 - (nullable NSString *)runCreatePlaylistDialog
 {
-    NSAlert * const alert = [[NSAlert alloc] init];
+    NSAlert *const alert = [[NSAlert alloc] init];
     alert.messageText = _NS("Create New Playlist");
     alert.informativeText = _NS("Enter a name for the new playlist:");
-    NSButton * const createButton = [alert addButtonWithTitle:_NS("Create")];
+    NSButton *const createButton = [alert addButtonWithTitle:_NS("Create")];
     createButton.enabled = NO;
     [alert addButtonWithTitle:_NS("Cancel")];
 
-    NSTextField * const input = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 300, 24)];
+    NSTextField *const input = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 300, 24)];
     input.placeholderString = _NS("Playlist Name");
     alert.accessoryView = input;
     alert.window.initialFirstResponder = input;
 
-    NSCharacterSet * const whitespace = NSCharacterSet.whitespaceAndNewlineCharacterSet;
+    NSCharacterSet *const whitespace = NSCharacterSet.whitespaceAndNewlineCharacterSet;
     id observer = [NSNotificationCenter.defaultCenter
         addObserverForName:NSControlTextDidChangeNotification
-                   object:input
-                    queue:NSOperationQueue.mainQueue
-               usingBlock:^(NSNotification *note) {
-        createButton.enabled = [input.stringValue stringByTrimmingCharactersInSet:whitespace].length > 0;
-    }];
+                    object:input
+                     queue:NSOperationQueue.mainQueue
+                usingBlock:^(NSNotification *note) {
+                    createButton.enabled =
+                        [input.stringValue stringByTrimmingCharactersInSet:whitespace].length > 0;
+                }];
 
     const NSModalResponse response = [alert runModal];
     [NSNotificationCenter.defaultCenter removeObserver:observer];
@@ -319,50 +328,58 @@ typedef int (*folder_action_f)(vlc_medialibrary_t*, const char*);
         return nil;
     }
 
-    NSString * const name = [input.stringValue stringByTrimmingCharactersInSet:whitespace];
+    NSString *const name = [input.stringValue stringByTrimmingCharactersInSet:whitespace];
     return name.length > 0 ? name : nil;
 }
 
-- (BOOL)createPlaylistWithName:(NSString *)playlistName fromPlayQueueItems:(NSArray<VLCPlayQueueItem *> *)items
+- (BOOL)createPlaylistWithName:(NSString *)playlistName
+            fromPlayQueueItems:(NSArray<VLCPlayQueueItem *> *)items
 {
     if (!_p_libraryInstance || !playlistName || playlistName.length == 0) {
         return NO;
     }
-    
-    vlc_ml_playlist_t * const playlist = vlc_ml_playlist_create(_p_libraryInstance, playlistName.UTF8String);
+
+    vlc_ml_playlist_t *const playlist =
+        vlc_ml_playlist_create(_p_libraryInstance, playlistName.UTF8String);
     if (!playlist) {
         msg_Err(getIntf(), "Failed to create playlist with name: %s", playlistName.UTF8String);
         return NO;
     }
-    
+
     const int64_t playlistId = playlist->i_id;
     vlc_ml_playlist_release(playlist);
-    
-    for (VLCPlayQueueItem * const item in items) {
-        VLCMediaLibraryMediaItem * const mediaLibraryItem = item.mediaLibraryItem;
-        
+
+    for (VLCPlayQueueItem *const item in items) {
+        VLCMediaLibraryMediaItem *const mediaLibraryItem = item.mediaLibraryItem;
+
         if (!mediaLibraryItem) {
-            msg_Warn(getIntf(), "No media library item found for playqueue item with name '%s'", item.title.UTF8String);
+            msg_Warn(getIntf(),
+                     "No media library item found for playqueue item with name '%s'",
+                     item.title.UTF8String);
             continue;
         }
-        
+
         const int64_t mediaId = mediaLibraryItem.libraryID;
         const int result = vlc_ml_playlist_append(_p_libraryInstance, playlistId, &mediaId, 1);
         if (result != VLC_SUCCESS) {
-            msg_Warn(getIntf(), "Failed to add media library item %lld to playlist", mediaLibraryItem.libraryID);
+            msg_Warn(getIntf(),
+                     "Failed to add media library item %lld to playlist",
+                     mediaLibraryItem.libraryID);
         }
     }
-    
+
     return YES;
 }
 
-- (BOOL)createPlaylistWithName:(NSString *)playlistName fromMediaItems:(NSArray<VLCMediaLibraryMediaItem *> *)mediaItems
+- (BOOL)createPlaylistWithName:(NSString *)playlistName
+                fromMediaItems:(NSArray<VLCMediaLibraryMediaItem *> *)mediaItems
 {
     if (!_p_libraryInstance || !playlistName || playlistName.length == 0) {
         return NO;
     }
 
-    vlc_ml_playlist_t * const playlist = vlc_ml_playlist_create(_p_libraryInstance, playlistName.UTF8String);
+    vlc_ml_playlist_t *const playlist =
+        vlc_ml_playlist_create(_p_libraryInstance, playlistName.UTF8String);
     if (!playlist) {
         msg_Err(getIntf(), "Failed to create playlist with name: %s", playlistName.UTF8String);
         return NO;
@@ -371,7 +388,7 @@ typedef int (*folder_action_f)(vlc_medialibrary_t*, const char*);
     const int64_t playlistId = playlist->i_id;
     vlc_ml_playlist_release(playlist);
 
-    VLCMediaLibraryPlaylist * const mlPlaylist =
+    VLCMediaLibraryPlaylist *const mlPlaylist =
         [VLCMediaLibraryPlaylist playlistForLibraryID:playlistId];
     [mlPlaylist appendMediaItems:mediaItems];
 
@@ -386,7 +403,7 @@ typedef int (*folder_action_f)(vlc_medialibrary_t*, const char*);
     [_libraryModel sortByCriteria:sortCriteria andDescending:descending];
 }
 
-- (void)filterByString:(NSString*)filterString
+- (void)filterByString:(NSString *)filterString
 {
     self.libraryModel.filterString = filterString;
 }

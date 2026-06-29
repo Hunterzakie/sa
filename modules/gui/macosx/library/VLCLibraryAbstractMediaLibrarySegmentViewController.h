@@ -26,7 +26,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol VLCLibraryDataSource;
 
-@interface VLCLibraryAbstractMediaLibrarySegmentViewController : VLCLibraryAbstractSegmentViewController
+@interface VLCLibraryAbstractMediaLibrarySegmentViewController
+    : VLCLibraryAbstractSegmentViewController
 
 @property (readonly) BOOL connected; // Meaning to library model notifications
 

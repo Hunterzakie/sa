@@ -50,7 +50,6 @@
 
 #import "main/VLCMain.h"
 
-
 #import "windows/video/VLCMainVideoViewController.h"
 
 @interface VLCLibraryPlaylistViewController ()
@@ -74,7 +73,7 @@
         [self setupPlaylistLibraryContainerView];
         [self setupPlaylistPlaceholderView];
 
-        NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+        NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
         [notificationCenter addObserver:self
                                selector:@selector(libraryModelUpdated:)
                                    name:VLCLibraryModelPlaylistAdded
@@ -84,10 +83,14 @@
                                    name:VLCLibraryModelPlaylistDeleted
                                  object:nil];
 
-        NSString * const playlistListResetLongLoadStartNotification = [VLCLibraryModelPlaylistAdded stringByAppendingString:VLCLongNotificationNameStartSuffix];
-        NSString * const playlistListResetLongLoadFinishNotification = [VLCLibraryModelPlaylistAdded stringByAppendingString:VLCLongNotificationNameFinishSuffix];
-        NSString * const playlistDeletedLongLoadStartNotification = [VLCLibraryModelPlaylistDeleted stringByAppendingString:VLCLongNotificationNameStartSuffix];
-        NSString * const playlistDeletedLongLoadFinishNotification = [VLCLibraryModelPlaylistDeleted stringByAppendingString:VLCLongNotificationNameFinishSuffix];
+        NSString *const playlistListResetLongLoadStartNotification = [VLCLibraryModelPlaylistAdded
+            stringByAppendingString:VLCLongNotificationNameStartSuffix];
+        NSString *const playlistListResetLongLoadFinishNotification = [VLCLibraryModelPlaylistAdded
+            stringByAppendingString:VLCLongNotificationNameFinishSuffix];
+        NSString *const playlistDeletedLongLoadStartNotification = [VLCLibraryModelPlaylistDeleted
+            stringByAppendingString:VLCLongNotificationNameStartSuffix];
+        NSString *const playlistDeletedLongLoadFinishNotification = [VLCLibraryModelPlaylistDeleted
+            stringByAppendingString:VLCLongNotificationNameFinishSuffix];
 
         [notificationCenter addObserver:self
                                selector:@selector(libraryModelLongLoadStarted:)
@@ -124,7 +127,7 @@
     _collectionView.allowsMultipleSelection = YES;
     _collectionView.allowsEmptySelection = YES;
 
-    self.dataSource.collectionViews = @[self.collectionView];
+    self.dataSource.collectionViews = @[ self.collectionView ];
 }
 
 - (void)setupPlaylistTableView
@@ -140,8 +143,10 @@
     self.masterTableView.translatesAutoresizingMaskIntoConstraints = NO;
     self.detailTableView.translatesAutoresizingMaskIntoConstraints = NO;
 
-    _masterTableViewScrollView = [NSScrollView libraryScrollViewWithDocumentView:self.masterTableView];
-    _detailTableViewScrollView = [NSScrollView libraryDetailScrollViewWithDocumentView:self.detailTableView];
+    _masterTableViewScrollView =
+        [NSScrollView libraryScrollViewWithDocumentView:self.masterTableView];
+    _detailTableViewScrollView =
+        [NSScrollView libraryDetailScrollViewWithDocumentView:self.detailTableView];
 
     self.listViewSplitView.vertical = YES;
     self.listViewSplitView.dividerStyle = NSSplitViewDividerStyleThin;
@@ -149,14 +154,14 @@
     [self.listViewSplitView addArrangedSubview:self.masterTableViewScrollView];
     [self.listViewSplitView addArrangedSubview:self.detailTableViewScrollView];
 
-    NSTableColumn * const masterColumn = [[NSTableColumn alloc] initWithIdentifier:@"playlists"];
-    NSTableColumn * const detailColumn =
+    NSTableColumn *const masterColumn = [[NSTableColumn alloc] initWithIdentifier:@"playlists"];
+    NSTableColumn *const detailColumn =
         [[NSTableColumn alloc] initWithIdentifier:@"selectedPlaylist"];
 
     [self.masterTableView addTableColumn:masterColumn];
     [self.detailTableView addTableColumn:detailColumn];
 
-    NSNib * const tableCellViewNib =
+    NSNib *const tableCellViewNib =
         [[NSNib alloc] initWithNibNamed:NSStringFromClass(VLCLibraryTableCellView.class)
                                  bundle:nil];
     [self.masterTableView registerNib:tableCellViewNib
@@ -223,27 +228,25 @@
     NSString *placeholderPlaylistsString = nil;
     switch (playlistType) {
         case VLC_ML_PLAYLIST_TYPE_ALL:
-            placeholderPlaylistsString =
-                _NS("Your playlists will appear here.\n"
-                    "Go to the Browse section to add playlists you love.");
+            placeholderPlaylistsString = _NS("Your playlists will appear here.\n"
+                                             "Go to the Browse section to add playlists you love.");
             break;
         case VLC_ML_PLAYLIST_TYPE_AUDIO:
         case VLC_ML_PLAYLIST_TYPE_AUDIO_ONLY:
-            placeholderPlaylistsString =
-                _NS("Your music playlists will appear here.\n"
-                    "Go to the Browse section to add playlists you love.");
+            placeholderPlaylistsString = _NS("Your music playlists will appear here.\n"
+                                             "Go to the Browse section to add playlists you love.");
             break;
         case VLC_ML_PLAYLIST_TYPE_VIDEO:
         case VLC_ML_PLAYLIST_TYPE_VIDEO_ONLY:
-            placeholderPlaylistsString =
-                _NS("Your video playlists will appear here.\n"
-                    "Go to the Browse section to add playlists you love.");
+            placeholderPlaylistsString = _NS("Your video playlists will appear here.\n"
+                                             "Go to the Browse section to add playlists you love.");
             break;
     }
 
-    [self.libraryWindow displayLibraryPlaceholderViewWithImage:NSImage.VLCPlaceholderGroupImage
-                                              usingConstraints:self.placeholderImageViewSizeConstraints
-                                             displayingMessage:placeholderPlaylistsString];
+    [self.libraryWindow
+        displayLibraryPlaceholderViewWithImage:NSImage.VLCPlaceholderGroupImage
+                              usingConstraints:self.placeholderImageViewSizeConstraints
+                             displayingMessage:placeholderPlaylistsString];
 }
 
 - (void)presentPlaylistLibraryView
@@ -279,7 +282,7 @@
 - (void)updatePresentedView
 {
     const vlc_ml_playlist_type_t playlistType = self.dataSource.playlistType;
-    VLCLibraryModel * const libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
+    VLCLibraryModel *const libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
     if ([libraryModel numberOfPlaylistsOfType:playlistType] > 0) {
         [self presentPlaylistLibraryView];
     } else if (self.dataSource.libraryModel.filterString.length > 0) {
@@ -302,15 +305,18 @@
 
 - (void)libraryModelUpdated:(NSNotification *)notification
 {
-    VLCLibraryModel * const model = VLCMain.sharedInstance.libraryController.libraryModel;
+    VLCLibraryModel *const model = VLCMain.sharedInstance.libraryController.libraryModel;
     const vlc_ml_playlist_type_t playlistType = self.dataSource.playlistType;
     const size_t numberOfPlaylists = [model numberOfPlaylistsOfType:playlistType];
 
-    if (self.libraryWindow.librarySegmentType == VLCLibraryPlaylistsSegmentType &&
-        ((numberOfPlaylists == 0 && ![self.libraryWindow.libraryTargetView.subviews containsObject:self.libraryWindow.emptyLibraryView]) ||
-         (numberOfPlaylists > 0 && ![self.libraryWindow.libraryTargetView.subviews containsObject:_collectionViewScrollView])) &&
-        !self.libraryWindow.embeddedVideoPlaybackActive) {
-
+    if (self.libraryWindow.librarySegmentType == VLCLibraryPlaylistsSegmentType
+        && ((numberOfPlaylists == 0
+             && ![self.libraryWindow.libraryTargetView.subviews
+                 containsObject:self.libraryWindow.emptyLibraryView])
+            || (numberOfPlaylists > 0
+                && ![self.libraryWindow.libraryTargetView.subviews
+                    containsObject:_collectionViewScrollView]))
+        && !self.libraryWindow.embeddedVideoPlaybackActive) {
         [self updatePresentedView];
     }
 }
@@ -318,8 +324,8 @@
 - (void)libraryModelPlaylistDeleted:(NSNotification *)notification
 {
     NSParameterAssert(notification);
-    if (self.libraryWindow.librarySegmentType == VLCLibraryPlaylistsSegmentType &&
-        !self.libraryWindow.embeddedVideoPlaybackActive) {
+    if (self.libraryWindow.librarySegmentType == VLCLibraryPlaylistsSegmentType
+        && !self.libraryWindow.embeddedVideoPlaybackActive) {
         [self updatePresentedView];
     }
 }

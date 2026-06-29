@@ -24,7 +24,6 @@
 
 #import <QuartzCore/QuartzCore.h>
 
-
 @implementation VLCMainVideoViewOverlayView
 {
     CAGradientLayer *_gradientLayer;
@@ -40,7 +39,7 @@
     _gradientLayer = [CAGradientLayer layer];
     _gradientLayer.frame = self.bounds;
     _gradientLayer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
-    
+
     [self.layer addSublayer:_gradientLayer];
     [self updateGradient];
 }
@@ -80,14 +79,12 @@
     const CGColorRef clearColor = NSColor.clearColor.CGColor;
 
     if (self.drawGradientForTopControls) {
-        _gradientLayer.colors = @[(__bridge id)darkColor, 
-                                  (__bridge id)clearColor, 
-                                  (__bridge id)darkColor];
-        _gradientLayer.locations = @[@0.0, @0.5, @1.0];
+        _gradientLayer.colors =
+            @[ (__bridge id)darkColor, (__bridge id)clearColor, (__bridge id)darkColor ];
+        _gradientLayer.locations = @[ @0.0, @0.5, @1.0 ];
     } else {
-        _gradientLayer.colors = @[(__bridge id)darkColor, 
-                                  (__bridge id)clearColor];
-        _gradientLayer.locations = @[@0.0, @1.0];
+        _gradientLayer.colors = @[ (__bridge id)darkColor, (__bridge id)clearColor ];
+        _gradientLayer.locations = @[ @0.0, @1.0 ];
     }
 
     _gradientLayer.startPoint = CGPointMake(0.5, 0.0);

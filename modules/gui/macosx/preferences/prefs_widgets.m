@@ -24,11 +24,11 @@
 /*****************************************************************************
  * Preamble
  *****************************************************************************/
-#include <stdlib.h>                                      /* malloc(), free() */
+#include <stdlib.h> /* malloc(), free() */
 #include <string.h>
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif
 
 #include <vlc_common.h>
@@ -43,7 +43,7 @@
 #import "extensions/NSTextField+VLCAdditions.h"
 #import "preferences/prefs_widgets.h"
 
-NSString * const VLCPrefsWidgetModuleDragType = @"VLC media player module";
+NSString *const VLCPrefsWidgetModuleDragType = @"VLC media player module";
 
 #define CONFIG_ITEM_STRING_LIST (CONFIG_ITEM_STRING + 10)
 #define CONFIG_ITEM_RANGED_INTEGER (CONFIG_ITEM_INTEGER + 10)
@@ -52,160 +52,152 @@ NSString * const VLCPrefsWidgetModuleDragType = @"VLC media player module";
 #define OFFSET_RIGHT 20
 #define OFFSET_BETWEEN 2
 
-#define UPWARDS_WHITE_ARROW                 "\xE2\x87\xA7"
-#define OPTION_KEY                          "\xE2\x8C\xA5"
-#define UP_ARROWHEAD                        "\xE2\x8C\x83"
-#define PLACE_OF_INTEREST_SIGN              "\xE2\x8C\x98"
+#define UPWARDS_WHITE_ARROW "\xE2\x87\xA7"
+#define OPTION_KEY "\xE2\x8C\xA5"
+#define UP_ARROWHEAD "\xE2\x8C\x83"
+#define PLACE_OF_INTEREST_SIGN "\xE2\x8C\x98"
 
-#define ADD_LABEL(o_label, superFrame, x_offset, my_y_offset, label,        \
-    tooltip)                                                                \
-{                                                                           \
-    NSRect s_rc = superFrame;                                               \
-    s_rc.size.height = 17;                                                  \
-    s_rc.origin.x = x_offset - 3;                                           \
-    s_rc.origin.y = superFrame.size.height - 17 + my_y_offset;              \
-    o_label = [NSTextField defaultLabelWithString:label];                   \
-    o_label.frame = s_rc;                                                   \
-    [o_label setSelectable: NO];                                            \
-    [o_label setToolTip: tooltip];                                          \
-    [o_label setFont:[NSFont systemFontOfSize:0]];                          \
-    [o_label sizeToFit];                                                    \
-}
+#define ADD_LABEL(o_label, superFrame, x_offset, my_y_offset, label, tooltip)                      \
+    {                                                                                              \
+        NSRect s_rc = superFrame;                                                                  \
+        s_rc.size.height = 17;                                                                     \
+        s_rc.origin.x = x_offset - 3;                                                              \
+        s_rc.origin.y = superFrame.size.height - 17 + my_y_offset;                                 \
+        o_label = [NSTextField defaultLabelWithString:label];                                      \
+        o_label.frame = s_rc;                                                                      \
+        [o_label setSelectable:NO];                                                                \
+        [o_label setToolTip:tooltip];                                                              \
+        [o_label setFont:[NSFont systemFontOfSize:0]];                                             \
+        [o_label sizeToFit];                                                                       \
+    }
 
-#define ADD_TEXTFIELD(o_textfield, superFrame, x_offset, my_y_offset,       \
-    my_width, tooltip, init_value)                                          \
-{                                                                           \
-    NSRect s_rc = superFrame;                                               \
-    s_rc.origin.x = x_offset;                                               \
-    s_rc.origin.y = my_y_offset;                                            \
-    s_rc.size.height = 22;                                                  \
-    s_rc.size.width = my_width;                                             \
-    o_textfield = [[NSTextField alloc] initWithFrame: s_rc];                \
-    [o_textfield setFont:[NSFont systemFontOfSize:0]];                      \
-    [o_textfield setToolTip: tooltip];                                      \
-    [o_textfield setStringValue: init_value];                               \
-}
+#define ADD_TEXTFIELD(                                                                             \
+    o_textfield, superFrame, x_offset, my_y_offset, my_width, tooltip, init_value)                 \
+    {                                                                                              \
+        NSRect s_rc = superFrame;                                                                  \
+        s_rc.origin.x = x_offset;                                                                  \
+        s_rc.origin.y = my_y_offset;                                                               \
+        s_rc.size.height = 22;                                                                     \
+        s_rc.size.width = my_width;                                                                \
+        o_textfield = [[NSTextField alloc] initWithFrame:s_rc];                                    \
+        [o_textfield setFont:[NSFont systemFontOfSize:0]];                                         \
+        [o_textfield setToolTip:tooltip];                                                          \
+        [o_textfield setStringValue:init_value];                                                   \
+    }
 
-#define ADD_SECURETEXTFIELD(o_textfield, superFrame, x_offset, my_y_offset, \
-my_width, tooltip, init_value)                                              \
-{                                                                           \
-    NSRect s_rc = superFrame;                                               \
-    s_rc.origin.x = x_offset;                                               \
-    s_rc.origin.y = my_y_offset;                                            \
-    s_rc.size.height = 22;                                                  \
-    s_rc.size.width = my_width;                                             \
-    o_textfield = [[NSSecureTextField alloc] initWithFrame: s_rc];          \
-    [o_textfield setFont:[NSFont systemFontOfSize:0]];                      \
-    [o_textfield setToolTip: tooltip];                                      \
-    [o_textfield setStringValue: init_value];                               \
-}
+#define ADD_SECURETEXTFIELD(                                                                       \
+    o_textfield, superFrame, x_offset, my_y_offset, my_width, tooltip, init_value)                 \
+    {                                                                                              \
+        NSRect s_rc = superFrame;                                                                  \
+        s_rc.origin.x = x_offset;                                                                  \
+        s_rc.origin.y = my_y_offset;                                                               \
+        s_rc.size.height = 22;                                                                     \
+        s_rc.size.width = my_width;                                                                \
+        o_textfield = [[NSSecureTextField alloc] initWithFrame:s_rc];                              \
+        [o_textfield setFont:[NSFont systemFontOfSize:0]];                                         \
+        [o_textfield setToolTip:tooltip];                                                          \
+        [o_textfield setStringValue:init_value];                                                   \
+    }
 
-#define ADD_COMBO(o_combo, superFrame, x_offset, my_y_offset, x2_offset,    \
-    tooltip)                                                                \
-{                                                                           \
-    NSRect s_rc = superFrame;                                               \
-    s_rc.origin.x = x_offset + 2;                                           \
-    s_rc.origin.y = my_y_offset;                                            \
-    s_rc.size.height = 26;                                                  \
-    s_rc.size.width = superFrame.size.width + 2 - s_rc.origin.x -           \
-        (x2_offset);                                                        \
-    o_combo = [[NSComboBox alloc] initWithFrame: s_rc];                     \
-    [o_combo setFont:[NSFont systemFontOfSize:0]];                          \
-    [o_combo setToolTip: tooltip];                                          \
-    [o_combo setUsesDataSource:TRUE];                                       \
-    [o_combo setDataSource:self];                                           \
-    [o_combo setNumberOfVisibleItems:10];                                   \
-    [o_combo setCompletes:YES];                                             \
-}
+#define ADD_COMBO(o_combo, superFrame, x_offset, my_y_offset, x2_offset, tooltip)                  \
+    {                                                                                              \
+        NSRect s_rc = superFrame;                                                                  \
+        s_rc.origin.x = x_offset + 2;                                                              \
+        s_rc.origin.y = my_y_offset;                                                               \
+        s_rc.size.height = 26;                                                                     \
+        s_rc.size.width = superFrame.size.width + 2 - s_rc.origin.x - (x2_offset);                 \
+        o_combo = [[NSComboBox alloc] initWithFrame:s_rc];                                         \
+        [o_combo setFont:[NSFont systemFontOfSize:0]];                                             \
+        [o_combo setToolTip:tooltip];                                                              \
+        [o_combo setUsesDataSource:TRUE];                                                          \
+        [o_combo setDataSource:self];                                                              \
+        [o_combo setNumberOfVisibleItems:10];                                                      \
+        [o_combo setCompletes:YES];                                                                \
+    }
 
-#define ADD_RIGHT_BUTTON(o_button, superFrame, x_offset, my_y_offset,       \
-    tooltip, title)                                                         \
-{                                                                           \
-    NSRect s_rc = superFrame;                                               \
-    o_button = [[NSButton alloc] initWithFrame: s_rc];                      \
-    [o_button setButtonType: NSMomentaryPushInButton];                      \
-    [o_button setBezelStyle: NSRoundedBezelStyle];                          \
-    [o_button setTitle: title];                                             \
-    [o_button setFont:[NSFont systemFontOfSize:0]];                         \
-    [o_button sizeToFit];                                                   \
-    s_rc = [o_button frame];                                                \
-    s_rc.origin.x = superFrame.size.width - [o_button frame].size.width - 6;\
-    s_rc.origin.y = my_y_offset - 6;                                        \
-    s_rc.size.width += 12;                                                  \
-    [o_button setFrame: s_rc];                                              \
-    [o_button setToolTip: tooltip];                                         \
-    [o_button setTarget: self];                                             \
-    [o_button setAction: @selector(openFileDialog:)];                       \
-}
+#define ADD_RIGHT_BUTTON(o_button, superFrame, x_offset, my_y_offset, tooltip, title)              \
+    {                                                                                              \
+        NSRect s_rc = superFrame;                                                                  \
+        o_button = [[NSButton alloc] initWithFrame:s_rc];                                          \
+        [o_button setButtonType:NSMomentaryPushInButton];                                          \
+        [o_button setBezelStyle:NSRoundedBezelStyle];                                              \
+        [o_button setTitle:title];                                                                 \
+        [o_button setFont:[NSFont systemFontOfSize:0]];                                            \
+        [o_button sizeToFit];                                                                      \
+        s_rc = [o_button frame];                                                                   \
+        s_rc.origin.x = superFrame.size.width - [o_button frame].size.width - 6;                   \
+        s_rc.origin.y = my_y_offset - 6;                                                           \
+        s_rc.size.width += 12;                                                                     \
+        [o_button setFrame:s_rc];                                                                  \
+        [o_button setToolTip:tooltip];                                                             \
+        [o_button setTarget:self];                                                                 \
+        [o_button setAction:@selector(openFileDialog:)];                                           \
+    }
 
-#define ADD_POPUP(o_popup, superFrame, x_offset, my_y_offset, x2_offset,    \
-    tooltip)                                                                \
-{                                                                           \
-    NSRect s_rc = superFrame;                                               \
-    s_rc.origin.x = x_offset - 1;                                           \
-    s_rc.origin.y = my_y_offset;                                            \
-    s_rc.size.height = 26;                                                  \
-    s_rc.size.width = superFrame.size.width + 2 - s_rc.origin.x -           \
-        (x2_offset);                                                        \
-    o_popup = [[NSPopUpButton alloc] initWithFrame: s_rc];                  \
-    [o_popup setFont:[NSFont systemFontOfSize:0]];                          \
-    [o_popup setToolTip: tooltip];                                          \
-}
+#define ADD_POPUP(o_popup, superFrame, x_offset, my_y_offset, x2_offset, tooltip)                  \
+    {                                                                                              \
+        NSRect s_rc = superFrame;                                                                  \
+        s_rc.origin.x = x_offset - 1;                                                              \
+        s_rc.origin.y = my_y_offset;                                                               \
+        s_rc.size.height = 26;                                                                     \
+        s_rc.size.width = superFrame.size.width + 2 - s_rc.origin.x - (x2_offset);                 \
+        o_popup = [[NSPopUpButton alloc] initWithFrame:s_rc];                                      \
+        [o_popup setFont:[NSFont systemFontOfSize:0]];                                             \
+        [o_popup setToolTip:tooltip];                                                              \
+    }
 
-#define ADD_STEPPER(o_stepper, superFrame, x_offset, my_y_offset, tooltip,  \
-    lower, higher)                                                          \
-{                                                                           \
-    NSRect s_rc = superFrame;                                               \
-    s_rc.origin.x = x_offset;                                               \
-    s_rc.origin.y = my_y_offset;                                            \
-    s_rc.size.height = 24;                                                  \
-    s_rc.size.width = 23;                                                   \
-    o_stepper = [[NSStepper alloc] initWithFrame: s_rc];                    \
-    [o_stepper setFont:[NSFont systemFontOfSize:0]];                        \
-    [o_stepper setToolTip: tooltip];                                        \
-    [o_stepper setMaxValue: higher];                                        \
-    [o_stepper setMinValue: lower];                                         \
-    [o_stepper setTarget: self];                                            \
-    [o_stepper setAction: @selector(stepperChanged:)];                      \
-    [o_stepper sendActionOn:NSEventMaskLeftMouseUp                          \
-        | NSEventMaskLeftMouseDown | NSEventMaskLeftMouseDragged];          \
-    [o_stepper sizeToFit];                                                  \
-}
+#define ADD_STEPPER(o_stepper, superFrame, x_offset, my_y_offset, tooltip, lower, higher)          \
+    {                                                                                              \
+        NSRect s_rc = superFrame;                                                                  \
+        s_rc.origin.x = x_offset;                                                                  \
+        s_rc.origin.y = my_y_offset;                                                               \
+        s_rc.size.height = 24;                                                                     \
+        s_rc.size.width = 23;                                                                      \
+        o_stepper = [[NSStepper alloc] initWithFrame:s_rc];                                        \
+        [o_stepper setFont:[NSFont systemFontOfSize:0]];                                           \
+        [o_stepper setToolTip:tooltip];                                                            \
+        [o_stepper setMaxValue:higher];                                                            \
+        [o_stepper setMinValue:lower];                                                             \
+        [o_stepper setTarget:self];                                                                \
+        [o_stepper setAction:@selector(stepperChanged:)];                                          \
+        [o_stepper sendActionOn:NSEventMaskLeftMouseUp | NSEventMaskLeftMouseDown |                \
+                   NSEventMaskLeftMouseDragged];                                                   \
+        [o_stepper sizeToFit];                                                                     \
+    }
 
-#define ADD_SLIDER(o_slider, superFrame, x_offset, my_y_offset, my_width,   \
-    tooltip, lower, higher)                                                 \
-{                                                                           \
-    NSRect s_rc = superFrame;                                               \
-    s_rc.origin.x = x_offset;                                               \
-    s_rc.origin.y = my_y_offset;                                            \
-    s_rc.size.height = 21;                                                  \
-    s_rc.size.width = my_width;                                             \
-    o_slider = [[NSSlider alloc] initWithFrame: s_rc];                      \
-    [o_slider setFont:[NSFont systemFontOfSize:0]];                         \
-    [o_slider setToolTip: tooltip];                                         \
-    [o_slider setMaxValue: higher];                                         \
-    [o_slider setMinValue: lower];                                          \
-    [o_slider setControlSize: NSControlSizeSmall];                          \
-}
+#define ADD_SLIDER(o_slider, superFrame, x_offset, my_y_offset, my_width, tooltip, lower, higher)  \
+    {                                                                                              \
+        NSRect s_rc = superFrame;                                                                  \
+        s_rc.origin.x = x_offset;                                                                  \
+        s_rc.origin.y = my_y_offset;                                                               \
+        s_rc.size.height = 21;                                                                     \
+        s_rc.size.width = my_width;                                                                \
+        o_slider = [[NSSlider alloc] initWithFrame:s_rc];                                          \
+        [o_slider setFont:[NSFont systemFontOfSize:0]];                                            \
+        [o_slider setToolTip:tooltip];                                                             \
+        [o_slider setMaxValue:higher];                                                             \
+        [o_slider setMinValue:lower];                                                              \
+        [o_slider setControlSize:NSControlSizeSmall];                                              \
+    }
 
-#define ADD_CHECKBOX(o_checkbox, superFrame, x_offset, my_y_offset, label,  \
-    tooltip, init_value, position)                                          \
-{                                                                           \
-    NSRect s_rc = superFrame;                                               \
-    s_rc.size.height = 18;                                                  \
-    s_rc.origin.x = x_offset - 2;                                           \
-    s_rc.origin.y = superFrame.size.height - 18 + my_y_offset;              \
-    o_checkbox = [[NSButton alloc] initWithFrame: s_rc];                    \
-    [o_checkbox setFont:[NSFont systemFontOfSize:0]];                       \
-    [o_checkbox setButtonType: NSSwitchButton];                             \
-    [o_checkbox setImagePosition: position];                                \
-    [o_checkbox setIntValue: init_value];                                   \
-    [o_checkbox setTitle: label];                                           \
-    [o_checkbox setToolTip: tooltip];                                       \
-    [o_checkbox sizeToFit];                                                 \
-}
+#define ADD_CHECKBOX(                                                                              \
+    o_checkbox, superFrame, x_offset, my_y_offset, label, tooltip, init_value, position)           \
+    {                                                                                              \
+        NSRect s_rc = superFrame;                                                                  \
+        s_rc.size.height = 18;                                                                     \
+        s_rc.origin.x = x_offset - 2;                                                              \
+        s_rc.origin.y = superFrame.size.height - 18 + my_y_offset;                                 \
+        o_checkbox = [[NSButton alloc] initWithFrame:s_rc];                                        \
+        [o_checkbox setFont:[NSFont systemFontOfSize:0]];                                          \
+        [o_checkbox setButtonType:NSSwitchButton];                                                 \
+        [o_checkbox setImagePosition:position];                                                    \
+        [o_checkbox setIntValue:init_value];                                                       \
+        [o_checkbox setTitle:label];                                                               \
+        [o_checkbox setToolTip:tooltip];                                                           \
+        [o_checkbox sizeToFit];                                                                    \
+    }
 
-@interface VLCConfigControl()
+@interface VLCConfigControl ()
 {
     const char *psz_name;
 }
@@ -215,14 +207,12 @@ my_width, tooltip, init_value)                                              \
 
 - (id)initWithFrame:(NSRect)frame
 {
-    return [self initWithFrame: frame
-                          item: nil];
+    return [self initWithFrame:frame item:nil];
 }
 
-- (id)initWithFrame:(NSRect)frame
-               item:(module_config_t *)p_item
+- (id)initWithFrame:(NSRect)frame item:(module_config_t *)p_item
 {
-    self = [super initWithFrame: frame];
+    self = [super initWithFrame:frame];
 
     if (self != nil) {
         _p_item = p_item;
@@ -233,7 +223,7 @@ my_width, tooltip, init_value)                                              \
             psz_name = NULL;
         }
 
-        [self setAutoresizingMask:NSViewWidthSizable | NSViewMinYMargin ];
+        [self setAutoresizingMask:NSViewWidthSizable | NSViewMinYMargin];
     }
     return (self);
 }
@@ -248,10 +238,10 @@ my_width, tooltip, init_value)                                              \
 + (int)calcVerticalMargin:(int)i_curItem lastItem:(int)i_lastItem
 {
     int i_margin;
-    switch(i_curItem) {
+    switch (i_curItem) {
         case CONFIG_ITEM_STRING:
         case CONFIG_ITEM_PASSWORD:
-            switch(i_lastItem) {
+            switch (i_lastItem) {
                 case CONFIG_ITEM_STRING:
                 case CONFIG_ITEM_PASSWORD:
                     i_margin = 8;
@@ -287,7 +277,7 @@ my_width, tooltip, init_value)                                              \
             }
             break;
         case CONFIG_ITEM_STRING_LIST:
-            switch(i_lastItem) {
+            switch (i_lastItem) {
                 case CONFIG_ITEM_STRING:
                 case CONFIG_ITEM_PASSWORD:
                     i_margin = 8;
@@ -324,7 +314,7 @@ my_width, tooltip, init_value)                                              \
             break;
         case CONFIG_ITEM_LOADFILE:
         case CONFIG_ITEM_SAVEFILE:
-            switch(i_lastItem) {
+            switch (i_lastItem) {
                 case CONFIG_ITEM_STRING:
                 case CONFIG_ITEM_PASSWORD:
                     i_margin = 13;
@@ -360,7 +350,7 @@ my_width, tooltip, init_value)                                              \
             }
             break;
         case CONFIG_ITEM_MODULE:
-            switch(i_lastItem) {
+            switch (i_lastItem) {
                 case CONFIG_ITEM_STRING:
                 case CONFIG_ITEM_PASSWORD:
                     i_margin = 8;
@@ -396,7 +386,7 @@ my_width, tooltip, init_value)                                              \
             }
             break;
         case CONFIG_ITEM_INTEGER:
-            switch(i_lastItem) {
+            switch (i_lastItem) {
                 case CONFIG_ITEM_STRING:
                 case CONFIG_ITEM_PASSWORD:
                     i_margin = 8;
@@ -432,7 +422,7 @@ my_width, tooltip, init_value)                                              \
             }
             break;
         case CONFIG_ITEM_RANGED_INTEGER:
-            switch(i_lastItem) {
+            switch (i_lastItem) {
                 case CONFIG_ITEM_STRING:
                 case CONFIG_ITEM_PASSWORD:
                     i_margin = 8;
@@ -468,7 +458,7 @@ my_width, tooltip, init_value)                                              \
             }
             break;
         case CONFIG_ITEM_BOOL:
-            switch(i_lastItem) {
+            switch (i_lastItem) {
                 case CONFIG_ITEM_STRING:
                 case CONFIG_ITEM_PASSWORD:
                     i_margin = 10;
@@ -504,7 +494,7 @@ my_width, tooltip, init_value)                                              \
             }
             break;
         case CONFIG_ITEM_KEY:
-            switch(i_lastItem) {
+            switch (i_lastItem) {
                 case CONFIG_ITEM_STRING:
                 case CONFIG_ITEM_PASSWORD:
                     i_margin = 8;
@@ -540,7 +530,7 @@ my_width, tooltip, init_value)                                              \
             }
             break;
         case CONFIG_ITEM_MODULE_LIST:
-            switch(i_lastItem) {
+            switch (i_lastItem) {
                 case CONFIG_ITEM_STRING:
                 case CONFIG_ITEM_PASSWORD:
                     i_margin = 10;
@@ -582,58 +572,50 @@ my_width, tooltip, init_value)                                              \
     return i_margin;
 }
 
-+ (VLCConfigControl *)newControl:(module_config_t *)_p_item
-                        withView:(NSView *)parentView
++ (VLCConfigControl *)newControl:(module_config_t *)_p_item withView:(NSView *)parentView
 {
     VLCConfigControl *control = NULL;
 
-    switch(_p_item->i_type) {
+    switch (_p_item->i_type) {
         case CONFIG_ITEM_STRING:
         case CONFIG_ITEM_PASSWORD:
             if (!_p_item->list_count) {
-                control = [[StringConfigControl alloc]
-                             initWithItem: _p_item
-                             withView: parentView];
+                control = [[StringConfigControl alloc] initWithItem:_p_item withView:parentView];
             } else {
-                control = [[StringListConfigControl alloc]
-                             initWithItem: _p_item
-                             withView: parentView];
+                control = [[StringListConfigControl alloc] initWithItem:_p_item
+                                                               withView:parentView];
             }
             break;
         case CONFIG_ITEM_LOADFILE:
         case CONFIG_ITEM_SAVEFILE:
         case CONFIG_ITEM_DIRECTORY:
-            control = [[FileConfigControl alloc]
-                         initWithItem: _p_item
-                         withView: parentView];
+            control = [[FileConfigControl alloc] initWithItem:_p_item withView:parentView];
             break;
         case CONFIG_ITEM_MODULE:
-            control = [[StringListConfigControl alloc]
-                         initWithItem: _p_item
-                         withView: parentView];
+            control = [[StringListConfigControl alloc] initWithItem:_p_item withView:parentView];
             break;
         case CONFIG_ITEM_MODULE_CAT:
-            control = [[ModuleConfigControl alloc]
-                         initWithItem: _p_item
-                         withView: parentView];
+            control = [[ModuleConfigControl alloc] initWithItem:_p_item withView:parentView];
             break;
         case CONFIG_ITEM_INTEGER:
             if (_p_item->list_count)
-                control = [[IntegerListConfigControl alloc] initWithItem: _p_item withView: parentView];
+                control = [[IntegerListConfigControl alloc] initWithItem:_p_item
+                                                                withView:parentView];
             else if (_p_item->min.i > INT32_MIN && _p_item->max.i < INT32_MAX)
-                control = [[RangedIntegerConfigControl alloc] initWithItem: _p_item withView: parentView];
+                control = [[RangedIntegerConfigControl alloc] initWithItem:_p_item
+                                                                  withView:parentView];
             else
-                control = [[IntegerConfigControl alloc] initWithItem: _p_item withView: parentView];
+                control = [[IntegerConfigControl alloc] initWithItem:_p_item withView:parentView];
             break;
         case CONFIG_ITEM_BOOL:
-            control = [[BoolConfigControl alloc] initWithItem: _p_item
-                                                     withView: parentView];
+            control = [[BoolConfigControl alloc] initWithItem:_p_item withView:parentView];
             break;
         case CONFIG_ITEM_FLOAT:
             if (_p_item->min.f > -FLT_MAX && _p_item->max.f < FLT_MAX)
-                control = [[RangedFloatConfigControl alloc] initWithItem: _p_item withView: parentView];
+                control = [[RangedFloatConfigControl alloc] initWithItem:_p_item
+                                                                withView:parentView];
             else
-                control = [[FloatConfigControl alloc] initWithItem: _p_item withView: parentView];
+                control = [[FloatConfigControl alloc] initWithItem:_p_item withView:parentView];
             break;
         /* don't display keys in the advanced settings, since the current controls
          are broken by design. The user is required to change hotkeys in the sprefs
@@ -644,10 +626,10 @@ my_width, tooltip, init_value)                                              \
          */
         case CONFIG_ITEM_MODULE_LIST:
         case CONFIG_ITEM_MODULE_LIST_CAT:
-            control = [[ModuleListConfigControl alloc] initWithItem: _p_item withView: parentView];
+            control = [[ModuleListConfigControl alloc] initWithItem:_p_item withView:parentView];
             break;
         case CONFIG_SECTION:
-            control = [[SectionControl alloc] initWithItem: _p_item withView: parentView];
+            control = [[SectionControl alloc] initWithItem:_p_item withView:parentView];
             break;
         default:
             break;
@@ -679,7 +661,7 @@ my_width, tooltip, init_value)                                              \
 - (void)applyChanges
 {
     vlc_value_t val;
-    switch(self.p_item->i_type) {
+    switch (self.p_item->i_type) {
         case CONFIG_ITEM_STRING:
         case CONFIG_ITEM_PASSWORD:
         case CONFIG_ITEM_LOADFILE:
@@ -722,15 +704,14 @@ my_width, tooltip, init_value)                                              \
 
 @end
 
-@interface StringConfigControl()
+@interface StringConfigControl ()
 {
-    NSTextField     *o_textfield;
+    NSTextField *o_textfield;
 }
 @end
 
 @implementation StringConfigControl
-- (id)initWithItem:(module_config_t *)p_item
-          withView:(NSView *)parentView
+- (id)initWithItem:(module_config_t *)p_item withView:(NSView *)parentView
 {
     const NSUInteger leftMargin = VLCLibraryUIUnits.largeSpacing;
     const NSUInteger rightMargin = VLCLibraryUIUnits.largeSpacing;
@@ -753,28 +734,36 @@ my_width, tooltip, init_value)                                              \
         /* add the label */
         labelString = NSTR(p_item->psz_text);
         ADD_LABEL(self.label, mainFrame, 0, -3, labelString, o_textfieldTooltip)
-        [self.label setAutoresizingMask:NSViewNotSizable ];
-        [self addSubview: self.label];
+        [self.label setAutoresizingMask:NSViewNotSizable];
+        [self addSubview:self.label];
 
         /* build the textfield */
         o_textfieldString = toNSStr(p_item->value.psz);
         if (p_item->i_type == CONFIG_ITEM_PASSWORD) {
-            ADD_SECURETEXTFIELD(o_textfield, mainFrame, [self.label frame].size.width + 2,
-                                0, mainFrame.size.width - [self.label frame].size.width -
-                                2, o_textfieldTooltip, o_textfieldString)
+            ADD_SECURETEXTFIELD(o_textfield,
+                                mainFrame,
+                                [self.label frame].size.width + 2,
+                                0,
+                                mainFrame.size.width - [self.label frame].size.width - 2,
+                                o_textfieldTooltip,
+                                o_textfieldString)
         } else {
-            ADD_TEXTFIELD(o_textfield, mainFrame, [self.label frame].size.width + 2,
-                          0, mainFrame.size.width - [self.label frame].size.width -
-                          2, o_textfieldTooltip, o_textfieldString)
+            ADD_TEXTFIELD(o_textfield,
+                          mainFrame,
+                          [self.label frame].size.width + 2,
+                          0,
+                          mainFrame.size.width - [self.label frame].size.width - 2,
+                          o_textfieldTooltip,
+                          o_textfieldString)
         }
-        [o_textfield setAutoresizingMask:NSViewWidthSizable ];
+        [o_textfield setAutoresizingMask:NSViewWidthSizable];
 
-        [self addSubview: o_textfield];
+        [self addSubview:o_textfield];
     }
     return self;
 }
 
-- (void) alignWithXPosition:(int)i_xPos
+- (void)alignWithXPosition:(int)i_xPos
 {
     NSRect frame;
     NSRect superFrame = [self frame];
@@ -802,15 +791,14 @@ my_width, tooltip, init_value)                                              \
 }
 @end
 
-@interface StringListConfigControl()
+@interface StringListConfigControl ()
 {
-    NSPopUpButton      *o_popup;
+    NSPopUpButton *o_popup;
 }
 @end
 
 @implementation StringListConfigControl
-- (id)initWithItem:(module_config_t *)p_item
-          withView:(NSView *)parentView
+- (id)initWithItem:(module_config_t *)p_item withView:(NSView *)parentView
 {
     const NSUInteger leftMargin = VLCLibraryUIUnits.largeSpacing;
     const NSUInteger rightMargin = VLCLibraryUIUnits.largeSpacing;
@@ -822,7 +810,7 @@ my_width, tooltip, init_value)                                              \
     mainFrame.origin.x = leftMargin;
     mainFrame.origin.y = 0;
 
-    if (self = [super initWithFrame: mainFrame item:p_item]) {
+    if (self = [super initWithFrame:mainFrame item:p_item]) {
         if (p_item->i_type == CONFIG_ITEM_STRING)
             self.viewType = CONFIG_ITEM_STRING_LIST;
         else
@@ -833,23 +821,22 @@ my_width, tooltip, init_value)                                              \
         /* add the label */
         labelString = NSTR(p_item->psz_text);
         ADD_LABEL(self.label, mainFrame, 0, -3, labelString, o_textfieldTooltip)
-        [self.label setAutoresizingMask:NSViewNotSizable ];
-        [self addSubview: self.label];
+        [self.label setAutoresizingMask:NSViewNotSizable];
+        [self addSubview:self.label];
 
         /* build the textfield */
-        ADD_POPUP(o_popup, mainFrame, [self.label frame].size.width,
-                  -2, 0, o_textfieldTooltip)
+        ADD_POPUP(o_popup, mainFrame, [self.label frame].size.width, -2, 0, o_textfieldTooltip)
         [o_popup setAutoresizingMask:NSViewWidthSizable];
 
         /* add items */
         [self resetValues];
 
-        [self addSubview: o_popup];
+        [self addSubview:o_popup];
     }
     return self;
 }
 
-- (void) alignWithXPosition:(int)i_xPos
+- (void)alignWithXPosition:(int)i_xPos
 {
     NSRect frame;
     NSRect superFrame = [self frame];
@@ -879,18 +866,17 @@ my_width, tooltip, init_value)                                              \
     char *psz_value = config_GetPsz(self.p_item->psz_name);
 
     char **values, **texts;
-    ssize_t count = config_GetPszChoices(self.p_item->psz_name,
-                                         &values, &texts);
+    ssize_t count = config_GetPszChoices(self.p_item->psz_name, &values, &texts);
     for (ssize_t i = 0; i < count && texts; i++) {
         if (texts[i] == NULL || values[i] == NULL)
             continue;
 
-        [o_popup addItemWithTitle: toNSStr(texts[i])];
+        [o_popup addItemWithTitle:toNSStr(texts[i])];
         NSMenuItem *lastItem = [o_popup lastItem];
-        [lastItem setRepresentedObject: toNSStr(values[i])];
+        [lastItem setRepresentedObject:toNSStr(values[i])];
 
         if (!strcmp(psz_value ? psz_value : "", values[i]))
-            [o_popup selectItem: [o_popup lastItem]];
+            [o_popup selectItem:[o_popup lastItem]];
 
         free(texts[i]);
         free(values[i]);
@@ -904,17 +890,16 @@ my_width, tooltip, init_value)                                              \
 }
 @end
 
-@interface FileConfigControl()
+@interface FileConfigControl ()
 {
-    NSTextField     *o_textfield;
-    NSButton        *o_button;
-    BOOL            b_directory;
+    NSTextField *o_textfield;
+    NSButton *o_button;
+    BOOL b_directory;
 }
 @end
 
 @implementation FileConfigControl
-- (id)initWithItem:(module_config_t *)p_item
-          withView:(NSView *)parentView
+- (id)initWithItem:(module_config_t *)p_item withView:(NSView *)parentView
 {
     const NSUInteger leftMargin = VLCLibraryUIUnits.largeSpacing;
     const NSUInteger rightMargin = VLCLibraryUIUnits.largeSpacing;
@@ -937,27 +922,30 @@ my_width, tooltip, init_value)                                              \
         /* add the label */
         labelString = NSTR(p_item->psz_text);
         ADD_LABEL(self.label, mainFrame, 0, 3, labelString, o_itemTooltip)
-        [self.label setAutoresizingMask:NSViewNotSizable ];
-        [self addSubview: self.label];
+        [self.label setAutoresizingMask:NSViewNotSizable];
+        [self addSubview:self.label];
 
         /* build the button */
-        ADD_RIGHT_BUTTON(o_button, mainFrame, 0, 0, o_itemTooltip,
-                         _NS("Browse..."))
-        [o_button setAutoresizingMask:NSViewMinXMargin ];
-        [self addSubview: o_button];
+        ADD_RIGHT_BUTTON(o_button, mainFrame, 0, 0, o_itemTooltip, _NS("Browse..."))
+        [o_button setAutoresizingMask:NSViewMinXMargin];
+        [self addSubview:o_button];
 
         /* build the textfield */
         o_textfieldString = toNSStr(p_item->value.psz);
-        ADD_TEXTFIELD(o_textfield, mainFrame, 12, 2, mainFrame.size.width -
-                      8 - [o_button frame].size.width,
-                      o_itemTooltip, o_textfieldString)
-        [o_textfield setAutoresizingMask:NSViewWidthSizable ];
-        [self addSubview: o_textfield];
+        ADD_TEXTFIELD(o_textfield,
+                      mainFrame,
+                      12,
+                      2,
+                      mainFrame.size.width - 8 - [o_button frame].size.width,
+                      o_itemTooltip,
+                      o_textfieldString)
+        [o_textfield setAutoresizingMask:NSViewWidthSizable];
+        [self addSubview:o_textfield];
     }
     return self;
 }
 
-- (void) alignWithXPosition:(int)i_xPos
+- (void)alignWithXPosition:(int)i_xPos
 {
 }
 
@@ -965,18 +953,18 @@ my_width, tooltip, init_value)                                              \
 {
     NSOpenPanel *o_open_panel = [NSOpenPanel openPanel];
 
-    [o_open_panel setTitle:(b_directory)?
-     _NS("Select a directory"):_NS("Select a file")];
-    [o_open_panel setPrompt: _NS("Select")];
-    [o_open_panel setAllowsMultipleSelection: NO];
-    [o_open_panel setCanChooseFiles: !b_directory];
-    [o_open_panel setCanChooseDirectories: b_directory];
-    [o_open_panel beginSheetModalForWindow:[sender window] completionHandler:^(NSInteger returnCode) {
-        if (returnCode == NSModalResponseOK) {
-            NSString *o_path = [[[o_open_panel URLs] firstObject] path];
-            [self->o_textfield setStringValue: o_path];
-        }
-    }];
+    [o_open_panel setTitle:(b_directory) ? _NS("Select a directory") : _NS("Select a file")];
+    [o_open_panel setPrompt:_NS("Select")];
+    [o_open_panel setAllowsMultipleSelection:NO];
+    [o_open_panel setCanChooseFiles:!b_directory];
+    [o_open_panel setCanChooseDirectories:b_directory];
+    [o_open_panel beginSheetModalForWindow:[sender window]
+                         completionHandler:^(NSInteger returnCode) {
+                             if (returnCode == NSModalResponseOK) {
+                                 NSString *o_path = [[[o_open_panel URLs] firstObject] path];
+                                 [self->o_textfield setStringValue:o_path];
+                             }
+                         }];
 }
 
 - (char *)stringValue
@@ -987,7 +975,7 @@ my_width, tooltip, init_value)                                              \
         return NULL;
 }
 
--(void)resetValues
+- (void)resetValues
 {
     char *psz_value = config_GetPsz(self.p_item->psz_name);
     [o_textfield setStringValue:toNSStr(psz_value)];
@@ -996,15 +984,14 @@ my_width, tooltip, init_value)                                              \
 }
 @end
 
-@interface ModuleConfigControl()
+@interface ModuleConfigControl ()
 {
-    NSPopUpButton   *o_popup;
+    NSPopUpButton *o_popup;
 }
 @end
 
 @implementation ModuleConfigControl
-- (id)initWithItem:(module_config_t *)p_item
-          withView:(NSView *)parentView
+- (id)initWithItem:(module_config_t *)p_item withView:(NSView *)parentView
 {
     const NSUInteger leftMargin = VLCLibraryUIUnits.largeSpacing;
     const NSUInteger rightMargin = VLCLibraryUIUnits.largeSpacing;
@@ -1025,24 +1012,23 @@ my_width, tooltip, init_value)                                              \
         labelString = NSTR(p_item->psz_text);
 
         ADD_LABEL(self.label, mainFrame, 0, -1, labelString, o_popupTooltip)
-        [self.label setAutoresizingMask:NSViewNotSizable ];
-        [self addSubview: self.label];
+        [self.label setAutoresizingMask:NSViewNotSizable];
+        [self addSubview:self.label];
 
         /* build the popup */
-        ADD_POPUP(o_popup, mainFrame, [self.label frame].size.width,
-                  -2, 0, o_popupTooltip)
-        [o_popup setAutoresizingMask:NSViewWidthSizable ];
-        [o_popup addItemWithTitle: _NS("Default")];
-        [[o_popup lastItem] setTag: -1];
-        [o_popup selectItem: [o_popup lastItem]];
+        ADD_POPUP(o_popup, mainFrame, [self.label frame].size.width, -2, 0, o_popupTooltip)
+        [o_popup setAutoresizingMask:NSViewWidthSizable];
+        [o_popup addItemWithTitle:_NS("Default")];
+        [[o_popup lastItem] setTag:-1];
+        [o_popup selectItem:[o_popup lastItem]];
 
         [self resetValues];
-        [self addSubview: o_popup];
+        [self addSubview:o_popup];
     }
     return self;
 }
 
-- (void) alignWithXPosition:(int)i_xPos
+- (void)alignWithXPosition:(int)i_xPos
 {
     NSRect frame;
     NSRect superFrame = [self frame];
@@ -1076,10 +1062,9 @@ my_width, tooltip, init_value)                                              \
         for (size_t i = 0; i < confsize; i++) {
             module_config_t *p_cfg = p_config + i;
             /* Hack: required subcategory is stored in i_min */
-            if (p_cfg->i_type == CONFIG_SUBCATEGORY &&
-                p_cfg->value.i == self.p_item->min.i) {
+            if (p_cfg->i_type == CONFIG_SUBCATEGORY && p_cfg->value.i == self.p_item->min.i) {
                 NSString *o_description = NSTR(module_GetLongName(p_parser));
-                if ([newval isEqualToString: o_description]) {
+                if ([newval isEqualToString:o_description]) {
                     returnval = strdup(module_get_object(p_parser));
                     break;
                 }
@@ -1089,13 +1074,14 @@ my_width, tooltip, init_value)                                              \
     }
     module_list_free(p_list);
 
-    if(returnval == NULL && [newval isEqualToString: _NS("Default")] && self.p_item->orig.psz != NULL) {
+    if (returnval == NULL && [newval isEqualToString:_NS("Default")]
+        && self.p_item->orig.psz != NULL) {
         returnval = strdup(self.p_item->orig.psz);
     }
     return returnval;
 }
 
--(void)resetValues
+- (void)resetValues
 {
     /* build a list of available modules */
     module_t *p_parser, **p_list;
@@ -1113,13 +1099,12 @@ my_width, tooltip, init_value)                                              \
         for (size_t i = 0; i < confsize; i++) {
             module_config_t *p_config = &p_configlist[i];
             /* Hack: required subcategory is stored in i_min */
-            if (p_config->i_type == CONFIG_SUBCATEGORY &&
-                p_config->value.i == self.p_item->min.i) {
+            if (p_config->i_type == CONFIG_SUBCATEGORY && p_config->value.i == self.p_item->min.i) {
                 NSString *o_description = NSTR(module_GetLongName(p_parser));
-                [o_popup addItemWithTitle: o_description];
+                [o_popup addItemWithTitle:o_description];
 
-                if (self.p_item->value.psz && !strcmp(self.p_item->value.psz,
-                                                      module_get_object(p_parser)))
+                if (self.p_item->value.psz
+                    && !strcmp(self.p_item->value.psz, module_get_object(p_parser)))
                     [o_popup selectItem:[o_popup lastItem]];
             }
         }
@@ -1130,17 +1115,15 @@ my_width, tooltip, init_value)                                              \
 }
 @end
 
-@interface IntegerConfigControl() <NSTextFieldDelegate>
+@interface IntegerConfigControl ()<NSTextFieldDelegate>
 {
-    NSTextField     *o_textfield;
-    NSStepper       *o_stepper;
-    
+    NSTextField *o_textfield;
+    NSStepper *o_stepper;
 }
 @end
 
 @implementation IntegerConfigControl
-- (id)initWithItem:(module_config_t *)p_item
-          withView:(NSView *)parentView
+- (id)initWithItem:(module_config_t *)p_item withView:(NSView *)parentView
 {
     const NSUInteger leftMargin = VLCLibraryUIUnits.largeSpacing;
     const NSUInteger rightMargin = VLCLibraryUIUnits.largeSpacing;
@@ -1160,31 +1143,29 @@ my_width, tooltip, init_value)                                              \
         /* add the label */
         labelString = NSTR((char *)p_item->psz_text);
         ADD_LABEL(self.label, mainFrame, 0, -3, labelString, toolTip)
-        [self.label setAutoresizingMask:NSViewNotSizable ];
-        [self addSubview: self.label];
+        [self.label setAutoresizingMask:NSViewNotSizable];
+        [self addSubview:self.label];
 
         /* build the stepper */
-        ADD_STEPPER(o_stepper, mainFrame, mainFrame.size.width - 19,
-                    0, toolTip, -100000, 100000)
-        [o_stepper setIntegerValue: p_item->value.i];
-        [o_stepper setAutoresizingMask:NSViewMaxXMargin ];
-        [self addSubview: o_stepper];
+        ADD_STEPPER(o_stepper, mainFrame, mainFrame.size.width - 19, 0, toolTip, -100000, 100000)
+        [o_stepper setIntegerValue:p_item->value.i];
+        [o_stepper setAutoresizingMask:NSViewMaxXMargin];
+        [self addSubview:o_stepper];
 
-        ADD_TEXTFIELD(o_textfield, mainFrame, mainFrame.size.width - 19 - 52,
-                      1, 49, toolTip, @"")
-        [o_textfield setIntegerValue: p_item->value.i];
-        [o_textfield setDelegate: self];
-        [NSNotificationCenter.defaultCenter addObserver: self
-                                                 selector: @selector(textfieldChanged:)
-                                                     name: NSControlTextDidChangeNotification
-                                                   object: o_textfield];
-        [o_textfield setAutoresizingMask:NSViewMaxXMargin ];
-        [self addSubview: o_textfield];
+        ADD_TEXTFIELD(o_textfield, mainFrame, mainFrame.size.width - 19 - 52, 1, 49, toolTip, @"")
+        [o_textfield setIntegerValue:p_item->value.i];
+        [o_textfield setDelegate:self];
+        [NSNotificationCenter.defaultCenter addObserver:self
+                                               selector:@selector(textfieldChanged:)
+                                                   name:NSControlTextDidChangeNotification
+                                                 object:o_textfield];
+        [o_textfield setAutoresizingMask:NSViewMaxXMargin];
+        [self addSubview:o_textfield];
     }
     return self;
 }
 
-- (void) alignWithXPosition:(int)i_xPos
+- (void)alignWithXPosition:(int)i_xPos
 {
     NSRect frame;
     frame = [self.label frame];
@@ -1202,12 +1183,12 @@ my_width, tooltip, init_value)                                              \
 
 - (IBAction)stepperChanged:(id)sender
 {
-    [o_textfield setIntValue: [o_stepper intValue]];
+    [o_textfield setIntValue:[o_stepper intValue]];
 }
 
 - (void)textfieldChanged:(NSNotification *)o_notification
 {
-    [o_stepper setIntValue: [o_textfield intValue]];
+    [o_stepper setIntValue:[o_textfield intValue]];
 }
 
 - (int)intValue
@@ -1215,24 +1196,23 @@ my_width, tooltip, init_value)                                              \
     return [o_textfield intValue];
 }
 
--(void)resetValues
+- (void)resetValues
 {
-    [o_textfield setIntegerValue: config_GetInt(self.p_item->psz_name)];
+    [o_textfield setIntegerValue:config_GetInt(self.p_item->psz_name)];
     [super resetValues];
 }
 
 @end
 
-@interface IntegerListConfigControl()
+@interface IntegerListConfigControl ()
 {
-    NSPopUpButton      *o_popup;
+    NSPopUpButton *o_popup;
 }
 @end
 
 @implementation IntegerListConfigControl
 
-- (id)initWithItem:(module_config_t *)p_item
-          withView:(NSView *)parentView
+- (id)initWithItem:(module_config_t *)p_item withView:(NSView *)parentView
 {
     const NSUInteger leftMargin = VLCLibraryUIUnits.largeSpacing;
     const NSUInteger rightMargin = VLCLibraryUIUnits.largeSpacing;
@@ -1252,23 +1232,22 @@ my_width, tooltip, init_value)                                              \
         /* add the label */
         labelString = NSTR(p_item->psz_text);
         ADD_LABEL(self.label, mainFrame, 0, -3, labelString, o_textfieldTooltip)
-        [self.label setAutoresizingMask:NSViewNotSizable ];
-        [self addSubview: self.label];
+        [self.label setAutoresizingMask:NSViewNotSizable];
+        [self addSubview:self.label];
 
         /* build the textfield */
-        ADD_POPUP(o_popup, mainFrame, [self.label frame].size.width,
-                  -2, 0, o_textfieldTooltip)
-        [o_popup setAutoresizingMask:NSViewWidthSizable ];
+        ADD_POPUP(o_popup, mainFrame, [self.label frame].size.width, -2, 0, o_textfieldTooltip)
+        [o_popup setAutoresizingMask:NSViewWidthSizable];
 
         /* add items */
         [self resetValues];
 
-        [self addSubview: o_popup];
+        [self addSubview:o_popup];
     }
     return self;
 }
 
-- (void) alignWithXPosition:(int)i_xPos
+- (void)alignWithXPosition:(int)i_xPos
 {
     NSRect frame;
     NSRect superFrame = [self frame];
@@ -1292,7 +1271,7 @@ my_width, tooltip, init_value)                                              \
         return 0;
 }
 
--(void)resetValues
+- (void)resetValues
 {
     [o_popup removeAllItems];
 
@@ -1301,7 +1280,9 @@ my_width, tooltip, init_value)                                              \
     char **texts;
     ssize_t count = config_GetIntChoices(self.p_item->psz_name, &values, &texts);
     for (ssize_t i = 0; i < count; i++) {
-        NSMenuItem *mi = [[NSMenuItem alloc] initWithTitle: toNSStr(texts[i]) action: NULL keyEquivalent: @""];
+        NSMenuItem *mi = [[NSMenuItem alloc] initWithTitle:toNSStr(texts[i])
+                                                    action:NULL
+                                             keyEquivalent:@""];
         [mi setRepresentedObject:[NSNumber numberWithInteger:values[i]]];
         [[o_popup menu] addItem:mi];
 
@@ -1314,18 +1295,17 @@ my_width, tooltip, init_value)                                              \
 }
 @end
 
-@interface RangedIntegerConfigControl() <NSTextFieldDelegate>
+@interface RangedIntegerConfigControl ()<NSTextFieldDelegate>
 {
-    NSSlider        *o_slider;
-    NSTextField     *o_textfield;
-    NSTextField     *o_textfield_min;
-    NSTextField     *o_textfield_max;
+    NSSlider *o_slider;
+    NSTextField *o_textfield;
+    NSTextField *o_textfield_min;
+    NSTextField *o_textfield_max;
 }
 @end
 
 @implementation RangedIntegerConfigControl
-- (id)initWithItem:(module_config_t *)p_item
-          withView:(NSView *)parentView
+- (id)initWithItem:(module_config_t *)p_item withView:(NSView *)parentView
 {
     const NSUInteger leftMargin = VLCLibraryUIUnits.largeSpacing;
     const NSUInteger rightMargin = VLCLibraryUIUnits.largeSpacing;
@@ -1337,7 +1317,7 @@ my_width, tooltip, init_value)                                              \
     mainFrame.origin.x = leftMargin;
     mainFrame.origin.y = 0;
 
-    if (self = [super initWithFrame: mainFrame item:p_item]) {
+    if (self = [super initWithFrame:mainFrame item:p_item]) {
         self.viewType = CONFIG_ITEM_RANGED_INTEGER;
 
         toolTip = [NSTR(p_item->psz_longtext) stringWrappedToWidth:PREFS_WRAP];
@@ -1345,57 +1325,60 @@ my_width, tooltip, init_value)                                              \
         /* add the label */
         labelString = NSTR(p_item->psz_text);
         ADD_LABEL(self.label, mainFrame, 0, -3, labelString, toolTip)
-        [self.label setAutoresizingMask:NSViewNotSizable ];
-        [self addSubview: self.label];
+        [self.label setAutoresizingMask:NSViewNotSizable];
+        [self addSubview:self.label];
 
         /* build the textfield */
-        ADD_TEXTFIELD(o_textfield, mainFrame, [self.label frame].size.width + 2,
-                      28, 70, toolTip, @"")
-        [o_textfield setIntegerValue: p_item->value.i];
-        [o_textfield setAutoresizingMask:NSViewMaxXMargin ];
-        [o_textfield setDelegate: self];
-        [NSNotificationCenter.defaultCenter addObserver: self
-                                                 selector: @selector(textfieldChanged:)
-                                                     name: NSControlTextDidChangeNotification
-                                                   object: o_textfield];
-        [self addSubview: o_textfield];
+        ADD_TEXTFIELD(
+            o_textfield, mainFrame, [self.label frame].size.width + 2, 28, 70, toolTip, @"")
+        [o_textfield setIntegerValue:p_item->value.i];
+        [o_textfield setAutoresizingMask:NSViewMaxXMargin];
+        [o_textfield setDelegate:self];
+        [NSNotificationCenter.defaultCenter addObserver:self
+                                               selector:@selector(textfieldChanged:)
+                                                   name:NSControlTextDidChangeNotification
+                                                 object:o_textfield];
+        [self addSubview:o_textfield];
 
         /* build the mintextfield */
         ADD_LABEL(o_textfield_min, mainFrame, 12, -30, @"-88888", @"")
-        [o_textfield_min setIntegerValue: p_item->min.i];
-        [o_textfield_min setAutoresizingMask:NSViewMaxXMargin ];
+        [o_textfield_min setIntegerValue:p_item->min.i];
+        [o_textfield_min setAutoresizingMask:NSViewMaxXMargin];
         [o_textfield_min setAlignment:NSTextAlignmentRight];
-        [self addSubview: o_textfield_min];
+        [self addSubview:o_textfield_min];
 
         /* build the maxtextfield */
-        ADD_LABEL(o_textfield_max, mainFrame,
-                  mainFrame.size.width - 50, -30, @"88888", @"")
-        [o_textfield_max setIntegerValue: p_item->max.i];
-        [o_textfield_max setAutoresizingMask:NSViewMinXMargin ];
-        [self addSubview: o_textfield_max];
+        ADD_LABEL(o_textfield_max, mainFrame, mainFrame.size.width - 50, -30, @"88888", @"")
+        [o_textfield_max setIntegerValue:p_item->max.i];
+        [o_textfield_max setAutoresizingMask:NSViewMinXMargin];
+        [self addSubview:o_textfield_max];
 
         [o_textfield_max sizeToFit];
         [o_textfield_min sizeToFit];
 
         /* build the slider */
-        ADD_SLIDER(o_slider, mainFrame, [o_textfield_min frame].origin.x +
-                   [o_textfield_min frame].size.width + 6, -1,
-                   [o_textfield_max frame].origin.x -
-                   ([o_textfield_min frame].origin.x + [o_textfield_min frame].size.width) - 14, toolTip,
-                   p_item->min.i, p_item->max.i)
-        [o_slider setIntegerValue: p_item->value.i];
-        [o_slider setAutoresizingMask:NSViewWidthSizable ];
-        [o_slider setTarget: self];
-        [o_slider setAction: @selector(sliderChanged:)];
+        ADD_SLIDER(o_slider,
+                   mainFrame,
+                   [o_textfield_min frame].origin.x + [o_textfield_min frame].size.width + 6,
+                   -1,
+                   [o_textfield_max frame].origin.x
+                       - ([o_textfield_min frame].origin.x + [o_textfield_min frame].size.width)
+                       - 14,
+                   toolTip,
+                   p_item->min.i,
+                   p_item->max.i)
+        [o_slider setIntegerValue:p_item->value.i];
+        [o_slider setAutoresizingMask:NSViewWidthSizable];
+        [o_slider setTarget:self];
+        [o_slider setAction:@selector(sliderChanged:)];
         [o_slider sendActionOn:NSEventMaskLeftMouseUp | NSEventMaskLeftMouseDown |
-         NSEventMaskLeftMouseDragged];
-        [self addSubview: o_slider];
-
+                  NSEventMaskLeftMouseDragged];
+        [self addSubview:o_slider];
     }
     return self;
 }
 
-- (void) alignWithXPosition:(int)i_xPos
+- (void)alignWithXPosition:(int)i_xPos
 {
     NSRect frame;
     frame = [self.label frame];
@@ -1409,12 +1392,12 @@ my_width, tooltip, init_value)                                              \
 
 - (IBAction)sliderChanged:(id)sender
 {
-    [o_textfield setIntValue: [o_slider intValue]];
+    [o_textfield setIntValue:[o_slider intValue]];
 }
 
 - (void)textfieldChanged:(NSNotification *)o_notification
 {
-    [o_slider setIntValue: [o_textfield intValue]];
+    [o_slider setIntValue:[o_textfield intValue]];
 }
 
 - (int)intValue
@@ -1431,16 +1414,15 @@ my_width, tooltip, init_value)                                              \
 }
 @end
 
-@interface FloatConfigControl() <NSTextFieldDelegate>
+@interface FloatConfigControl ()<NSTextFieldDelegate>
 {
-    NSTextField     *o_textfield;
-    NSStepper       *o_stepper;
+    NSTextField *o_textfield;
+    NSStepper *o_stepper;
 }
 @end
 
 @implementation FloatConfigControl
-- (id)initWithItem:(module_config_t *)p_item
-          withView:(NSView *)parentView
+- (id)initWithItem:(module_config_t *)p_item withView:(NSView *)parentView
 {
     const NSUInteger leftMargin = VLCLibraryUIUnits.largeSpacing;
     const NSUInteger rightMargin = VLCLibraryUIUnits.largeSpacing;
@@ -1460,32 +1442,30 @@ my_width, tooltip, init_value)                                              \
         /* add the label */
         labelString = NSTR(p_item->psz_text);
         ADD_LABEL(self.label, mainFrame, 0, -2, labelString, toolTip)
-        [self.label setAutoresizingMask:NSViewNotSizable ];
-        [self addSubview: self.label];
+        [self.label setAutoresizingMask:NSViewNotSizable];
+        [self addSubview:self.label];
 
         /* build the stepper */
-        ADD_STEPPER(o_stepper, mainFrame, mainFrame.size.width - 19,
-                    0, toolTip, -100000, 100000)
-        [o_stepper setFloatValue: p_item->value.f];
-        [o_stepper setAutoresizingMask:NSViewMaxXMargin ];
-        [self addSubview: o_stepper];
+        ADD_STEPPER(o_stepper, mainFrame, mainFrame.size.width - 19, 0, toolTip, -100000, 100000)
+        [o_stepper setFloatValue:p_item->value.f];
+        [o_stepper setAutoresizingMask:NSViewMaxXMargin];
+        [self addSubview:o_stepper];
 
         /* build the textfield */
-        ADD_TEXTFIELD(o_textfield, mainFrame, mainFrame.size.width - 19 - 52,
-                      1, 49, toolTip, @"")
-        [o_textfield setFloatValue: p_item->value.f];
-        [o_textfield setDelegate: self];
-        [NSNotificationCenter.defaultCenter addObserver: self
-                                                 selector: @selector(textfieldChanged:)
-                                                     name: NSControlTextDidChangeNotification
-                                                   object: o_textfield];
-        [o_textfield setAutoresizingMask:NSViewMaxXMargin ];
-        [self addSubview: o_textfield];
+        ADD_TEXTFIELD(o_textfield, mainFrame, mainFrame.size.width - 19 - 52, 1, 49, toolTip, @"")
+        [o_textfield setFloatValue:p_item->value.f];
+        [o_textfield setDelegate:self];
+        [NSNotificationCenter.defaultCenter addObserver:self
+                                               selector:@selector(textfieldChanged:)
+                                                   name:NSControlTextDidChangeNotification
+                                                 object:o_textfield];
+        [o_textfield setAutoresizingMask:NSViewMaxXMargin];
+        [self addSubview:o_textfield];
     }
     return self;
 }
 
-- (void) alignWithXPosition:(int)i_xPos
+- (void)alignWithXPosition:(int)i_xPos
 {
     NSRect frame;
     frame = [self.label frame];
@@ -1503,12 +1483,12 @@ my_width, tooltip, init_value)                                              \
 
 - (IBAction)stepperChanged:(id)sender
 {
-    [o_textfield setFloatValue: [o_stepper floatValue]];
+    [o_textfield setFloatValue:[o_stepper floatValue]];
 }
 
 - (void)textfieldChanged:(NSNotification *)o_notification
 {
-    [o_stepper setFloatValue: [o_textfield floatValue]];
+    [o_stepper setFloatValue:[o_textfield floatValue]];
 }
 
 - (float)floatValue
@@ -1518,23 +1498,22 @@ my_width, tooltip, init_value)                                              \
 
 - (void)resetValues
 {
-    [o_textfield setFloatValue: config_GetFloat(self.p_item->psz_name)];
+    [o_textfield setFloatValue:config_GetFloat(self.p_item->psz_name)];
     [super resetValues];
 }
 @end
 
-@interface RangedFloatConfigControl() <NSTextFieldDelegate>
+@interface RangedFloatConfigControl ()<NSTextFieldDelegate>
 {
-    NSSlider        *o_slider;
-    NSTextField     *o_textfield;
-    NSTextField     *o_textfield_min;
-    NSTextField     *o_textfield_max;
+    NSSlider *o_slider;
+    NSTextField *o_textfield;
+    NSTextField *o_textfield_min;
+    NSTextField *o_textfield_max;
 }
 @end
 
 @implementation RangedFloatConfigControl
-- (id)initWithItem:(module_config_t *)p_item
-          withView:(NSView *)parentView
+- (id)initWithItem:(module_config_t *)p_item withView:(NSView *)parentView
 {
     const NSUInteger leftMargin = VLCLibraryUIUnits.largeSpacing;
     const NSUInteger rightMargin = VLCLibraryUIUnits.largeSpacing;
@@ -1554,55 +1533,56 @@ my_width, tooltip, init_value)                                              \
         /* add the label */
         labelString = NSTR(p_item->psz_text);
         ADD_LABEL(self.label, mainFrame, 0, -3, labelString, toolTip)
-        [self.label setAutoresizingMask:NSViewNotSizable ];
-        [self addSubview: self.label];
+        [self.label setAutoresizingMask:NSViewNotSizable];
+        [self addSubview:self.label];
 
         /* build the textfield */
-        ADD_TEXTFIELD(o_textfield, mainFrame, [self.label frame].size.width + 2,
-                      28, 49, toolTip, @"")
-        [o_textfield setFloatValue: p_item->value.f];
-        [o_textfield setAutoresizingMask:NSViewMaxXMargin ];
-        [o_textfield setDelegate: self];
-        [NSNotificationCenter.defaultCenter addObserver: self
-                                                 selector: @selector(textfieldChanged:)
-                                                     name: NSControlTextDidChangeNotification
-                                                   object: o_textfield];
-        [self addSubview: o_textfield];
+        ADD_TEXTFIELD(
+            o_textfield, mainFrame, [self.label frame].size.width + 2, 28, 49, toolTip, @"")
+        [o_textfield setFloatValue:p_item->value.f];
+        [o_textfield setAutoresizingMask:NSViewMaxXMargin];
+        [o_textfield setDelegate:self];
+        [NSNotificationCenter.defaultCenter addObserver:self
+                                               selector:@selector(textfieldChanged:)
+                                                   name:NSControlTextDidChangeNotification
+                                                 object:o_textfield];
+        [self addSubview:o_textfield];
 
         /* build the mintextfield */
         ADD_LABEL(o_textfield_min, mainFrame, 12, -30, @"-8888", @"")
-        [o_textfield_min setFloatValue: p_item->min.f];
-        [o_textfield_min setAutoresizingMask:NSViewMaxXMargin ];
+        [o_textfield_min setFloatValue:p_item->min.f];
+        [o_textfield_min setAutoresizingMask:NSViewMaxXMargin];
         [o_textfield_min setAlignment:NSTextAlignmentRight];
-        [self addSubview: o_textfield_min];
+        [self addSubview:o_textfield_min];
 
         /* build the maxtextfield */
-        ADD_LABEL(o_textfield_max, mainFrame, mainFrame.size.width - 31,
-                  -30, @"8888", @"")
-        [o_textfield_max setFloatValue: p_item->max.f];
-        [o_textfield_max setAutoresizingMask:NSViewMinXMargin ];
-        [self addSubview: o_textfield_max];
+        ADD_LABEL(o_textfield_max, mainFrame, mainFrame.size.width - 31, -30, @"8888", @"")
+        [o_textfield_max setFloatValue:p_item->max.f];
+        [o_textfield_max setAutoresizingMask:NSViewMinXMargin];
+        [self addSubview:o_textfield_max];
 
         /* build the slider */
-        ADD_SLIDER(o_slider, mainFrame, [o_textfield_min frame].origin.x +
-                   [o_textfield_min frame].size.width + 6, -1, mainFrame.size.width -
-                   [o_textfield_max frame].size.width -
-                   [o_textfield_max frame].size.width - 14 -
-                   [o_textfield_min frame].origin.x, toolTip, p_item->min.f,
+        ADD_SLIDER(o_slider,
+                   mainFrame,
+                   [o_textfield_min frame].origin.x + [o_textfield_min frame].size.width + 6,
+                   -1,
+                   mainFrame.size.width - [o_textfield_max frame].size.width -
+                       [o_textfield_max frame].size.width - 14 - [o_textfield_min frame].origin.x,
+                   toolTip,
+                   p_item->min.f,
                    p_item->max.f)
-        [o_slider setFloatValue: p_item->value.f];
-        [o_slider setAutoresizingMask:NSViewWidthSizable ];
-        [o_slider setTarget: self];
-        [o_slider setAction: @selector(sliderChanged:)];
+        [o_slider setFloatValue:p_item->value.f];
+        [o_slider setAutoresizingMask:NSViewWidthSizable];
+        [o_slider setTarget:self];
+        [o_slider setAction:@selector(sliderChanged:)];
         [o_slider sendActionOn:NSEventMaskLeftMouseUp | NSEventMaskLeftMouseDown |
-         NSEventMaskLeftMouseDragged];
-        [self addSubview: o_slider];
-
+                  NSEventMaskLeftMouseDragged];
+        [self addSubview:o_slider];
     }
     return self;
 }
 
-- (void) alignWithXPosition:(int)i_xPos
+- (void)alignWithXPosition:(int)i_xPos
 {
     NSRect frame;
     frame = [self.label frame];
@@ -1616,12 +1596,12 @@ my_width, tooltip, init_value)                                              \
 
 - (IBAction)sliderChanged:(id)sender
 {
-    [o_textfield setFloatValue: [o_slider floatValue]];
+    [o_textfield setFloatValue:[o_slider floatValue]];
 }
 
 - (void)textfieldChanged:(NSNotification *)o_notification
 {
-    [o_slider setFloatValue: [o_textfield floatValue]];
+    [o_slider setFloatValue:[o_textfield floatValue]];
 }
 
 - (float)floatValue
@@ -1631,22 +1611,21 @@ my_width, tooltip, init_value)                                              \
 
 - (void)resetValues
 {
-    [o_textfield setFloatValue: config_GetFloat(self.p_item->psz_name)];
-    [o_slider setFloatValue: config_GetFloat(self.p_item->psz_name)];
+    [o_textfield setFloatValue:config_GetFloat(self.p_item->psz_name)];
+    [o_slider setFloatValue:config_GetFloat(self.p_item->psz_name)];
     [super resetValues];
 }
 @end
 
-@interface BoolConfigControl()
+@interface BoolConfigControl ()
 {
-    NSButton        *o_checkbox;
+    NSButton *o_checkbox;
 }
 @end
 
 @implementation BoolConfigControl
 
-- (id)initWithItem:(module_config_t *)p_item
-          withView:(NSView *)parentView
+- (id)initWithItem:(module_config_t *)p_item withView:(NSView *)parentView
 {
     const NSUInteger leftMargin = VLCLibraryUIUnits.largeSpacing;
     const NSUInteger rightMargin = VLCLibraryUIUnits.largeSpacing;
@@ -1668,10 +1647,10 @@ my_width, tooltip, init_value)                                              \
         toolTip = [NSTR(p_item->psz_longtext) stringWrappedToWidth:PREFS_WRAP];
 
         /* add the checkbox */
-        ADD_CHECKBOX(o_checkbox, mainFrame, 0,
-                     0, labelString, toolTip, (int)p_item->value.i, NSImageLeft)
+        ADD_CHECKBOX(
+            o_checkbox, mainFrame, 0, 0, labelString, toolTip, (int)p_item->value.i, NSImageLeft)
         [o_checkbox setAutoresizingMask:NSViewNotSizable];
-        [self addSubview: o_checkbox];
+        [self addSubview:o_checkbox];
     }
     return self;
 }
@@ -1683,22 +1662,21 @@ my_width, tooltip, init_value)                                              \
 
 - (void)resetValues
 {
-    [o_checkbox setState: config_GetInt(self.p_item->psz_name)];
+    [o_checkbox setState:config_GetInt(self.p_item->psz_name)];
     [super resetValues];
 }
 @end
 
-@interface ModuleListConfigControl() <NSTextFieldDelegate, NSTableViewDataSource>
+@interface ModuleListConfigControl ()<NSTextFieldDelegate, NSTableViewDataSource>
 {
-    NSTextField     *o_textfield;
-    NSTableView     *o_tableview;
-    NSMutableArray  *o_modulearray;
+    NSTextField *o_textfield;
+    NSTableView *o_tableview;
+    NSMutableArray *o_modulearray;
 }
 @end
 
 @implementation ModuleListConfigControl
-- (id)initWithItem:(module_config_t *)p_item
-          withView:(NSView *)parentView
+- (id)initWithItem:(module_config_t *)p_item withView:(NSView *)parentView
 {
     self = [super initWithFrame:CGRectZero item:p_item];
     if (!self) {
@@ -1708,7 +1686,7 @@ my_width, tooltip, init_value)                                              \
 
     BOOL b_by_cat = p_item->i_type == CONFIG_ITEM_MODULE_LIST_CAT;
 
-    //Fill our array to know how may items we have...
+    // Fill our array to know how may items we have...
     module_t *p_parser, **p_list;
     size_t i_module_index;
     NSRect mainFrame = [parentView frame];
@@ -1735,62 +1713,59 @@ my_width, tooltip, init_value)                                              \
                 NSNumber *o_moduleenabled = nil;
 
                 /* Hack: required subcategory is stored in i_min */
-                if (p_config->i_type == CONFIG_SUBCATEGORY &&
-                    p_config->value.i == p_item->min.i) {
-
+                if (p_config->i_type == CONFIG_SUBCATEGORY && p_config->value.i == p_item->min.i) {
                     o_modulelongname = toNSStr(module_GetLongName(p_parser));
                     o_modulename = toNSStr(module_get_object(p_parser));
 
-                    if (p_item->value.psz &&
-                        strstr(p_item->value.psz, module_get_object(p_parser)))
+                    if (p_item->value.psz && strstr(p_item->value.psz, module_get_object(p_parser)))
                         o_moduleenabled = [NSNumber numberWithBool:YES];
                     else
                         o_moduleenabled = [NSNumber numberWithBool:NO];
 
-                    [o_modulearray addObject:[NSMutableArray
-                                              arrayWithObjects: o_modulename, o_modulelongname,
-                                              o_moduleenabled, nil]];
+                    [o_modulearray addObject:[NSMutableArray arrayWithObjects:o_modulename,
+                                                                              o_modulelongname,
+                                                                              o_moduleenabled,
+                                                                              nil]];
                 }
 
                 /* Parental Advisory HACK:
                  * Selecting HTTP, RC and Telnet interfaces is difficult now
                  * since they are just the lua interface module */
-                if (p_config->i_type == CONFIG_SUBCATEGORY &&
-                    !strcmp(module_get_object(p_parser), "lua") &&
-                    !strcmp(p_item->psz_name, "extraintf") &&
-                    p_config->value.i == p_item->min.i) {
-
-#define addLuaIntf(shortname, longname) \
-if (p_item->value.psz && strstr(p_item->value.psz, shortname))\
-o_moduleenabled = [NSNumber numberWithBool:YES];\
-else \
-o_moduleenabled = [NSNumber numberWithBool:NO];\
-[o_modulearray addObject:[NSMutableArray arrayWithObjects: @shortname, NSTR(longname), o_moduleenabled, nil]]
+                if (p_config->i_type == CONFIG_SUBCATEGORY
+                    && !strcmp(module_get_object(p_parser), "lua")
+                    && !strcmp(p_item->psz_name, "extraintf")
+                    && p_config->value.i == p_item->min.i) {
+#define addLuaIntf(shortname, longname)                                                            \
+    if (p_item->value.psz && strstr(p_item->value.psz, shortname))                                 \
+        o_moduleenabled = [NSNumber numberWithBool:YES];                                           \
+    else                                                                                           \
+        o_moduleenabled = [NSNumber numberWithBool:NO];                                            \
+    [o_modulearray                                                                                 \
+        addObject:[NSMutableArray                                                                  \
+                      arrayWithObjects:@shortname, NSTR(longname), o_moduleenabled, nil]]
 
                     addLuaIntf("http", "Web");
                     addLuaIntf("telnet", "Telnet");
                     addLuaIntf("cli", "Console");
 #undef addLuaIntf
                 }
-
             }
             module_config_free(p_configlist);
 
         } else if (module_provides(p_parser, p_item->psz_type)) {
-
             NSString *o_modulelongname = toNSStr(module_GetLongName(p_parser));
             NSString *o_modulename = toNSStr(module_get_object(p_parser));
 
             NSNumber *o_moduleenabled = nil;
-            if (p_item->value.psz &&
-                strstr(p_item->value.psz, module_get_object(p_parser)))
+            if (p_item->value.psz && strstr(p_item->value.psz, module_get_object(p_parser)))
                 o_moduleenabled = [NSNumber numberWithBool:YES];
             else
                 o_moduleenabled = [NSNumber numberWithBool:NO];
 
-            [o_modulearray addObject:[NSMutableArray
-                                      arrayWithObjects: o_modulename, o_modulelongname,
-                                      o_moduleenabled, nil]];
+            [o_modulearray addObject:[NSMutableArray arrayWithObjects:o_modulename,
+                                                                      o_modulelongname,
+                                                                      o_moduleenabled,
+                                                                      nil]];
         }
 
     } /* FOR i_module_index */
@@ -1803,7 +1778,7 @@ o_moduleenabled = [NSNumber numberWithBool:NO];\
     // width is increased a little to fix horizontal auto-sizing
     NSRect s_rc = NSMakeRect(12, 10, mainFrame.size.width - leftMargin - rightMargin + 18, 50);
     // height is automatically increased as needed
-    o_tableview = [[NSTableView alloc] initWithFrame : s_rc];
+    o_tableview = [[NSTableView alloc] initWithFrame:s_rc];
     [o_tableview setUsesAlternatingRowBackgroundColors:YES];
     [o_tableview setHeaderView:nil];
     /* FIXME: support for multiple selection... */
@@ -1811,35 +1786,33 @@ o_moduleenabled = [NSNumber numberWithBool:NO];\
 
     NSTableHeaderCell *o_headerCell = [[NSTableHeaderCell alloc] initTextCell:@"Enabled"];
     NSCell *o_dataCell = [[NSButtonCell alloc] init];
-    [(NSButtonCell*)o_dataCell setButtonType:NSSwitchButton];
+    [(NSButtonCell *)o_dataCell setButtonType:NSSwitchButton];
     [o_dataCell setTitle:@""];
     [o_dataCell setFont:[NSFont systemFontOfSize:0]];
-    NSTableColumn *o_tableColumn = [[NSTableColumn alloc]
-                                    initWithIdentifier:@"Enabled"];
-    [o_tableColumn setHeaderCell: o_headerCell];
-    [o_tableColumn setDataCell: o_dataCell];
+    NSTableColumn *o_tableColumn = [[NSTableColumn alloc] initWithIdentifier:@"Enabled"];
+    [o_tableColumn setHeaderCell:o_headerCell];
+    [o_tableColumn setDataCell:o_dataCell];
     [o_tableColumn setWidth:17];
-    [o_tableview addTableColumn: o_tableColumn];
+    [o_tableview addTableColumn:o_tableColumn];
 
     o_headerCell = [[NSTableHeaderCell alloc] initTextCell:@"Module Name"];
     o_dataCell = [[NSTextFieldCell alloc] init];
     [o_dataCell setFont:[NSFont systemFontOfSize:12]];
-    o_tableColumn = [[NSTableColumn alloc]
-                     initWithIdentifier:@"Module"];
-    [o_tableColumn setHeaderCell: o_headerCell];
-    [o_tableColumn setDataCell: o_dataCell];
+    o_tableColumn = [[NSTableColumn alloc] initWithIdentifier:@"Module"];
+    [o_tableColumn setHeaderCell:o_headerCell];
+    [o_tableColumn setDataCell:o_dataCell];
     [o_tableColumn setWidth:s_rc.size.width - 34];
-    [o_tableview addTableColumn: o_tableColumn];
-    [o_tableview registerForDraggedTypes:@[VLCPrefsWidgetModuleDragType]];
+    [o_tableview addTableColumn:o_tableColumn];
+    [o_tableview registerForDraggedTypes:@[ VLCPrefsWidgetModuleDragType ]];
 
     [o_tableview setDataSource:self];
-    [o_tableview setTarget: self];
-    [o_tableview setAction: @selector(tableChanged:)];
+    [o_tableview setTarget:self];
+    [o_tableview setAction:@selector(tableChanged:)];
     [o_tableview sendActionOn:NSEventMaskLeftMouseUp | NSEventMaskLeftMouseDown |
-     NSEventMaskLeftMouseDragged];
+                 NSEventMaskLeftMouseDragged];
 
     [o_tableview reloadData];
-    [o_tableview setAutoresizingMask: NSViewWidthSizable];
+    [o_tableview setAutoresizingMask:NSViewWidthSizable];
 
     CGFloat tableview_height = [o_tableview frame].size.height;
 
@@ -1854,23 +1827,27 @@ o_moduleenabled = [NSNumber numberWithBool:NO];\
     /* add the label */
     labelString = NSTR((char *)p_item->psz_text);
     ADD_LABEL(self.label, mainFrame, 0, -3, labelString, toolTip)
-    [self.label setAutoresizingMask:NSViewNotSizable ];
-    [self addSubview: self.label];
+    [self.label setAutoresizingMask:NSViewNotSizable];
+    [self addSubview:self.label];
 
     /* build the textfield */
     o_textfieldString = NSTR(p_item->value.psz);
-    ADD_TEXTFIELD(o_textfield, mainFrame, [self.label frame].size.width + 2,
-                  mainFrame.size.height - 22, mainFrame.size.width -
-                  [self.label frame].size.width - 2, toolTip, o_textfieldString)
-    [o_textfield setAutoresizingMask:NSViewWidthSizable ];
-    [self addSubview: o_textfield];
+    ADD_TEXTFIELD(o_textfield,
+                  mainFrame,
+                  [self.label frame].size.width + 2,
+                  mainFrame.size.height - 22,
+                  mainFrame.size.width - [self.label frame].size.width - 2,
+                  toolTip,
+                  o_textfieldString)
+    [o_textfield setAutoresizingMask:NSViewWidthSizable];
+    [self addSubview:o_textfield];
 
-    [self addSubview: o_tableview];
+    [self addSubview:o_tableview];
 
     return self;
 }
 
-- (void) alignWithXPosition:(int)i_xPos
+- (void)alignWithXPosition:(int)i_xPos
 {
     ;
 }
@@ -1879,16 +1856,16 @@ o_moduleenabled = [NSNumber numberWithBool:NO];\
 {
     NSString *o_newstring = @"";
     NSUInteger count = [o_modulearray count];
-    for (NSUInteger i = 0 ; i < count ; i++)
-        if ([[[o_modulearray objectAtIndex:i] objectAtIndex:2]
-             boolValue] != NO) {
-            o_newstring = [o_newstring stringByAppendingString:
-                           [[o_modulearray objectAtIndex:i] firstObject]];
+    for (NSUInteger i = 0; i < count; i++)
+        if ([[[o_modulearray objectAtIndex:i] objectAtIndex:2] boolValue] != NO) {
+            o_newstring =
+                [o_newstring stringByAppendingString:[[o_modulearray objectAtIndex:i] firstObject]];
             o_newstring = [o_newstring stringByAppendingString:@":"];
         }
 
-    [o_textfield setStringValue: [o_newstring
-                                  substringToIndex:([o_newstring length])?[o_newstring length] - 1:0]];
+    [o_textfield
+        setStringValue:[o_newstring
+                           substringToIndex:([o_newstring length]) ? [o_newstring length] - 1 : 0]];
 }
 
 - (char *)stringValue
@@ -1902,7 +1879,7 @@ o_moduleenabled = [NSNumber numberWithBool:NO];\
  * as far as I could figure out by reading the commit in which this was
  * introduced. (d66f3c874786e9dd4692f9775bdd54b386c583dd)
  */
--(void)resetValues
+- (void)resetValues
 {
 #warning Reset prefs of the module selector is broken atm.
     msg_Err(getIntf(), "don't forget about modulelistconfig");
@@ -1913,15 +1890,18 @@ o_moduleenabled = [NSNumber numberWithBool:NO];\
 
 @implementation ModuleListConfigControl (NSTableDataSource)
 
-- (BOOL)tableView:(NSTableView *)tableView writeRowsWithIndexes:(NSIndexSet *)rowIndexes toPasteboard:(NSPasteboard *)pboard
+- (BOOL)tableView:(NSTableView *)tableView
+    writeRowsWithIndexes:(NSIndexSet *)rowIndexes
+            toPasteboard:(NSPasteboard *)pboard
 {
-    [pboard declareTypes:@[VLCPrefsWidgetModuleDragType] owner:nil];
-    [pboard setPropertyList:@[@(rowIndexes.firstIndex)] forType:VLCPrefsWidgetModuleDragType];
+    [pboard declareTypes:@[ VLCPrefsWidgetModuleDragType ] owner:nil];
+    [pboard setPropertyList:@[ @(rowIndexes.firstIndex) ] forType:VLCPrefsWidgetModuleDragType];
     return YES;
 }
 
-- (NSDragOperation)tableView:(NSTableView*)table
-                validateDrop:(id <NSDraggingInfo>)info proposedRow:(NSInteger)row
+- (NSDragOperation)tableView:(NSTableView *)table
+                validateDrop:(id<NSDraggingInfo>)info
+                 proposedRow:(NSInteger)row
        proposedDropOperation:(NSTableViewDropOperation)op
 {
     // Make drops at the end of the table go to the end.
@@ -1933,14 +1913,16 @@ o_moduleenabled = [NSNumber numberWithBool:NO];\
 
     // We don't ever want to drop onto a row, only between rows.
     if (op == NSTableViewDropOn)
-        [table setDropRow:(row+1) dropOperation:NSTableViewDropAbove];
+        [table setDropRow:(row + 1) dropOperation:NSTableViewDropAbove];
     return NSDragOperationGeneric;
 }
 
-- (BOOL)tableView:(NSTableView*)table acceptDrop:(id <NSDraggingInfo>)info
-              row:(NSInteger)dropRow dropOperation:(NSTableViewDropOperation)op;
+- (BOOL)tableView:(NSTableView *)table
+       acceptDrop:(id<NSDraggingInfo>)info
+              row:(NSInteger)dropRow
+    dropOperation:(NSTableViewDropOperation)op;
 {
-    NSPasteboard    *pb = [info draggingPasteboard];
+    NSPasteboard *pb = [info draggingPasteboard];
     BOOL accepted = NO;
 
     NS_DURING
@@ -1948,24 +1930,22 @@ o_moduleenabled = [NSNumber numberWithBool:NO];\
     NSArray *array;
 
     // Intra-table drag - data is the array of rows.
-    if (!accepted && (array =
-                      [pb propertyListForType:VLCPrefsWidgetModuleDragType]) != NULL) {
+    if (!accepted && (array = [pb propertyListForType:VLCPrefsWidgetModuleDragType]) != NULL) {
         NSEnumerator *iter = nil;
         id val;
         // Move the modules
         iter = [array objectEnumerator];
         while ((val = [iter nextObject]) != NULL) {
-            NSArray *o_tmp = [[o_modulearray objectAtIndex:
-                               [val intValue]] mutableCopyWithZone:nil];
+            NSArray *o_tmp = [[o_modulearray objectAtIndex:[val intValue]] mutableCopyWithZone:nil];
             [o_modulearray removeObject:o_tmp];
             [o_modulearray insertObject:o_tmp
-                                atIndex:(dropRow>[val intValue]) ? dropRow - 1 : dropRow];
+                                atIndex:(dropRow > [val intValue]) ? dropRow - 1 : dropRow];
             dropRow++;
         }
 
         // Select the newly-dragged items.
         iter = [array objectEnumerator];
-        //TODO...
+        // TODO...
         [table deselectAll:self];
 
         [self tableChanged:self];
@@ -1994,28 +1974,29 @@ o_moduleenabled = [NSNumber numberWithBool:NO];\
 }
 
 - (id)tableView:(NSTableView *)aTableView
-objectValueForTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
+    objectValueForTableColumn:(NSTableColumn *)aTableColumn
+                          row:(NSInteger)rowIndex
 {
-    if ([[aTableColumn identifier] isEqualToString: @"Enabled"])
+    if ([[aTableColumn identifier] isEqualToString:@"Enabled"])
         return [[o_modulearray objectAtIndex:rowIndex] objectAtIndex:2];
-    if ([[aTableColumn identifier] isEqualToString: @"Module"])
+    if ([[aTableColumn identifier] isEqualToString:@"Module"])
         return [[o_modulearray objectAtIndex:rowIndex] objectAtIndex:1];
 
     return nil;
 }
 
-- (void)tableView:(NSTableView *)aTableView setObjectValue:(id)anObject
-   forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
+- (void)tableView:(NSTableView *)aTableView
+    setObjectValue:(id)anObject
+    forTableColumn:(NSTableColumn *)aTableColumn
+               row:(NSInteger)rowIndex
 {
-    [[o_modulearray objectAtIndex:rowIndex] replaceObjectAtIndex:2
-                                                      withObject: anObject];
+    [[o_modulearray objectAtIndex:rowIndex] replaceObjectAtIndex:2 withObject:anObject];
 }
 @end
 
 @implementation SectionControl
 
-- (id)initWithItem:(module_config_t *)p_item
-          withView:(NSView *)parentView
+- (id)initWithItem:(module_config_t *)p_item withView:(NSView *)parentView
 {
     const NSUInteger leftMargin = VLCLibraryUIUnits.largeSpacing;
     const NSUInteger rightMargin = VLCLibraryUIUnits.largeSpacing;
@@ -2031,18 +2012,19 @@ objectValueForTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
         /* add the label */
         labelString = NSTR(p_item->psz_text);
 
-        NSDictionary *boldAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
-                                        [NSFont boldSystemFontOfSize:[NSFont systemFontSize]],
-                                        NSFontAttributeName,
-                                        nil];
-        NSAttributedString *o_bold_string = [[NSAttributedString alloc] initWithString: labelString attributes: boldAttributes];
+        NSDictionary *boldAttributes = [NSDictionary
+            dictionaryWithObjectsAndKeys:[NSFont boldSystemFontOfSize:[NSFont systemFontSize]],
+                                         NSFontAttributeName,
+                                         nil];
+        NSAttributedString *o_bold_string =
+            [[NSAttributedString alloc] initWithString:labelString attributes:boldAttributes];
 
         ADD_LABEL(self.label, mainFrame, 1, 0, @"", @"")
-        [self.label setAttributedStringValue: o_bold_string];
+        [self.label setAttributedStringValue:o_bold_string];
         [self.label sizeToFit];
 
         [self.label setAutoresizingMask:NSViewNotSizable];
-        [self addSubview: self.label];
+        [self addSubview:self.label];
     }
     return self;
 }

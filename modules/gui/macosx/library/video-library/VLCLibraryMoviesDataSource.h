@@ -29,7 +29,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class VLCLibraryModel;
 
-@interface VLCLibraryMoviesDataSource : NSObject <VLCLibraryCollectionViewDataSource, VLCLibraryTableViewDataSource>
+@interface VLCLibraryMoviesDataSource
+    : NSObject<VLCLibraryCollectionViewDataSource, VLCLibraryTableViewDataSource>
 
 @property (readwrite, weak) VLCLibraryModel *libraryModel;
 @property (readwrite, weak) NSCollectionView *collectionView;

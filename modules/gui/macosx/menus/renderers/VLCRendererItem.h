@@ -39,12 +39,12 @@ NS_ASSUME_NONNULL_BEGIN
  Initialize the object with a renderer item, typically received from
  a \c vlc_renderer_discovery_t event.
  */
-- (instancetype)initWithRendererItem:(vlc_renderer_item_t*)item;
+- (instancetype)initWithRendererItem:(vlc_renderer_item_t *)item;
 
 /**
  The underlying \c vlc_renderer_item_t item
  */
-@property (readonly, assign) vlc_renderer_item_t* rendererItem;
+@property (readonly, assign) vlc_renderer_item_t *rendererItem;
 
 /**
  The name of the renderer item

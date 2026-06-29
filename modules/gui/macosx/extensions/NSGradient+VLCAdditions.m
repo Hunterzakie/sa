@@ -24,8 +24,7 @@
 
 @implementation NSGradient (VLCAdditions)
 
-- (void)vlc_safeDrawInBezierPath:(NSBezierPath *)path 
-                           angle:(CGFloat)angle
+- (void)vlc_safeDrawInBezierPath:(NSBezierPath *)path angle:(CGFloat)angle
 {
     if ([path isEmpty])
         return;

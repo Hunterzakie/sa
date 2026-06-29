@@ -63,7 +63,8 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
 {
     const CVTimeStamp inNowCopy = *inNow;
     dispatch_async(dispatch_get_main_queue(), ^{
-        VLCPlaybackProgressSliderCell * const sliderCell = (__bridge VLCPlaybackProgressSliderCell*)displayLinkContext;
+        VLCPlaybackProgressSliderCell *const sliderCell =
+            (__bridge VLCPlaybackProgressSliderCell *)displayLinkContext;
         [sliderCell displayLink:displayLink tickWithTime:&inNowCopy];
     });
     return kCVReturnSuccess;
@@ -81,7 +82,7 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
         [self updateAtoBLoopState];
         [self initDisplayLink];
 
-        NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+        NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
         [notificationCenter addObserver:self
                                selector:@selector(abLoopStateChanged:)
                                    name:VLCPlayerABLoopStateChanged
@@ -99,7 +100,7 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
 {
     const CVReturn ret = CVDisplayLinkCreateWithActiveCGDisplays(&_displayLink);
     NSAssert(ret == kCVReturnSuccess && _displayLink != NULL, @"Could not init displaylink");
-    CVDisplayLinkSetOutputCallback(_displayLink, DisplayLinkCallback, (__bridge void*) self);
+    CVDisplayLinkSetOutputCallback(_displayLink, DisplayLinkCallback, (__bridge void *)self);
 }
 
 - (void)setSliderStyleLight
@@ -119,7 +120,7 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (void)updateAtoBLoopState
 {
-    VLCPlayerController * const playerController =
+    VLCPlayerController *const playerController =
         VLCMain.sharedInstance.playQueueController.playerController;
 
     _abLoopState = playerController.abLoopState;
@@ -156,10 +157,9 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
     static const CGFloat trackBorderRadius = 1;
 
     // Empty Track Drawing
-    NSBezierPath * const emptyTrackPath =
-        [NSBezierPath bezierPathWithRoundedRect:rect
-                                        xRadius:trackBorderRadius
-                                        yRadius:trackBorderRadius];
+    NSBezierPath *const emptyTrackPath = [NSBezierPath bezierPathWithRoundedRect:rect
+                                                                         xRadius:trackBorderRadius
+                                                                         yRadius:trackBorderRadius];
     [_emptySliderBackgroundColor setFill];
     [emptyTrackPath fill];
 
@@ -173,7 +173,7 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
     filledTrackRect.size.width = knobRect.origin.x + (knobRect.size.width / 2);
 
     // Filled Track Drawing
-    NSBezierPath * const filledTrackPath = 
+    NSBezierPath *const filledTrackPath =
         [NSBezierPath bezierPathWithRoundedRect:filledTrackRect
                                         xRadius:trackBorderRadius
                                         yRadius:trackBorderRadius];
@@ -189,8 +189,9 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
 {
     [NSGraphicsContext saveGraphicsState];
     rect = NSInsetRect(rect, 1.0, 1.0);
-    NSBezierPath * const fullPath =
-        [NSBezierPath bezierPathWithRoundedRect:rect xRadius:2.0 yRadius:2.0];
+    NSBezierPath *const fullPath = [NSBezierPath bezierPathWithRoundedRect:rect
+                                                                   xRadius:2.0
+                                                                   yRadius:2.0];
     [fullPath setClip];
 
     // Use previously calculated position
@@ -209,9 +210,9 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
     _deltaToLastFrame = 0;
 }
 
-- (void)drawCustomTickMarkAtPosition:(const CGFloat)position 
+- (void)drawCustomTickMarkAtPosition:(const CGFloat)position
                          inCellFrame:(const NSRect)cellFrame
-                           withColor:(NSColor * const)color
+                           withColor:(NSColor *const)color
 {
     const CGFloat tickThickness = VLCLibraryUIUnits.sliderTickThickness;
     const CGSize cellSize = cellFrame.size;
@@ -227,8 +228,7 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
 
     const NSAlignmentOptions alignOpts =
         NSAlignMinXOutward | NSAlignMinYOutward | NSAlignWidthOutward | NSAlignMaxYOutward;
-    const NSRect finalTickRect =
-        [self.controlView backingAlignedRect:tickFrame options:alignOpts];
+    const NSRect finalTickRect = [self.controlView backingAlignedRect:tickFrame options:alignOpts];
 
     [color setFill];
     NSRectFill(finalTickRect);
@@ -276,7 +276,6 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
 {
     CVDisplayLinkStop(_displayLink);
     self.enabled = YES;
-
 }
 
 - (void)setIndefinite:(BOOL)indefinite
@@ -299,6 +298,5 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
     _knobHidden = knobHidden;
     self.controlView.needsDisplay = YES;
 }
-
 
 @end

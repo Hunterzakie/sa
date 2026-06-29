@@ -27,8 +27,8 @@ NS_ASSUME_NONNULL_BEGIN
 @class VLCLibraryAbstractSegmentViewController;
 @protocol VLCMediaLibraryItemProtocol;
 
-extern NSString * const VLCLibraryBookmarkedLocationsKey;
-extern NSString * const VLCLibraryBookmarkedLocationsChanged;
+extern NSString *const VLCLibraryBookmarkedLocationsKey;
+extern NSString *const VLCLibraryBookmarkedLocationsChanged;
 
 typedef NS_ENUM(NSInteger, VLCLibrarySegmentType) {
     VLCLibraryLowSentinelSegment = -1,
@@ -56,7 +56,7 @@ typedef NS_ENUM(NSInteger, VLCLibrarySegmentType) {
 
 @interface VLCLibrarySegment : NSTreeNode
 
-@property (class, readonly) NSArray<VLCLibrarySegment*> *librarySegments;
+@property (class, readonly) NSArray<VLCLibrarySegment *> *librarySegments;
 @property (readonly) VLCLibrarySegmentType segmentType;
 @property (readonly) NSString *displayString;
 @property (readonly, nullable) NSString *searchFieldPlaceholder;

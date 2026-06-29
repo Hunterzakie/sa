@@ -105,9 +105,9 @@ const NSUInteger VLCLibrarySearchMaxMatchingTitles = 5;
 const CGFloat VLCLibraryWindowMinimalWidth = 604.;
 const CGFloat VLCLibraryWindowMinimalHeight = 307.;
 const NSUserInterfaceItemIdentifier VLCLibraryWindowIdentifier = @"VLCLibraryWindow";
-NSString * const VLCLibraryWindowEmbeddedVideoPlaybackActiveKey = @"embeddedVideoPlaybackActive";
+NSString *const VLCLibraryWindowEmbeddedVideoPlaybackActiveKey = @"embeddedVideoPlaybackActive";
 
-@interface VLCLibraryWindow () <NSControlTextEditingDelegate>
+@interface VLCLibraryWindow ()<NSControlTextEditingDelegate>
 {
     NSInteger _currentSelectedViewModeSegment;
     VLCVideoWindowCommon *_temporaryAudioDecorativeWindow;
@@ -118,32 +118,33 @@ NSString * const VLCLibraryWindowEmbeddedVideoPlaybackActiveKey = @"embeddedVide
 
 @end
 
-static int ShowFullscreenController(vlc_object_t * __unused p_this,
-                                    const char * __unused psz_variable,
+static int ShowFullscreenController(vlc_object_t *__unused p_this,
+                                    const char *__unused psz_variable,
                                     vlc_value_t __unused old_val,
                                     vlc_value_t __unused new_val,
-                                    void * __unused param)
+                                    void *__unused param)
 {
     @autoreleasepool {
         dispatch_async(dispatch_get_main_queue(), ^{
-            [NSNotificationCenter.defaultCenter postNotificationName:VLCVideoWindowShouldShowFullscreenController
-                                                                object:nil];
+            [NSNotificationCenter.defaultCenter
+                postNotificationName:VLCVideoWindowShouldShowFullscreenController
+                              object:nil];
         });
 
         return VLC_SUCCESS;
     }
 }
 
-static int ShowController(vlc_object_t * __unused p_this,
-                          const char * __unused psz_variable,
+static int ShowController(vlc_object_t *__unused p_this,
+                          const char *__unused psz_variable,
                           vlc_value_t __unused old_val,
                           vlc_value_t __unused new_val,
-                          void * __unused param)
+                          void *__unused param)
 {
     @autoreleasepool {
         dispatch_async(dispatch_get_main_queue(), ^{
             [NSNotificationCenter.defaultCenter postNotificationName:VLCWindowShouldShowController
-                                                                object:nil];
+                                                              object:nil];
         });
 
         return VLC_SUCCESS;
@@ -170,7 +171,10 @@ static int ShowController(vlc_object_t * __unused p_this,
     _playQueueController = [mainInstance playQueueController];
 
     libvlc_int_t *libvlc = vlc_object_instance(getIntf());
-    var_AddCallback(libvlc, "intf-toggle-fscontrol", ShowFullscreenController, (__bridge void *)self);
+    var_AddCallback(libvlc,
+                    "intf-toggle-fscontrol",
+                    ShowFullscreenController,
+                    (__bridge void *)self);
     var_AddCallback(libvlc, "intf-show", ShowController, (__bridge void *)self);
 
     _libraryTargetView = [[NSView alloc] init];
@@ -212,7 +216,10 @@ static int ShowController(vlc_object_t * __unused p_this,
 {
     [NSNotificationCenter.defaultCenter removeObserver:self];
     libvlc_int_t *libvlc = vlc_object_instance(getIntf());
-    var_DelCallback(libvlc, "intf-toggle-fscontrol", ShowFullscreenController, (__bridge void *)self);
+    var_DelCallback(libvlc,
+                    "intf-toggle-fscontrol",
+                    ShowFullscreenController,
+                    (__bridge void *)self);
     var_DelCallback(libvlc, "intf-show", ShowController, (__bridge void *)self);
 }
 
@@ -238,7 +245,8 @@ static int ShowController(vlc_object_t * __unused p_this,
 
 - (NSInteger)currentViewMode
 {
-    if ([self.librarySegmentViewController conformsToProtocol:@protocol(VLCLibraryDynamicViewModeCapable)]) {
+    if ([self.librarySegmentViewController
+            conformsToProtocol:@protocol(VLCLibraryDynamicViewModeCapable)]) {
         id<VLCLibraryDynamicViewModeCapable> const capableViewController =
             (id<VLCLibraryDynamicViewModeCapable>)self.librarySegmentViewController;
         return capableViewController.viewMode;
@@ -248,7 +256,8 @@ static int ShowController(vlc_object_t * __unused p_this,
 
 - (void)setCurrentViewMode:(NSInteger)viewMode
 {
-    if ([self.librarySegmentViewController conformsToProtocol:@protocol(VLCLibraryDynamicViewModeCapable)]) {
+    if ([self.librarySegmentViewController
+            conformsToProtocol:@protocol(VLCLibraryDynamicViewModeCapable)]) {
         id<VLCLibraryDynamicViewModeCapable> const capableViewController =
             (id<VLCLibraryDynamicViewModeCapable>)self.librarySegmentViewController;
         capableViewController.viewMode = (VLCLibraryViewModeSegment)viewMode;
@@ -259,7 +268,8 @@ static int ShowController(vlc_object_t * __unused p_this,
 
 - (void)updateToolbarDisplayFlags
 {
-    NSParameterAssert([self.librarySegmentViewController conformsToProtocol:@protocol(VLCLibraryDynamicToolbarFlagsCapable)]);
+    NSParameterAssert([self.librarySegmentViewController
+        conformsToProtocol:@protocol(VLCLibraryDynamicToolbarFlagsCapable)]);
     id<VLCLibraryDynamicToolbarFlagsCapable> const capableViewController =
         (id<VLCLibraryDynamicToolbarFlagsCapable>)self.librarySegmentViewController;
     [self.toolbarDelegate applyVisiblityFlags:capableViewController.toolbarDisplayFlags];
@@ -268,7 +278,8 @@ static int ShowController(vlc_object_t * __unused p_this,
 - (void)applyToolbarDisplayFlagsForSegment:(VLCLibrarySegment *)segment
 {
     VLCLibraryWindowToolbarDisplayFlags flags;
-    if ([self.librarySegmentViewController conformsToProtocol:@protocol(VLCLibraryDynamicToolbarFlagsCapable)]) {
+    if ([self.librarySegmentViewController
+            conformsToProtocol:@protocol(VLCLibraryDynamicToolbarFlagsCapable)]) {
         id<VLCLibraryDynamicToolbarFlagsCapable> const capableViewController =
             (id<VLCLibraryDynamicToolbarFlagsCapable>)self.librarySegmentViewController;
         flags = capableViewController.toolbarDisplayFlags;
@@ -281,7 +292,7 @@ static int ShowController(vlc_object_t * __unused p_this,
 - (void)setViewForSelectedSegment
 {
     const VLCLibrarySegmentType segmentType = self.librarySegmentType;
-    VLCLibrarySegment * const segment = [VLCLibrarySegment segmentWithSegmentType:segmentType];
+    VLCLibrarySegment *const segment = [VLCLibrarySegment segmentWithSegmentType:segmentType];
     [self applySegmentView:segment];
 }
 
@@ -322,9 +333,9 @@ static int ShowController(vlc_object_t * __unused p_this,
 {
     view.translatesAutoresizingMaskIntoConstraints = NO;
     if ([self.libraryTargetView.subviews containsObject:self.loadingOverlayView]) {
-        self.libraryTargetView.subviews = @[view, self.loadingOverlayView];
+        self.libraryTargetView.subviews = @[ view, self.loadingOverlayView ];
     } else {
-        self.libraryTargetView.subviews = @[view];
+        self.libraryTargetView.subviews = @[ view ];
     }
 
     [NSLayoutConstraint activateConstraints:@[
@@ -334,8 +345,9 @@ static int ShowController(vlc_object_t * __unused p_this,
         [view.rightAnchor constraintEqualToAnchor:self.libraryTargetView.rightAnchor]
     ]];
 
-    if (VLCMain.sharedInstance.metalLibrary && ((VLCApplication *)NSApplication.sharedApplication).winterHolidaysTheming) {
-        VLCSnowEffectView * const snowView =
+    if (VLCMain.sharedInstance.metalLibrary
+        && ((VLCApplication *)NSApplication.sharedApplication).winterHolidaysTheming) {
+        VLCSnowEffectView *const snowView =
             [[VLCSnowEffectView alloc] initWithFrame:self.contentView.bounds];
         [self.libraryTargetView addSubview:snowView];
         snowView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -347,11 +359,11 @@ static int ShowController(vlc_object_t * __unused p_this,
                               usingConstraints:(NSArray<NSLayoutConstraint *> *)constraints
                              displayingMessage:(NSString *)message
 {
-    for (NSLayoutConstraint * const constraint in self.placeholderImageViewConstraints) {
+    for (NSLayoutConstraint *const constraint in self.placeholderImageViewConstraints) {
         constraint.active = NO;
     }
     _placeholderImageViewConstraints = constraints;
-    for (NSLayoutConstraint * const constraint in constraints) {
+    for (NSLayoutConstraint *const constraint in constraints) {
         constraint.active = YES;
     }
 
@@ -366,32 +378,37 @@ static int ShowController(vlc_object_t * __unused p_this,
         _noResultsLabel = [[VLCNoResultsLabel alloc] init];
         _noResultsLabel.translatesAutoresizingMaskIntoConstraints = NO;
     }
-    
+
     if ([self.libraryTargetView.subviews containsObject:self.loadingOverlayView]) {
-        self.libraryTargetView.subviews = @[self.noResultsLabel, self.loadingOverlayView];
+        self.libraryTargetView.subviews = @[ self.noResultsLabel, self.loadingOverlayView ];
     } else {
-        self.libraryTargetView.subviews = @[_noResultsLabel];
+        self.libraryTargetView.subviews = @[ _noResultsLabel ];
     }
 
     [NSLayoutConstraint activateConstraints:@[
-        [self.noResultsLabel.centerXAnchor constraintEqualToAnchor:self.libraryTargetView.centerXAnchor],
-        [self.noResultsLabel.centerYAnchor constraintEqualToAnchor:self.libraryTargetView.centerYAnchor]
+        [self.noResultsLabel.centerXAnchor
+            constraintEqualToAnchor:self.libraryTargetView.centerXAnchor],
+        [self.noResultsLabel.centerYAnchor
+            constraintEqualToAnchor:self.libraryTargetView.centerYAnchor]
     ]];
 }
 
 - (void)presentLibraryItem:(id<VLCMediaLibraryItemProtocol>)libraryItem
 {
-    VLCLibrarySegment * const segment = [VLCLibrarySegment segmentForLibraryItem:libraryItem];
+    VLCLibrarySegment *const segment = [VLCLibrarySegment segmentForLibraryItem:libraryItem];
     [self applySegmentView:segment];
-    if ([self.librarySegmentViewController conformsToProtocol:@protocol(VLCLibraryItemPresentingCapable)]) {
-        [(VLCLibraryAbstractSegmentViewController<VLCLibraryItemPresentingCapable> *)self.librarySegmentViewController presentLibraryItem:libraryItem];
+    if ([self.librarySegmentViewController
+            conformsToProtocol:@protocol(VLCLibraryItemPresentingCapable)]) {
+        [(VLCLibraryAbstractSegmentViewController<VLCLibraryItemPresentingCapable> *)
+                self.librarySegmentViewController presentLibraryItem:libraryItem];
     }
 }
 
 - (void)browseFolderByMrl:(NSString *)mrl
 {
     [self goToBrowseSection:self];
-    [(VLCLibraryMediaSourceViewController *)self.librarySegmentViewController browseFolderByMrl:mrl];
+    [(VLCLibraryMediaSourceViewController *)self.librarySegmentViewController
+        browseFolderByMrl:mrl];
 }
 
 - (IBAction)sortLibrary:(id)sender
@@ -399,7 +416,9 @@ static int ShowController(vlc_object_t * __unused p_this,
     if (!_librarySortingMenuController) {
         _librarySortingMenuController = [[VLCLibrarySortingMenuController alloc] init];
     }
-    [NSMenu popUpContextMenu:_librarySortingMenuController.librarySortingMenu withEvent:[NSApp currentEvent] forView:sender];
+    [NSMenu popUpContextMenu:_librarySortingMenuController.librarySortingMenu
+                   withEvent:[NSApp currentEvent]
+                     forView:sender];
 }
 
 - (void)stopSearchTimer
@@ -412,17 +431,17 @@ static int ShowController(vlc_object_t * __unused p_this,
 {
     [self stopSearchTimer];
     self.searchInputTimer = [NSTimer scheduledTimerWithTimeInterval:0.3
-                                                            target:self
+                                                             target:self
                                                            selector:@selector(updateFilterString)
                                                            userInfo:nil
                                                             repeats:NO];
-    
+
     if (self.librarySegmentType == VLCLibraryHomeSegmentType) {
         return;
     }
 
     // Trigger completions
-    NSText * const fieldEditor = self.librarySearchField.currentEditor;
+    NSText *const fieldEditor = self.librarySearchField.currentEditor;
     if (fieldEditor) {
         [fieldEditor complete:sender];
     }
@@ -457,13 +476,15 @@ static int ShowController(vlc_object_t * __unused p_this,
 - (IBAction)backwardsNavigationAction:(id)sender
 {
     !self.embeddedVideoPlaybackActive
-        ? [((VLCLibraryMediaSourceViewController *)self.librarySegmentViewController).navigationStack backwards]
+        ? [((VLCLibraryMediaSourceViewController *)
+                self.librarySegmentViewController).navigationStack backwards]
         : [self disableVideoPlaybackAppearance];
 }
 
 - (IBAction)forwardsNavigationAction:(id)sender
 {
-    [((VLCLibraryMediaSourceViewController *)self.librarySegmentViewController).navigationStack forwards];
+    [((VLCLibraryMediaSourceViewController *)
+          self.librarySegmentViewController).navigationStack forwards];
 }
 
 #pragma mark - video output controlling
@@ -483,7 +504,7 @@ static int ShowController(vlc_object_t * __unused p_this,
 - (void)playerCurrentMediaItemChanged:(NSNotification *)notification
 {
     NSParameterAssert(notification);
-    VLCPlayerController * const controller = notification.object;
+    VLCPlayerController *const controller = notification.object;
     NSAssert(controller != nil,
              @"Player current media item changed notification should have valid player controller");
 
@@ -507,7 +528,7 @@ static int ShowController(vlc_object_t * __unused p_this,
 
 - (void)updateArtworkButtonEnabledState
 {
-    VLCPlayerController * const playerController = self.playerController;
+    VLCPlayerController *const playerController = self.playerController;
     const BOOL videoTrackDisabled =
         !playerController.videoTracksEnabled || !playerController.selectedVideoTrack.selected;
     const BOOL audioTrackDisabled =
@@ -515,24 +536,22 @@ static int ShowController(vlc_object_t * __unused p_this,
     const BOOL currentItemIsAudio =
         playerController.videoTracks.count == 0 && playerController.audioTracks.count > 0;
     const BOOL pipOpen = self.videoViewController.pipIsActive;
-    const BOOL artworkButtonDisabled =
-        (videoTrackDisabled && audioTrackDisabled) ||
-        (videoTrackDisabled && !currentItemIsAudio) ||
-        pipOpen;
+    const BOOL artworkButtonDisabled = (videoTrackDisabled && audioTrackDisabled)
+        || (videoTrackDisabled && !currentItemIsAudio) || pipOpen;
     self.artworkButton.enabled = !artworkButtonDisabled;
     self.artworkButton.hidden = artworkButtonDisabled;
     self.controlsBar.thumbnailTrackingView.enabled = !artworkButtonDisabled;
-    for (NSView * const view in self.controlsBar.thumbnailTrackingView.viewsToHide) {
+    for (NSView *const view in self.controlsBar.thumbnailTrackingView.viewsToHide) {
         view.hidden = artworkButtonDisabled;
     }
 }
 
 - (void)configureArtworkButtonLiveVideoView
 {
-    VLCPlayerController * const playerController = self.playerController;
+    VLCPlayerController *const playerController = self.playerController;
     const BOOL videoTrackDisabled =
         !playerController.videoTracksEnabled || !playerController.selectedVideoTrack.selected;
-        
+
     if (videoTrackDisabled || !var_InheritBool(getIntf(), "embedded-video"))
         return;
 
@@ -553,13 +572,17 @@ static int ShowController(vlc_object_t * __unused p_this,
 
 - (void)hideControlsBar
 {
-     [NSAnimationContext runAnimationRespectingPreferencesWithDuration:VLCLibraryUIUnits.controlsFadeAnimationDuration
-                                                               changes:^(NSAnimationContext * const context) {
-        context.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
-        self.controlsBar.bottomBarView.animator.alphaValue = 0;
-    } completionHandler:^{
-        self.controlsBar.bottomBarView.hidden = self.controlsBar.bottomBarView.alphaValue == 0;
-    }];
+    [NSAnimationContext
+        runAnimationRespectingPreferencesWithDuration:VLCLibraryUIUnits
+                                                          .controlsFadeAnimationDuration
+        changes:^(NSAnimationContext *const context) {
+            context.timingFunction =
+                [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
+            self.controlsBar.bottomBarView.animator.alphaValue = 0;
+        }
+        completionHandler:^{
+            self.controlsBar.bottomBarView.hidden = self.controlsBar.bottomBarView.alphaValue == 0;
+        }];
 }
 
 - (void)showControlsBarImmediately
@@ -572,17 +595,23 @@ static int ShowController(vlc_object_t * __unused p_this,
 {
     self.controlsBar.bottomBarView.hidden = NO;
 
-    [NSAnimationContext runAnimationRespectingPreferencesWithDuration:VLCLibraryUIUnits.controlsFadeAnimationDuration
-                                                              changes:^(NSAnimationContext * const context) {
-        context.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseIn];
-        self.controlsBar.bottomBarView.animator.alphaValue = 1;
-    } completionHandler:nil];
+    [NSAnimationContext
+        runAnimationRespectingPreferencesWithDuration:VLCLibraryUIUnits
+                                                          .controlsFadeAnimationDuration
+                                              changes:^(NSAnimationContext *const context) {
+                                                  context.timingFunction = [CAMediaTimingFunction
+                                                      functionWithName:
+                                                          kCAMediaTimingFunctionEaseIn];
+                                                  self.controlsBar.bottomBarView.animator
+                                                      .alphaValue = 1;
+                                              }
+                                    completionHandler:nil];
 }
 
 - (void)presentExternalWindows
 {
-    VLCVideoOutputProvider * const voutProvider = VLCMain.sharedInstance.voutProvider;
-    NSArray<NSWindow *> * const voutWindows = voutProvider.voutWindows.allValues;
+    VLCVideoOutputProvider *const voutProvider = VLCMain.sharedInstance.voutProvider;
+    NSArray<NSWindow *> *const voutWindows = voutProvider.voutWindows.allValues;
 
     if (voutWindows.count == 0 && self.playerController.videoTracks.count == 0) {
         // If we have no video windows in the video provider but are being asked to present a window
@@ -592,7 +621,7 @@ static int ShowController(vlc_object_t * __unused p_this,
         return;
     }
 
-    for (NSWindow * const window in voutWindows) {
+    for (NSWindow *const window in voutWindows) {
         [window makeKeyAndOrderFront:self];
     }
 }
@@ -605,7 +634,7 @@ static int ShowController(vlc_object_t * __unused p_this,
 
     NSLog(@"Presenting video view in main library window.");
 
-    NSView * const videoView = self.videoViewController.view;
+    NSView *const videoView = self.videoViewController.view;
     videoView.translatesAutoresizingMaskIntoConstraints = NO;
     videoView.hidden = NO;
 
@@ -615,7 +644,7 @@ static int ShowController(vlc_object_t * __unused p_this,
 
 - (void)enableVideoPlaybackAppearance
 {
-    VLCPlayerController * const playerController = self.playerController;
+    VLCPlayerController *const playerController = self.playerController;
     const BOOL videoTrackDisabled =
         !playerController.videoTracksEnabled || !playerController.selectedVideoTrack.selected;
     const BOOL audioTrackDisabled =
@@ -659,8 +688,10 @@ static int ShowController(vlc_object_t * __unused p_this,
     _embeddedVideoPlaybackActive = YES;
     [self didChangeValueForKey:VLCLibraryWindowEmbeddedVideoPlaybackActiveKey];
 
-    if ([self.librarySegmentViewController isKindOfClass:VLCLibraryAbstractMediaLibrarySegmentViewController.class]) {
-        [(VLCLibraryAbstractMediaLibrarySegmentViewController *)self.librarySegmentViewController disconnect];
+    if ([self.librarySegmentViewController
+            isKindOfClass:VLCLibraryAbstractMediaLibrarySegmentViewController.class]) {
+        [(VLCLibraryAbstractMediaLibrarySegmentViewController *)
+                self.librarySegmentViewController disconnect];
     }
 }
 
@@ -692,8 +723,10 @@ static int ShowController(vlc_object_t * __unused p_this,
         [self showLoadingOverlay];
     }
 
-    if ([self.librarySegmentViewController isKindOfClass:VLCLibraryAbstractMediaLibrarySegmentViewController.class]) {
-        [(VLCLibraryAbstractMediaLibrarySegmentViewController *)self.librarySegmentViewController connect];
+    if ([self.librarySegmentViewController
+            isKindOfClass:VLCLibraryAbstractMediaLibrarySegmentViewController.class]) {
+        [(VLCLibraryAbstractMediaLibrarySegmentViewController *)
+                self.librarySegmentViewController connect];
     }
 }
 
@@ -709,17 +742,19 @@ static int ShowController(vlc_object_t * __unused p_this,
     self.loadingOverlayView.wantsLayer = YES;
     self.loadingOverlayView.alphaValue = 0.0;
 
-    NSArray * const views = [self.libraryTargetView.subviews arrayByAddingObject:self.loadingOverlayView];
+    NSArray *const views =
+        [self.libraryTargetView.subviews arrayByAddingObject:self.loadingOverlayView];
     self.libraryTargetView.subviews = views;
     [self.loadingOverlayView applyConstraintsToFillSuperview];
 
-    [NSAnimationContext runAnimationRespectingPreferencesWithDuration:0.5
-                                                              changes:^(NSAnimationContext * const context) {
-        self.loadingOverlayView.animator.alphaValue = 1.0;
-    } completionHandler:nil];
+    [NSAnimationContext
+        runAnimationRespectingPreferencesWithDuration:0.5
+                                              changes:^(NSAnimationContext *const context) {
+                                                  self.loadingOverlayView.animator.alphaValue = 1.0;
+                                              }
+                                    completionHandler:nil];
 
     [self.loadingOverlayView.indicator startAnimation:self];
-
 }
 
 - (void)hideLoadingOverlay
@@ -734,14 +769,15 @@ static int ShowController(vlc_object_t * __unused p_this,
     self.loadingOverlayView.alphaValue = 1.0;
 
     [NSAnimationContext runAnimationRespectingPreferencesWithDuration:1.0
-                                                              changes:^(NSAnimationContext * const context) {
-        self.loadingOverlayView.animator.alphaValue = 0.0;
-    } completionHandler:^{
-        NSMutableArray * const mutableSubviews = self.libraryTargetView.subviews.mutableCopy;
-        [mutableSubviews removeObject:self.loadingOverlayView];
-        self.libraryTargetView.subviews = mutableSubviews;
-        [self.loadingOverlayView.indicator stopAnimation:self];
-    }];
+        changes:^(NSAnimationContext *const context) {
+            self.loadingOverlayView.animator.alphaValue = 0.0;
+        }
+        completionHandler:^{
+            NSMutableArray *const mutableSubviews = self.libraryTargetView.subviews.mutableCopy;
+            [mutableSubviews removeObject:self.loadingOverlayView];
+            self.libraryTargetView.subviews = mutableSubviews;
+            [self.loadingOverlayView.indicator stopAnimation:self];
+        }];
 }
 
 - (void)mouseMoved:(NSEvent *)o_event
@@ -752,8 +788,9 @@ static int ShowController(vlc_object_t * __unused p_this,
         NSRect videoViewRect = [videoView convertRect:videoView.frame toView:self.contentView];
 
         if ([self.contentView mouse:mouseLocation inRect:videoViewRect]) {
-            [NSNotificationCenter.defaultCenter postNotificationName:VLCVideoWindowShouldShowFullscreenController
-                                                                object:self];
+            [NSNotificationCenter.defaultCenter
+                postNotificationName:VLCVideoWindowShouldShowFullscreenController
+                              object:self];
         }
     }
 
@@ -763,30 +800,31 @@ static int ShowController(vlc_object_t * __unused p_this,
 #pragma mark - NSControlTextEditingDelegate
 
 - (NSArray<NSString *> *)control:(NSControl *)control
-                         textView:(NSTextView *)textView
-                      completions:(NSArray<NSString *> *)words
-              forPartialWordRange:(NSRange)charRange
-              indexOfSelectedItem:(NSInteger *)index
+                        textView:(NSTextView *)textView
+                     completions:(NSArray<NSString *> *)words
+             forPartialWordRange:(NSRange)charRange
+             indexOfSelectedItem:(NSInteger *)index
 {
     // Get the partial word being completed
-    NSString * const currentText = textView.string;
-    NSString * const partialWord = [currentText substringWithRange:charRange];
-    
+    NSString *const currentText = textView.string;
+    NSString *const partialWord = [currentText substringWithRange:charRange];
+
     if (partialWord.length == 0) {
         return @[];
     }
-    
+
     // Get cached titles from library model
-    VLCLibraryModel * const libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
+    VLCLibraryModel *const libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
     if (!libraryModel) {
         return @[];
     }
-    
-    NSArray<NSString *> * const allTitles = libraryModel.listOfMediaTitles;
-    NSMutableArray<NSString *> * const matchingTitles = [NSMutableArray arrayWithCapacity:VLCLibrarySearchMaxMatchingTitles];
-    
+
+    NSArray<NSString *> *const allTitles = libraryModel.listOfMediaTitles;
+    NSMutableArray<NSString *> *const matchingTitles =
+        [NSMutableArray arrayWithCapacity:VLCLibrarySearchMaxMatchingTitles];
+
     // Filter titles that match the partial word
-    for (NSString * const title in allTitles) {
+    for (NSString *const title in allTitles) {
         if (![title.lowercaseString hasPrefix:partialWord.lowercaseString]) {
             continue;
         }
@@ -795,7 +833,7 @@ static int ShowController(vlc_object_t * __unused p_this,
             break;
         }
     }
-    
+
     *index = -1;
     return matchingTitles;
 }
@@ -809,7 +847,8 @@ static int ShowController(vlc_object_t * __unused p_this,
 
     if (self.videoViewController.view.isHidden) {
         [self showControlsBar];
-        NSView *standardWindowButtonsSuperView = [self standardWindowButton:NSWindowCloseButton].superview;
+        NSView *standardWindowButtonsSuperView =
+            [self standardWindowButton:NSWindowCloseButton].superview;
         standardWindowButtonsSuperView.hidden = NO;
     }
 }

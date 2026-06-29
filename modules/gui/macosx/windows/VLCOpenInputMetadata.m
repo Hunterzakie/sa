@@ -22,7 +22,7 @@
  *****************************************************************************/
 
 #ifdef HAVE_CONFIG_H
-# import <config.h>
+#import <config.h>
 #endif
 
 #import <vlc_common.h>

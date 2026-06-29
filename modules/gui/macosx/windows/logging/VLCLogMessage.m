@@ -35,7 +35,7 @@
     if (self) {
         if (!message || !info->psz_module)
             return nil;
-        
+
         _type = type;
         _message = [NSString stringWithUTF8String:message];
         _location = [NSString stringWithFormat:@"%s:%i", info->file, info->line];

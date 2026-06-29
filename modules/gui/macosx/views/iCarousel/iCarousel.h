@@ -30,24 +30,21 @@
 //  3. This notice may not be removed or altered from any source distribution.
 //
 
-
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunknown-pragmas"
 #pragma clang diagnostic ignored "-Wreserved-id-macro"
 #pragma clang diagnostic ignored "-Wobjc-missing-property-synthesis"
 
-
 #import <Availability.h>
 #undef weak_delegate
 #undef __weak_delegate
-#if __has_feature(objc_arc) && __has_feature(objc_arc_weak) && \
-(!(defined __MAC_OS_X_VERSION_MIN_REQUIRED) || \
-__MAC_OS_X_VERSION_MIN_REQUIRED >= __MAC_10_8)
+#if __has_feature(objc_arc) && __has_feature(objc_arc_weak)                                        \
+    && (!(defined __MAC_OS_X_VERSION_MIN_REQUIRED)                                                 \
+        || __MAC_OS_X_VERSION_MIN_REQUIRED >= __MAC_10_8)
 #define weak_delegate weak
 #else
 #define weak_delegate unsafe_unretained
 #endif
-
 
 #import <QuartzCore/QuartzCore.h>
 #if defined USING_CHAMELEON || defined __IPHONE_OS_VERSION_MAX_ALLOWED
@@ -56,7 +53,6 @@ __MAC_OS_X_VERSION_MIN_REQUIRED >= __MAC_10_8)
 #define ICAROUSEL_MACOS
 #endif
 
-
 #ifdef ICAROUSEL_IOS
 #import <UIKit/UIKit.h>
 #else
@@ -64,9 +60,7 @@ __MAC_OS_X_VERSION_MIN_REQUIRED >= __MAC_10_8)
 typedef NSView UIView;
 #endif
 
-
-typedef NS_ENUM(NSInteger, iCarouselType)
-{
+typedef NS_ENUM(NSInteger, iCarouselType) {
     iCarouselTypeLinear = 0,
     iCarouselTypeRotary,
     iCarouselTypeInvertedRotary,
@@ -81,9 +75,7 @@ typedef NS_ENUM(NSInteger, iCarouselType)
     iCarouselTypeCustom
 };
 
-
-typedef NS_ENUM(NSInteger, iCarouselOption)
-{
+typedef NS_ENUM(NSInteger, iCarouselOption) {
     iCarouselOptionWrap = 0,
     iCarouselOptionShowBackfaces,
     iCarouselOptionOffsetMultiplier,
@@ -100,10 +92,10 @@ typedef NS_ENUM(NSInteger, iCarouselOption)
     iCarouselOptionFadeMinAlpha
 };
 
-
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol iCarouselDataSource, iCarouselDelegate;
+@protocol iCarouselDataSource
+, iCarouselDelegate;
 
 @interface iCarousel : UIView
 
@@ -114,10 +106,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) CGFloat decelerationRate;
 @property (nonatomic, assign) CGFloat scrollSpeed;
 @property (nonatomic, assign) CGFloat bounceDistance;
-@property (nonatomic, assign, getter = isScrollEnabled) BOOL scrollEnabled;
-@property (nonatomic, assign, getter = isPagingEnabled) BOOL pagingEnabled;
-@property (nonatomic, assign, getter = isVertical) BOOL vertical;
-@property (nonatomic, readonly, getter = isWrapEnabled) BOOL wrapEnabled;
+@property (nonatomic, assign, getter=isScrollEnabled) BOOL scrollEnabled;
+@property (nonatomic, assign, getter=isPagingEnabled) BOOL pagingEnabled;
+@property (nonatomic, assign, getter=isVertical) BOOL vertical;
+@property (nonatomic, readonly, getter=isWrapEnabled) BOOL wrapEnabled;
 @property (nonatomic, assign) BOOL bounces;
 @property (nonatomic, assign) CGFloat scrollOffset;
 @property (nonatomic, readonly) CGFloat offsetMultiplier;
@@ -126,7 +118,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) NSInteger numberOfItems;
 @property (nonatomic, readonly) NSInteger numberOfPlaceholders;
 @property (nonatomic, assign) NSInteger currentItemIndex;
-@property (nonatomic, strong, readonly) UIView * __nullable currentItemView;
+@property (nonatomic, strong, readonly) UIView *__nullable currentItemView;
 @property (nonatomic, strong, readonly) NSArray *indexesForVisibleItems;
 @property (nonatomic, readonly) NSInteger numberOfVisibleItems;
 @property (nonatomic, strong, readonly) NSArray *visibleItemViews;
@@ -140,9 +132,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL centerItemWhenSelected;
 @property (assign) BOOL disableAutoscrollOnInteract;
 @property (assign) CGFloat reenablePostInteractAutoscrollTimeout;
-@property (nonatomic, readonly, getter = isDragging) BOOL dragging;
-@property (nonatomic, readonly, getter = isDecelerating) BOOL decelerating;
-@property (nonatomic, readonly, getter = isScrolling) BOOL scrolling;
+@property (nonatomic, readonly, getter=isDragging) BOOL dragging;
+@property (nonatomic, readonly, getter=isDecelerating) BOOL decelerating;
+@property (nonatomic, readonly, getter=isScrolling) BOOL scrolling;
 
 - (void)scrollByOffset:(CGFloat)offset duration:(NSTimeInterval)duration;
 - (void)scrollToOffset:(CGFloat)offset duration:(NSTimeInterval)duration;
@@ -164,21 +156,23 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-
-@protocol iCarouselDataSource <NSObject>
+@protocol iCarouselDataSource<NSObject>
 
 - (NSInteger)numberOfItemsInCarousel:(iCarousel *)carousel;
-- (UIView *)carousel:(iCarousel *)carousel viewForItemAtIndex:(NSInteger)index reusingView:(nullable UIView *)view;
+- (UIView *)carousel:(iCarousel *)carousel
+    viewForItemAtIndex:(NSInteger)index
+           reusingView:(nullable UIView *)view;
 
 @optional
 
 - (NSInteger)numberOfPlaceholdersInCarousel:(iCarousel *)carousel;
-- (UIView *)carousel:(iCarousel *)carousel placeholderViewAtIndex:(NSInteger)index reusingView:(nullable UIView *)view;
+- (UIView *)carousel:(iCarousel *)carousel
+    placeholderViewAtIndex:(NSInteger)index
+               reusingView:(nullable UIView *)view;
 
 @end
 
-
-@protocol iCarouselDelegate <NSObject>
+@protocol iCarouselDelegate<NSObject>
 @optional
 
 - (void)carouselWillBeginScrollingAnimation:(iCarousel *)carousel;
@@ -194,12 +188,16 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)carousel:(iCarousel *)carousel didSelectItemAtIndex:(NSInteger)index;
 
 - (CGFloat)carouselItemWidth:(iCarousel *)carousel;
-- (CATransform3D)carousel:(iCarousel *)carousel itemTransformForOffset:(CGFloat)offset baseTransform:(CATransform3D)transform;
-- (CGFloat)carousel:(iCarousel *)carousel valueForOption:(iCarouselOption)option withDefault:(CGFloat)value;
+- (CATransform3D)carousel:(iCarousel *)carousel
+    itemTransformForOffset:(CGFloat)offset
+             baseTransform:(CATransform3D)transform;
+- (CGFloat)carousel:(iCarousel *)carousel
+     valueForOption:(iCarouselOption)option
+        withDefault:(CGFloat)value;
 
 @end
 
-@protocol iCarouselItemView <NSObject>
+@protocol iCarouselItemView<NSObject>
 
 @optional
 - (void)openContextMenu:(NSEvent *)event;

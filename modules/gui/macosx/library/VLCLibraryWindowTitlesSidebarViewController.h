@@ -28,7 +28,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class VLCLibraryWindow;
 
-@interface VLCLibraryWindowTitlesSidebarViewController : VLCLibraryWindowAbstractSidebarViewController<NSTableViewDelegate>
+@interface VLCLibraryWindowTitlesSidebarViewController
+    : VLCLibraryWindowAbstractSidebarViewController<NSTableViewDelegate>
 
 @property (readwrite, weak) IBOutlet NSTableView *tableView;
 @property (readonly) NSArrayController *titlesArrayController;

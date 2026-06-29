@@ -36,14 +36,15 @@ extern NSString *VLCPlayerElementaryStreamID;
 extern NSString *VLCTick;
 
 /**
- * Listen to VLCPlayerCurrentMediaItemChanged to notified if the current media item changes for the player
+ * Listen to VLCPlayerCurrentMediaItemChanged to notified if the current media item changes for the
+ * player
  * @note the affected player object will be the object of the notification
  */
 extern NSString *VLCPlayerCurrentMediaItemChanged;
 
 /**
- * Listen to VLCPlayerMetadataChangedForCurrentMedia to be notified if metadata such as title, artwork, etc change
- * for the media item currently played
+ * Listen to VLCPlayerMetadataChangedForCurrentMedia to be notified if metadata such as title,
+ * artwork, etc change for the media item currently played
  * @note the affected player object will be the object of the notification
  */
 extern NSString *VLCPlayerMetadataChangedForCurrentMedia;
@@ -64,8 +65,8 @@ extern NSString *VLCPlayerBufferFill;
 /**
  * Listen to VLCPlayerBufferChanged to be notified if the player's buffer value changes
  * @note the affected player object will be the object of the notification
- * @note the userInfo dictionary will have the float value indicating the fill state as percentage from 0.0 to 1.0
- * for key VLCPlayerBufferFill */
+ * @note the userInfo dictionary will have the float value indicating the fill state as percentage
+ * from 0.0 to 1.0 for key VLCPlayerBufferFill */
 extern NSString *VLCPlayerBufferChanged;
 
 /**
@@ -94,31 +95,36 @@ extern NSString *VLCPlayerTimeAndPositionChanged;
 extern NSString *VLCPlayerLengthChanged;
 
 /**
- * Listen to VLCPlayerTitleSelectionChanged to be notified if the selected title of the current media changes
+ * Listen to VLCPlayerTitleSelectionChanged to be notified if the selected title of the current
+ * media changes
  * @note the affected player object will be the object of the notification
  */
 extern NSString *VLCPlayerTitleSelectionChanged;
 
 /**
- * Listen to VLCPlayerTitleListChanged to be notified if the list of titles of the current media changes
+ * Listen to VLCPlayerTitleListChanged to be notified if the list of titles of the current media
+ * changes
  * @note the affected player object will be the object of the notification
  */
 extern NSString *VLCPlayerTitleListChanged;
 
 /**
- * Listen to VLCPlayerChapterSelectionChanged to be notified if the selected chapter of the current title changes
+ * Listen to VLCPlayerChapterSelectionChanged to be notified if the selected chapter of the current
+ * title changes
  * @note the affected player object will be the object of the notification
  */
 extern NSString *VLCPlayerChapterSelectionChanged;
 
 /**
- * Listen to VLCPlayerProgramSelectionChanged to be notified if the selected program of the current media changes
+ * Listen to VLCPlayerProgramSelectionChanged to be notified if the selected program of the current
+ * media changes
  * @note the affected player object will be the object of the notification
  */
 extern NSString *VLCPlayerProgramSelectionChanged;
 
 /**
- * Listen to VLCPlayerProgramListChanged to be notified if the list of available programs of the current media changes
+ * Listen to VLCPlayerProgramListChanged to be notified if the list of available programs of the
+ * current media changes
  * @note the affected player object will be the object of the notification
  */
 extern NSString *VLCPlayerProgramListChanged;
@@ -148,70 +154,83 @@ extern NSString *VLCPlayerTeletextEnabled;
 extern NSString *VLCPlayerTeletextPageChanged;
 
 /**
- * Listen to VLCPlayerTeletextTransparencyChanged to be notified if the teletext transparency changes
+ * Listen to VLCPlayerTeletextTransparencyChanged to be notified if the teletext transparency
+ * changes
  * @note the affected player object will be the object of the notification
  */
 extern NSString *VLCPlayerTeletextTransparencyChanged;
 
 /**
- * Listen to VLCPlayerAudioDelayChanged to be notified if the audio delay of the current media changes
+ * Listen to VLCPlayerAudioDelayChanged to be notified if the audio delay of the current media
+ * changes
  * @note the affected player object will be the object of the notification
  */
 extern NSString *VLCPlayerAudioDelayChanged;
 
 /**
- * Listen to VLCPlayerSubtitlesDelayChanged to be notified if the subtitles delay of the current media changes
+ * Listen to VLCPlayerSubtitlesDelayChanged to be notified if the subtitles delay of the current
+ * media changes
  * @note the affected player object will be the object of the notification
  */
 extern NSString *VLCPlayerSubtitlesDelayChanged;
 
 /**
- * Listen to VLCPlayerDelayChangedForSpecificElementaryStream to be notified if the delay of a specific elementary stream changes
+ * Listen to VLCPlayerDelayChangedForSpecificElementaryStream to be notified if the delay of a
+ * specific elementary stream changes
  * @note the affected player object will be the object of the notification
- * @return the notification's userInfo dictionary will hold key/value pairs for VLCPlayerElementaryStreamID and VLCTick to describe the changes
+ * @return the notification's userInfo dictionary will hold key/value pairs for
+ * VLCPlayerElementaryStreamID and VLCTick to describe the changes
  */
 extern NSString *VLCPlayerDelayChangedForSpecificElementaryStream;
 
 /**
- * Listen to VLCPlayerSubtitlesFPSChanged to be notified if the subtitles FPS of the current media changes
+ * Listen to VLCPlayerSubtitlesFPSChanged to be notified if the subtitles FPS of the current media
+ * changes
  * @note the affected player object will be the object of the notification
  */
 extern NSString *VLCPlayerSubtitlesFPSChanged;
 
 /**
- * Listen to VLCPlayerRecordingChanged to be notified if the recording state of the current media changes
+ * Listen to VLCPlayerRecordingChanged to be notified if the recording state of the current media
+ * changes
  * @note the affected player object will be the object of the notification
  */
 extern NSString *VLCPlayerRecordingChanged;
 
 /**
- * Listen to VLCPlayerRendererChanged to be notified if the renderer (such as a Chromecast device) changes
+ * Listen to VLCPlayerRendererChanged to be notified if the renderer (such as a Chromecast device)
+ * changes
  * @note the affected player object will be the object of the notification
  */
 extern NSString *VLCPlayerRendererChanged;
 
 extern NSString *VLCPlayerInputStats;
 /**
- * Listen to VLCPlayerStatisticsUpdated to be notified if the playback statistics state of the current media update
+ * Listen to VLCPlayerStatisticsUpdated to be notified if the playback statistics state of the
+ * current media update
  * @note the affected player object will be the object of the notification
- * @note the userInfo dictionary will have an instance of VLCInputStats for key VLCPlayerInputStats representing the new state
+ * @note the userInfo dictionary will have an instance of VLCInputStats for key VLCPlayerInputStats
+ * representing the new state
  */
 extern NSString *VLCPlayerStatisticsUpdated;
 
 /**
- * Listen to VLCPlayerTrackListChanged to be notified of the list of audio/video/SPU tracks changes for the current media
+ * Listen to VLCPlayerTrackListChanged to be notified of the list of audio/video/SPU tracks changes
+ * for the current media
  * @note the affected player object will be the object of the notification
  */
 extern NSString *VLCPlayerTrackListChanged;
 
 /**
- * Listen to VLCPlayerTrackSelectionChanged to be notified if a selected audio/video/SPU track changes for the current media
+ * Listen to VLCPlayerTrackSelectionChanged to be notified if a selected audio/video/SPU track
+ * changes for the current media
  * @note the affected player object will be the object of the notification
  */
 extern NSString *VLCPlayerTrackSelectionChanged;
 
 /**
- * Listen to VLCPlayerFullscreenChanged to be notified whether the fullscreen state of the video output changes
+ * Listen to VLCPlayerFullscreenChanged to be notified whether the fullscreen state of the video
+ * output changes
  * @note the affected player object will be the object of the notification
  */
 extern NSString *VLCPlayerFullscreenChanged;
@@ -219,13 +238,15 @@ extern NSString *VLCPlayerFullscreenChanged;
 extern NSString *VLCPlayerPictureInPictureChanged;
 
 /**
- * Listen to VLCPlayerListOfVideoOutputThreadsChanged to be notified when a video output thread was added or removed
+ * Listen to VLCPlayerListOfVideoOutputThreadsChanged to be notified when a video output thread was
+ * added or removed
  * @note the affected player object will be the object of the notification
  */
 extern NSString *VLCPlayerListOfVideoOutputThreadsChanged;
 
 /**
- * Listen to VLCPlayerWallpaperModeChanged to be notified whether the fullscreen state of the video output changes
+ * Listen to VLCPlayerWallpaperModeChanged to be notified whether the fullscreen state of the video
+ * output changes
  * @note the affected player object will be the object of the notification
  */
 extern NSString *VLCPlayerWallpaperModeChanged;
@@ -243,16 +264,17 @@ extern NSString *VLCPlayerVolumeChanged;
 extern NSString *VLCPlayerMuteChanged;
 
 /**
- * Listen to VLCPlayerLyricsAvailableChanged to be notified if the current media has synchronized lyrics available
+ * Listen to VLCPlayerLyricsAvailableChanged to be notified if the current media has synchronized
+ * lyrics available
  * @note the affected player object will be the object of the notification
  */
-extern NSString * const VLCPlayerLyricsAvailableChanged;
+extern NSString *const VLCPlayerLyricsAvailableChanged;
 
 /**
  * Listen to VLCPlayerShowLyricsChanged to be notified if the show lyrics user preference changes
  * @note the affected player object will be the object of the notification
  */
-extern NSString * const VLCPlayerShowLyricsChanged;
+extern NSString *const VLCPlayerShowLyricsChanged;
 
 extern const CGFloat VLCVolumeMaximum;
 extern const CGFloat VLCVolumeDefault;
@@ -307,7 +329,8 @@ extern const CGFloat VLCVolumeDefault;
 /**
  * set the A→B loop
  * this function will need to be called twice to set the A and the B point
- * @note VLC core will automatically pick the current time stamp, so there is no parameter to this method
+ * @note VLC core will automatically pick the current time stamp, so there is no parameter to this
+ * method
  * @return VLC_SUCCESS or a VLC error code
  */
 - (int)setABLoop;
@@ -320,7 +343,8 @@ extern const CGFloat VLCVolumeDefault;
 
 /**
  * Move on to the next video frame and pause
- * @warning this relies on a gross hack in the core and will work for 20 consecutive frames maximum only
+ * @warning this relies on a gross hack in the core and will work for 20 consecutive frames maximum
+ * only
  */
 - (void)nextVideoFrame;
 
@@ -551,7 +575,7 @@ extern const CGFloat VLCVolumeDefault;
  * convenience method to get the current title
  * @note this may return NULL if there is no title
  */
-- (const struct vlc_player_title * _Nullable)selectedTitle;
+- (const struct vlc_player_title *_Nullable)selectedTitle;
 
 /**
  * get the number of titles available for the currently playing media item
@@ -563,7 +587,8 @@ extern const CGFloat VLCVolumeDefault;
 
 /**
  * get a vlc_player_title by the index
- * @note listen to VLCPlayerTitleListChanged in case the list changes so previous indexes will no longer be valid anymore
+ * @note listen to VLCPlayerTitleListChanged in case the list changes so previous indexes will no
+ * longer be valid anymore
  */
 - (const struct vlc_player_title *)titleAtIndexForCurrentMedia:(size_t)index;
 
@@ -649,7 +674,8 @@ extern const CGFloat VLCVolumeDefault;
 /**
  * is the teletext background transparent or not?
  * @return a BOOL value indicating the current state
- * @note listen to VLCPlayerTeletextTransparencyChanged to be notified about changes to this property
+ * @note listen to VLCPlayerTeletextTransparencyChanged to be notified about changes to this
+ * property
  */
 @property (readwrite, nonatomic) BOOL teletextTransparent;
 
@@ -677,13 +703,17 @@ extern const CGFloat VLCVolumeDefault;
 
 /**
  * set the delay of a specific track identified through its elementary stream ID
- * @warning Setting the delay of one specific track will override previous and future changes of delay made through generic calls
- * @param delay the delay as a valid time or VLC_TICK_MAX to reset to the default for the ES category
+ * @warning Setting the delay of one specific track will override previous and future changes of
+ * delay made through generic calls
+ * @param delay the delay as a valid time or VLC_TICK_MAX to reset to the default for the ES
+ * category
  * @param esID the ID for the elementary stream
  * @param relative use an absolute or relative whence to describe the time
  * @return VLC_SUCCESS on success
  */
-- (int)setDelay:(vlc_tick_t)delay forElementaryStreamID:(vlc_es_id_t *)esID relativeWhence:(BOOL)relative;
+- (int)setDelay:(vlc_tick_t)delay
+    forElementaryStreamID:(vlc_es_id_t *)esID
+           relativeWhence:(BOOL)relative;
 
 /**
  * the subtitles fps to correct mismatch between video and text
@@ -783,22 +813,25 @@ extern const CGFloat VLCVolumeDefault;
 - (void)selectNextTrackForCategory:(enum es_format_category_e)category;
 
 /**
- * an array holding instances of VLCTrackMetaData describing the available audio tracks for the current media
+ * an array holding instances of VLCTrackMetaData describing the available audio tracks for the
+ * current media
  * @note listen to VLCPlayerTrackListChanged to be notified of changes to the list
  */
-@property (readonly, nullable) NSArray<VLCTrackMetaData *>* audioTracks;
+@property (readonly, nullable) NSArray<VLCTrackMetaData *> *audioTracks;
 
 /**
- * an array holding instances of VLCTrackMetaData describing the available video tracks for the current media
+ * an array holding instances of VLCTrackMetaData describing the available video tracks for the
+ * current media
  * @note listen to VLCPlayerTrackListChanged to be notified of changes to the list
  */
-@property (readonly, nullable) NSArray<VLCTrackMetaData *>* videoTracks;
+@property (readonly, nullable) NSArray<VLCTrackMetaData *> *videoTracks;
 
 /**
- * an array holding instances of VLCTrackMetaData describing the available subtitle tracks for the current media
+ * an array holding instances of VLCTrackMetaData describing the available subtitle tracks for the
+ * current media
  * @note listen to VLCPlayerTrackListChanged to be notified of changes to the list
  */
-@property (readonly, nullable) NSArray<VLCTrackMetaData *>* subtitleTracks;
+@property (readonly, nullable) NSArray<VLCTrackMetaData *> *subtitleTracks;
 
 @property (readonly) BOOL videoTracksEnabled;
 
@@ -821,13 +854,15 @@ extern const CGFloat VLCVolumeDefault;
 /**
  * the video output embedded in the current key window
  * @warning the returned vout_thread_t * must be released with vout_Release().
- * @return the current video output thread for the key window or the main video output thread or NULL if there is none
+ * @return the current video output thread for the key window or the main video output thread or
+ * NULL if there is none
  */
 @property (readonly, nullable) vout_thread_t *videoOutputThreadForKeyWindow;
 
 /**
  * an array holding all current video output threads
- * @warning the returned vout_thread_t * instances must be individually released with vout_Release().
+ * @warning the returned vout_thread_t * instances must be individually released with
+ * vout_Release().
  * @note listen to VLCPlayerListOfVideoOutputThreadsChanged to be notified about changes
  */
 @property (readonly, nullable, copy) NSArray<NSValue *> *allVideoOutputThreads;
@@ -847,7 +882,6 @@ extern const CGFloat VLCVolumeDefault;
  * helper function to inverse the current fullscreen state
  */
 - (void)toggleFullscreen;
-
 
 - (void)togglePictureInPicture;
 
@@ -926,7 +960,9 @@ extern const CGFloat VLCVolumeDefault;
  * @param value the value to set
  * @return VLC_SUCCESS on success, error code otherwise
  */
-- (int)setVideoFilterProperty:(NSString *)property forFilter:(NSString *)filterName withValue:(vlc_value_t)value;
+- (int)setVideoFilterProperty:(NSString *)property
+                    forFilter:(NSString *)filterName
+                    withValue:(vlc_value_t)value;
 
 @end
 

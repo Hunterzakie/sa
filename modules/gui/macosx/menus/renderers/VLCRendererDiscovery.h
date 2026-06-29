@@ -24,8 +24,8 @@
 
 #import "menus/renderers/VLCRendererItem.h"
 
-extern NSString * const VLCRendererAddedNotification;
-extern NSString * const VLCRendererRemovedNotification;
+extern NSString *const VLCRendererAddedNotification;
+extern NSString *const VLCRendererRemovedNotification;
 
 @protocol VLCRendererDiscoveryDelegate;
 
@@ -54,8 +54,7 @@ extern NSString * const VLCRendererRemovedNotification;
 /**
  Array of \c VLCRendererItems that the module discovered
  */
-@property (readonly) NSMutableArray<VLCRendererItem*> *rendererItems;
-
+@property (readonly) NSMutableArray<VLCRendererItem *> *rendererItems;
 
 /**
  Indicates if the discovery has been started
@@ -74,7 +73,7 @@ extern NSString * const VLCRendererRemovedNotification;
  \returns   Initialized class that already created the underlying
             \c vlc_renderer_discovery_t structure or nil on failure.
  */
-- (instancetype)initWithName:(const char*)name andLongname:(const char*)longname;
+- (instancetype)initWithName:(const char *)name andLongname:(const char *)longname;
 
 /**
  Starts the renderer discovery

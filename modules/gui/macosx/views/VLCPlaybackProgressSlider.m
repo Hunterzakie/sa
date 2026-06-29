@@ -26,7 +26,8 @@
 #import "extensions/NSView+VLCAdditions.h"
 #import "views/VLCPlaybackProgressSliderCell.h"
 
-@implementation VLCPlaybackProgressSlider {
+@implementation VLCPlaybackProgressSlider
+{
     NSTrackingArea *_hoverTrackingArea;
     NSWindow *_hoverWindow;
     NSTextField *_hoverLabel;
@@ -50,7 +51,8 @@
 
             if (@available(macOS 13, *)) {
                 // Apple's documentation says the clipping default changed in macOS 13.
-                // Use a dynamic call so this still builds with SDKs that don't declare the selector.
+                // Use a dynamic call so this still builds with SDKs that don't declare the
+                // selector.
                 SEL clipsToBoundsSelector = NSSelectorFromString(@"setClipsToBounds:");
                 if ([self respondsToSelector:clipsToBoundsSelector]) {
                     void (*setClipsToBoundsImp)(id, SEL, BOOL) =
@@ -59,9 +61,8 @@
                 }
             }
         } else {
-            [(VLCPlaybackProgressSliderCell*)self.cell setSliderStyleLight];
+            [(VLCPlaybackProgressSliderCell *)self.cell setSliderStyleLight];
         }
-
     }
     return self;
 }
@@ -104,22 +105,22 @@
 
 - (BOOL)indefinite
 {
-    return [(VLCPlaybackProgressSliderCell*)self.cell indefinite];
+    return [(VLCPlaybackProgressSliderCell *)self.cell indefinite];
 }
 
 - (void)setIndefinite:(BOOL)indefinite
 {
-    [(VLCPlaybackProgressSliderCell*)self.cell setIndefinite:indefinite];
+    [(VLCPlaybackProgressSliderCell *)self.cell setIndefinite:indefinite];
 }
 
 - (BOOL)knobHidden
 {
-    return [(VLCPlaybackProgressSliderCell*)self.cell knobHidden];
+    return [(VLCPlaybackProgressSliderCell *)self.cell knobHidden];
 }
 
 - (void)setKnobHidden:(BOOL)knobHidden
 {
-    [(VLCPlaybackProgressSliderCell*)self.cell setKnobHidden:knobHidden];
+    [(VLCPlaybackProgressSliderCell *)self.cell setKnobHidden:knobHidden];
 }
 
 - (BOOL)isFlipped
@@ -130,9 +131,9 @@
 - (void)viewDidChangeEffectiveAppearance
 {
     if (self.shouldShowDarkAppearance) {
-        [(VLCPlaybackProgressSliderCell*)self.cell setSliderStyleDark];
+        [(VLCPlaybackProgressSliderCell *)self.cell setSliderStyleDark];
     } else {
-        [(VLCPlaybackProgressSliderCell*)self.cell setSliderStyleLight];
+        [(VLCPlaybackProgressSliderCell *)self.cell setSliderStyleLight];
     }
     [self applyHoverAppearance];
 }
@@ -145,10 +146,12 @@
     if (_hoverTrackingArea != nil) {
         return;
     }
-    _hoverTrackingArea = [[NSTrackingArea alloc] initWithRect:NSZeroRect
-                                                      options:NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved | NSTrackingInVisibleRect | NSTrackingActiveInKeyWindow
-                                                        owner:self
-                                                     userInfo:nil];
+    _hoverTrackingArea =
+        [[NSTrackingArea alloc] initWithRect:NSZeroRect
+                                     options:NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved
+                                     | NSTrackingInVisibleRect | NSTrackingActiveInKeyWindow
+                                       owner:self
+                                    userInfo:nil];
     [self addTrackingArea:_hoverTrackingArea];
 }
 
@@ -185,22 +188,22 @@
     }
 
     _hoverLabel = [NSTextField labelWithString:@""];
-    _hoverLabel.font =
-        [NSFont monospacedDigitSystemFontOfSize:NSFont.smallSystemFontSize
-                                         weight:NSFontWeightRegular];
+    _hoverLabel.font = [NSFont monospacedDigitSystemFontOfSize:NSFont.smallSystemFontSize
+                                                        weight:NSFontWeightRegular];
     _hoverLabel.alignment = NSTextAlignmentCenter;
     _hoverLabel.textColor = NSColor.controlTextColor;
 
-    NSView * const contentView = [[NSView alloc] initWithFrame:NSZeroRect];
+    NSView *const contentView = [[NSView alloc] initWithFrame:NSZeroRect];
     contentView.wantsLayer = YES;
     contentView.layer.borderWidth = 0.5;
     contentView.layer.cornerRadius = 3.0;
     [contentView addSubview:_hoverLabel];
 
-    _hoverWindow = [[NSPanel alloc] initWithContentRect:NSMakeRect(0, 0, 60, 20)
-                                              styleMask:NSWindowStyleMaskBorderless | NSWindowStyleMaskNonactivatingPanel
-                                                backing:NSBackingStoreBuffered
-                                                  defer:NO];
+    _hoverWindow = [[NSPanel alloc]
+        initWithContentRect:NSMakeRect(0, 0, 60, 20)
+                  styleMask:NSWindowStyleMaskBorderless | NSWindowStyleMaskNonactivatingPanel
+                    backing:NSBackingStoreBuffered
+                      defer:NO];
     _hoverWindow.contentView = contentView;
     _hoverWindow.opaque = NO;
     _hoverWindow.backgroundColor = NSColor.clearColor;
@@ -216,7 +219,7 @@
     if (_hoverWindow == nil) {
         return;
     }
-    NSView * const contentView = _hoverWindow.contentView;
+    NSView *const contentView = _hoverWindow.contentView;
     if (@available(macOS 11.0, *)) {
         _hoverWindow.appearance = self.effectiveAppearance;
         [self.effectiveAppearance performAsCurrentDrawingAppearance:^{
@@ -239,7 +242,7 @@
     if (_hoverWindow == nil) {
         return;
     }
-    NSWindow * const parent = _hoverWindow.parentWindow;
+    NSWindow *const parent = _hoverWindow.parentWindow;
     if (parent != nil) {
         [parent removeChildWindow:_hoverWindow];
     }
@@ -248,7 +251,7 @@
 
 - (void)showHoverAtSliderX:(CGFloat)xInSlider time:(vlc_tick_t)time
 {
-    NSWindow * const parentWindow = self.window;
+    NSWindow *const parentWindow = self.window;
     if (parentWindow == nil) {
         return;
     }
@@ -264,20 +267,18 @@
     const CGFloat verticalGap = 6.0;
     const NSSize windowSize = NSMakeSize(textSize.width + horizontalPadding * 2.0,
                                          textSize.height + verticalPadding * 2.0);
-    _hoverLabel.frame = NSMakeRect(horizontalPadding, verticalPadding,
-                                   textSize.width, textSize.height);
+    _hoverLabel.frame =
+        NSMakeRect(horizontalPadding, verticalPadding, textSize.width, textSize.height);
 
-    const NSRect sliderOnScreen =
-        [parentWindow convertRectToScreen:[self convertRect:self.bounds toView:nil]];
+    const NSRect sliderOnScreen = [parentWindow convertRectToScreen:[self convertRect:self.bounds
+                                                                               toView:nil]];
     const CGFloat anchorScreenX = NSMinX(sliderOnScreen) + xInSlider;
 
     CGFloat originX = anchorScreenX - windowSize.width / 2.0;
-    originX = MAX(NSMinX(sliderOnScreen),
-                  MIN(originX, NSMaxX(sliderOnScreen) - windowSize.width));
+    originX = MAX(NSMinX(sliderOnScreen), MIN(originX, NSMaxX(sliderOnScreen) - windowSize.width));
     const CGFloat originY = NSMaxY(sliderOnScreen) + verticalGap;
 
-    [_hoverWindow setFrame:NSMakeRect(originX, originY,
-                                      windowSize.width, windowSize.height)
+    [_hoverWindow setFrame:NSMakeRect(originX, originY, windowSize.width, windowSize.height)
                    display:YES];
 
     if (_hoverWindow.parentWindow != parentWindow) {

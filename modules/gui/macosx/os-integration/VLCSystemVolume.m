@@ -25,13 +25,13 @@
 #import "VLCSystemVolume.h"
 #import "main/VLCMain.h"
 
-#define VLCSystemVolume_LogErr(...) \
+#define VLCSystemVolume_LogErr(...)                                                                \
     msg_Generic(getIntf(), VLC_MSG_ERR, "VLCSystemVolume: " __VA_ARGS__)
 
 static const AudioObjectPropertyAddress virtualMasterPropertyAddress = {
-    .mElement   = kAudioObjectPropertyElementMaster,
-    .mScope     = kAudioObjectPropertyScopeOutput,
-    .mSelector  = kAudioHardwareServiceDeviceProperty_VirtualMainVolume,
+    .mElement = kAudioObjectPropertyElementMaster,
+    .mScope = kAudioObjectPropertyScopeOutput,
+    .mSelector = kAudioHardwareServiceDeviceProperty_VirtualMainVolume,
 };
 
 @implementation VLCSystemVolume
@@ -39,9 +39,9 @@ static const AudioObjectPropertyAddress virtualMasterPropertyAddress = {
 + (AudioDeviceID)defaultOutputDevice
 {
     const AudioObjectPropertyAddress defaultDevicePropertyAddress = {
-        .mElement   = kAudioObjectPropertyElementMaster,
-        .mScope     = kAudioObjectPropertyScopeOutput,
-        .mSelector  = kAudioHardwarePropertyDefaultOutputDevice,
+        .mElement = kAudioObjectPropertyElementMaster,
+        .mScope = kAudioObjectPropertyScopeOutput,
+        .mSelector = kAudioHardwarePropertyDefaultOutputDevice,
     };
 
     if (!AudioObjectHasProperty(kAudioObjectSystemObject, &defaultDevicePropertyAddress)) {
@@ -49,12 +49,16 @@ static const AudioObjectPropertyAddress virtualMasterPropertyAddress = {
     }
 
     AudioDeviceID deviceID;
-    if (AudioObjectGetPropertyData(kAudioObjectSystemObject, &defaultDevicePropertyAddress,
-            0, NULL, &(UInt32) { sizeof(deviceID) }, &deviceID) != noErr)
-    {
+    if (AudioObjectGetPropertyData(kAudioObjectSystemObject,
+                                   &defaultDevicePropertyAddress,
+                                   0,
+                                   NULL,
+                                   &(UInt32) { sizeof(deviceID) },
+                                   &deviceID)
+        != noErr) {
         return kAudioObjectUnknown;
     }
-    
+
     return deviceID;
 }
 
@@ -65,9 +69,9 @@ static const AudioObjectPropertyAddress virtualMasterPropertyAddress = {
     if (!AudioObjectHasProperty(device, &virtualMasterPropertyAddress))
         return NO;
 
-    if (AudioObjectGetPropertyData(device, &virtualMasterPropertyAddress,
-            0, NULL, &(UInt32) { sizeof(*volume) }, volume) != noErr)
-    {
+    if (AudioObjectGetPropertyData(
+            device, &virtualMasterPropertyAddress, 0, NULL, &(UInt32) { sizeof(*volume) }, volume)
+        != noErr) {
         return NO;
     }
     return YES;
@@ -82,9 +86,9 @@ static const AudioObjectPropertyAddress virtualMasterPropertyAddress = {
     if (err != noErr || !isSettable)
         return NO;
 
-    err = AudioObjectSetPropertyData(device, &virtualMasterPropertyAddress,
-            0, NULL, sizeof(volume), &volume);
-    if (err != noErr )
+    err = AudioObjectSetPropertyData(
+        device, &virtualMasterPropertyAddress, 0, NULL, sizeof(volume), &volume);
+    if (err != noErr)
         return NO;
 
     return YES;
@@ -94,7 +98,8 @@ static const AudioObjectPropertyAddress virtualMasterPropertyAddress = {
 {
     AudioDeviceID deviceID = [self defaultOutputDevice];
     if (deviceID == kAudioObjectUnknown) {
-        VLCSystemVolume_LogErr("Could not adjust system volume, failed to obtain default output device");
+        VLCSystemVolume_LogErr(
+            "Could not adjust system volume, failed to obtain default output device");
         return NO;
     }
 

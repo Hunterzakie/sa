@@ -25,8 +25,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-extern NSString * const VLCMediaLibraryMediaItemPasteboardType;
-extern NSString * const VLCMediaLibraryMediaItemUTI;
+extern NSString *const VLCMediaLibraryMediaItemPasteboardType;
+extern NSString *const VLCMediaLibraryMediaItemUTI;
 
 @class VLCMediaLibraryMediaItem;
 @class VLCMediaLibraryAlbum;
@@ -36,7 +36,7 @@ extern NSString * const VLCMediaLibraryMediaItemUTI;
 
 extern const long long int VLCMediaLibraryMediaItemDurationDenominator;
 
-vlc_medialibrary_t * _Nullable getMediaLibrary(void);
+vlc_medialibrary_t *_Nullable getMediaLibrary(void);
 
 typedef NS_ENUM(NSUInteger, VLCMediaLibraryParentGroupType) {
     VLCMediaLibraryParentGroupTypeUnknown = VLC_ML_PARENT_UNKNOWN,
@@ -108,7 +108,7 @@ typedef NS_ENUM(NSUInteger, VLCMediaLibraryParentGroupType) {
 
 @end
 
-@protocol VLCLocallyManipulableItemProtocol <NSObject>
+@protocol VLCLocallyManipulableItemProtocol<NSObject>
 
 - (void)revealInFinder;
 - (void)moveToTrash;
@@ -116,7 +116,7 @@ typedef NS_ENUM(NSUInteger, VLCMediaLibraryParentGroupType) {
 @end
 
 // Protocol with common methods and properties expected for media library items
-@protocol VLCMediaLibraryItemProtocol <VLCLocallyManipulableItemProtocol>
+@protocol VLCMediaLibraryItemProtocol<VLCLocallyManipulableItemProtocol>
 
 @property (readonly) int64_t libraryID;
 @property (readonly) BOOL smallArtworkGenerated;
@@ -144,7 +144,7 @@ typedef NS_ENUM(NSUInteger, VLCMediaLibraryParentGroupType) {
 - (int)setFavorite:(BOOL)favorite;
 - (int)toggleFavorite;
 
-- (void)iterateMediaItemsWithBlock:(void (^)(VLCMediaLibraryMediaItem*))mediaItemBlock;
+- (void)iterateMediaItemsWithBlock:(void (^)(VLCMediaLibraryMediaItem *))mediaItemBlock;
 
 @end
 
@@ -156,7 +156,7 @@ typedef NS_ENUM(NSUInteger, VLCMediaLibraryParentGroupType) {
 
 // Extended VLCMediaLibraryItemProtocol that includes additional properties for media library item
 // audio groups (i.e. artists, genres, etc.)
-@protocol VLCMediaLibraryAudioGroupProtocol <VLCMediaLibraryItemProtocol>
+@protocol VLCMediaLibraryAudioGroupProtocol<VLCMediaLibraryItemProtocol>
 
 @property (readonly) unsigned int numberOfTracks;
 @property (readonly) NSArray<VLCMediaLibraryArtist *> *artists;
@@ -164,19 +164,21 @@ typedef NS_ENUM(NSUInteger, VLCMediaLibraryParentGroupType) {
 @property (readonly) NSArray<VLCMediaLibraryGenre *> *genres;
 @property (readonly) VLCMediaLibraryParentGroupType matchingParentType;
 
-- (void)iterateMediaItemsWithBlock:(void (^)(VLCMediaLibraryMediaItem*))mediaItemBlock;
+- (void)iterateMediaItemsWithBlock:(void (^)(VLCMediaLibraryMediaItem *))mediaItemBlock;
 
 @end
 
 // Like VLCAbstractMediaLibraryItem but with some additional functionality for audio groupings
 // such as artists and genres. Do not use directly, subclass instead.
-@interface VLCAbstractMediaLibraryAudioGroup : VLCAbstractMediaLibraryItem<VLCMediaLibraryAudioGroupProtocol>
+@interface VLCAbstractMediaLibraryAudioGroup
+    : VLCAbstractMediaLibraryItem<VLCMediaLibraryAudioGroupProtocol>
 
 @end
 
 #pragma mark - Media library classes
 
-@interface VLCMediaLibraryArtist : VLCAbstractMediaLibraryAudioGroup<VLCMediaLibraryAudioGroupProtocol>
+@interface VLCMediaLibraryArtist
+    : VLCAbstractMediaLibraryAudioGroup<VLCMediaLibraryAudioGroupProtocol>
 
 + (nullable instancetype)artistWithID:(int64_t)artistID;
 - (instancetype)initWithArtist:(struct vlc_ml_artist_t *)p_artist;
@@ -189,7 +191,8 @@ typedef NS_ENUM(NSUInteger, VLCMediaLibraryParentGroupType) {
 
 @end
 
-@interface VLCMediaLibraryAlbum : VLCAbstractMediaLibraryAudioGroup<VLCMediaLibraryAudioGroupProtocol>
+@interface VLCMediaLibraryAlbum
+    : VLCAbstractMediaLibraryAudioGroup<VLCMediaLibraryAudioGroupProtocol>
 
 + (nullable instancetype)albumWithID:(int64_t)albumID;
 - (instancetype)initWithAlbum:(struct vlc_ml_album_t *)p_album;
@@ -204,7 +207,8 @@ typedef NS_ENUM(NSUInteger, VLCMediaLibraryParentGroupType) {
 
 @end
 
-@interface VLCMediaLibraryGenre : VLCAbstractMediaLibraryAudioGroup<VLCMediaLibraryAudioGroupProtocol>
+@interface VLCMediaLibraryGenre
+    : VLCAbstractMediaLibraryAudioGroup<VLCMediaLibraryAudioGroupProtocol>
 
 + (nullable instancetype)genreWithID:(int64_t)genreID;
 - (instancetype)initWithGenre:(struct vlc_ml_genre_t *)p_genre;
@@ -228,7 +232,7 @@ typedef NS_ENUM(NSUInteger, VLCMediaLibraryParentGroupType) {
 
 @end
 
-@interface VLCMediaLibraryMovie : VLCAbstractMediaLibraryItem <VLCMediaLibraryItemProtocol>
+@interface VLCMediaLibraryMovie : VLCAbstractMediaLibraryItem<VLCMediaLibraryItemProtocol>
 
 - (instancetype)initWithMediaItem:(struct vlc_ml_media_t *)p_media;
 
@@ -283,7 +287,7 @@ typedef NS_ENUM(NSUInteger, VLCMediaLibraryParentGroupType) {
 @property (readonly) BOOL readOnly;
 
 + (instancetype)playlistForLibraryID:(int64_t)libraryID;
-- (instancetype)initWithPlaylist:(const struct vlc_ml_playlist_t * const)p_playlist;
+- (instancetype)initWithPlaylist:(const struct vlc_ml_playlist_t *const)p_playlist;
 
 - (void)removeMediaItemsAtPositions:(NSArray<NSNumber *> *)positions;
 - (BOOL)appendMediaItems:(NSArray<VLCMediaLibraryMediaItem *> *)mediaItems;
@@ -304,8 +308,8 @@ typedef NS_ENUM(NSUInteger, VLCMediaLibraryParentGroupType) {
 @property (readonly) NSString *readableMediaSubType;
 @property (readonly) VLCInputItem *inputItem;
 
-@property (readonly) NSArray <VLCMediaLibraryFile *> *files;
-@property (readonly) NSArray <VLCMediaLibraryTrack *> *tracks;
+@property (readonly) NSArray<VLCMediaLibraryFile *> *files;
+@property (readonly) NSArray<VLCMediaLibraryTrack *> *tracks;
 @property (readonly, nullable) VLCMediaLibraryTrack *firstVideoTrack;
 
 @property (readonly) int32_t year;
@@ -362,7 +366,7 @@ typedef NS_ENUM(NSUInteger, VLCMediaLibraryParentGroupType) {
             withSecondaryDetailString:(nullable NSString *)secondaryDetailString;
 
 - (instancetype)initWithDisplayString:(NSString *)displayString
-                       withMediaItems:(NSArray<VLCMediaLibraryMediaItem *> *)mediaItems;      
+                       withMediaItems:(NSArray<VLCMediaLibraryMediaItem *> *)mediaItems;
 
 @end
 

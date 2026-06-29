@@ -46,13 +46,14 @@
 #include <unistd.h>
 
 // This needs to match whatever identifier has been set in the library window XIB
-static NSString * const VLCLibrarySegmentCellIdentifier = @"VLCLibrarySegmentCellIdentifier";
+static NSString *const VLCLibrarySegmentCellIdentifier = @"VLCLibrarySegmentCellIdentifier";
 
 @interface VLCLibraryWindowNavigationSidebarViewController ()
 
 @property BOOL ignoreSegmentSelectionChanges;
 @property (readonly) NSEdgeInsets scrollViewInsets;
-@property (readonly) NSMutableDictionary<NSString *, dispatch_source_t> *observedPathDispatchSources;
+@property (readonly)
+    NSMutableDictionary<NSString *, dispatch_source_t> *observedPathDispatchSources;
 
 @end
 
@@ -95,7 +96,7 @@ static NSString * const VLCLibrarySegmentCellIdentifier = @"VLCLibrarySegmentCel
 
     self.statusNotifierView.postsFrameChangedNotifications = YES;
 
-    NSNotificationCenter * const defaultCenter = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const defaultCenter = NSNotificationCenter.defaultCenter;
     [defaultCenter addObserver:self
                       selector:@selector(internalNodesChanged:)
                           name:VLCLibraryBookmarkedLocationsChanged
@@ -130,9 +131,9 @@ static NSString * const VLCLibrarySegmentCellIdentifier = @"VLCLibrarySegmentCel
 {
     const VLCLibrarySegmentType currentSegmentType = self.libraryWindow.librarySegmentType;
 
-    NSMutableSet<NSNumber *> * const expandedSegmentTypes = NSMutableSet.set;
-    for (VLCLibrarySegment * const segment in self.treeController.content) {
-        NSTreeNode * const node = [self nodeForSegmentType:segment.segmentType];
+    NSMutableSet<NSNumber *> *const expandedSegmentTypes = NSMutableSet.set;
+    for (VLCLibrarySegment *const segment in self.treeController.content) {
+        NSTreeNode *const node = [self nodeForSegmentType:segment.segmentType];
         if ([self.outlineView isItemExpanded:node]) {
             [expandedSegmentTypes addObject:@(segment.segmentType)];
         }
@@ -152,9 +153,9 @@ static NSString * const VLCLibrarySegmentCellIdentifier = @"VLCLibrarySegmentCel
 
     [self updateBookmarkObservation];
 
-    for (VLCLibrarySegment * const segment in self.treeController.content) {
+    for (VLCLibrarySegment *const segment in self.treeController.content) {
         if ([expandedSegmentTypes containsObject:@(segment.segmentType)]) {
-            NSTreeNode * const node = [self nodeForSegmentType:segment.segmentType];
+            NSTreeNode *const node = [self nodeForSegmentType:segment.segmentType];
             [self.outlineView expandItem:node];
         }
     }
@@ -164,22 +165,23 @@ static NSString * const VLCLibrarySegmentCellIdentifier = @"VLCLibrarySegmentCel
 
 - (void)updateBookmarkObservation
 {
-    NSUserDefaults * const defaults = NSUserDefaults.standardUserDefaults;
-    NSArray<NSString *> * const bookmarkedLocations =
+    NSUserDefaults *const defaults = NSUserDefaults.standardUserDefaults;
+    NSArray<NSString *> *const bookmarkedLocations =
         [defaults stringArrayForKey:VLCLibraryBookmarkedLocationsKey];
     if (bookmarkedLocations.count == 0) {
         return;
     }
 
-    NSMutableArray<NSString *> * const deletedLocations = self.observedPathDispatchSources.allKeys.mutableCopy;
+    NSMutableArray<NSString *> *const deletedLocations =
+        self.observedPathDispatchSources.allKeys.mutableCopy;
     const __weak typeof(self) weakSelf = self;
 
-    for (NSString * const locationMrl in bookmarkedLocations) {
+    for (NSString *const locationMrl in bookmarkedLocations) {
         [deletedLocations removeObject:locationMrl];
         if ([self.observedPathDispatchSources objectForKey:locationMrl] != nil) {
             continue;
         }
-        NSURL * const locationUrl = [NSURL URLWithString:locationMrl];
+        NSURL *const locationUrl = [NSURL URLWithString:locationMrl];
         const uintptr_t descriptor = open(locationUrl.path.UTF8String, O_EVTONLY);
         if (descriptor == (uintptr_t)-1) {
             continue;
@@ -187,18 +189,26 @@ static NSString * const VLCLibrarySegmentCellIdentifier = @"VLCLibrarySegmentCel
         struct stat fileStat;
         const int statResult = fstat(descriptor, &fileStat);
 
-        const dispatch_queue_t globalQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
-        const dispatch_source_t fileDispatchSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_VNODE, descriptor, DISPATCH_VNODE_DELETE | DISPATCH_VNODE_RENAME, globalQueue);
+        const dispatch_queue_t globalQueue =
+            dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+        const dispatch_source_t fileDispatchSource =
+            dispatch_source_create(DISPATCH_SOURCE_TYPE_VNODE,
+                                   descriptor,
+                                   DISPATCH_VNODE_DELETE | DISPATCH_VNODE_RENAME,
+                                   globalQueue);
         dispatch_source_set_event_handler(fileDispatchSource, ^{
             const unsigned long eventFlags = dispatch_source_get_data(fileDispatchSource);
             if (eventFlags & DISPATCH_VNODE_RENAME && statResult != -1) {
-                NSURL * const parentLocationUrl = locationUrl.URLByDeletingLastPathComponent;
-                NSString * const parentLocationPath = parentLocationUrl.path;
-                NSArray<NSString *> * const files = [NSFileManager.defaultManager contentsOfDirectoryAtPath:parentLocationPath error:nil];
+                NSURL *const parentLocationUrl = locationUrl.URLByDeletingLastPathComponent;
+                NSString *const parentLocationPath = parentLocationUrl.path;
+                NSArray<NSString *> *const files =
+                    [NSFileManager.defaultManager contentsOfDirectoryAtPath:parentLocationPath
+                                                                      error:nil];
                 NSString *newFileName = nil;
 
-                for (NSString * const file in files) {
-                    NSString * const fullChildPath = [parentLocationPath stringByAppendingPathComponent:file];
+                for (NSString *const file in files) {
+                    NSString *const fullChildPath =
+                        [parentLocationPath stringByAppendingPathComponent:file];
                     struct stat currentFileStat;
                     if (stat(fullChildPath.UTF8String, &currentFileStat) == -1) {
                         continue;
@@ -209,20 +219,21 @@ static NSString * const VLCLibrarySegmentCellIdentifier = @"VLCLibrarySegmentCel
                 }
 
                 if (newFileName != nil) {
-                    NSMutableArray<NSString *> * const mutableBookmarkedLocations = bookmarkedLocations.mutableCopy;
-                    const NSUInteger locationIndex = [mutableBookmarkedLocations indexOfObject:locationMrl];
-                    NSString * const newLocationMrl = [parentLocationUrl URLByAppendingPathComponent:newFileName].absoluteString;
-                    [mutableBookmarkedLocations replaceObjectAtIndex:locationIndex withObject:newLocationMrl];
-                    [defaults setObject:mutableBookmarkedLocations forKey:VLCLibraryBookmarkedLocationsKey];
+                    NSMutableArray<NSString *> *const mutableBookmarkedLocations =
+                        bookmarkedLocations.mutableCopy;
+                    const NSUInteger locationIndex =
+                        [mutableBookmarkedLocations indexOfObject:locationMrl];
+                    NSString *const newLocationMrl =
+                        [parentLocationUrl URLByAppendingPathComponent:newFileName].absoluteString;
+                    [mutableBookmarkedLocations replaceObjectAtIndex:locationIndex
+                                                          withObject:newLocationMrl];
+                    [defaults setObject:mutableBookmarkedLocations
+                                 forKey:VLCLibraryBookmarkedLocationsKey];
                 }
             }
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [weakSelf internalNodesChanged:nil];
-            });
+            dispatch_async(dispatch_get_main_queue(), ^{ [weakSelf internalNodesChanged:nil]; });
         });
-        dispatch_source_set_cancel_handler(fileDispatchSource, ^{
-            close(descriptor);
-        });
+        dispatch_source_set_cancel_handler(fileDispatchSource, ^{ close(descriptor); });
         dispatch_resume(fileDispatchSource);
         [self.observedPathDispatchSources setObject:fileDispatchSource forKey:locationMrl];
     }
@@ -240,19 +251,23 @@ static NSString * const VLCLibrarySegmentCellIdentifier = @"VLCLibrarySegmentCel
                          self.scrollViewInsets.right);
     self.statusNotifierView.hidden = NO;
 
-    [NSAnimationContext runAnimationRespectingPreferencesWithChanges:^(NSAnimationContext * const __unused context) {
-        self.statusNotifierView.animator.alphaValue = 1.0;
-    } completionHandler:nil];
+    [NSAnimationContext
+        runAnimationRespectingPreferencesWithChanges:^(NSAnimationContext *const __unused context) {
+            self.statusNotifierView.animator.alphaValue = 1.0;
+        }
+                                   completionHandler:nil];
 }
 
 - (void)statusViewDeactivated:(NSNotification *)notification
 {
-    [NSAnimationContext runAnimationRespectingPreferencesWithChanges:^(NSAnimationContext * const __unused context) {
-        self.statusNotifierView.animator.alphaValue = 0.0;
-    } completionHandler:^{
-        self.statusNotifierView.hidden = YES;
-        self.outlineViewScrollView.contentInsets = self.scrollViewInsets;
-    }];
+    [NSAnimationContext
+        runAnimationRespectingPreferencesWithChanges:^(NSAnimationContext *const __unused context) {
+            self.statusNotifierView.animator.alphaValue = 0.0;
+        }
+        completionHandler:^{
+            self.statusNotifierView.hidden = YES;
+            self.outlineViewScrollView.contentInsets = self.scrollViewInsets;
+        }];
 }
 
 - (void)statusViewSizeChanged:(NSNotification *)notification
@@ -273,18 +288,19 @@ static NSString * const VLCLibrarySegmentCellIdentifier = @"VLCLibrarySegmentCel
 {
     NSArray<NSTreeNode *> *nodes = self.treeController.arrangedObjects.childNodes;
     while (nodes.count != 0) {
-        NSMutableArray<NSTreeNode *> * const nextLevelNodes = NSMutableArray.array;
+        NSMutableArray<NSTreeNode *> *const nextLevelNodes = NSMutableArray.array;
 
-        const NSInteger nodeIdx = [nodes indexOfObjectPassingTest:^BOOL(NSTreeNode * const obj,
-                                                                        const NSUInteger __unused idx,
-                                                                        BOOL * const __unused stop) {
-            VLCLibrarySegment * const segment = obj.representedObject;
-            const BOOL matching = segment.segmentType == segmentType;
-            if (!matching) {
-                [nextLevelNodes addObjectsFromArray:obj.childNodes];
-            }
-            return matching;
-        }];
+        const NSInteger nodeIdx =
+            [nodes indexOfObjectPassingTest:^BOOL(NSTreeNode *const obj,
+                                                  const NSUInteger __unused idx,
+                                                  BOOL *const __unused stop) {
+                VLCLibrarySegment *const segment = obj.representedObject;
+                const BOOL matching = segment.segmentType == segmentType;
+                if (!matching) {
+                    [nextLevelNodes addObjectsFromArray:obj.childNodes];
+                }
+                return matching;
+            }];
 
         if (nodeIdx != NSNotFound) {
             return nodes[nodeIdx];
@@ -297,31 +313,31 @@ static NSString * const VLCLibrarySegmentCellIdentifier = @"VLCLibrarySegmentCel
 
 - (void)expandParentsOfNode:(NSTreeNode *)targetNode
 {
-    NSMutableArray * const parentNodes = NSMutableArray.array;
+    NSMutableArray *const parentNodes = NSMutableArray.array;
     NSTreeNode *currentNode = targetNode.parentNode;
     while (currentNode != nil) {
         [parentNodes insertObject:currentNode atIndex:0];
         currentNode = currentNode.parentNode;
     }
 
-    for (NSTreeNode * const node in parentNodes) {
+    for (NSTreeNode *const node in parentNodes) {
         [self.outlineView expandItem:node];
     }
 }
 
 - (void)selectSegment:(NSInteger)segmentType
 {
-    NSAssert(segmentType > VLCLibraryLowSentinelSegment &&
-             segmentType < VLCLibraryHighSentinelSegment,
+    NSAssert(segmentType > VLCLibraryLowSentinelSegment
+                 && segmentType < VLCLibraryHighSentinelSegment,
              @"Invalid segment type value provided");
 
     if (segmentType == VLCLibraryHeaderSegmentType) {
         return;
     }
 
-    VLCLibrarySegment * const segment = [VLCLibrarySegment segmentWithSegmentType:segmentType];
-    if (segment.mediaLibraryRequired &&
-        VLCMain.sharedInstance.libraryController.libraryModel == nil) {
+    VLCLibrarySegment *const segment = [VLCLibrarySegment segmentWithSegmentType:segmentType];
+    if (segment.mediaLibraryRequired
+        && VLCMain.sharedInstance.libraryController.libraryModel == nil) {
         segmentType = VLCLibraryBrowseSegmentType;
     }
 
@@ -344,31 +360,38 @@ static NSString * const VLCLibrarySegmentCellIdentifier = @"VLCLibrarySegmentCel
                   byExtendingSelection:NO];
 }
 
-# pragma mark - NSOutlineView delegation
+#pragma mark - NSOutlineView delegation
 
 - (NSView *)outlineView:(NSOutlineView *)outlineView
      viewForTableColumn:(NSTableColumn *)tableColumn
                    item:(id)item
 {
-    NSAssert(outlineView == _outlineView, @"VLCLibraryWindowNavigationSidebarController should only be a delegate for the libraryWindow nav sidebar outline view!");
+    NSAssert(outlineView == _outlineView,
+             @"VLCLibraryWindowNavigationSidebarController should only be a delegate for the "
+             @"libraryWindow nav sidebar outline view!");
 
     const BOOL isHeader = [self outlineView:outlineView isGroupItem:item];
-    NSTableCellView * const cellView = isHeader
+    NSTableCellView *const cellView = isHeader
         ? [outlineView makeViewWithIdentifier:@"VLCLibrarySegmentHeaderCellIdentifier" owner:self]
         : [outlineView makeViewWithIdentifier:@"VLCLibrarySegmentCellIdentifier" owner:self];
     NSAssert(cellView != nil, @"Provided cell view for navigation outline view should be valid!");
-    [cellView.textField bind:NSValueBinding toObject:cellView withKeyPath:@"objectValue.displayString" options:nil];
-    [cellView.imageView bind:NSImageBinding toObject:cellView withKeyPath:@"objectValue.displayImage" options:nil];
+    [cellView.textField bind:NSValueBinding
+                    toObject:cellView
+                 withKeyPath:@"objectValue.displayString"
+                     options:nil];
+    [cellView.imageView bind:NSImageBinding
+                    toObject:cellView
+                 withKeyPath:@"objectValue.displayImage"
+                     options:nil];
 
     if (@available(macOS 10.14, *)) {
         cellView.imageView.contentTintColor = NSColor.VLCAccentColor;
     }
 
-    NSTreeNode * const treeNode = (NSTreeNode *)item;
-    VLCLibrarySegment * const segment = (VLCLibrarySegment *)treeNode.representedObject;
-    const BOOL mediaLibraryUnavailable =
-        segment.mediaLibraryRequired &&
-        VLCMain.sharedInstance.libraryController.libraryModel == nil;
+    NSTreeNode *const treeNode = (NSTreeNode *)item;
+    VLCLibrarySegment *const segment = (VLCLibrarySegment *)treeNode.representedObject;
+    const BOOL mediaLibraryUnavailable = segment.mediaLibraryRequired
+        && VLCMain.sharedInstance.libraryController.libraryModel == nil;
     if (mediaLibraryUnavailable) {
         cellView.textField.textColor = NSColor.tertiaryLabelColor;
         if (@available(macOS 10.14, *)) {
@@ -379,21 +402,23 @@ static NSString * const VLCLibrarySegmentCellIdentifier = @"VLCLibrarySegmentCel
     return cellView;
 }
 
-- (NSIndexSet *)outlineView:(NSOutlineView *)outlineView selectionIndexesForProposedSelection:(nonnull NSIndexSet *)proposedSelectionIndexes
+- (NSIndexSet *)outlineView:(NSOutlineView *)outlineView
+    selectionIndexesForProposedSelection:(nonnull NSIndexSet *)proposedSelectionIndexes
 {
-    NSAssert(outlineView == _outlineView, @"VLCLibraryWindowNavigationSidebarController should only be a delegate for the libraryWindow nav sidebar outline view!");
+    NSAssert(outlineView == _outlineView,
+             @"VLCLibraryWindowNavigationSidebarController should only be a delegate for the "
+             @"libraryWindow nav sidebar outline view!");
 
     if (proposedSelectionIndexes.count > 0) {
-        NSTreeNode * const node = [self.outlineView itemAtRow:proposedSelectionIndexes.firstIndex];
-        VLCLibrarySegment * const segment = (VLCLibrarySegment *)node.representedObject;
+        NSTreeNode *const node = [self.outlineView itemAtRow:proposedSelectionIndexes.firstIndex];
+        VLCLibrarySegment *const segment = (VLCLibrarySegment *)node.representedObject;
 
         if (segment.segmentType == VLCLibraryHeaderSegmentType) {
             return NSIndexSet.indexSet;
         }
 
-        const BOOL mediaLibraryUnavailable =
-            segment.mediaLibraryRequired &&
-            VLCMain.sharedInstance.libraryController.libraryModel == nil;
+        const BOOL mediaLibraryUnavailable = segment.mediaLibraryRequired
+            && VLCMain.sharedInstance.libraryController.libraryModel == nil;
         if (mediaLibraryUnavailable) {
             return [outlineView selectedRowIndexes];
         }
@@ -407,16 +432,17 @@ static NSString * const VLCLibrarySegmentCellIdentifier = @"VLCLibrarySegmentCel
     if (self.ignoreSegmentSelectionChanges) {
         return;
     }
-    
-    NSTreeNode * const node = (NSTreeNode *)[_outlineView itemAtRow:_outlineView.selectedRow];
+
+    NSTreeNode *const node = (NSTreeNode *)[_outlineView itemAtRow:_outlineView.selectedRow];
     NSParameterAssert(node != nil);
-    VLCLibrarySegment * const segment = (VLCLibrarySegment *)node.representedObject;
-    NSObject * const representedObject = segment.representedObject;
+    VLCLibrarySegment *const segment = (VLCLibrarySegment *)node.representedObject;
+    NSObject *const representedObject = segment.representedObject;
     NSParameterAssert(representedObject != nil);
 
     if (segment.segmentType == VLCLibraryMusicSegmentType) {
         [self.outlineView expandItem:[self nodeForSegmentType:VLCLibraryMusicSegmentType]];
-        NSTreeNode * const artistsNode = [self nodeForSegmentType:VLCLibraryArtistsMusicSubSegmentType];
+        NSTreeNode *const artistsNode =
+            [self nodeForSegmentType:VLCLibraryArtistsMusicSubSegmentType];
         const NSInteger artistsIndex = [self.outlineView rowForItem:artistsNode];
         [self.outlineView selectRowIndexes:[NSIndexSet indexSetWithIndex:artistsIndex]
                       byExtendingSelection:NO];
@@ -424,38 +450,45 @@ static NSString * const VLCLibrarySegmentCellIdentifier = @"VLCLibrarySegmentCel
     } else if ([representedObject isKindOfClass:NSNumber.class]) {
         self.libraryWindow.librarySegmentType = segment.segmentType;
     } else if ([representedObject isKindOfClass:VLCLibrarySegmentBookmarkedLocation.class]) {
-        VLCLibrarySegmentBookmarkedLocation * const bookmarkedLocation =
+        VLCLibrarySegmentBookmarkedLocation *const bookmarkedLocation =
             (VLCLibrarySegmentBookmarkedLocation *)representedObject;
         self.libraryWindow.librarySegmentType = bookmarkedLocation.segmentType;
         [self.libraryWindow browseFolderByMrl:bookmarkedLocation.mrl];
     } else if ([representedObject isKindOfClass:VLCMediaLibraryGroup.class]) {
         [self.libraryWindow presentLibraryItem:(VLCMediaLibraryGroup *)representedObject];
     }
-    
+
     // Refresh disclosure triangles when selection changes
     [(VLCLibraryWindowNavigationSidebarOutlineView *)self.outlineView refreshDisclosureCaret];
 }
 
-- (BOOL)outlineView:(NSOutlineView*)outlineView isGroupItem:(id)item
+- (BOOL)outlineView:(NSOutlineView *)outlineView isGroupItem:(id)item
 {
-    NSTreeNode * const treeNode = (NSTreeNode *)item;
-    VLCLibrarySegment * const segment = (VLCLibrarySegment *)treeNode.representedObject;
+    NSTreeNode *const treeNode = (NSTreeNode *)item;
+    VLCLibrarySegment *const segment = (VLCLibrarySegment *)treeNode.representedObject;
     return segment.segmentType == VLCLibraryHeaderSegmentType;
 }
 
 - (BOOL)outlineView:(nonnull NSOutlineView *)outlineView shouldCollapseItem:(nonnull id)item
 {
-    NSAssert(outlineView == _outlineView, @"VLCLibraryWindowNavigationSidebarController should only be a delegate for the libraryWindow nav sidebar outline view!");
+    NSAssert(outlineView == _outlineView,
+             @"VLCLibraryWindowNavigationSidebarController should only be a delegate for the "
+             @"libraryWindow nav sidebar outline view!");
 
     // Don't allow collapsing the parent segment of the selected segment, if selection is a child
-    NSTreeNode * const treeNode = (NSTreeNode *)item;
-    VLCLibrarySegment * const segment = (VLCLibrarySegment *)treeNode.representedObject;
-    NSTreeNode * const selectedSegmentItem = (NSTreeNode *)[self.outlineView itemAtRow:self.outlineView.selectedRow];
-    VLCLibrarySegment * const selectedSegment = (VLCLibrarySegment *)selectedSegmentItem.representedObject;
-    const NSInteger childNodeIndex = [segment.childNodes indexOfObjectPassingTest:^BOOL(NSTreeNode * const _Nonnull obj, const NSUInteger __unused idx, BOOL * const _Nonnull __unused stop) {
-        VLCLibrarySegment * const childSegment = (VLCLibrarySegment *)obj;
-        return childSegment.segmentType == selectedSegment.segmentType;
-    }];
+    NSTreeNode *const treeNode = (NSTreeNode *)item;
+    VLCLibrarySegment *const segment = (VLCLibrarySegment *)treeNode.representedObject;
+    NSTreeNode *const selectedSegmentItem =
+        (NSTreeNode *)[self.outlineView itemAtRow:self.outlineView.selectedRow];
+    VLCLibrarySegment *const selectedSegment =
+        (VLCLibrarySegment *)selectedSegmentItem.representedObject;
+    const NSInteger childNodeIndex =
+        [segment.childNodes indexOfObjectPassingTest:^BOOL(NSTreeNode *const _Nonnull obj,
+                                                           const NSUInteger __unused idx,
+                                                           BOOL *const _Nonnull __unused stop) {
+            VLCLibrarySegment *const childSegment = (VLCLibrarySegment *)obj;
+            return childSegment.segmentType == selectedSegment.segmentType;
+        }];
     return childNodeIndex == NSNotFound;
 }
 

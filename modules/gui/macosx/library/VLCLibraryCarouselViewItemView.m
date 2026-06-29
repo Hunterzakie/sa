@@ -109,22 +109,24 @@
     const id<VLCMediaLibraryItemProtocol> actualItem = self.representedItem.item;
 
     __weak typeof(self) weakSelf = self;
-    [VLCLibraryImageCache thumbnailForLibraryItem:actualItem withCompletion:^(NSImage * const thumbnail) {
-        if (!weakSelf || weakSelf.representedItem.item != actualItem) {
-            return;
-        }
-        weakSelf.imageView.image = thumbnail;
-    }];
+    [VLCLibraryImageCache
+        thumbnailForLibraryItem:actualItem
+                 withCompletion:^(NSImage *const thumbnail) {
+                     if (!weakSelf || weakSelf.representedItem.item != actualItem) {
+                         return;
+                     }
+                     weakSelf.imageView.image = thumbnail;
+                 }];
 
     self.titleTextField.stringValue = actualItem.displayString;
     self.detailTextField.stringValue = actualItem.primaryDetailString;
 
     if ([actualItem isKindOfClass:VLCMediaLibraryMediaItem.class]) {
-        VLCMediaLibraryMediaItem * const mediaItem = (VLCMediaLibraryMediaItem *)actualItem;
+        VLCMediaLibraryMediaItem *const mediaItem = (VLCMediaLibraryMediaItem *)actualItem;
 
         if (mediaItem.mediaType == VLC_ML_MEDIA_TYPE_VIDEO) {
-            VLCMediaLibraryTrack * const videoTrack = mediaItem.firstVideoTrack;
-            NSString * const resolutionLabel = videoTrack.resolutionLabel;
+            VLCMediaLibraryTrack *const videoTrack = mediaItem.firstVideoTrack;
+            NSString *const resolutionLabel = videoTrack.resolutionLabel;
             if (resolutionLabel) {
                 self.annotationTextField.stringValue = resolutionLabel;
                 self.annotationTextField.hidden = NO;
@@ -170,7 +172,7 @@
         _menuController = [[VLCLibraryMenuController alloc] init];
     }
 
-    self.menuController.representedItems = @[self.representedItem];
+    self.menuController.representedItems = @[ self.representedItem ];
     [self.menuController popupMenuWithEvent:event forView:self];
 }
 

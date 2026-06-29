@@ -58,7 +58,7 @@
     VLCLibraryCollectionViewDelegate *_collectionViewDelegate;
     VLCLibraryCollectionViewFlowLayout *_collectionViewLayout;
     NSArray<NSLayoutConstraint *> *_internalPlaceholderImageViewSizeConstraints;
-    
+
     id<VLCMediaLibraryItemProtocol> _awaitingPresentingLibraryItem;
 }
 
@@ -69,11 +69,11 @@
 - (instancetype)initWithLibraryWindow:(VLCLibraryWindow *)libraryWindow
 {
     self = [super initWithLibraryWindow:libraryWindow];
-    
+
     if (self) {
         _favoritesLibraryTableViewDelegate = [[VLCLibraryFavoritesTableViewDelegate alloc] init];
         _splitViewDelegate = [[VLCLibraryTwoPaneSplitViewDelegate alloc] init];
-        
+
         [self setupProperties];
         [self setupTableViews];
         [self setupCollectionView];
@@ -83,7 +83,7 @@
         [self setupFavoritesLibraryContainerView];
         [self setupNotifications];
     }
-    
+
     return self;
 }
 
@@ -110,34 +110,36 @@
     _favoritesLibraryTableViewDelegate.detailTableHeaderView = self.favoritesHeaderView;
     self.favoritesLibraryGroupSelectionTableView.headerView = self.favoritesHeaderView;
 
-    NSTableColumn * const groupsColumn = [[NSTableColumn alloc] initWithIdentifier:@"groups"];
-    NSTableColumn * const selectedGroupColumn = [[NSTableColumn alloc] initWithIdentifier:@"selectedGroup"];
-    
+    NSTableColumn *const groupsColumn = [[NSTableColumn alloc] initWithIdentifier:@"groups"];
+    NSTableColumn *const selectedGroupColumn =
+        [[NSTableColumn alloc] initWithIdentifier:@"selectedGroup"];
+
     selectedGroupColumn.headerCell = [VLCLibraryHeaderCell new];
 
     [self.favoritesLibraryGroupsTableView addTableColumn:groupsColumn];
     [self.favoritesLibraryGroupSelectionTableView addTableColumn:selectedGroupColumn];
 
-    NSNib * const tableCellViewNib =
+    NSNib *const tableCellViewNib =
         [[NSNib alloc] initWithNibNamed:NSStringFromClass(VLCLibraryTableCellView.class)
                                  bundle:nil];
     [self.favoritesLibraryGroupsTableView registerNib:tableCellViewNib
                                         forIdentifier:VLCLibraryTableCellViewIdentifier];
-    [self.favoritesLibraryGroupSelectionTableView registerNib:tableCellViewNib 
+    [self.favoritesLibraryGroupSelectionTableView registerNib:tableCellViewNib
                                                 forIdentifier:VLCLibraryTableCellViewIdentifier];
-    
+
     // Register album cell view for artist/genre sections
-    NSNib * const albumCellViewNib =
+    NSNib *const albumCellViewNib =
         [[NSNib alloc] initWithNibNamed:NSStringFromClass(VLCLibraryAlbumTableCellView.class)
                                  bundle:nil];
     [self.favoritesLibraryGroupSelectionTableView registerNib:albumCellViewNib
                                                 forIdentifier:VLCAudioLibraryCellIdentifier];
-    
+
     self.favoritesLibraryGroupsTableView.headerView = nil;
     self.favoritesLibraryGroupsTableView.allowsEmptySelection = NO;
-    
+
     self.favoritesLibraryGroupsTableView.rowHeight = VLCLibraryUIUnits.mediumTableViewRowHeight;
-    self.favoritesLibraryGroupSelectionTableView.rowHeight = VLCLibraryUIUnits.mediumTableViewRowHeight;
+    self.favoritesLibraryGroupSelectionTableView.rowHeight =
+        VLCLibraryUIUnits.mediumTableViewRowHeight;
 
     self.favoritesLibraryGroupsTableView.allowsMultipleSelection = YES;
     self.favoritesLibraryGroupSelectionTableView.allowsMultipleSelection = YES;
@@ -150,70 +152,75 @@
     self.favoritesLibraryCollectionView.translatesAutoresizingMaskIntoConstraints = NO;
 
     _collectionViewLayout = [[VLCLibraryCollectionViewFlowLayout alloc] init];
-    
+
     const CGFloat collectionItemSpacing = VLCLibraryUIUnits.collectionViewItemSpacing;
     const NSEdgeInsets collectionViewSectionInset = VLCLibraryUIUnits.collectionViewSectionInsets;
-    _collectionViewLayout.headerReferenceSize = VLCLibraryCollectionViewSupplementaryElementView.defaultHeaderSize;
+    _collectionViewLayout.headerReferenceSize =
+        VLCLibraryCollectionViewSupplementaryElementView.defaultHeaderSize;
     _collectionViewLayout.minimumLineSpacing = collectionItemSpacing;
     _collectionViewLayout.minimumInteritemSpacing = collectionItemSpacing;
     _collectionViewLayout.sectionInset = collectionViewSectionInset;
-    
-    NSCollectionView * const collectionView = self.favoritesLibraryCollectionView;
+
+    NSCollectionView *const collectionView = self.favoritesLibraryCollectionView;
     collectionView.collectionViewLayout = _collectionViewLayout;
-    
+
     _collectionViewDelegate = [[VLCLibraryCollectionViewDelegate alloc] init];
     collectionView.delegate = _collectionViewDelegate;
-    
+
     collectionView.selectable = YES;
     collectionView.allowsEmptySelection = YES;
     collectionView.allowsMultipleSelection = YES;
-    
+
     [collectionView registerClass:VLCLibraryCollectionViewItem.class
             forItemWithIdentifier:VLCLibraryCellIdentifier];
-    
+
     [collectionView registerClass:VLCLibraryCollectionViewSupplementaryElementView.class
-       forSupplementaryViewOfKind:NSCollectionElementKindSectionHeader
-                   withIdentifier:VLCLibrarySupplementaryElementViewIdentifier];
-    
-    NSString * const mediaItemSupplementaryDetailViewString =
+        forSupplementaryViewOfKind:NSCollectionElementKindSectionHeader
+                    withIdentifier:VLCLibrarySupplementaryElementViewIdentifier];
+
+    NSString *const mediaItemSupplementaryDetailViewString =
         NSStringFromClass(VLCLibraryCollectionViewMediaItemSupplementaryDetailView.class);
-    NSNib * const mediaItemSupplementaryDetailViewNib =
+    NSNib *const mediaItemSupplementaryDetailViewNib =
         [[NSNib alloc] initWithNibNamed:mediaItemSupplementaryDetailViewString bundle:nil];
-    
+
     [collectionView registerNib:mediaItemSupplementaryDetailViewNib
-     forSupplementaryViewOfKind:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind
-                 withIdentifier:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewIdentifier];
-    
-    NSString * const audioGroupSupplementaryDetailViewString =
+        forSupplementaryViewOfKind:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind
+                    withIdentifier:
+                        VLCLibraryCollectionViewMediaItemSupplementaryDetailViewIdentifier];
+
+    NSString *const audioGroupSupplementaryDetailViewString =
         NSStringFromClass(VLCLibraryCollectionViewAudioGroupSupplementaryDetailView.class);
-    NSNib * const audioGroupSupplementaryDetailViewNib =
+    NSNib *const audioGroupSupplementaryDetailViewNib =
         [[NSNib alloc] initWithNibNamed:audioGroupSupplementaryDetailViewString bundle:nil];
-    
+
     [collectionView registerNib:audioGroupSupplementaryDetailViewNib
-     forSupplementaryViewOfKind:VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewKind
-                 withIdentifier:VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewIdentifier];
-    
-    NSString * const mediaListSupplementaryDetailViewString =
+        forSupplementaryViewOfKind:VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewKind
+                    withIdentifier:
+                        VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewIdentifier];
+
+    NSString *const mediaListSupplementaryDetailViewString =
         NSStringFromClass(VLCLibraryCollectionViewMediaItemListSupplementaryDetailView.class);
-    NSNib * const mediaListSupplementaryDetailViewNib =
+    NSNib *const mediaListSupplementaryDetailViewNib =
         [[NSNib alloc] initWithNibNamed:mediaListSupplementaryDetailViewString bundle:nil];
-    
+
     [collectionView registerNib:mediaListSupplementaryDetailViewNib
-     forSupplementaryViewOfKind:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind
-                 withIdentifier:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewIdentifier];
+        forSupplementaryViewOfKind:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind
+                    withIdentifier:
+                        VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewIdentifier];
 }
 
 - (void)setupFavoritesDataSource
 {
     _libraryFavoritesDataSource = [[VLCLibraryFavoritesDataSource alloc] init];
-    self.libraryFavoritesDataSource.libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
+    self.libraryFavoritesDataSource.libraryModel =
+        VLCMain.sharedInstance.libraryController.libraryModel;
     self.libraryFavoritesDataSource.collectionView = self.favoritesLibraryCollectionView;
     self.libraryFavoritesDataSource.masterTableView = self.favoritesLibraryGroupsTableView;
     self.libraryFavoritesDataSource.detailTableView = self.favoritesLibraryGroupSelectionTableView;
     self.libraryFavoritesDataSource.headerDelegate = _favoritesLibraryTableViewDelegate;
-    
+
     self.favoritesLibraryCollectionView.dataSource = self.libraryFavoritesDataSource;
-    
+
     self.favoritesLibraryGroupsTableView.dataSource = self.libraryFavoritesDataSource;
     self.favoritesLibraryGroupsTableView.target = self.libraryFavoritesDataSource;
     self.favoritesLibraryGroupsTableView.delegate = _favoritesLibraryTableViewDelegate;
@@ -230,14 +237,16 @@
 
     _favoritesLibraryGroupsTableViewScrollView =
         [NSScrollView libraryScrollViewWithDocumentView:self.favoritesLibraryGroupsTableView];
-    _favoritesLibraryGroupSelectionTableViewScrollView =
-        [NSScrollView libraryDetailScrollViewWithDocumentView:self.favoritesLibraryGroupSelectionTableView];
+    _favoritesLibraryGroupSelectionTableViewScrollView = [NSScrollView
+        libraryDetailScrollViewWithDocumentView:self.favoritesLibraryGroupSelectionTableView];
 
     self.favoritesLibrarySplitView.vertical = YES;
     self.favoritesLibrarySplitView.dividerStyle = NSSplitViewDividerStyleThin;
     self.favoritesLibrarySplitView.delegate = _splitViewDelegate;
-    [self.favoritesLibrarySplitView addArrangedSubview:self.favoritesLibraryGroupsTableViewScrollView];
-    [self.favoritesLibrarySplitView addArrangedSubview:self.favoritesLibraryGroupSelectionTableViewScrollView];
+    [self.favoritesLibrarySplitView
+        addArrangedSubview:self.favoritesLibraryGroupsTableViewScrollView];
+    [self.favoritesLibrarySplitView
+        addArrangedSubview:self.favoritesLibraryGroupSelectionTableViewScrollView];
 }
 
 - (void)setupFavoritesLibraryContainerView
@@ -317,9 +326,10 @@
 - (void)updatePresentedFavoritesView
 {
     [self.libraryFavoritesDataSource reloadData];
-    
+
     if ([self hasFavoriteItems]) {
-        const VLCLibraryViewModeSegment viewModeSegment = VLCLibraryWindowPersistentPreferences.sharedInstance.favoritesLibraryViewMode;
+        const VLCLibraryViewModeSegment viewModeSegment =
+            VLCLibraryWindowPersistentPreferences.sharedInstance.favoritesLibraryViewMode;
         [self presentFavoritesLibraryView:viewModeSegment];
     } else if (self.libraryFavoritesDataSource.libraryModel.filterString.length > 0) {
         [self.libraryWindow displayNoResultsMessage];
@@ -330,12 +340,10 @@
 
 - (BOOL)hasFavoriteItems
 {
-    VLCLibraryModel * const libraryModel = self.libraryFavoritesDataSource.libraryModel;
-    return libraryModel.numberOfFavoriteVideoMedia > 0 ||
-           libraryModel.numberOfFavoriteAudioMedia > 0 ||
-           libraryModel.numberOfFavoriteAlbums > 0 ||
-           libraryModel.numberOfFavoriteArtists > 0 ||
-           libraryModel.numberOfFavoriteGenres > 0;
+    VLCLibraryModel *const libraryModel = self.libraryFavoritesDataSource.libraryModel;
+    return libraryModel.numberOfFavoriteVideoMedia > 0
+        || libraryModel.numberOfFavoriteAudioMedia > 0 || libraryModel.numberOfFavoriteAlbums > 0
+        || libraryModel.numberOfFavoriteArtists > 0 || libraryModel.numberOfFavoriteGenres > 0;
 }
 
 - (void)presentFavoritesCollectionView
@@ -345,9 +353,12 @@
 
 - (void)presentPlaceholderFavoritesView
 {
-    [self.libraryWindow displayLibraryPlaceholderViewWithImage:NSImage.VLCPlaceholderVideoImage
-                                              usingConstraints:self.placeholderImageViewSizeConstraints
-                                             displayingMessage:_NS("Your favorite media will appear here.\nMark media items as favorites to see them in this view.")];
+    [self.libraryWindow
+        displayLibraryPlaceholderViewWithImage:NSImage.VLCPlaceholderVideoImage
+                              usingConstraints:self.placeholderImageViewSizeConstraints
+                             displayingMessage:_NS("Your favorite media will appear here.\nMark "
+                                                   "media items as favorites to see them in this "
+                                                   "view.")];
 }
 
 - (void)presentFavoritesLibraryView:(VLCLibraryViewModeSegment)viewModeSegment
@@ -373,18 +384,21 @@
 
     _awaitingPresentingLibraryItem = libraryItem;
 
-    const VLCLibraryViewModeSegment viewModeSegment = VLCLibraryWindowPersistentPreferences.sharedInstance.favoritesLibraryViewMode;
+    const VLCLibraryViewModeSegment viewModeSegment =
+        VLCLibraryWindowPersistentPreferences.sharedInstance.favoritesLibraryViewMode;
 
     if (viewModeSegment == VLCLibraryGridViewModeSegment) {
-        [NSNotificationCenter.defaultCenter addObserver:self
-                                               selector:@selector(presentLibraryItemWaitForCollectionViewDataSourceFinished:)
-                                                   name:VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotification
-                                                 object:self.libraryFavoritesDataSource];
+        [NSNotificationCenter.defaultCenter
+            addObserver:self
+               selector:@selector(presentLibraryItemWaitForCollectionViewDataSourceFinished:)
+                   name:VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotification
+                 object:self.libraryFavoritesDataSource];
     } else if (viewModeSegment == VLCLibraryListViewModeSegment) {
-        [NSNotificationCenter.defaultCenter addObserver:self
-                                               selector:@selector(presentLibraryItemWaitForTableViewDataSourceFinished:)
-                                                   name:VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotification
-                                                 object:self.libraryFavoritesDataSource];
+        [NSNotificationCenter.defaultCenter
+            addObserver:self
+               selector:@selector(presentLibraryItemWaitForTableViewDataSourceFinished:)
+                   name:VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotification
+                 object:self.libraryFavoritesDataSource];
     } else {
         NSAssert(false, @"View mode must be grid or list mode");
     }
@@ -392,22 +406,25 @@
 
 - (void)presentLibraryItemWaitForCollectionViewDataSourceFinished:(NSNotification *)notification
 {
-    [NSNotificationCenter.defaultCenter removeObserver:self
-                                                  name:VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotification
-                                                object:self.libraryFavoritesDataSource];
+    [NSNotificationCenter.defaultCenter
+        removeObserver:self
+                  name:VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotification
+                object:self.libraryFavoritesDataSource];
 
     _awaitingPresentingLibraryItem = nil;
 }
 
 - (void)presentLibraryItemWaitForTableViewDataSourceFinished:(NSNotification *)notification
 {
-    [NSNotificationCenter.defaultCenter removeObserver:self
-                                                  name:VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotification
-                                                object:self.libraryFavoritesDataSource];
+    [NSNotificationCenter.defaultCenter
+        removeObserver:self
+                  name:VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotification
+                object:self.libraryFavoritesDataSource];
 
-    const NSInteger rowForLibraryItem = [self.libraryFavoritesDataSource rowForLibraryItem:_awaitingPresentingLibraryItem];
+    const NSInteger rowForLibraryItem =
+        [self.libraryFavoritesDataSource rowForLibraryItem:_awaitingPresentingLibraryItem];
     if (rowForLibraryItem != NSNotFound) {
-        NSIndexSet * const indexSet = [NSIndexSet indexSetWithIndex:rowForLibraryItem];
+        NSIndexSet *const indexSet = [NSIndexSet indexSetWithIndex:rowForLibraryItem];
         [self.favoritesLibraryGroupsTableView selectRowIndexes:indexSet byExtendingSelection:NO];
         [self.favoritesLibraryGroupsTableView scrollRowToVisible:rowForLibraryItem];
     }

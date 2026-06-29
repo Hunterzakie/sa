@@ -53,7 +53,7 @@
 
 #import "private/PIPSPI.h"
 
-NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerLayoutKey";
+NSString *const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerLayoutKey";
 
 @interface PIPVoutViewController : NSViewController
 @property (nonatomic) NSRect previousBounds;
@@ -62,16 +62,19 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
 @implementation PIPVoutViewController
 
-- (void)setView:(NSView *)view {
+- (void)setView:(NSView *)view
+{
     [super setView:view];
     self.previousBounds = NSZeroRect;
 }
 
-- (void)viewDidLoad {
+- (void)viewDidLoad
+{
     [super viewDidLoad];
 }
 
-- (void)viewWillAppear {
+- (void)viewWillAppear
+{
     [super viewWillAppear];
 
     if (self.view.superview) {
@@ -79,29 +82,30 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
     }
 }
 
-- (void)viewDidAppear {
+- (void)viewDidAppear
+{
     [super viewDidAppear];
 }
 
-- (void)viewDidLayout 
+- (void)viewDidLayout
 {
     [super viewDidLayout];
 
     NSRect currentBounds = self.view.bounds;
     if (!NSIsEmptyRect(currentBounds) && !NSEqualRects(currentBounds, _previousBounds)) {
-            _previousBounds = currentBounds;
+        _previousBounds = currentBounds;
 
-            dispatch_async(dispatch_get_main_queue(), ^{
-                if (self.boundsChangeHandler) {
-                    self.boundsChangeHandler();
-                    self.boundsChangeHandler = nil;
-                }
-            });
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (self.boundsChangeHandler) {
+                self.boundsChangeHandler();
+                self.boundsChangeHandler = nil;
+            }
+        });
     }
 }
 @end
 
-@interface VLCMainVideoViewController() <PIPViewControllerDelegate>
+@interface VLCMainVideoViewController ()<PIPViewControllerDelegate>
 {
     NSTimer *_hideControlsTimer;
     NSLayoutConstraint *_returnButtonBottomConstraint;
@@ -122,15 +126,16 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
 - (instancetype)init
 {
-    const BOOL classic = [NSUserDefaults.standardUserDefaults boolForKey:VLCUseClassicVideoPlayerLayoutKey];
-    NSString * const nibName = classic ? @"VLCClassicMainVideoView" : @"VLCMainVideoView";
+    const BOOL classic =
+        [NSUserDefaults.standardUserDefaults boolForKey:VLCUseClassicVideoPlayerLayoutKey];
+    NSString *const nibName = classic ? @"VLCClassicMainVideoView" : @"VLCMainVideoView";
     self = [super initWithNibName:nibName bundle:nil];
     if (self) {
         _classic = classic;
         _isFadingIn = NO;
         _voutTaken = NO;
 
-        NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+        NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
         [notificationCenter addObserver:self
                                selector:@selector(playerCurrentMediaItemChanged:)
                                    name:VLCPlayerCurrentMediaItemChanged
@@ -140,7 +145,7 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
                                    name:VLCPlayerTrackListChanged
                                  object:nil];
         [notificationCenter addObserver:self
-                                   selector:@selector(playerBufferChanged:)
+                               selector:@selector(playerBufferChanged:)
                                    name:VLCPlayerBufferChanged
                                  object:nil];
         [notificationCenter addObserver:self
@@ -171,12 +176,12 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
     if (!self.classic) {
         // Only set up button constraints for standard layout
-        _bottomButtonStackViewConstraint =
-            [self.bottomBarView.topAnchor constraintEqualToAnchor:self.centralControlsStackView.bottomAnchor];
+        _bottomButtonStackViewConstraint = [self.bottomBarView.topAnchor
+            constraintEqualToAnchor:self.centralControlsStackView.bottomAnchor];
         [self updateLyricsInsets];
     }
 
-    VLCPlayerController * const controller =
+    VLCPlayerController *const controller =
         VLCMain.sharedInstance.playQueueController.playerController;
     [self updateDecorativeViewVisibilityOnControllerChange:controller];
 }
@@ -186,8 +191,8 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
     self.loadingIndicator.hidden = YES;
 
     BOOL floatOnTopActive = NO;
-    VLCVideoWindowCommon * const window = (VLCVideoWindowCommon *)self.view.window;
-    vout_thread_t * const p_vout = window.videoViewController.voutView.voutThread;
+    VLCVideoWindowCommon *const window = (VLCVideoWindowCommon *)self.view.window;
+    vout_thread_t *const p_vout = window.videoViewController.voutView.voutThread;
     if (p_vout) {
         floatOnTopActive = var_GetBool(p_vout, "video-on-top");
         vout_Release(p_vout);
@@ -207,13 +212,14 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
                                                                  attribute:NSLayoutAttributeBottom
                                                                 multiplier:1.
                                                                   constant:0];
-    _playQueueButtonBottomConstraint = [NSLayoutConstraint constraintWithItem:_playQueueButton
-                                                                    attribute:NSLayoutAttributeBottom
-                                                                    relatedBy:NSLayoutRelationEqual
-                                                                       toItem:_fakeTitleBar
-                                                                    attribute:NSLayoutAttributeBottom
-                                                                   multiplier:1.
-                                                                     constant:0];
+    _playQueueButtonBottomConstraint =
+        [NSLayoutConstraint constraintWithItem:_playQueueButton
+                                     attribute:NSLayoutAttributeBottom
+                                     relatedBy:NSLayoutRelationEqual
+                                        toItem:_fakeTitleBar
+                                     attribute:NSLayoutAttributeBottom
+                                    multiplier:1.
+                                      constant:0];
 
     _returnButtonBottomConstraint.active = NO;
     _playQueueButtonBottomConstraint.active = NO;
@@ -222,15 +228,18 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
     [self.controlsBar update];
     [self updateFloatOnTopIndicator];
     [self updateLyricsInsets];
-    
-    // For classic layout, create constraint for video view to fill main view when controls are hidden
+
+    // For classic layout, create constraint for video view to fill main view when controls are
+    // hidden
     if (self.classic) {
-        _videoViewBottomToViewConstraint = [self.voutContainingView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor];
+        _videoViewBottomToViewConstraint =
+            [self.voutContainingView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor];
         self.videoViewBottomToViewConstraint.active = NO;
 
         if (@available(macOS 26.0, *)) {
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 260000
-            NSGlassEffectContainerView * const glassEffectView = [[NSGlassEffectContainerView alloc] initWithFrame:self.bottomBarView.frame];
+            NSGlassEffectContainerView *const glassEffectView =
+                [[NSGlassEffectContainerView alloc] initWithFrame:self.bottomBarView.frame];
             glassEffectView.translatesAutoresizingMaskIntoConstraints = NO;
             [self.classicViewBottomBarContainerView addSubview:glassEffectView];
             [glassEffectView applyConstraintsToFillSuperview];
@@ -238,11 +247,14 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
             glassEffectView.contentView = self.bottomBarView;
 #endif
         } else {
-            NSVisualEffectView * const controlsBackgroundView = [[NSVisualEffectView alloc] initWithFrame:self.bottomBarView.frame];
+            NSVisualEffectView *const controlsBackgroundView =
+                [[NSVisualEffectView alloc] initWithFrame:self.bottomBarView.frame];
             controlsBackgroundView.translatesAutoresizingMaskIntoConstraints = NO;
             controlsBackgroundView.blendingMode = NSVisualEffectBlendingModeWithinWindow;
             controlsBackgroundView.material = NSVisualEffectMaterialTitlebar;
-            [self.bottomBarView addSubview:controlsBackgroundView positioned:NSWindowBelow relativeTo:self.bottomBarView.subviews.firstObject];
+            [self.bottomBarView addSubview:controlsBackgroundView
+                                positioned:NSWindowBelow
+                                relativeTo:self.bottomBarView.subviews.firstObject];
             [controlsBackgroundView applyConstraintsToFillSuperview];
         }
     }
@@ -251,9 +263,10 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 - (void)updateLyricsInsets
 {
     const CGFloat topInset = self.fakeTitleBar.frame.size.height + VLCLibraryUIUnits.largeSpacing;
-    const CGFloat bottomInset = self.bottomBarView.frame.size.height + VLCLibraryUIUnits.largeSpacing;
+    const CGFloat bottomInset =
+        self.bottomBarView.frame.size.height + VLCLibraryUIUnits.largeSpacing;
 
-    NSScrollView * const scrollView = self.audioDecorativeView.lyricsScrollView;
+    NSScrollView *const scrollView = self.audioDecorativeView.lyricsScrollView;
     scrollView.automaticallyAdjustsContentInsets = NO;
     scrollView.contentInsets = NSEdgeInsetsMake(topInset, 0, bottomInset, 0);
     scrollView.scrollerInsets = NSEdgeInsetsMake(topInset, 0, 0, 0);
@@ -262,18 +275,19 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 - (BOOL)isVisualizationActive
 {
     BOOL isVisualActive;
-    VLCPlayerController * const controller = VLCMain.sharedInstance.playQueueController.playerController;
-    audio_output_t * const p_aout = controller.mainAudioOutput;
+    VLCPlayerController *const controller =
+        VLCMain.sharedInstance.playQueueController.playerController;
+    audio_output_t *const p_aout = controller.mainAudioOutput;
     if (!p_aout) {
         return NO;
     }
-    
+
     char *psz_visual = var_GetString(p_aout, "visual");
     isVisualActive = psz_visual && psz_visual[0] != '\0';
-    
+
     free(psz_visual);
     aout_Release(p_aout);
-    
+
     return isVisualActive;
 }
 
@@ -289,9 +303,7 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
     // before VLCPlayerTrackListChanged re-attaches voutView, and the vout
     // module then binds its layer to a detached view.
     if (self.voutView.superview != self.voutContainingView) {
-        [self.voutContainingView addSubview:self.voutView
-                                 positioned:NSWindowBelow
-                                 relativeTo:nil];
+        [self.voutContainingView addSubview:self.voutView positioned:NSWindowBelow relativeTo:nil];
         [self.voutView applyConstraintsToFillSuperview];
     }
 
@@ -311,8 +323,10 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
         self.prevButtonSizeConstraint.constant = VLCLibraryUIUnits.smallPlaybackControlButtonSize;
         self.playButtonSizeConstraint.constant = VLCLibraryUIUnits.smallPlaybackControlButtonSize;
         self.nextButtonSizeConstraint.constant = VLCLibraryUIUnits.smallPlaybackControlButtonSize;
-        self.jumpBackwardButtonSizeConstraint.constant = VLCLibraryUIUnits.smallPlaybackControlButtonSize;
-        self.jumpForwardButtonSizeConstraint.constant = VLCLibraryUIUnits.smallPlaybackControlButtonSize;
+        self.jumpBackwardButtonSizeConstraint.constant =
+            VLCLibraryUIUnits.smallPlaybackControlButtonSize;
+        self.jumpForwardButtonSizeConstraint.constant =
+            VLCLibraryUIUnits.smallPlaybackControlButtonSize;
         [self applyAudioDecorativeViewForegroundCoverArtViewConstraints];
     } else {
         [self setAutohideControls:!self.classic];
@@ -321,8 +335,10 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
         self.prevButtonSizeConstraint.constant = VLCLibraryUIUnits.mediumPlaybackControlButtonSize;
         self.playButtonSizeConstraint.constant = VLCLibraryUIUnits.largePlaybackControlButtonSize;
         self.nextButtonSizeConstraint.constant = VLCLibraryUIUnits.mediumPlaybackControlButtonSize;
-        self.jumpBackwardButtonSizeConstraint.constant = VLCLibraryUIUnits.mediumPlaybackControlButtonSize;
-        self.jumpForwardButtonSizeConstraint.constant = VLCLibraryUIUnits.mediumPlaybackControlButtonSize;
+        self.jumpBackwardButtonSizeConstraint.constant =
+            VLCLibraryUIUnits.mediumPlaybackControlButtonSize;
+        self.jumpForwardButtonSizeConstraint.constant =
+            VLCLibraryUIUnits.mediumPlaybackControlButtonSize;
     }
 }
 
@@ -331,23 +347,27 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
     if (self.classic) {
         return;
     }
-    if (![self.view.subviews containsObject:self.voutContainingView] ||
-        ![self.voutContainingView.subviews containsObject:self.audioDecorativeView]) {
+    if (![self.view.subviews containsObject:self.voutContainingView]
+        || ![self.voutContainingView.subviews containsObject:self.audioDecorativeView]) {
         return;
     }
 
-    NSView * const foregroundCoverArtView = self.audioDecorativeView.foregroundCoverArtView;
+    NSView *const foregroundCoverArtView = self.audioDecorativeView.foregroundCoverArtView;
     [NSLayoutConstraint activateConstraints:@[
-        [self.centralControlsStackView.topAnchor constraintGreaterThanOrEqualToAnchor:foregroundCoverArtView.bottomAnchor constant:VLCLibraryUIUnits.largeSpacing],
-        [self.fakeTitleBar.bottomAnchor constraintLessThanOrEqualToAnchor:foregroundCoverArtView.topAnchor constant:-VLCLibraryUIUnits.largeSpacing]
+        [self.centralControlsStackView.topAnchor
+            constraintGreaterThanOrEqualToAnchor:foregroundCoverArtView.bottomAnchor
+                                        constant:VLCLibraryUIUnits.largeSpacing],
+        [self.fakeTitleBar.bottomAnchor
+            constraintLessThanOrEqualToAnchor:foregroundCoverArtView.topAnchor
+                                     constant:-VLCLibraryUIUnits.largeSpacing]
     ]];
 }
 
 - (void)playerCurrentMediaItemChanged:(NSNotification *)notification
 {
     NSParameterAssert(notification);
-    VLCPlayerController * const controller = notification.object;
-    NSAssert(controller != nil, 
+    VLCPlayerController *const controller = notification.object;
+    NSAssert(controller != nil,
              @"Player current media item changed notification should have valid player controller");
     [self updateDecorativeViewVisibilityOnControllerChange:controller];
 
@@ -359,9 +379,10 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 - (void)playerCurrentItemTrackListChanged:(NSNotification *)notification
 {
     NSParameterAssert(notification);
-    VLCPlayerController * const controller = notification.object;
-    NSAssert(controller != nil, 
-             @"Player current item track list changed notification should have valid player controller");
+    VLCPlayerController *const controller = notification.object;
+    NSAssert(
+        controller != nil,
+        @"Player current item track list changed notification should have valid player controller");
     [self updateDecorativeViewVisibilityOnControllerChange:controller];
 }
 
@@ -370,7 +391,7 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
     NSParameterAssert(notification);
     NSParameterAssert(notification.userInfo != nil);
 
-    NSNumber * const bufferFillNumber = notification.userInfo[VLCPlayerBufferFill];
+    NSNumber *const bufferFillNumber = notification.userInfo[VLCPlayerBufferFill];
     NSAssert(bufferFillNumber != nil, @"Buffer fill number should not be nil");
 
     const float bufferFill = bufferFillNumber.floatValue;
@@ -384,9 +405,9 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
 - (void)floatOnTopChanged:(NSNotification *)notification
 {
-    VLCVideoWindowCommon * const videoWindow = (VLCVideoWindowCommon *)notification.object;
+    VLCVideoWindowCommon *const videoWindow = (VLCVideoWindowCommon *)notification.object;
     NSAssert(videoWindow != nil, @"Received video window should not be nil!");
-    VLCVideoWindowCommon * const selfVideoWindow = (VLCVideoWindowCommon *)self.view.window;
+    VLCVideoWindowCommon *const selfVideoWindow = (VLCVideoWindowCommon *)self.view.window;
 
     if (videoWindow != selfVideoWindow) {
         return;
@@ -397,7 +418,7 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
 - (void)updateFloatOnTopIndicator
 {
-    vout_thread_t * const voutThread = self.voutView.voutThread;
+    vout_thread_t *const voutThread = self.voutView.voutThread;
     if (voutThread == NULL) {
         return;
     }
@@ -411,9 +432,9 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
     NSPoint mousePos = [self.view.window mouseLocationOutsideOfEventStream];
 
     return [_centralControlsStackView mouse:mousePos inRect:_centralControlsStackView.frame] ||
-        [_controlsBar.bottomBarView mouse:mousePos inRect: _controlsBar.bottomBarView.frame] ||
-        [_returnButton mouse:mousePos inRect: _returnButton.frame] ||
-        [_playQueueButton mouse:mousePos inRect: _playQueueButton.frame];
+        [_controlsBar.bottomBarView mouse:mousePos inRect:_controlsBar.bottomBarView.frame] ||
+        [_returnButton mouse:mousePos inRect:_returnButton.frame] ||
+        [_playQueueButton mouse:mousePos inRect:_playQueueButton.frame];
 }
 
 - (void)stopAutohideTimer
@@ -429,7 +450,8 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
     }
 
     /* Get timeout and make sure it is not lower than 1 second */
-    long long timeToKeepVisibleInSec = MAX(var_CreateGetInteger(getIntf(), "mouse-hide-timeout") / 1000, 1);
+    long long timeToKeepVisibleInSec =
+        MAX(var_CreateGetInteger(getIntf(), "mouse-hide-timeout") / 1000, 1);
 
     _hideControlsTimer = [NSTimer scheduledTimerWithTimeInterval:timeToKeepVisibleInSec
                                                           target:self
@@ -441,7 +463,7 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 - (void)shouldHideControls:(id)sender
 {
     [self hideControls];
-    [NSCursor setHiddenUntilMouseMoves: YES];
+    [NSCursor setHiddenUntilMouseMoves:YES];
 }
 
 - (void)hideControls
@@ -462,11 +484,17 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
         self.videoViewBottomToViewConstraint.active = YES;
     }
 
-    [NSAnimationContext runAnimationRespectingPreferencesWithDuration:VLCLibraryUIUnits.controlsFadeAnimationDuration
-                                                              changes:^(NSAnimationContext * const _Nonnull context) {
-        [self->_mainControlsView.animator setAlphaValue:0.0f];
-        [self->_floatOnTopIndicatorImageView.animator setAlphaValue:0.0f];
-    } completionHandler:nil];
+    [NSAnimationContext
+        runAnimationRespectingPreferencesWithDuration:VLCLibraryUIUnits
+                                                          .controlsFadeAnimationDuration
+                                              changes:^(
+                                                  NSAnimationContext *const _Nonnull context) {
+                                                  [self->_mainControlsView.animator
+                                                      setAlphaValue:0.0f];
+                                                  [self->_floatOnTopIndicatorImageView.animator
+                                                      setAlphaValue:0.0f];
+                                              }
+                                    completionHandler:nil];
 }
 
 - (void)setAutohideControls:(BOOL)autohide
@@ -505,20 +533,22 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
     }
 
     if (!_autohideControls) {
-        _mainControlsView.alphaValue = 1.0f;        
+        _mainControlsView.alphaValue = 1.0f;
         return;
     }
 
-
-    [NSAnimationContext runAnimationRespectingPreferencesWithDuration:VLCLibraryUIUnits.controlsFadeAnimationDuration
-                                                              changes:^(NSAnimationContext * const _Nonnull context) {
-        self->_isFadingIn = YES;
-        [self->_mainControlsView.animator setAlphaValue:1.0f];
-        [self->_floatOnTopIndicatorImageView.animator setAlphaValue:1.0f];
-    } completionHandler:^{
-        self->_isFadingIn = NO;
-        [self startAutohideTimer];
-    }];
+    [NSAnimationContext
+        runAnimationRespectingPreferencesWithDuration:VLCLibraryUIUnits
+                                                          .controlsFadeAnimationDuration
+        changes:^(NSAnimationContext *const _Nonnull context) {
+            self->_isFadingIn = YES;
+            [self->_mainControlsView.animator setAlphaValue:1.0f];
+            [self->_floatOnTopIndicatorImageView.animator setAlphaValue:1.0f];
+        }
+        completionHandler:^{
+            self->_isFadingIn = NO;
+            [self startAutohideTimer];
+        }];
 }
 
 - (void)setDisplayLibraryControls:(BOOL)displayLibraryControls
@@ -531,29 +561,31 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
 - (void)updatePlayQueueToggleState
 {
-    VLCLibraryWindow * const libraryWindow = (VLCLibraryWindow*)self.view.window;
+    VLCLibraryWindow *const libraryWindow = (VLCLibraryWindow *)self.view.window;
     if (libraryWindow != nil && _displayLibraryControls) {
-        const BOOL sidebarCollapsed = libraryWindow.splitViewController.multifunctionSidebarItem.isCollapsed;
-        self.playQueueButton.state = sidebarCollapsed ? NSControlStateValueOff : NSControlStateValueOn;
+        const BOOL sidebarCollapsed =
+            libraryWindow.splitViewController.multifunctionSidebarItem.isCollapsed;
+        self.playQueueButton.state =
+            sidebarCollapsed ? NSControlStateValueOff : NSControlStateValueOn;
     }
 }
 
 - (NSRect)windowButtonsRect
 {
-    NSWindow * const window = self.view.window;
+    NSWindow *const window = self.view.window;
     NSRect buttonBox = NSZeroRect;
 
-    NSButton * const closeButton = [window standardWindowButton:NSWindowCloseButton];
+    NSButton *const closeButton = [window standardWindowButton:NSWindowCloseButton];
     if (closeButton) {
         buttonBox = NSUnionRect(buttonBox, closeButton.frame);
     }
 
-    NSButton * const minimizeButton = [window standardWindowButton:NSWindowMiniaturizeButton];
+    NSButton *const minimizeButton = [window standardWindowButton:NSWindowMiniaturizeButton];
     if (minimizeButton) {
         buttonBox = NSUnionRect(buttonBox, minimizeButton.frame);
     }
 
-    NSButton * const zoomButton = [window standardWindowButton:NSWindowZoomButton];
+    NSButton *const zoomButton = [window standardWindowButton:NSWindowZoomButton];
     if (zoomButton) {
         buttonBox = NSUnionRect(buttonBox, zoomButton.frame);
     }
@@ -568,13 +600,12 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
 - (void)updateLibraryControls
 {
-    const NSWindow * const viewWindow = self.view.window;
+    const NSWindow *const viewWindow = self.view.window;
     const CGFloat windowTitlebarHeight = viewWindow.titlebarHeight;
 
-    const BOOL windowFullscreen = [(VLCWindow*)viewWindow isInNativeFullscreen] ||
-                                  [(VLCWindow*)viewWindow fullscreen];
-    const BOOL placeInFakeToolbar = viewWindow.titlebarAppearsTransparent &&
-                                    !windowFullscreen;
+    const BOOL windowFullscreen =
+        [(VLCWindow *)viewWindow isInNativeFullscreen] || [(VLCWindow *)viewWindow fullscreen];
+    const BOOL placeInFakeToolbar = viewWindow.titlebarAppearsTransparent && !windowFullscreen;
 
     const CGFloat buttonTopSpace = placeInFakeToolbar ? 0 : VLCLibraryUIUnits.largeSpacing;
 
@@ -585,9 +616,9 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
     }
 
     [NSNotificationCenter.defaultCenter addObserver:self
-                                             selector:@selector(updateLibraryControls:)
-                                                 name:VLCVideoWindowDidEnterFullscreen
-                                               object:nil];
+                                           selector:@selector(updateLibraryControls:)
+                                               name:VLCVideoWindowDidEnterFullscreen
+                                             object:nil];
 
     _returnButtonTopConstraint.constant = buttonTopSpace;
     _playQueueButtonTopConstraint.constant = buttonTopSpace;
@@ -610,9 +641,9 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
     _returnButton.controlSize = buttonSize;
     _playQueueButton.controlSize = buttonSize;
 
-    // HACK: Upon changing the control size the actual highlight of toggled/hovered buttons doesn't change
-    // properly, at least for recessed buttons. This is most obvious on the toggleable playlist button.
-    // So reset the state and then retoggle once done.
+    // HACK: Upon changing the control size the actual highlight of toggled/hovered buttons doesn't
+    // change properly, at least for recessed buttons. This is most obvious on the toggleable
+    // playlist button. So reset the state and then retoggle once done.
     if (previousButtonSize != buttonSize) {
         const NSControlStateValue returnButtonControlState = _returnButton.state;
         const NSControlStateValue playQueueButtonControlState = _playQueueButton.state;
@@ -622,11 +653,15 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
         _playQueueButton.state = playQueueButtonControlState;
     }
 
-    const CGFloat realButtonSpace = (windowTitlebarHeight - _playQueueButton.cell.cellSize.height) / 2;
+    const CGFloat realButtonSpace =
+        (windowTitlebarHeight - _playQueueButton.cell.cellSize.height) / 2;
     const NSRect windowButtonBox = [self windowButtonsRect];
 
-    _returnButtonLeadingConstraint.constant = placeInFakeToolbar ? windowButtonBox.size.width + VLCLibraryUIUnits.mediumSpacing + realButtonSpace : VLCLibraryUIUnits.largeSpacing;
-    _playQueueButtonTrailingConstraint.constant = placeInFakeToolbar ? realButtonSpace: VLCLibraryUIUnits.largeSpacing;
+    _returnButtonLeadingConstraint.constant = placeInFakeToolbar
+        ? windowButtonBox.size.width + VLCLibraryUIUnits.mediumSpacing + realButtonSpace
+        : VLCLibraryUIUnits.largeSpacing;
+    _playQueueButtonTrailingConstraint.constant =
+        placeInFakeToolbar ? realButtonSpace : VLCLibraryUIUnits.largeSpacing;
 
     _overlayView.drawGradientForTopControls = !placeInFakeToolbar;
     [_overlayView setNeedsDisplay:YES];
@@ -643,31 +678,32 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
         return;
     }
 
-    VLCVideoWindowCommon * const videoWindow =
+    VLCVideoWindowCommon *const videoWindow =
         [VLCMain.sharedInstance.voutProvider videoWindowForVoutView:self.voutView];
     if (videoWindow.fullscreen && !videoWindow.isInNativeFullscreen) {
         [videoWindow leaveFullscreenWithAnimation:NO];
     }
 
-    NSWindow * const window = self.view.window;
+    NSWindow *const window = self.view.window;
     [window orderOut:window];
     self.retainedWindow = window;
 
     _voutViewController = [PIPVoutViewController new];
     _voutViewController.view = [self acquireVideoView];
     NSAssert(_voutViewController.view != nil, @"Vout view should not be nil");
-    VLCPlayerController * const controller = notification.object;
+    VLCPlayerController *const controller = notification.object;
     _pipViewController.playing = controller.playerState == VLC_PLAYER_STATE_PLAYING;
-    
-    VLCInputItem * const item = controller.currentMedia;
-    input_item_t * const p_input = item.vlcInputItem;
+
+    VLCInputItem *const item = controller.currentMedia;
+    input_item_t *const p_input = item.vlcInputItem;
     vlc_mutex_lock(&p_input->lock);
     const struct input_item_es *item_es;
-    vlc_vector_foreach_ref(item_es, &p_input->es_vec) {
+    vlc_vector_foreach_ref(item_es, &p_input->es_vec)
+    {
         if (item_es->es.i_cat != VIDEO_ES) {
             continue;
         }
-        const video_format_t * const fmt = &item_es->es.video;
+        const video_format_t *const fmt = &item_es->es.video;
         unsigned int width = fmt->i_visible_width;
         unsigned int height = fmt->i_visible_height;
         if (fmt->i_sar_num && fmt->i_sar_den) {
@@ -678,13 +714,14 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
     }
     vlc_mutex_unlock(&p_input->lock);
     _pipViewController.title = window.title;
-    
+
     __weak typeof(self) weakSelf = self;
 
     void (^presentVcAsPip)(void) = ^() {
         typeof(self) strongSelf = weakSelf;
         if (strongSelf && strongSelf->_voutViewController.presentingViewController == nil) {
-            [strongSelf->_pipViewController presentViewControllerAsPictureInPicture:strongSelf->_voutViewController];
+            [strongSelf->_pipViewController
+                presentViewControllerAsPictureInPicture:strongSelf->_voutViewController];
         }
     };
 
@@ -697,9 +734,7 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
     // on macOS 26 Tahoe the detached view never receives a layout pass, so the
     // handler never fired. The acquired view already has valid bounds so we can
     // present immediately on the next run-loop cycle for both paths.
-    dispatch_async(dispatch_get_main_queue(), ^{
-        presentVcAsPip();
-    });
+    dispatch_async(dispatch_get_main_queue(), ^{ presentVcAsPip(); });
 
     if ([window isKindOfClass:VLCLibraryWindow.class]) {
         [self returnToLibrary:self];
@@ -708,7 +743,7 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
 - (IBAction)togglePlayQueue:(id)sender
 {
-    VLCLibraryWindow * const libraryWindow = (VLCLibraryWindow*)self.view.window;
+    VLCLibraryWindow *const libraryWindow = (VLCLibraryWindow *)self.view.window;
     if (libraryWindow != nil) {
         [libraryWindow.splitViewController toggleMultifunctionSidebar:self];
     }
@@ -741,10 +776,8 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 {
     NSParameterAssert(videoView != nil);
     [videoView removeFromSuperview];
-    [self.view addSubview:videoView
-               positioned:NSWindowBelow
-               relativeTo:self.mainControlsView];
-    
+    [self.view addSubview:videoView positioned:NSWindowBelow relativeTo:self.mainControlsView];
+
     if (self.classic) {
         videoView.translatesAutoresizingMaskIntoConstraints = NO;
         [NSLayoutConstraint activateConstraints:@[
@@ -752,19 +785,22 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
             [videoView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
             [videoView.topAnchor constraintEqualToAnchor:self.view.topAnchor]
         ]];
-        
-        // Create constraint for video view bottom to main view bottom (for when controls are hidden)
-        _videoViewBottomToViewConstraint = [videoView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor];
-        _videoViewBottomConstraint = [videoView.bottomAnchor constraintEqualToAnchor:self.bottomBarView.topAnchor];
-        
-        // The videoViewBottomConstraint outlet connects video bottom to controls top (for when controls are visible)
-        // Start with controls visible, so activate the XIB constraint
+
+        // Create constraint for video view bottom to main view bottom (for when controls are
+        // hidden)
+        _videoViewBottomToViewConstraint =
+            [videoView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor];
+        _videoViewBottomConstraint =
+            [videoView.bottomAnchor constraintEqualToAnchor:self.bottomBarView.topAnchor];
+
+        // The videoViewBottomConstraint outlet connects video bottom to controls top (for when
+        // controls are visible) Start with controls visible, so activate the XIB constraint
         self.videoViewBottomConstraint.active = YES;
         self.videoViewBottomToViewConstraint.active = NO;
     } else {
         [videoView applyConstraintsToFillSuperview];
     }
-    
+
     [self applyAudioDecorativeViewForegroundCoverArtViewConstraints];
     self.voutTaken = NO;
 }
@@ -774,7 +810,7 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
     if (_playbackEndViewController == nil) {
         _playbackEndViewController = [[VLCPlaybackEndViewController alloc] init];
 
-        NSNotificationCenter * const defaultCenter = NSNotificationCenter.defaultCenter;
+        NSNotificationCenter *const defaultCenter = NSNotificationCenter.defaultCenter;
         [defaultCenter addObserver:self
                           selector:@selector(playbackEndViewReturnToLibrary:)
                               name:VLCPlaybackEndViewReturnToLibraryNotificationName
@@ -787,10 +823,18 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
     self.playbackEndViewController.hideLibraryControls = !self.displayLibraryControls;
     [self.view addSubview:self.playbackEndViewController.view];
-    [self.playbackEndViewController.view.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor].active = YES;
-    [self.playbackEndViewController.view.centerYAnchor constraintEqualToAnchor:self.view.centerYAnchor].active = YES;
-    [self.playbackEndViewController.view.leadingAnchor constraintGreaterThanOrEqualToAnchor:self.view.leadingAnchor].active = YES;
-    [self.playbackEndViewController.view.trailingAnchor constraintLessThanOrEqualToAnchor:self.view.trailingAnchor].active = YES;
+    [self.playbackEndViewController.view.centerXAnchor
+        constraintEqualToAnchor:self.view.centerXAnchor]
+        .active = YES;
+    [self.playbackEndViewController.view.centerYAnchor
+        constraintEqualToAnchor:self.view.centerYAnchor]
+        .active = YES;
+    [self.playbackEndViewController.view.leadingAnchor
+        constraintGreaterThanOrEqualToAnchor:self.view.leadingAnchor]
+        .active = YES;
+    [self.playbackEndViewController.view.trailingAnchor
+        constraintLessThanOrEqualToAnchor:self.view.trailingAnchor]
+        .active = YES;
     [self.playbackEndViewController startCountdown];
 }
 
@@ -818,7 +862,7 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
 - (void)pipWillClose:(PIPViewController *)pip
 {
-    NSWindow * const window = self.retainedWindow;
+    NSWindow *const window = self.retainedWindow;
     pip.replacementWindow = window;
     pip.replacementRect = self.view.frame;
     if ([window isKindOfClass:VLCLibraryWindow.class]) {
@@ -836,7 +880,7 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
 - (void)pipActionPlay:(PIPViewController *)pip
 {
-    VLCPlayerController * const controller =
+    VLCPlayerController *const controller =
         VLCMain.sharedInstance.playQueueController.playerController;
     if (controller.playerState == VLC_PLAYER_STATE_PAUSED) {
         [controller resume];
@@ -847,14 +891,14 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
 - (void)pipActionStop:(PIPViewController *)pip
 {
-    VLCPlayerController * const controller =
+    VLCPlayerController *const controller =
         VLCMain.sharedInstance.playQueueController.playerController;
     [controller pause];
 }
 
 - (void)pipActionPause:(PIPViewController *)pip
 {
-    VLCPlayerController * const controller =
+    VLCPlayerController *const controller =
         VLCMain.sharedInstance.playQueueController.playerController;
     [controller pause];
 }

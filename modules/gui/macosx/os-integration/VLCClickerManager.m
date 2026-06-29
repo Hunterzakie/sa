@@ -32,7 +32,7 @@
 
 #import <vlc_configuration.h>
 
-@interface VLCClickerManager()
+@interface VLCClickerManager ()
 {
     VLCPlayQueueController *_playQueueController;
     VLCPlayerController *_playerController;
@@ -44,7 +44,8 @@
     BOOL b_mediaKeyTrapEnabled;
 
     AppleRemote *_remote;
-    BOOL b_remote_button_hold; /* true as long as the user holds the left,right,plus or minus on the remote control */
+    BOOL b_remote_button_hold; /* true as long as the user holds the left,right,plus or minus on the
+                                  remote control */
 }
 @end
 
@@ -78,8 +79,8 @@
 
         /* init Apple Remote support */
         _remote = [[AppleRemote alloc] init];
-        [_remote setClickCountEnabledButtons: kRemoteButtonPlay];
-        [_remote setDelegate: self];
+        [_remote setClickCountEnabledButtons:kRemoteButtonPlay];
+        [_remote setDelegate:self];
         [notificationCenter addObserver:self
                                selector:@selector(startListeningWithAppleRemote)
                                    name:NSApplicationDidBecomeActiveNotification
@@ -117,7 +118,7 @@
     if (b_mediaKeySupport && !_mediaKeyController)
         _mediaKeyController = [[SPMediaKeyTap alloc] initWithDelegate:self];
 
-    VLCMain * const main = VLCMain.sharedInstance;
+    VLCMain *const main = VLCMain.sharedInstance;
     if (b_mediaKeySupport && (main.playQueueController.playQueueModel.numberOfPlayQueueItems > 0)) {
         if (!b_mediaKeyTrapEnabled) {
             [self enableMediaKeySupport];
@@ -137,7 +138,8 @@
     if ([_mediaKeyController startWatchingMediaKeys]) {
         b_mediaKeyTrapEnabled = YES;
     } else {
-        msg_Warn(p_intf, "Failed to enable media key support, likely "
+        msg_Warn(p_intf,
+                 "Failed to enable media key support, likely "
                  "app needs to be whitelisted in Security Settings.");
     }
 }
@@ -155,7 +157,8 @@
         return;
     }
 
-    BOOL numberOfMediaLargerThanZero = VLCMain.sharedInstance.playQueueController.playQueueModel.numberOfPlayQueueItems > 0;
+    BOOL numberOfMediaLargerThanZero =
+        VLCMain.sharedInstance.playQueueController.playQueueModel.numberOfPlayQueueItems > 0;
 
     if (b_mediaKeyTrapEnabled && !numberOfMediaLargerThanZero) {
         [self disableMediaKeySupport];
@@ -164,10 +167,11 @@
     }
 }
 
-- (void)mediaKeyTap:(SPMediaKeyTap*)keyTap receivedMediaKeyEvent:(NSEvent*)event
+- (void)mediaKeyTap:(SPMediaKeyTap *)keyTap receivedMediaKeyEvent:(NSEvent *)event
 {
     if (b_mediaKeySupport) {
-        assert([event type] == NSEventTypeSystemDefined && [event subtype] == SPSystemDefinedEventMediaKeys);
+        assert([event type] == NSEventTypeSystemDefined &&
+               [event subtype] == SPSystemDefinedEventMediaKeys);
 
         int keyCode = (([event data1] & 0xFFFF0000) >> 16);
         int keyFlags = ([event data1] & 0x0000FFFF);
@@ -184,21 +188,18 @@
             } else if (keyRepeat == 1) {
                 [_playerController jumpForwardShort];
                 b_mediakeyJustJumped = YES;
-                [self performSelector:@selector(resetMediaKeyJump)
-                           withObject: NULL
-                           afterDelay:0.25];
+                [self performSelector:@selector(resetMediaKeyJump) withObject:NULL afterDelay:0.25];
             }
         }
 
-        if ((keyCode == NX_KEYTYPE_REWIND || keyCode == NX_KEYTYPE_PREVIOUS) && !b_mediakeyJustJumped) {
+        if ((keyCode == NX_KEYTYPE_REWIND || keyCode == NX_KEYTYPE_PREVIOUS)
+            && !b_mediakeyJustJumped) {
             if (keyState == 0 && keyRepeat == 0) {
                 [_playQueueController playPreviousItem];
             } else if (keyRepeat == 1) {
                 [_playerController jumpBackwardShort];
                 b_mediakeyJustJumped = YES;
-                [self performSelector:@selector(resetMediaKeyJump)
-                           withObject: NULL
-                           afterDelay:0.25];
+                [self performSelector:@selector(resetMediaKeyJump) withObject:NULL afterDelay:0.25];
             }
         }
     }
@@ -210,7 +211,7 @@
 - (void)startListeningWithAppleRemote
 {
     if (var_InheritBool(getIntf(), "macosx-appleremote") == YES)
-        [_remote startListening: self];
+        [_remote startListening:self];
 }
 
 - (void)stopListeningWithAppleRemote
@@ -223,7 +224,7 @@
 - (void)executeHoldActionForRemoteButton:(NSNumber *)buttonIdentifierNumber
 {
     if (b_remote_button_hold) {
-        switch([buttonIdentifierNumber intValue]) {
+        switch ([buttonIdentifierNumber intValue]) {
             case kRemoteButtonRight_Hold:
                 [_playerController jumpForwardShort];
                 break;
@@ -251,7 +252,7 @@
               pressedDown:(BOOL)pressedDown
                clickCount:(unsigned int)count
 {
-    switch(buttonIdentifier) {
+    switch (buttonIdentifier) {
         case k2009RemoteButtonFullscreen:
             [_playerController toggleFullscreen];
             break;
@@ -297,7 +298,7 @@
             /* simulate an event as long as the user holds the button */
             b_remote_button_hold = pressedDown;
             if (pressedDown) {
-                NSNumber* buttonIdentifierNumber = [NSNumber numberWithInt:buttonIdentifier];
+                NSNumber *buttonIdentifierNumber = [NSNumber numberWithInt:buttonIdentifier];
                 [self performSelector:@selector(executeHoldActionForRemoteButton:)
                            withObject:buttonIdentifierNumber];
             }
@@ -305,9 +306,9 @@
         case kRemoteButtonMenu:
             [_playerController displayPosition];
             break;
-        case kRemoteButtonPlay_Sleep:
-        {
-            NSAppleScript * script = [[NSAppleScript alloc] initWithSource:@"tell application \"System Events\" to sleep"];
+        case kRemoteButtonPlay_Sleep: {
+            NSAppleScript *script = [[NSAppleScript alloc]
+                initWithSource:@"tell application \"System Events\" to sleep"];
             [script executeAndReturnError:nil];
             break;
         }

@@ -24,8 +24,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-extern NSString * const VLCStatusNotifierViewActivated;
-extern NSString * const VLCStatusNotifierViewDeactivated;
+extern NSString *const VLCStatusNotifierViewActivated;
+extern NSString *const VLCStatusNotifierViewDeactivated;
 
 @interface VLCStatusNotifierView : NSVisualEffectView
 

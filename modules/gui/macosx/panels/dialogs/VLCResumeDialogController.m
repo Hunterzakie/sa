@@ -21,7 +21,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
-
 #import "VLCResumeDialogController.h"
 
 #import "main/VLCMain.h"
@@ -31,7 +30,7 @@
 
 #import <vlc_configuration.h>
 
-@interface VLCResumeDialogController()
+@interface VLCResumeDialogController ()
 {
     int _currentResumeTimeout;
     CompletionBlock _completionBlock;
@@ -48,9 +47,9 @@
     self = [super initWithWindowNibName:@"ResumeDialog"];
     if (self) {
         [NSNotificationCenter.defaultCenter addObserver:self
-                                                 selector:@selector(updateCocoaWindowLevel:)
-                                                     name:VLCWindowShouldUpdateLevel
-                                                   object:nil];
+                                               selector:@selector(updateCocoaWindowLevel:)
+                                                   name:VLCWindowShouldUpdateLevel
+                                                 object:nil];
     }
     return self;
 }
@@ -70,7 +69,9 @@
     [self updateTextLabels];
 }
 
-- (void)showWindowWithItem:(VLCInputItem *)inputItem withLastPosition:(NSInteger)pos completionBlock:(CompletionBlock)block
+- (void)showWindowWithItem:(VLCInputItem *)inputItem
+          withLastPosition:(NSInteger)pos
+           completionBlock:(CompletionBlock)block
 {
     _inputItem = inputItem;
     _lastPosition = pos;
@@ -94,14 +95,18 @@
 - (void)updateTextLabels
 {
     NSString *restartButtonLabel = _NS("Restart playback");
-    restartButtonLabel = [restartButtonLabel stringByAppendingFormat:@" (%d)", _currentResumeTimeout];
+    restartButtonLabel =
+        [restartButtonLabel stringByAppendingFormat:@" (%d)", _currentResumeTimeout];
     [_restartButton setTitle:restartButtonLabel];
 
     if (!_inputItem) {
         return;
     }
 
-    NSString *labelString = [NSString stringWithFormat:_NS("Playback of \"%@\" will continue at %@"), _inputItem.title, [NSString stringWithTime:_lastPosition]];
+    NSString *labelString =
+        [NSString stringWithFormat:_NS("Playback of \"%@\" will continue at %@"),
+                                   _inputItem.title,
+                                   [NSString stringWithTime:_lastPosition]];
     [_descriptionLabel setStringValue:labelString];
     [_alwaysResumeCheckbox setState:NSOffState];
 }
@@ -149,7 +154,7 @@
 {
     NSInteger i_level = [aNotification.userInfo[VLCWindowLevelKey] integerValue];
     if (self.isWindowLoaded && [self.window isVisible] && [self.window level] != i_level)
-        [self.window setLevel: i_level];
+        [self.window setLevel:i_level];
 }
 
 - (void)cancel

@@ -53,7 +53,7 @@
     }
 }
 
-+ (void)setVideoFilter: (const char *)psz_name on:(BOOL)b_on
++ (void)setVideoFilter:(const char *)psz_name on:(BOOL)b_on
 {
     intf_thread_t *p_intf = getIntf();
     if (!p_intf)
@@ -66,7 +66,8 @@
         return;
     }
 
-    VLCPlayerController *playerController = VLCMain.sharedInstance.playQueueController.playerController;
+    VLCPlayerController *playerController =
+        VLCMain.sharedInstance.playQueueController.playerController;
     vout_thread_t *vout = [playerController mainVideoOutputThread];
     if (!vout)
         return;
@@ -79,13 +80,13 @@
         if (psz_string == NULL) {
             psz_string = strdup(psz_name);
         } else if (strstr(psz_string, psz_name) == NULL) {
-            char *psz_tmp = strdup([[NSString stringWithFormat: @"%s:%s", psz_string, psz_name] UTF8String]);
+            char *psz_tmp =
+                strdup([[NSString stringWithFormat:@"%s:%s", psz_string, psz_name] UTF8String]);
             free(psz_string);
             psz_string = psz_tmp;
         }
     } else {
-        if (!psz_string)
-        {
+        if (!psz_string) {
             vout_Release(vout);
             return;
         }
@@ -93,15 +94,16 @@
         psz_parser = strstr(psz_string, psz_name);
         if (psz_parser) {
             if (*(psz_parser + strlen(psz_name)) == ':') {
-                memmove(psz_parser, psz_parser + strlen(psz_name) + 1,
+                memmove(psz_parser,
+                        psz_parser + strlen(psz_name) + 1,
                         strlen(psz_parser + strlen(psz_name) + 1) + 1);
             } else {
                 *psz_parser = '\0';
             }
 
             /* Remove trailing : : */
-            if (*psz_string != '\0' && *(psz_string + strlen(psz_string) -1) == ':')
-                *(psz_string + strlen(psz_string) -1) = '\0';
+            if (*psz_string != '\0' && *(psz_string + strlen(psz_string) - 1) == ':')
+                *(psz_string + strlen(psz_string) - 1) = '\0';
         } else {
             free(psz_string);
             vout_Release(vout);
@@ -113,22 +115,23 @@
     free(psz_string);
 }
 
-+ (void)setVideoFilterProperty: (char const *)psz_property
-                     forFilter: (char const *)psz_filter
-                     withValue: (vlc_value_t)value
++ (void)setVideoFilterProperty:(char const *)psz_property
+                     forFilter:(char const *)psz_filter
+                     withValue:(vlc_value_t)value
 {
     intf_thread_t *p_intf = getIntf();
     if (!p_intf)
         return;
 
     int i_type = 0;
-    char const *psz_filter_type = [self getFilterType: psz_filter];
+    char const *psz_filter_type = [self getFilterType:psz_filter];
     if (!psz_filter_type) {
         msg_Err(p_intf, "Unable to find filter module \"%s\".", psz_filter);
         return;
     }
 
-    VLCPlayerController *playerController = VLCMain.sharedInstance.playQueueController.playerController;
+    VLCPlayerController *playerController =
+        VLCMain.sharedInstance.playQueueController.playerController;
     vout_thread_t *vout = [playerController mainVideoOutputThread];
     if (!vout)
         return;
@@ -141,6 +144,5 @@
     var_SetChecked(vout, psz_property, i_type, value);
     vout_Release(vout);
 }
-
 
 @end

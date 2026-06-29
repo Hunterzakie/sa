@@ -28,10 +28,12 @@
 
 #import <vlc_modules.h>
 
-static NSString * const VLCConnectToServerRecentsDefaultsKey = @"VLCConnectToServerRecents";
+static NSString *const VLCConnectToServerRecentsDefaultsKey = @"VLCConnectToServerRecents";
 static const NSUInteger VLCConnectToServerMaxRecents = 8;
 
-@interface VLCConnectToServerDialog () <NSComboBoxDataSource, NSComboBoxDelegate, NSControlTextEditingDelegate>
+@interface VLCConnectToServerDialog ()<NSComboBoxDataSource,
+                                       NSComboBoxDelegate,
+                                       NSControlTextEditingDelegate>
 {
     NSComboBox *_addressField;
     NSButton *_connectButton;
@@ -45,8 +47,8 @@ static const NSUInteger VLCConnectToServerMaxRecents = 8;
 {
     self = [super init];
     if (self) {
-        NSArray<NSString *> * const stored =
-            [NSUserDefaults.standardUserDefaults stringArrayForKey:VLCConnectToServerRecentsDefaultsKey];
+        NSArray<NSString *> *const stored = [NSUserDefaults.standardUserDefaults
+            stringArrayForKey:VLCConnectToServerRecentsDefaultsKey];
         _recents = stored ? [stored mutableCopy] : [NSMutableArray array];
     }
     return self;
@@ -54,7 +56,7 @@ static const NSUInteger VLCConnectToServerMaxRecents = 8;
 
 - (NSView *)buildAccessoryView
 {
-    NSView * const content = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 420, 56)];
+    NSView *const content = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 420, 56)];
 
     _addressField = [[NSComboBox alloc] initWithFrame:NSZeroRect];
     _addressField.translatesAutoresizingMaskIntoConstraints = NO;
@@ -65,7 +67,7 @@ static const NSUInteger VLCConnectToServerMaxRecents = 8;
     _addressField.completes = YES;
     [content addSubview:_addressField];
 
-    NSTextField * const hint = [NSTextField labelWithString:[self supportedSchemesHint]];
+    NSTextField *const hint = [NSTextField labelWithString:[self supportedSchemesHint]];
     hint.translatesAutoresizingMaskIntoConstraints = NO;
     hint.textColor = NSColor.secondaryLabelColor;
     hint.font = [NSFont systemFontOfSize:NSFont.smallSystemFontSize];
@@ -87,25 +89,25 @@ static const NSUInteger VLCConnectToServerMaxRecents = 8;
 
 - (NSString *)supportedSchemesHint
 {
-    NSMutableArray<NSString *> * const schemes = [NSMutableArray array];
+    NSMutableArray<NSString *> *const schemes = [NSMutableArray array];
     if (module_exists("webdav"))
-        [schemes addObjectsFromArray:@[@"webdav", @"webdavs"]];
+        [schemes addObjectsFromArray:@[ @"webdav", @"webdavs" ]];
     if (module_exists("smb2"))
         [schemes addObject:@"smb"];
     if (module_exists("ftp"))
-        [schemes addObjectsFromArray:@[@"ftp", @"ftps", @"ftpes"]];
+        [schemes addObjectsFromArray:@[ @"ftp", @"ftps", @"ftpes" ]];
     if (module_exists("sftp"))
         [schemes addObject:@"sftp"];
     if (module_exists("nfs"))
         [schemes addObject:@"nfs"];
 
-    return [NSString stringWithFormat:_NS("Supported protocols: %@"),
-            [schemes componentsJoinedByString:@", "]];
+    return [NSString
+        stringWithFormat:_NS("Supported protocols: %@"), [schemes componentsJoinedByString:@", "]];
 }
 
 - (void)show
 {
-    NSAlert * const alert = [[NSAlert alloc] init];
+    NSAlert *const alert = [[NSAlert alloc] init];
     alert.messageText = _NS("Connect to Server");
     alert.informativeText = _NS("Enter a server address to browse.");
     _connectButton = [alert addButtonWithTitle:_NS("Connect")];
@@ -117,7 +119,7 @@ static const NSUInteger VLCConnectToServerMaxRecents = 8;
     if ([alert runModal] != NSAlertFirstButtonReturn)
         return;
 
-    NSString * const mrl = [self currentMrl];
+    NSString *const mrl = [self currentMrl];
     if (mrl == nil)
         return;
 
@@ -139,7 +141,7 @@ static const NSUInteger VLCConnectToServerMaxRecents = 8;
 
 - (NSString *)comboBox:(NSComboBox *)comboBox completedString:(NSString *)string
 {
-    for (NSString * const entry in _recents) {
+    for (NSString *const entry in _recents) {
         if ([entry.lowercaseString hasPrefix:string.lowercaseString])
             return entry;
     }
@@ -155,7 +157,7 @@ static const NSUInteger VLCConnectToServerMaxRecents = 8;
 
 - (void)comboBoxSelectionDidChange:(NSNotification *)notification
 {
-    NSComboBox * const box = notification.object;
+    NSComboBox *const box = notification.object;
     const NSInteger index = box.indexOfSelectedItem;
     if (index >= 0 && index < (NSInteger)_recents.count)
         box.stringValue = _recents[index];
@@ -169,12 +171,12 @@ static const NSUInteger VLCConnectToServerMaxRecents = 8;
 
 - (nullable NSString *)currentMrl
 {
-    NSString * const input = [_addressField.stringValue stringByTrimmingCharactersInSet:
-                              NSCharacterSet.whitespaceAndNewlineCharacterSet];
+    NSString *const input = [_addressField.stringValue
+        stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
     if (input.length == 0)
         return nil;
 
-    NSURL * const url = [NSURL URLWithString:input];
+    NSURL *const url = [NSURL URLWithString:input];
     if (url.scheme.length == 0 || url.host.length == 0)
         return nil;
 

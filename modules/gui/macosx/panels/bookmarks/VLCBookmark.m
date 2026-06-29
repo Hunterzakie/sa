@@ -28,8 +28,8 @@
 
 + (instancetype)bookmarkWithVlcBookmark:(vlc_ml_bookmark_t)vlcBookmark
 {
-    VLCBookmark * const bookmark = [[VLCBookmark alloc] init];
-    
+    VLCBookmark *const bookmark = [[VLCBookmark alloc] init];
+
     bookmark->_mediaLibraryItemId = vlcBookmark.i_media_id;
     bookmark.bookmarkTime = vlcBookmark.i_time;
     bookmark.bookmarkName = toNSStr(vlcBookmark.psz_name);
@@ -40,7 +40,7 @@
 
 - (nonnull id)copyWithZone:(nullable NSZone *)zone
 {
-    VLCBookmark * const bookmarkCopy = [[VLCBookmark alloc] init];
+    VLCBookmark *const bookmarkCopy = [[VLCBookmark alloc] init];
 
     bookmarkCopy->_mediaLibraryItemId = self.mediaLibraryItemId;
     bookmarkCopy.bookmarkTime = self.bookmarkTime;

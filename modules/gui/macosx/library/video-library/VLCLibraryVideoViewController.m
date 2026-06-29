@@ -73,7 +73,7 @@
 {
     self = [super initWithLibraryWindow:libraryWindow];
 
-    if(self) {
+    if (self) {
         _videoLibraryTableViewDelegate = [[VLCLibraryVideoTableViewDelegate alloc] init];
 
         [self setupPropertiesFromLibraryWindow:libraryWindow];
@@ -96,10 +96,18 @@
                                    name:VLCLibraryModelVideoMediaItemDeleted
                                  object:nil];
 
-        NSString * const videoMediaResetLongLoadStartNotification = [VLCLibraryModelVideoMediaListReset stringByAppendingString:VLCLongNotificationNameStartSuffix];
-        NSString * const videoMediaResetLongLoadFinishNotification = [VLCLibraryModelVideoMediaListReset stringByAppendingString:VLCLongNotificationNameFinishSuffix];
-        NSString * const videoMediaDeletedLongLoadStartNotification = [VLCLibraryModelVideoMediaItemDeleted stringByAppendingString:VLCLongNotificationNameStartSuffix];
-        NSString * const videoMediaDeletedLongLoadFinishNotification = [VLCLibraryModelVideoMediaItemDeleted stringByAppendingString:VLCLongNotificationNameFinishSuffix];
+        NSString *const videoMediaResetLongLoadStartNotification =
+            [VLCLibraryModelVideoMediaListReset
+                stringByAppendingString:VLCLongNotificationNameStartSuffix];
+        NSString *const videoMediaResetLongLoadFinishNotification =
+            [VLCLibraryModelVideoMediaListReset
+                stringByAppendingString:VLCLongNotificationNameFinishSuffix];
+        NSString *const videoMediaDeletedLongLoadStartNotification =
+            [VLCLibraryModelVideoMediaItemDeleted
+                stringByAppendingString:VLCLongNotificationNameStartSuffix];
+        NSString *const videoMediaDeletedLongLoadFinishNotification =
+            [VLCLibraryModelVideoMediaItemDeleted
+                stringByAppendingString:VLCLongNotificationNameFinishSuffix];
 
         [notificationCenter addObserver:self
                                selector:@selector(libraryModelLongLoadStarted:)
@@ -131,27 +139,29 @@
     _videoLibrarySplitView = libraryWindow.videoLibrarySplitView;
     _videoLibraryGroupsTableViewScrollView = libraryWindow.videoLibraryGroupsTableViewScrollView;
     _videoLibraryGroupsTableView = libraryWindow.videoLibraryGroupsTableView;
-    _videoLibraryGroupSelectionTableViewScrollView = libraryWindow.videoLibraryGroupSelectionTableViewScrollView;
+    _videoLibraryGroupSelectionTableViewScrollView =
+        libraryWindow.videoLibraryGroupSelectionTableViewScrollView;
     _videoLibraryGroupSelectionTableView = libraryWindow.videoLibraryGroupSelectionTableView;
 }
 
 - (void)setupTableView
 {
-    NSNib * const tableCellViewNib =
-        [[NSNib alloc] initWithNibNamed:@"VLCLibraryVideoTableCellView"
-                                 bundle:nil];
-    [self.videoLibraryGroupSelectionTableView registerNib:tableCellViewNib
-                                           forIdentifier:@"VLCVideoLibraryTableViewCellIdentifier"];
+    NSNib *const tableCellViewNib = [[NSNib alloc] initWithNibNamed:@"VLCLibraryVideoTableCellView"
+                                                             bundle:nil];
+    [self.videoLibraryGroupSelectionTableView
+          registerNib:tableCellViewNib
+        forIdentifier:@"VLCVideoLibraryTableViewCellIdentifier"];
     [self.videoLibraryGroupsTableView registerNib:tableCellViewNib
-                                   forIdentifier:@"VLCVideoLibraryTableViewCellIdentifier"];
-    
+                                    forIdentifier:@"VLCVideoLibraryTableViewCellIdentifier"];
+
     self.videoLibraryGroupSelectionTableView.floatsGroupRows = NO;
 }
 
 - (void)setupVideoDataSource
 {
     _libraryVideoDataSource = [[VLCLibraryVideoDataSource alloc] init];
-    self.libraryVideoDataSource.libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
+    self.libraryVideoDataSource.libraryModel =
+        VLCMain.sharedInstance.libraryController.libraryModel;
     self.libraryVideoDataSource.tableView = self.videoLibraryGroupSelectionTableView;
     self.libraryVideoDataSource.collectionView = self.videoLibraryCollectionView;
 }
@@ -181,12 +191,13 @@
 
     const CGFloat collectionItemSpacing = VLCLibraryUIUnits.collectionViewItemSpacing;
     const NSEdgeInsets collectionViewSectionInset = VLCLibraryUIUnits.collectionViewSectionInsets;
-    _collectionViewLayout.headerReferenceSize = VLCLibraryCollectionViewSupplementaryElementView.defaultHeaderSize;
+    _collectionViewLayout.headerReferenceSize =
+        VLCLibraryCollectionViewSupplementaryElementView.defaultHeaderSize;
     _collectionViewLayout.minimumLineSpacing = collectionItemSpacing;
     _collectionViewLayout.minimumInteritemSpacing = collectionItemSpacing;
     _collectionViewLayout.sectionInset = collectionViewSectionInset;
 
-    NSCollectionView * const collectionView = self.videoLibraryCollectionView;
+    NSCollectionView *const collectionView = self.videoLibraryCollectionView;
     collectionView.collectionViewLayout = _collectionViewLayout;
 
     _collectionViewDelegate = [[VLCLibraryCollectionViewDelegate alloc] init];
@@ -198,17 +209,18 @@
             forItemWithIdentifier:VLCLibraryCellIdentifier];
 
     [collectionView registerClass:VLCLibraryCollectionViewSupplementaryElementView.class
-       forSupplementaryViewOfKind:NSCollectionElementKindSectionHeader
-                   withIdentifier:VLCLibrarySupplementaryElementViewIdentifier];
+        forSupplementaryViewOfKind:NSCollectionElementKindSectionHeader
+                    withIdentifier:VLCLibrarySupplementaryElementViewIdentifier];
 
-    NSString * const mediaItemSupplementaryDetailViewString =
+    NSString *const mediaItemSupplementaryDetailViewString =
         NSStringFromClass(VLCLibraryCollectionViewMediaItemSupplementaryDetailView.class);
-    NSNib * const mediaItemSupplementaryDetailViewNib =
+    NSNib *const mediaItemSupplementaryDetailViewNib =
         [[NSNib alloc] initWithNibNamed:mediaItemSupplementaryDetailViewString bundle:nil];
-    
+
     [collectionView registerNib:mediaItemSupplementaryDetailViewNib
-     forSupplementaryViewOfKind:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind
-                 withIdentifier:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewIdentifier];
+        forSupplementaryViewOfKind:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind
+                    withIdentifier:
+                        VLCLibraryCollectionViewMediaItemSupplementaryDetailViewIdentifier];
 }
 
 - (void)setupVideoPlaceholderView
@@ -233,7 +245,8 @@
 
 - (void)setupVideoLibraryViews
 {
-    _videoLibraryGroupSelectionTableView.rowHeight = VLCLibraryUIUnits.videoLibraryTableViewRowHeight;
+    _videoLibraryGroupSelectionTableView.rowHeight =
+        VLCLibraryUIUnits.videoLibraryTableViewRowHeight;
 
     const NSEdgeInsets defaultInsets = VLCLibraryUIUnits.libraryViewScrollViewContentInsets;
     const NSEdgeInsets scrollerInsets = VLCLibraryUIUnits.libraryViewScrollViewScrollerInsets;
@@ -283,7 +296,8 @@
 
     const BOOL anyVideoMedia = self.libraryVideoDataSource.libraryModel.numberOfVideoMedia > 0;
     if (anyVideoMedia) {
-        const VLCLibraryViewModeSegment viewModeSegment = VLCLibraryWindowPersistentPreferences.sharedInstance.videoLibraryViewMode;
+        const VLCLibraryViewModeSegment viewModeSegment =
+            VLCLibraryWindowPersistentPreferences.sharedInstance.videoLibraryViewMode;
         [self presentVideoLibraryView:viewModeSegment];
     } else if (self.libraryVideoDataSource.libraryModel.filterString.length > 0) {
         [self.libraryWindow displayNoResultsMessage];
@@ -314,7 +328,8 @@
 
     const BOOL anyShows = self.libraryShowsDataSource.libraryModel.listOfShows.count > 0;
     if (anyShows) {
-        const VLCLibraryViewModeSegment viewModeSegment = VLCLibraryWindowPersistentPreferences.sharedInstance.showsLibraryViewMode;
+        const VLCLibraryViewModeSegment viewModeSegment =
+            VLCLibraryWindowPersistentPreferences.sharedInstance.showsLibraryViewMode;
         [self presentVideoLibraryView:viewModeSegment];
     } else if (self.libraryShowsDataSource.libraryModel.filterString.length > 0) {
         [self.libraryWindow displayNoResultsMessage];
@@ -343,7 +358,8 @@
 
     const BOOL anyMovies = self.libraryMoviesDataSource.libraryModel.numberOfMovies > 0;
     if (anyMovies) {
-        const VLCLibraryViewModeSegment viewModeSegment = VLCLibraryWindowPersistentPreferences.sharedInstance.moviesLibraryViewMode;
+        const VLCLibraryViewModeSegment viewModeSegment =
+            VLCLibraryWindowPersistentPreferences.sharedInstance.moviesLibraryViewMode;
         [self presentVideoLibraryView:viewModeSegment];
     } else if (self.libraryMoviesDataSource.libraryModel.filterString.length > 0) {
         [self.libraryWindow displayNoResultsMessage];
@@ -364,9 +380,11 @@
 
 - (void)presentPlaceholderVideoLibraryView
 {
-    [self.libraryWindow displayLibraryPlaceholderViewWithImage:NSImage.VLCPlaceholderVideoImage
-                                              usingConstraints:self.placeholderImageViewSizeConstraints
-                                             displayingMessage:_NS("Your videos will appear here.\nGo to the Browse section to add videos you love.")];
+    [self.libraryWindow
+        displayLibraryPlaceholderViewWithImage:NSImage.VLCPlaceholderVideoImage
+                              usingConstraints:self.placeholderImageViewSizeConstraints
+                             displayingMessage:_NS("Your videos will appear here.\nGo to the "
+                                                   "Browse section to add videos you love.")];
 }
 
 - (void)presentVideoLibraryView:(VLCLibraryViewModeSegment)viewModeSegment
@@ -402,38 +420,46 @@
     const NSUInteger videoCount = model.numberOfVideoMedia;
     const NSUInteger showsCount = model.numberOfShows;
 
-    if (self.libraryWindow.librarySegmentType == VLCLibraryVideoSegmentType &&
-        ((videoCount == 0 && ![self.libraryTargetView.subviews containsObject:self.emptyLibraryView]) ||
-         (videoCount > 0 && ![self.libraryTargetView.subviews containsObject:_videoLibraryView])) &&
-        !self.libraryWindow.embeddedVideoPlaybackActive) {
-
+    if (self.libraryWindow.librarySegmentType == VLCLibraryVideoSegmentType
+        && ((videoCount == 0
+             && ![self.libraryTargetView.subviews containsObject:self.emptyLibraryView])
+            || (videoCount > 0
+                && ![self.libraryTargetView.subviews containsObject:_videoLibraryView]))
+        && !self.libraryWindow.embeddedVideoPlaybackActive) {
         [self updatePresentedVideoLibraryView];
-    } else if (self.libraryWindow.librarySegmentType == VLCLibraryShowsVideoSubSegmentType &&
-         ((showsCount == 0 && ![self.libraryTargetView.subviews containsObject:self.emptyLibraryView]) ||
-          (showsCount > 0 && ![self.libraryTargetView.subviews containsObject:_videoLibraryView])) &&
-         !self.libraryWindow.embeddedVideoPlaybackActive) {
-
-         [self updatePresentedShowsLibraryView];
-     } else if (self.libraryWindow.librarySegmentType == VLCLibraryMoviesVideoSubSegmentType &&
-         ((model.numberOfMovies == 0 && ![self.libraryTargetView.subviews containsObject:self.emptyLibraryView]) ||
-          (model.numberOfMovies > 0 && ![self.libraryTargetView.subviews containsObject:_videoLibraryView])) &&
-         !self.libraryWindow.embeddedVideoPlaybackActive) {
-
-         [self updatePresentedMoviesLibraryView];
-     }
+    } else if (self.libraryWindow.librarySegmentType == VLCLibraryShowsVideoSubSegmentType
+               && ((showsCount == 0
+                    && ![self.libraryTargetView.subviews containsObject:self.emptyLibraryView])
+                   || (showsCount > 0
+                       && ![self.libraryTargetView.subviews containsObject:_videoLibraryView]))
+               && !self.libraryWindow.embeddedVideoPlaybackActive) {
+        [self updatePresentedShowsLibraryView];
+    } else if (self.libraryWindow.librarySegmentType == VLCLibraryMoviesVideoSubSegmentType
+               && ((model.numberOfMovies == 0
+                    && ![self.libraryTargetView.subviews containsObject:self.emptyLibraryView])
+                   || (model.numberOfMovies > 0
+                       && ![self.libraryTargetView.subviews containsObject:_videoLibraryView]))
+               && !self.libraryWindow.embeddedVideoPlaybackActive) {
+        [self updatePresentedMoviesLibraryView];
+    }
 }
 
 - (void)presentLibraryItemWaitForCollectionViewDataSourceFinished:(NSNotification *)notification
 {
-    [NSNotificationCenter.defaultCenter removeObserver:self
-                                                  name:VLCLibraryVideoDataSourceDisplayedCollectionChangedNotification
-                                                object:self.libraryVideoDataSource];
+    [NSNotificationCenter.defaultCenter
+        removeObserver:self
+                  name:VLCLibraryVideoDataSourceDisplayedCollectionChangedNotification
+                object:self.libraryVideoDataSource];
 
-    NSIndexPath * const indexPath = [self.libraryVideoDataSource indexPathForLibraryItem:_awaitingPresentingLibraryItem];
+    NSIndexPath *const indexPath =
+        [self.libraryVideoDataSource indexPathForLibraryItem:_awaitingPresentingLibraryItem];
     if (indexPath != nil) {
-        NSSet * const indexPathSet = [NSSet setWithObject:indexPath];
-        [self.videoLibraryCollectionView selectItemsAtIndexPaths:indexPathSet scrollPosition:NSCollectionViewScrollPositionTop];
-        [self.videoLibraryCollectionView scrollToItemsAtIndexPaths:indexPathSet scrollPosition:NSCollectionViewScrollPositionTop];
+        NSSet *const indexPathSet = [NSSet setWithObject:indexPath];
+        [self.videoLibraryCollectionView selectItemsAtIndexPaths:indexPathSet
+                                                  scrollPosition:NSCollectionViewScrollPositionTop];
+        [self.videoLibraryCollectionView
+            scrollToItemsAtIndexPaths:indexPathSet
+                       scrollPosition:NSCollectionViewScrollPositionTop];
     }
 
     _awaitingPresentingLibraryItem = nil;
@@ -441,14 +467,17 @@
 
 - (void)presentLibraryItemWaitForTableViewDataSourceFinished:(NSNotification *)notification
 {
-    [NSNotificationCenter.defaultCenter removeObserver:self
-                                                  name:VLCLibraryVideoDataSourceDisplayedCollectionChangedNotification
-                                             object:self.libraryVideoDataSource];
+    [NSNotificationCenter.defaultCenter
+        removeObserver:self
+                  name:VLCLibraryVideoDataSourceDisplayedCollectionChangedNotification
+                object:self.libraryVideoDataSource];
 
-    const NSInteger rowForLibraryItem = [self.libraryVideoDataSource rowForLibraryItem:_awaitingPresentingLibraryItem];
+    const NSInteger rowForLibraryItem =
+        [self.libraryVideoDataSource rowForLibraryItem:_awaitingPresentingLibraryItem];
     if (rowForLibraryItem != NSNotFound) {
-        NSIndexSet * const indexSet = [NSIndexSet indexSetWithIndex:rowForLibraryItem];
-        [self.videoLibraryGroupSelectionTableView selectRowIndexes:indexSet byExtendingSelection:NO];
+        NSIndexSet *const indexSet = [NSIndexSet indexSetWithIndex:rowForLibraryItem];
+        [self.videoLibraryGroupSelectionTableView selectRowIndexes:indexSet
+                                              byExtendingSelection:NO];
         [self.videoLibraryGroupSelectionTableView scrollRowToVisible:rowForLibraryItem];
     }
 
@@ -463,19 +492,22 @@
 
     _awaitingPresentingLibraryItem = libraryItem;
 
-     const VLCLibraryViewModeSegment viewModeSegment = VLCLibraryWindowPersistentPreferences.sharedInstance.videoLibraryViewMode;
+    const VLCLibraryViewModeSegment viewModeSegment =
+        VLCLibraryWindowPersistentPreferences.sharedInstance.videoLibraryViewMode;
 
     if (viewModeSegment == VLCLibraryGridViewModeSegment) {
-        [NSNotificationCenter.defaultCenter addObserver:self
-                                           selector:@selector(presentLibraryItemWaitForCollectionViewDataSourceFinished:)
-                                               name:VLCLibraryVideoDataSourceDisplayedCollectionChangedNotification
-                                             object:self.libraryVideoDataSource];
+        [NSNotificationCenter.defaultCenter
+            addObserver:self
+               selector:@selector(presentLibraryItemWaitForCollectionViewDataSourceFinished:)
+                   name:VLCLibraryVideoDataSourceDisplayedCollectionChangedNotification
+                 object:self.libraryVideoDataSource];
 
     } else if (viewModeSegment == VLCLibraryListViewModeSegment) {
-        [NSNotificationCenter.defaultCenter addObserver:self
-                                           selector:@selector(presentLibraryItemWaitForTableViewDataSourceFinished:)
-                                               name:VLCLibraryVideoDataSourceDisplayedCollectionChangedNotification
-                                             object:self.libraryVideoDataSource];
+        [NSNotificationCenter.defaultCenter
+            addObserver:self
+               selector:@selector(presentLibraryItemWaitForTableViewDataSourceFinished:)
+                   name:VLCLibraryVideoDataSourceDisplayedCollectionChangedNotification
+                 object:self.libraryVideoDataSource];
 
     } else {
         NSAssert(false, @"View mode must be grid or list mode");

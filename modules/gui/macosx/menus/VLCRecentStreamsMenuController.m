@@ -43,11 +43,8 @@ static void recentStreamsLibraryCallback(void *p_data, const vlc_ml_event_t *p_e
     if (p_event->i_type != VLC_ML_EVENT_HISTORY_CHANGED)
         return;
 
-    VLCRecentStreamsMenuController *controller =
-        (__bridge VLCRecentStreamsMenuController *)p_data;
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [controller rebuild];
-    });
+    VLCRecentStreamsMenuController *controller = (__bridge VLCRecentStreamsMenuController *)p_data;
+    dispatch_async(dispatch_get_main_queue(), ^{ [controller rebuild]; });
 }
 
 @implementation VLCRecentStreamsMenuController
@@ -97,7 +94,8 @@ static void recentStreamsLibraryCallback(void *p_data, const vlc_ml_event_t *p_e
     BOOL hasEntries = NO;
     vlc_ml_query_params_t params = vlc_ml_query_params_create();
     params.i_nbResults = 30;
-    vlc_ml_media_list_t *list = vlc_ml_list_history(_mediaLibrary, &params, VLC_ML_HISTORY_TYPE_NETWORK);
+    vlc_ml_media_list_t *list =
+        vlc_ml_list_history(_mediaLibrary, &params, VLC_ML_HISTORY_TYPE_NETWORK);
     if (list != NULL) {
         for (size_t i = 0; i < list->i_nb_items; i++) {
             const vlc_ml_media_t *ml_media = &list->p_items[i];
@@ -137,7 +135,7 @@ static void recentStreamsLibraryCallback(void *p_data, const vlc_ml_event_t *p_e
 {
     VLCOpenInputMetadata *meta = [[VLCOpenInputMetadata alloc] init];
     meta.MRLString = sender.representedObject;
-    [VLCMain.sharedInstance.playQueueController addPlayQueueItems:@[meta]];
+    [VLCMain.sharedInstance.playQueueController addPlayQueueItems:@[ meta ]];
 }
 
 - (void)clearRecentStreams:(id)sender

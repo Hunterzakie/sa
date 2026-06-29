@@ -44,9 +44,9 @@
         self.menuController.playQueueTableView = self;
     }
 
-    const NSPoint pt = [self convertPoint: [event locationInWindow] fromView: nil];
+    const NSPoint pt = [self convertPoint:[event locationInWindow] fromView:nil];
     const NSInteger row = [self rowAtPoint:pt];
-    if (row != -1 && ![[self selectedRowIndexes] containsIndex: row])
+    if (row != -1 && ![[self selectedRowIndexes] containsIndex:row])
         [self selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:NO];
 
     return self.menuController.playQueueMenu;
@@ -58,19 +58,19 @@
 
     if ([[event characters] length]) {
         /* we evaluate the first key only */
-        key = [[event characters] characterAtIndex: 0];
+        key = [[event characters] characterAtIndex:0];
     }
 
     size_t indexOfSelectedItem = self.selectedRow;
     NSIndexSet *selectedIndexes = [self selectedRowIndexes];
 
-    switch(key) {
+    switch (key) {
         case NSDeleteCharacter:
         case NSDeleteFunctionKey:
         case NSDeleteCharFunctionKey:
-        case NSBackspaceCharacter:
-        {
-            VLCPlayQueueController *playQueueController = VLCMain.sharedInstance.playQueueController;
+        case NSBackspaceCharacter: {
+            VLCPlayQueueController *playQueueController =
+                VLCMain.sharedInstance.playQueueController;
             [playQueueController removeItemsAtIndexes:selectedIndexes];
             break;
         }
@@ -81,7 +81,7 @@
             break;
 
         default:
-            [super keyDown: event];
+            [super keyDown:event];
             break;
     }
 }

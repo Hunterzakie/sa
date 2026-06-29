@@ -24,9 +24,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-extern NSString * const VLCPlaybackEndViewEnabledKey;
-extern NSString * const VLCPlaybackEndViewReturnToLibraryNotificationName;
-extern NSString * const VLCPlaybackEndViewHideNotificationName;
+extern NSString *const VLCPlaybackEndViewEnabledKey;
+extern NSString *const VLCPlaybackEndViewReturnToLibraryNotificationName;
+extern NSString *const VLCPlaybackEndViewHideNotificationName;
 
 @interface VLCPlaybackEndViewController : NSViewController
 

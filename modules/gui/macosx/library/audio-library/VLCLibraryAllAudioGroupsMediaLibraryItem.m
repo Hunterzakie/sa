@@ -40,14 +40,14 @@
 
 - (instancetype)initWithDisplayString:(NSString *)displayString
 {
-     return [self initWithDisplayString:displayString
-                  accordingToParentType:VLCMediaLibraryParentGroupTypeAudioLibrary];
+    return [self initWithDisplayString:displayString
+                 accordingToParentType:VLCMediaLibraryParentGroupTypeAudioLibrary];
 }
 
 - (instancetype)initWithDisplayString:(NSString *)displayString
                 accordingToParentType:(const VLCMediaLibraryParentGroupType)parentType
 {
-    VLCLibraryModel * const libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
+    VLCLibraryModel *const libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
     _matchingParentType = VLCMediaLibraryParentGroupTypeAudioLibrary;
     _albums = libraryModel.listOfAlbums;
     _artists = libraryModel.listOfArtists;
@@ -55,20 +55,22 @@
     _numberOfTracks = _mediaItems.count;
 
     const NSUInteger numberOfAlbums = libraryModel.numberOfAlbums;
-    NSString * const albumString = _NPS("%li album", "%li albums", numberOfAlbums);
-    NSString * const songString = _NPS("%li song", "%li songs", _numberOfTracks);
-    NSString * const primaryDetailString = [NSString stringWithFormat:@"%@, %@", albumString, songString];
+    NSString *const albumString = _NPS("%li album", "%li albums", numberOfAlbums);
+    NSString *const songString = _NPS("%li song", "%li songs", _numberOfTracks);
+    NSString *const primaryDetailString =
+        [NSString stringWithFormat:@"%@, %@", albumString, songString];
 
     return [super initWithDisplayString:displayString
                 withPrimaryDetailString:primaryDetailString
               withSecondaryDetailString:nil];
 }
 
-- (void)iterateMediaItemsWithBlock:(nonnull void (^)(VLCMediaLibraryMediaItem * _Nonnull))mediaItemBlock
+- (void)iterateMediaItemsWithBlock:
+    (nonnull void (^)(VLCMediaLibraryMediaItem *_Nonnull))mediaItemBlock
 {
     // Iterate by album
-    NSArray<id<VLCMediaLibraryItemProtocol>> * const childItems = self.albums;
-    for(id<VLCMediaLibraryItemProtocol> childItem in childItems) {
+    NSArray<id<VLCMediaLibraryItemProtocol>> *const childItems = self.albums;
+    for (id<VLCMediaLibraryItemProtocol> childItem in childItems) {
         [childItem iterateMediaItemsWithBlock:mediaItemBlock];
     }
 }

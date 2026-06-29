@@ -59,7 +59,12 @@ static NSString *VLCPlayQueueCellIdentifier = @"VLCPlayQueueCellIdentifier";
 
 - (void)prepareForUse
 {
-    [_tableView registerForDraggedTypes:@[VLCMediaLibraryMediaItemPasteboardType, VLCMediaLibraryMediaItemUTI, VLCPlaylistItemPasteboardType, NSFilenamesPboardType]];
+    [_tableView registerForDraggedTypes:@[
+        VLCMediaLibraryMediaItemPasteboardType,
+        VLCMediaLibraryMediaItemUTI,
+        VLCPlaylistItemPasteboardType,
+        NSFilenamesPboardType
+    ]];
 }
 
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)tableView
@@ -67,7 +72,9 @@ static NSString *VLCPlayQueueCellIdentifier = @"VLCPlayQueueCellIdentifier";
     return _playQueueModel.numberOfPlayQueueItems;
 }
 
-- (NSView *)tableView:(NSTableView *)tableView viewForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)row
+- (NSView *)tableView:(NSTableView *)tableView
+    viewForTableColumn:(NSTableColumn *)tableColumn
+                   row:(NSInteger)row
 {
     VLCPlayQueueTableCellView *cellView =
         [tableView makeViewWithIdentifier:VLCPlayQueueCellIdentifier owner:self];
@@ -81,14 +88,15 @@ static NSString *VLCPlayQueueCellIdentifier = @"VLCPlayQueueCellIdentifier";
         cellView.identifier = VLCPlayQueueCellIdentifier;
     }
 
-    VLCPlayQueueItem * const item = [_playQueueModel playQueueItemAtIndex:row];
+    VLCPlayQueueItem *const item = [_playQueueModel playQueueItemAtIndex:row];
     if (!item) {
         msg_Err(getIntf(), "playlist model did not return an item for representation");
         return cellView;
     }
 
     cellView.representedPlayQueueItem = item;
-    cellView.representsCurrentPlayQueueItem = _playQueueController.currentPlayQueueIndex == (size_t)row;
+    cellView.representsCurrentPlayQueueItem =
+        _playQueueController.currentPlayQueueIndex == (size_t)row;
 
     return cellView;
 }
@@ -103,9 +111,10 @@ static NSString *VLCPlayQueueCellIdentifier = @"VLCPlayQueueCellIdentifier";
 
 - (id<NSPasteboardWriting>)tableView:(NSTableView *)tableView pasteboardWriterForRow:(NSInteger)row
 {
-    NSPasteboardItem * const pboardItem = [[NSPasteboardItem alloc] init];
-    VLCPlayQueueItem * const playlistItem = [_playQueueModel playQueueItemAtIndex:row];
-    [pboardItem setString:[@(playlistItem.uniqueID) stringValue] forType:VLCPlaylistItemPasteboardType];
+    NSPasteboardItem *const pboardItem = [[NSPasteboardItem alloc] init];
+    VLCPlayQueueItem *const playlistItem = [_playQueueModel playQueueItemAtIndex:row];
+    [pboardItem setString:[@(playlistItem.uniqueID) stringValue]
+                  forType:VLCPlaylistItemPasteboardType];
     return pboardItem;
 }
 
@@ -122,7 +131,8 @@ static NSString *VLCPlayQueueCellIdentifier = @"VLCPlayQueueCellIdentifier";
               row:(NSInteger)row
     dropOperation:(NSTableViewDropOperation)dropOperation
 {
-    NSString *encodedIDtoMove = [info.draggingPasteboard stringForType:VLCPlaylistItemPasteboardType];
+    NSString *encodedIDtoMove =
+        [info.draggingPasteboard stringForType:VLCPlaylistItemPasteboardType];
     if (encodedIDtoMove != nil) {
         int64_t uniqueID = [encodedIDtoMove integerValue];
         [_playQueueController moveItemWithID:uniqueID toPosition:row];
@@ -132,9 +142,9 @@ static NSString *VLCPlayQueueCellIdentifier = @"VLCPlayQueueCellIdentifier";
     /* Collect library media items from all pasteboard items.
      * Table view drags create one NSPasteboardItem per selected row, so we
      * must iterate all of them to capture every dragged item. */
-    NSMutableArray<VLCMediaLibraryMediaItem *> * const allMediaItems = [NSMutableArray array];
+    NSMutableArray<VLCMediaLibraryMediaItem *> *const allMediaItems = [NSMutableArray array];
 
-    for (NSPasteboardItem * const pboardItem in info.draggingPasteboard.pasteboardItems) {
+    for (NSPasteboardItem *const pboardItem in info.draggingPasteboard.pasteboardItems) {
         NSData *itemData = [pboardItem dataForType:VLCMediaLibraryMediaItemPasteboardType];
         if (!itemData) {
             itemData = [pboardItem dataForType:VLCMediaLibraryMediaItemUTI];
@@ -145,12 +155,15 @@ static NSString *VLCPlayQueueCellIdentifier = @"VLCPlayQueueCellIdentifier";
 
         /* It is a media library item, so unarchive it and add it to the playlist */
         NSError *unarchiveError = nil;
-        NSArray<VLCMediaLibraryMediaItem *> * const items =
-            [NSKeyedUnarchiver unarchivedObjectOfClasses:[NSSet setWithObjects:[NSArray class], [VLCMediaLibraryMediaItem class], nil]
-                                                fromData:itemData
-                                                   error:&unarchiveError];
+        NSArray<VLCMediaLibraryMediaItem *> *const items = [NSKeyedUnarchiver
+            unarchivedObjectOfClasses:[NSSet setWithObjects:[NSArray class],
+                                                            [VLCMediaLibraryMediaItem class],
+                                                            nil]
+                             fromData:itemData
+                                error:&unarchiveError];
         if (unarchiveError != nil) {
-            msg_Err(getIntf(), "Failed to unarchive MediaLibrary Item: %s",
+            msg_Err(getIntf(),
+                    "Failed to unarchive MediaLibrary Item: %s",
                     unarchiveError.localizedDescription.UTF8String);
             continue;
         }
@@ -162,7 +175,7 @@ static NSString *VLCPlayQueueCellIdentifier = @"VLCPlayQueueCellIdentifier";
 
     if (allMediaItems.count > 0) {
         NSInteger insertionIndex = (NSInteger)row;
-        for (VLCMediaLibraryMediaItem * const mediaItem in allMediaItems) {
+        for (VLCMediaLibraryMediaItem *const mediaItem in allMediaItems) {
             [_playQueueController addInputItem:mediaItem.inputItem.vlcInputItem
                                     atPosition:insertionIndex
                                  startPlayback:NO];
@@ -179,10 +192,10 @@ static NSString *VLCPlayQueueCellIdentifier = @"VLCPlayQueueCellIdentifier";
 
     const NSUInteger mediaCount = [propertyList count];
     if (mediaCount > 0) {
-        NSMutableArray * const metadataArray = [NSMutableArray arrayWithCapacity:mediaCount];
-        for (NSString * const mediaPath in propertyList) {
+        NSMutableArray *const metadataArray = [NSMutableArray arrayWithCapacity:mediaCount];
+        for (NSString *const mediaPath in propertyList) {
             VLCOpenInputMetadata *inputMetadata;
-            NSURL * const url = [NSURL fileURLWithPath:mediaPath isDirectory:NO];
+            NSURL *const url = [NSURL fileURLWithPath:mediaPath isDirectory:NO];
             if (!url) {
                 continue;
             }
@@ -202,19 +215,20 @@ static NSString *VLCPlayQueueCellIdentifier = @"VLCPlayQueueCellIdentifier";
                                           edge:(NSTableRowActionEdge)edge
 {
     if (edge == NSTableRowActionEdgeTrailing) {
-        VLCPlayQueueItem * const item = [_playQueueController.playQueueModel playQueueItemAtIndex:row];
+        VLCPlayQueueItem *const item =
+            [_playQueueController.playQueueModel playQueueItemAtIndex:row];
         if (item == nil) {
             return @[];
         }
 
-        NSTableViewRowAction * const removeAction =
-            [NSTableViewRowAction rowActionWithStyle:NSTableViewRowActionStyleDestructive
-                                                title:_NS("Remove from Play Queue")
-                                               handler:^(NSTableViewRowAction * const __unused action, const NSInteger row) {
-                NSIndexSet * const indices = [NSIndexSet indexSetWithIndex:row];
-                [_playQueueController removeItemsAtIndexes:indices];
-            }];
-        return @[removeAction];
+        NSTableViewRowAction *const removeAction = [NSTableViewRowAction
+            rowActionWithStyle:NSTableViewRowActionStyleDestructive
+                         title:_NS("Remove from Play Queue")
+                       handler:^(NSTableViewRowAction *const __unused action, const NSInteger row) {
+                           NSIndexSet *const indices = [NSIndexSet indexSetWithIndex:row];
+                           [_playQueueController removeItemsAtIndexes:indices];
+                       }];
+        return @[ removeAction ];
     }
     return @[];
 }

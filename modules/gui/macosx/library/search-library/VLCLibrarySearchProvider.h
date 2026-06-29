@@ -28,11 +28,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol VLCMediaLibraryItemProtocol;
 
-extern NSString * const VLCLibrarySearchProviderResultsUpdated;
+extern NSString *const VLCLibrarySearchProviderResultsUpdated;
 
 // Block called on a background queue with query params containing the search pattern.
-typedef NSArray<id<VLCMediaLibraryItemProtocol>> * _Nonnull
-    (^VLCLibrarySearchProviderFetchBlock)(const vlc_ml_query_params_t * _Nonnull params);
+typedef NSArray<id<VLCMediaLibraryItemProtocol>> *_Nonnull (^VLCLibrarySearchProviderFetchBlock)(
+    const vlc_ml_query_params_t *_Nonnull params);
 
 @interface VLCLibrarySearchProvider : NSObject
 

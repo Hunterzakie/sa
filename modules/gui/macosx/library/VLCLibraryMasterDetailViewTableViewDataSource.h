@@ -28,7 +28,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol VLCLibraryMasterDetailViewTableViewDataSource <VLCLibraryTableViewDataSource>
+@protocol VLCLibraryMasterDetailViewTableViewDataSource<VLCLibraryTableViewDataSource>
 
 @property (readwrite, weak) NSTableView *masterTableView;
 @property (readwrite, weak) NSTableView *detailTableView;
@@ -37,7 +37,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (readwrite, weak, nullable) id<VLCLibraryGroupHeaderDelegate> headerDelegate;
 
-- (void)updateHeaderInTableView:(NSTableView *)detailTableView forMasterSelection:(NSTableView *)masterTableView;
+- (void)updateHeaderInTableView:(NSTableView *)detailTableView
+             forMasterSelection:(NSTableView *)masterTableView;
 
 @end
 

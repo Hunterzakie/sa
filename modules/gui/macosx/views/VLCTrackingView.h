@@ -24,7 +24,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-typedef void(^EnterExitBlock)(void);
+typedef void (^EnterExitBlock)(void);
 
 @interface VLCTrackingView : NSView
 

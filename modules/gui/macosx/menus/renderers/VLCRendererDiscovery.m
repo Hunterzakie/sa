@@ -27,14 +27,14 @@
 
 #import "main/VLCMain.h"
 
-NSString * const VLCRendererAddedNotification = @"VLCRendererAddedNotification";
-NSString * const VLCRendererRemovedNotification = @"VLCRendererRemovedNotification";
+NSString *const VLCRendererAddedNotification = @"VLCRendererAddedNotification";
+NSString *const VLCRendererRemovedNotification = @"VLCRendererRemovedNotification";
 
 @interface VLCRendererDiscovery ()
 {
-    intf_thread_t               *p_intf;
-    vlc_renderer_discovery_t    *p_rd;
-    BOOL                        _isRunning;
+    intf_thread_t *p_intf;
+    vlc_renderer_discovery_t *p_rd;
+    BOOL _isRunning;
 }
 
 - (void)handleItemAdded:(vlc_renderer_item_t *)item;
@@ -43,30 +43,27 @@ NSString * const VLCRendererRemovedNotification = @"VLCRendererRemovedNotificati
 @end
 
 // C callback event handler functions
-static void renderer_event_item_added(vlc_renderer_discovery_t *rd,
-                                      vlc_renderer_item_t *item)
+static void renderer_event_item_added(vlc_renderer_discovery_t *rd, vlc_renderer_item_t *item)
 {
-    VLCRendererDiscovery *target = (__bridge VLCRendererDiscovery*)rd->owner.sys;
+    VLCRendererDiscovery *target = (__bridge VLCRendererDiscovery *)rd->owner.sys;
     [target handleItemAdded:item];
 }
 
-static void renderer_event_item_removed(vlc_renderer_discovery_t *rd,
-                                        vlc_renderer_item_t *item)
+static void renderer_event_item_removed(vlc_renderer_discovery_t *rd, vlc_renderer_item_t *item)
 {
-    VLCRendererDiscovery *target = (__bridge VLCRendererDiscovery*)rd->owner.sys;
+    VLCRendererDiscovery *target = (__bridge VLCRendererDiscovery *)rd->owner.sys;
     [target handleItemRemoved:item];
 }
 
 @implementation VLCRendererDiscovery
 
-- (instancetype)initWithName:(const char*)name andLongname:(const char*)longname
+- (instancetype)initWithName:(const char *)name andLongname:(const char *)longname
 {
     self = [super init];
 
     if (self) {
         if (!name)
-            [NSException raise:NSInvalidArgumentException
-                        format:@"name must not be nil"];
+            [NSException raise:NSInvalidArgumentException format:@"name must not be nil"];
         _name = [NSString stringWithUTF8String:name];
         _longName = (!longname) ? nil : [NSString stringWithUTF8String:longname];
         _rendererItems = [NSMutableArray array];
@@ -85,9 +82,8 @@ static void renderer_event_item_removed(vlc_renderer_discovery_t *rd,
         return YES;
     }
 
-    struct vlc_renderer_discovery_owner owner =
-    {
-        (__bridge void *) self,
+    struct vlc_renderer_discovery_owner owner = {
+        (__bridge void *)self,
         renderer_event_item_added,
         renderer_event_item_removed,
     };
@@ -132,8 +128,7 @@ static void renderer_event_item_removed(vlc_renderer_discovery_t *rd,
 
 - (void)handleItemRemoved:(vlc_renderer_item_t *)base_item
 {
-    VLCRendererItem * const removedItem =
-        [[VLCRendererItem alloc] initWithRendererItem:base_item];
+    VLCRendererItem *const removedItem = [[VLCRendererItem alloc] initWithRendererItem:base_item];
     dispatch_async(dispatch_get_main_queue(), ^{
         VLCRendererItem *result_item = nil;
         for (VLCRendererItem *item in self->_rendererItems) {

@@ -26,10 +26,12 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface VLCLibraryAllAudioGroupsMediaLibraryItem : VLCMediaLibraryDummyItem<VLCMediaLibraryAudioGroupProtocol>
+@interface VLCLibraryAllAudioGroupsMediaLibraryItem
+    : VLCMediaLibraryDummyItem<VLCMediaLibraryAudioGroupProtocol>
 
 - (nullable instancetype)initWithDisplayString:(NSString *)displayString;
-- (nullable instancetype)initWithDisplayString:(NSString *)displayString // Parent type affects ordering of items
+- (nullable instancetype)initWithDisplayString:
+                             (NSString *)displayString // Parent type affects ordering of items
                          accordingToParentType:(VLCMediaLibraryParentGroupType)parentType;
 
 @end

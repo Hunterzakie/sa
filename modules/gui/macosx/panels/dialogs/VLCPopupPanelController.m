@@ -22,7 +22,7 @@
 
 #import "VLCPopupPanelController.h"
 
-@interface VLCPopupPanelController()
+@interface VLCPopupPanelController ()
 {
     PopupPanelCompletionBlock _completionBlock;
 }
@@ -40,10 +40,11 @@
 - (IBAction)windowElementAction:(id)sender
 {
     [self.window orderOut:sender];
-    [NSApp endSheet: self.window];
+    [NSApp endSheet:self.window];
 
     if (_completionBlock)
-        _completionBlock(sender == _okButton ? NSModalResponseOK : NSModalResponseCancel, [_popupButton indexOfSelectedItem]);
+        _completionBlock(sender == _okButton ? NSModalResponseOK : NSModalResponseCancel,
+                         [_popupButton indexOfSelectedItem]);
 }
 
 - (void)runModalForWindow:(NSWindow *)window completionHandler:(PopupPanelCompletionBlock)handler;

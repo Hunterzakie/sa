@@ -30,7 +30,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol VLCLibraryHomeViewVideoContainerView <VLCLibraryHomeViewContainerView, VLCLibraryItemPresentingCapable>
+@protocol VLCLibraryHomeViewVideoContainerView<VLCLibraryHomeViewContainerView,
+                                               VLCLibraryItemPresentingCapable>
 
 @property (readonly) VLCLibraryVideoCollectionViewGroupDescriptor *groupDescriptor;
 @property (readwrite, assign, nonatomic) VLCMediaLibraryParentGroupType videoGroup;

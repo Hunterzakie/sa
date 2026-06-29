@@ -44,7 +44,7 @@
 #import "views/VLCImageView.h"
 #import "views/VLCTrackingView.h"
 
-NSString * const VLCLibraryTableCellViewIdentifier = @"VLCLibraryTableCellViewIdentifier";
+NSString *const VLCLibraryTableCellViewIdentifier = @"VLCLibraryTableCellViewIdentifier";
 
 @implementation VLCLibraryTableCellView
 
@@ -57,7 +57,8 @@ NSString * const VLCLibraryTableCellViewIdentifier = @"VLCLibraryTableCellViewId
         self.playInstantlyButton.bordered = YES;
         self.playInstantlyButton.bezelStyle = NSBezelStyleGlass;
         self.playInstantlyButton.borderShape = NSControlBorderShapeCircle;
-        self.playInstantlyButton.image = [NSImage imageWithSystemSymbolName:@"play.fill" accessibilityDescription:nil];
+        self.playInstantlyButton.image = [NSImage imageWithSystemSymbolName:@"play.fill"
+                                                   accessibilityDescription:nil];
         self.playInstantlyButton.imageScaling = NSImageScaleProportionallyUpOrDown;
         self.playInstantlyButton.controlSize = NSControlSizeExtraLarge;
 #endif
@@ -88,14 +89,16 @@ NSString * const VLCLibraryTableCellViewIdentifier = @"VLCLibraryTableCellViewId
     self.playInstantlyButton.target = self;
 
     __weak typeof(self) weakSelf = self;
-    [VLCLibraryImageCache thumbnailForLibraryItem:actualItem withCompletion:^(NSImage * const thumbnail) {
-        if (!weakSelf || weakSelf.representedItem.item != actualItem) {
-            return;
-        }
-        weakSelf.representedImageView.image = thumbnail;
-    }];
+    [VLCLibraryImageCache
+        thumbnailForLibraryItem:actualItem
+                 withCompletion:^(NSImage *const thumbnail) {
+                     if (!weakSelf || weakSelf.representedItem.item != actualItem) {
+                         return;
+                     }
+                     weakSelf.representedImageView.image = thumbnail;
+                 }];
 
-    if(actualItem.primaryDetailString.length > 0) {
+    if (actualItem.primaryDetailString.length > 0) {
         self.primaryTitleTextField.hidden = NO;
         self.primaryTitleTextField.stringValue = actualItem.displayString;
         self.secondaryTitleTextField.hidden = NO;
@@ -115,13 +118,15 @@ NSString * const VLCLibraryTableCellViewIdentifier = @"VLCLibraryTableCellViewId
     self.singlePrimaryTitleTextField.stringValue = _representedInputItem.name;
 
     __weak typeof(self) weakSelf = self;
-    [VLCLibraryImageCache thumbnailForInputItem:self->_representedInputItem withCompletion:^(NSImage * const thumbnail) {
-        VLCLibraryTableCellView * const strongSelf = weakSelf;
-        if (!strongSelf || representedInputItem != strongSelf->_representedInputItem) {
-            return;
-        }
-        strongSelf->_representedImageView.image = thumbnail;
-    }];
+    [VLCLibraryImageCache
+        thumbnailForInputItem:self->_representedInputItem
+               withCompletion:^(NSImage *const thumbnail) {
+                   VLCLibraryTableCellView *const strongSelf = weakSelf;
+                   if (!strongSelf || representedInputItem != strongSelf->_representedInputItem) {
+                       return;
+                   }
+                   strongSelf->_representedImageView.image = thumbnail;
+               }];
 
     self.trackingView.viewToHide = self.playInstantlyButton;
     self.playInstantlyButton.action = @selector(playInputItemInstantly:);
@@ -132,13 +137,13 @@ NSString * const VLCLibraryTableCellViewIdentifier = @"VLCLibraryTableCellViewId
 {
     // We need to adjust the selected row value to match the backing enum.
     // Additionally, we hide recents when there are no recent media items.
-    VLCLibraryModel * const model = VLCMain.sharedInstance.libraryController.libraryModel;
+    VLCLibraryModel *const model = VLCMain.sharedInstance.libraryController.libraryModel;
     const BOOL anyRecents = model.numberOfRecentMedia > 0;
     const NSUInteger sectionBase = VLCMediaLibraryParentGroupTypeRecentVideos;
     const NSUInteger sectionAdjustment = anyRecents ? sectionBase : sectionBase + 1;
 
     NSString *sectionString = @"";
-    switch(section + sectionAdjustment) { // Group 0 is Invalid, so add one
+    switch (section + sectionAdjustment) { // Group 0 is Invalid, so add one
         case VLCMediaLibraryParentGroupTypeRecentVideos:
             sectionString = _NS("Recents");
             break;
@@ -164,7 +169,9 @@ NSString * const VLCLibraryTableCellViewIdentifier = @"VLCLibraryTableCellViewId
 
 - (void)playInputItemInstantly:(id)sender
 {
-    [VLCMain.sharedInstance.playQueueController addInputItem:_representedInputItem.vlcInputItem atPosition:-1 startPlayback:YES];
+    [VLCMain.sharedInstance.playQueueController addInputItem:_representedInputItem.vlcInputItem
+                                                  atPosition:-1
+                                               startPlayback:YES];
 }
 
 @end

@@ -61,7 +61,7 @@
 @property (weak) IBOutlet NSButton *streamDestinationButton;
 
 // customize panel
-@property ()     IBOutlet NSWindow *customizePanel;
+@property () IBOutlet NSWindow *customizePanel;
 @property (weak) IBOutlet NSButton *customizeNewProfileButton;
 @property (weak) IBOutlet NSButton *customizeCancelButton;
 @property (weak) IBOutlet NSButton *customizeOkButton;
@@ -106,7 +106,7 @@
 @property (weak) IBOutlet NSPopUpButton *customizeSubsPopup;
 
 // stream panel
-@property ()     IBOutlet NSWindow *streamPanel;
+@property () IBOutlet NSWindow *streamPanel;
 @property (weak) IBOutlet NSTextField *streamDestinationLabel;
 @property (weak) IBOutlet NSTextField *streamTypeLabel;
 @property (weak) IBOutlet NSTextField *streamAddressLabel;
@@ -137,7 +137,6 @@
 @property (nonatomic) int vidFramerate;
 @property (nonatomic) int audBitrate;
 @property (nonatomic) int audChannels;
-
 
 - (IBAction)finalizePanel:(id)sender;
 - (IBAction)openMedia:(id)sender;

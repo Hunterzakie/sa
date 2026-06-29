@@ -52,12 +52,15 @@ typedef NS_ENUM(NSInteger, VLCLibraryViewModeSegment) {
     VLCLibraryLargestSentinelViewModeSegment
 };
 
-@interface VLCLibraryWindow : VLCFullVideoViewWindow<NSUserInterfaceItemIdentification, VLCDragDropTarget, VLCLibraryItemPresentingCapable, NSSearchFieldDelegate>
+@interface VLCLibraryWindow : VLCFullVideoViewWindow<NSUserInterfaceItemIdentification,
+                                                     VLCDragDropTarget,
+                                                     VLCLibraryItemPresentingCapable,
+                                                     NSSearchFieldDelegate>
 
 extern const CGFloat VLCLibraryWindowMinimalWidth;
 extern const CGFloat VLCLibraryWindowMinimalHeight;
 extern const NSUserInterfaceItemIdentifier VLCLibraryWindowIdentifier;
-extern NSString * const VLCLibraryWindowEmbeddedVideoPlaybackActiveKey;
+extern NSString *const VLCLibraryWindowEmbeddedVideoPlaybackActiveKey;
 
 @property (readonly) NSView *libraryTargetView;
 
@@ -87,14 +90,18 @@ extern NSString * const VLCLibraryWindowEmbeddedVideoPlaybackActiveKey;
 @property (readwrite, weak) IBOutlet NSScrollView *audioCollectionViewScrollView;
 @property (readwrite, weak) IBOutlet VLCLibraryCollectionView *audioLibraryCollectionView;
 @property (readwrite, weak) IBOutlet NSSplitView *audioLibraryGridModeSplitView;
-@property (readwrite, weak) IBOutlet NSScrollView *audioLibraryGridModeSplitViewListTableViewScrollView;
+@property (readwrite, weak)
+    IBOutlet NSScrollView *audioLibraryGridModeSplitViewListTableViewScrollView;
 @property (readwrite, weak) IBOutlet NSTableView *audioLibraryGridModeSplitViewListTableView;
-@property (readwrite, weak) IBOutlet NSScrollView *audioLibraryGridModeSplitViewListSelectionCollectionViewScrollView;
-@property (readwrite, weak) IBOutlet VLCLibraryCollectionView *audioLibraryGridModeSplitViewListSelectionCollectionView;
+@property (readwrite, weak)
+    IBOutlet NSScrollView *audioLibraryGridModeSplitViewListSelectionCollectionViewScrollView;
+@property (readwrite, weak)
+    IBOutlet VLCLibraryCollectionView *audioLibraryGridModeSplitViewListSelectionCollectionView;
 @property (readwrite, weak) IBOutlet NSView *mediaSourceView;
-// These two media source controls are held strongly due to their handling within the media source view controller.
-// Specifically, we do some custom handling to give them the glass background on macOS 26.0 and later; to avoid deallocation
-// when removing the glass container view from the media source view, we must hold them strongly.
+// These two media source controls are held strongly due to their handling within the media source
+// view controller. Specifically, we do some custom handling to give them the glass background on
+// macOS 26.0 and later; to avoid deallocation when removing the glass container view from the media
+// source view, we must hold them strongly.
 @property (readwrite, strong) IBOutlet NSButton *mediaSourceHomeButton;
 @property (readwrite, strong) IBOutlet VLCInputNodePathControl *mediaSourcePathControl;
 @property (readwrite, weak) IBOutlet NSVisualEffectView *mediaSourcePathControlVisualEffectView;
@@ -113,7 +120,8 @@ extern NSString * const VLCLibraryWindowEmbeddedVideoPlaybackActiveKey;
 @property (nonatomic, readwrite, strong) IBOutlet NSView *emptyLibraryView;
 @property (nonatomic, readwrite, strong) IBOutlet NSImageView *placeholderImageView;
 @property (nonatomic, readwrite, strong) IBOutlet NSTextField *placeholderLabel;
-@property (nonatomic, readwrite, strong) IBOutlet VLCCustomEmptyLibraryBrowseButton *placeholderGoToBrowseButton;
+@property (nonatomic, readwrite, strong)
+    IBOutlet VLCCustomEmptyLibraryBrowseButton *placeholderGoToBrowseButton;
 
 @property (readonly) VLCLoadingOverlayView *loadingOverlayView;
 @property (readonly) NSArray<NSLayoutConstraint *> *placeholderImageViewConstraints;

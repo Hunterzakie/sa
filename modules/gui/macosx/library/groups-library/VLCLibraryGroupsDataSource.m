@@ -29,7 +29,7 @@
 - (instancetype)init
 {
     self = [super init];
-    if(self) {
+    if (self) {
         [self connect];
     }
     return self;
@@ -37,7 +37,7 @@
 
 - (void)connect
 {
-    NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
 
     [notificationCenter addObserver:self
                            selector:@selector(libraryModelGroupsListReset:)
@@ -77,8 +77,8 @@
 
 - (void)libraryModelGroupUpdated:(NSNotification *)notification
 {
-    VLCMediaLibraryGroup * const group = notification.object;
-    NSIndexPath * const indexPath = [self indexPathForLibraryItem:group];
+    VLCMediaLibraryGroup *const group = notification.object;
+    NSIndexPath *const indexPath = [self indexPathForLibraryItem:group];
 
     if (indexPath != nil) {
         [self.collectionView reloadItemsAtIndexPaths:[NSSet setWithObject:indexPath]];
@@ -94,7 +94,8 @@
         // the master table view has changed after reloading the target index. In this case, we want
         // to reselect. If the selection has been maintained then we need to reload the detail table
         // view.
-        if (rowIndex == selectedMasterRow && self.masterTableView.selectedRow != selectedMasterRow) {
+        if (rowIndex == selectedMasterRow
+            && self.masterTableView.selectedRow != selectedMasterRow) {
             [self.masterTableView selectRowIndexes:[NSIndexSet indexSetWithIndex:selectedMasterRow]
                               byExtendingSelection:NO];
         } else {
@@ -105,8 +106,8 @@
 
 - (void)libraryModelGroupDeleted:(NSNotification *)notification
 {
-    VLCMediaLibraryGroup * const group = notification.object;
-    NSIndexPath * const indexPath = [self indexPathForLibraryItem:group];
+    VLCMediaLibraryGroup *const group = notification.object;
+    NSIndexPath *const indexPath = [self indexPathForLibraryItem:group];
 
     if (indexPath != nil) {
         [self.collectionView deleteItemsAtIndexPaths:[NSSet setWithObject:indexPath]];

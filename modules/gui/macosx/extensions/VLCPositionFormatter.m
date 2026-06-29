@@ -22,7 +22,7 @@
 
 #import "VLCPositionFormatter.h"
 
-@interface VLCPositionFormatter()
+@interface VLCPositionFormatter ()
 {
     NSCharacterSet *o_forbidden_characters;
 }
@@ -34,32 +34,37 @@
 {
     self = [super init];
     if (self) {
-        NSMutableCharacterSet *nonNumbers = [[[NSCharacterSet decimalDigitCharacterSet] invertedSet] mutableCopy];
+        NSMutableCharacterSet *nonNumbers =
+            [[[NSCharacterSet decimalDigitCharacterSet] invertedSet] mutableCopy];
         [nonNumbers removeCharactersInString:@"-:"];
         o_forbidden_characters = [nonNumbers copy];
     }
     return self;
 }
 
-- (NSString*)stringForObjectValue:(id)obj
+- (NSString *)stringForObjectValue:(id)obj
 {
-    if([obj isKindOfClass:[NSString class]])
+    if ([obj isKindOfClass:[NSString class]])
         return obj;
-    if([obj isKindOfClass:[NSNumber class]])
+    if ([obj isKindOfClass:[NSNumber class]])
         return [obj stringValue];
 
     return nil;
 }
 
-- (BOOL)getObjectValue:(id*)obj forString:(NSString*)string errorDescription:(NSString**)error
+- (BOOL)getObjectValue:(id *)obj forString:(NSString *)string errorDescription:(NSString **)error
 {
     *obj = [string copy];
     return YES;
 }
 
-- (BOOL)isPartialStringValid:(NSString*)partialString newEditingString:(NSString**)newString errorDescription:(NSString**)error
+- (BOOL)isPartialStringValid:(NSString *)partialString
+            newEditingString:(NSString **)newString
+            errorDescription:(NSString **)error
 {
-    if ([partialString rangeOfCharacterFromSet:o_forbidden_characters options:NSLiteralSearch].location != NSNotFound) {
+    if ([partialString rangeOfCharacterFromSet:o_forbidden_characters options:NSLiteralSearch]
+            .location
+        != NSNotFound) {
         return NO;
     } else {
         return YES;

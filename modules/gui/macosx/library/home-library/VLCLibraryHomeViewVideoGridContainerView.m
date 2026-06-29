@@ -49,7 +49,7 @@
 {
     self = [super init];
 
-    if(self) {
+    if (self) {
         [self setupView];
         [self setupDataSource];
         [self setupCollectionViewSizeChangeListener];
@@ -75,13 +75,14 @@
     [self setContentHuggingPriority:NSLayoutPriorityDefaultHigh
                      forOrientation:NSLayoutConstraintOrientationVertical];
     [self setContentCompressionResistancePriority:NSLayoutPriorityDefaultHigh
-                     forOrientation:NSLayoutConstraintOrientationVertical];
+                                   forOrientation:NSLayoutConstraintOrientationVertical];
 }
 
 - (void)setupCollectionView
 {
     _collectionViewLayout = VLCLibraryCollectionViewFlowLayout.standardLayout;
-    _collectionViewLayout.headerReferenceSize = VLCLibraryCollectionViewSupplementaryElementView.defaultHeaderSize;
+    _collectionViewLayout.headerReferenceSize =
+        VLCLibraryCollectionViewSupplementaryElementView.defaultHeaderSize;
 
     _collectionView = [[VLCLibraryCollectionView alloc] initWithFrame:NSZeroRect];
     _collectionView.postsFrameChangedNotifications = YES;
@@ -138,9 +139,9 @@
     _videoGroup = groupDescriptor.group;
     _dataSource.groupDescriptor = groupDescriptor;
 
-    _collectionViewLayout.scrollDirection = _groupDescriptor.isHorizontalBarCollectionView ?
-                                            NSCollectionViewScrollDirectionHorizontal :
-                                            NSCollectionViewScrollDirectionVertical;
+    _collectionViewLayout.scrollDirection = _groupDescriptor.isHorizontalBarCollectionView
+        ? NSCollectionViewScrollDirectionHorizontal
+        : NSCollectionViewScrollDirectionVertical;
     _scrollView.scrollSelf = _groupDescriptor.isHorizontalBarCollectionView;
     _collectionViewDelegate.dynamicItemSizing = !_groupDescriptor.isHorizontalBarCollectionView;
 }
@@ -151,7 +152,8 @@
         return;
     }
 
-    VLCLibraryVideoCollectionViewGroupDescriptor * const descriptor = [[VLCLibraryVideoCollectionViewGroupDescriptor alloc] initWithVLCVideoLibraryGroup:group];
+    VLCLibraryVideoCollectionViewGroupDescriptor *const descriptor =
+        [[VLCLibraryVideoCollectionViewGroupDescriptor alloc] initWithVLCVideoLibraryGroup:group];
     [self setGroupDescriptor:descriptor];
 }
 
@@ -163,9 +165,9 @@
 
     // HACK: On app init the vertical collection views will not get their heights updated properly.
     // So let's schedule a check a bit later to correct this issue...
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100 * NSEC_PER_MSEC), dispatch_get_main_queue(), ^{
-        [self invalidateIntrinsicContentSize];
-    });
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100 * NSEC_PER_MSEC),
+                   dispatch_get_main_queue(),
+                   ^{ [self invalidateIntrinsicContentSize]; });
 }
 
 - (NSSize)intrinsicContentSize
@@ -173,16 +175,11 @@
     const NSSize collectionViewContentSize = _collectionViewLayout.collectionViewContentSize;
     const NSEdgeInsets scrollViewInsets = _collectionView.enclosingScrollView.contentInsets;
     const NSEdgeInsets collectionViewLayoutInset = _collectionViewLayout.sectionInset;
-    const CGFloat insetsHeight = scrollViewInsets.top +
-                                 scrollViewInsets.bottom +
-                                 collectionViewLayoutInset.top +
-                                 collectionViewLayoutInset.bottom;
+    const CGFloat insetsHeight = scrollViewInsets.top + scrollViewInsets.bottom
+        + collectionViewLayoutInset.top + collectionViewLayoutInset.bottom;
     const CGFloat itemHeight = _collectionViewDelegate.staticItemSize.height;
-    const CGFloat width = scrollViewInsets.left +
-                          scrollViewInsets.right +
-                          collectionViewLayoutInset.left +
-                          collectionViewLayoutInset.right +
-                          self.frame.size.width;
+    const CGFloat width = scrollViewInsets.left + scrollViewInsets.right
+        + collectionViewLayoutInset.left + collectionViewLayoutInset.right + self.frame.size.width;
 
     if (collectionViewContentSize.height == 0) {
         // If we don't return a size larger than 0 then we run into issues with the collection
@@ -211,14 +208,15 @@
         return;
     }
 
-    NSIndexPath * const indexPath = [self.dataSource indexPathForLibraryItem:libraryItem];
+    NSIndexPath *const indexPath = [self.dataSource indexPathForLibraryItem:libraryItem];
     if (indexPath == nil) {
         return;
     }
 
-    NSSet<NSIndexPath *> * const indexPathSet = [NSSet setWithObject:indexPath];
-    NSCollectionView * const collectionView = self.collectionView;
-    VLCLibraryCollectionViewFlowLayout * const flowLayout = (VLCLibraryCollectionViewFlowLayout *)collectionView.collectionViewLayout;
+    NSSet<NSIndexPath *> *const indexPathSet = [NSSet setWithObject:indexPath];
+    NSCollectionView *const collectionView = self.collectionView;
+    VLCLibraryCollectionViewFlowLayout *const flowLayout =
+        (VLCLibraryCollectionViewFlowLayout *)collectionView.collectionViewLayout;
 
     [collectionView selectItemsAtIndexPaths:indexPathSet
                              scrollPosition:NSCollectionViewScrollPositionCenteredVertically];

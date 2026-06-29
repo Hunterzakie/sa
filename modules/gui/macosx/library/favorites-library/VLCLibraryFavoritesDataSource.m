@@ -43,7 +43,8 @@
 #import "extensions/NSString+Helpers.h"
 #import "extensions/NSPasteboardItem+VLCAdditions.h"
 
-NSString * const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotification = @"VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotification";
+NSString *const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotification =
+    @"VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotification";
 
 @interface VLCLibraryFavoritesDataSource ()
 {
@@ -54,8 +55,10 @@ NSString * const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotifica
     NSArray<VLCMediaLibraryArtist *> *_favoriteArtistsArray;
     NSArray<VLCMediaLibraryGenre *> *_favoriteGenresArray;
     VLCLibraryCollectionViewFlowLayout *_collectionViewFlowLayout;
-    NSArray<NSNumber *> *_visibleSectionMapping; // Maps visible sections to VLCLibraryFavoritesSection values
-    NSMutableDictionary<NSNumber *, NSArray<id<VLCMediaLibraryItemProtocol>> *> *_flattenedRowMappings; // Maps row indices to items for flattened artist/genre views
+    NSArray<NSNumber *>
+        *_visibleSectionMapping; // Maps visible sections to VLCLibraryFavoritesSection values
+    NSMutableDictionary<NSNumber *, NSArray<id<VLCMediaLibraryItemProtocol>> *>
+        *_flattenedRowMappings; // Maps row indices to items for flattened artist/genre views
 }
 
 @end
@@ -143,8 +146,8 @@ NSString * const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotifica
 - (BOOL)isAudioGroupSection:(VLCLibraryFavoritesSection)section
 {
     // Only artists and genres show the audio group view (list of albums)
-    return section == VLCLibraryFavoritesSectionArtists ||
-           section == VLCLibraryFavoritesSectionGenres;
+    return section == VLCLibraryFavoritesSectionArtists
+        || section == VLCLibraryFavoritesSectionGenres;
 }
 
 - (BOOL)isMediaListSection:(VLCLibraryFavoritesSection)section
@@ -155,16 +158,17 @@ NSString * const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotifica
 
 - (NSInteger)visibleIndexForSection:(VLCLibraryFavoritesSection)section
 {
-    NSNumber * const sectionNumber = @(section);
+    NSNumber *const sectionNumber = @(section);
     NSUInteger index = [_visibleSectionMapping indexOfObject:sectionNumber];
     return index == NSNotFound ? -1 : (NSInteger)index;
 }
 
 - (void)updateVisibleSectionMapping
 {
-    NSMutableArray<NSNumber *> * const visibleSections = [NSMutableArray arrayWithCapacity:VLCLibraryFavoritesSectionCount];
+    NSMutableArray<NSNumber *> *const visibleSections =
+        [NSMutableArray arrayWithCapacity:VLCLibraryFavoritesSectionCount];
     for (NSUInteger i = 1; i < VLCLibraryFavoritesSectionCount; i++) {
-        NSArray * const sectionArray = [self arrayForSection:i];
+        NSArray *const sectionArray = [self arrayForSection:i];
         if (sectionArray.count > 0) {
             [visibleSections addObject:@(i)];
         }
@@ -178,32 +182,38 @@ NSString * const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotifica
 
 - (NSUInteger)indexOfMediaItem:(const int64_t)libraryId inArray:(NSArray const *)array
 {
-    return [array indexOfObjectPassingTest:^BOOL(id<VLCMediaLibraryItemProtocol> const findMediaItem, const NSUInteger __unused idx, BOOL * const __unused stop) {
-        NSAssert(findMediaItem != nil, @"Collection should not contain nil media items");
-        return findMediaItem.libraryID == libraryId;
-    }];
+    return
+        [array indexOfObjectPassingTest:^BOOL(id<VLCMediaLibraryItemProtocol> const findMediaItem,
+                                              const NSUInteger __unused idx,
+                                              BOOL *const __unused stop) {
+            NSAssert(findMediaItem != nil, @"Collection should not contain nil media items");
+            return findMediaItem.libraryID == libraryId;
+        }];
 }
 
-- (id<VLCMediaLibraryItemProtocol>)createGroupDescriptorForSection:(VLCLibraryFavoritesSection)section
+- (id<VLCMediaLibraryItemProtocol>)createGroupDescriptorForSection:
+    (VLCLibraryFavoritesSection)section
 {
-    NSArray * const sectionArray = [self arrayForSection:section];
-    
-    // For video and audio media sections, the array already contains VLCMediaLibraryMediaItem objects
-    if (section == VLCLibraryFavoritesSectionVideoMedia || 
-        section == VLCLibraryFavoritesSectionAudioMedia) {
-        return [[VLCMediaLibraryDummyItem alloc] initWithDisplayString:[self titleForSection:section]
-                                                        withMediaItems:sectionArray];
+    NSArray *const sectionArray = [self arrayForSection:section];
+
+    // For video and audio media sections, the array already contains VLCMediaLibraryMediaItem
+    // objects
+    if (section == VLCLibraryFavoritesSectionVideoMedia
+        || section == VLCLibraryFavoritesSectionAudioMedia) {
+        return
+            [[VLCMediaLibraryDummyItem alloc] initWithDisplayString:[self titleForSection:section]
+                                                     withMediaItems:sectionArray];
     }
-    
+
     // For albums, artists, and genres, we need to extract media items from each item
-    NSMutableArray<VLCMediaLibraryMediaItem *> * const mediaItems = [NSMutableArray array];
+    NSMutableArray<VLCMediaLibraryMediaItem *> *const mediaItems = [NSMutableArray array];
     for (id<VLCMediaLibraryItemProtocol> item in sectionArray) {
-        NSArray<VLCMediaLibraryMediaItem *> * const itemMediaItems = item.mediaItems;
+        NSArray<VLCMediaLibraryMediaItem *> *const itemMediaItems = item.mediaItems;
         if (itemMediaItems) {
             [mediaItems addObjectsFromArray:itemMediaItems];
         }
     }
-    
+
     return [[VLCMediaLibraryDummyItem alloc] initWithDisplayString:[self titleForSection:section]
                                                     withMediaItems:[mediaItems copy]];
 }
@@ -211,21 +221,21 @@ NSString * const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotifica
 - (NSArray *)buildFlattenedArrayForAudioGroupSection:(VLCLibraryFavoritesSection)section
 {
     NSParameterAssert([self isAudioGroupSection:section]);
-    NSArray<id<VLCMediaLibraryAudioGroupProtocol>> * const sectionArray = 
+    NSArray<id<VLCMediaLibraryAudioGroupProtocol>> *const sectionArray =
         (NSArray<id<VLCMediaLibraryAudioGroupProtocol>> *)[self arrayForSection:section];
-    NSMutableArray * const flattenedArray = [NSMutableArray array];
-    
+    NSMutableArray *const flattenedArray = [NSMutableArray array];
+
     for (id<VLCMediaLibraryAudioGroupProtocol> audioGroup in sectionArray) {
         [flattenedArray addObject:audioGroup];
         [flattenedArray addObjectsFromArray:audioGroup.albums];
     }
-    
+
     return [flattenedArray copy];
 }
 
 #pragma mark - Notification handlers
 
-- (void)libraryModelFavoriteListReset:(NSNotification * const)notification
+- (void)libraryModelFavoriteListReset:(NSNotification *const)notification
 {
     [self reloadData];
 }
@@ -234,7 +244,7 @@ NSString * const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotifica
 
 - (void)connect
 {
-    NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
 
     [notificationCenter addObserver:self
                            selector:@selector(libraryModelFavoriteListReset:)
@@ -282,7 +292,8 @@ NSString * const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotifica
     _favoriteAlbumsArray = [self.libraryModel listOfFavoriteAlbums];
     _favoriteArtistsArray = [self.libraryModel listOfFavoriteArtists];
     _favoriteGenresArray = [self.libraryModel listOfFavoriteGenres];
-    _allFavoritesArray = [self.libraryModel listOfMediaItemsForParentType:VLCMediaLibraryParentGroupTypeAllFavorites];
+    _allFavoritesArray = [self.libraryModel
+        listOfMediaItemsForParentType:VLCMediaLibraryParentGroupTypeAllFavorites];
 
     [self updateVisibleSectionMapping];
 
@@ -291,21 +302,26 @@ NSString * const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotifica
     [self updateHeaderForMasterSelection];
 
     const NSInteger selectedRow = self.masterTableView.selectedRow;
-    NSAssert(self.masterTableView == nil || self.masterTableView.dataSource == self, @"Cannot reload a table view with a different data source");
+    NSAssert(self.masterTableView == nil || self.masterTableView.dataSource == self,
+             @"Cannot reload a table view with a different data source");
     [self.masterTableView reloadData];
     if (selectedRow != -1 && selectedRow < [self.masterTableView numberOfRows]) {
-        [self.masterTableView selectRowIndexes:[NSIndexSet indexSetWithIndex:selectedRow] byExtendingSelection:NO];
+        [self.masterTableView selectRowIndexes:[NSIndexSet indexSetWithIndex:selectedRow]
+                          byExtendingSelection:NO];
     }
 
-    NSAssert(self.detailTableView == nil || self.detailTableView.dataSource == self, @"Cannot reload a table view with a different data source");
+    NSAssert(self.detailTableView == nil || self.detailTableView.dataSource == self,
+             @"Cannot reload a table view with a different data source");
     [self.detailTableView reloadData];
 
-    NSAssert(self.collectionView == nil || self.collectionView.dataSource == self, @"Cannot reload a collection view with a different data source");
+    NSAssert(self.collectionView == nil || self.collectionView.dataSource == self,
+             @"Cannot reload a collection view with a different data source");
     [self.collectionView reloadData];
-    
-    [NSNotificationCenter.defaultCenter postNotificationName:VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotification
-                                                      object:self
-                                                    userInfo:nil];
+
+    [NSNotificationCenter.defaultCenter
+        postNotificationName:VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotification
+                      object:self
+                    userInfo:nil];
 }
 
 #pragma mark - NSTableViewDataSource (Master-Detail View)
@@ -315,28 +331,31 @@ NSString * const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotifica
     if (tableView == self.masterTableView) {
         return _visibleSectionMapping.count;
     } else if (tableView == self.detailTableView && self.masterTableView.selectedRow > -1) {
-        const VLCLibraryFavoritesSection section = [self sectionForVisibleIndex:self.masterTableView.selectedRow];
-        
+        const VLCLibraryFavoritesSection section =
+            [self sectionForVisibleIndex:self.masterTableView.selectedRow];
+
         // For artist and genre sections, return the flattened count
         if ([self isAudioGroupSection:section]) {
-            NSArray * const flattenedArray = _flattenedRowMappings[@(section)];
+            NSArray *const flattenedArray = _flattenedRowMappings[@(section)];
             if (flattenedArray) {
                 return flattenedArray.count;
             }
-            NSArray * const newFlattenedArray = [self buildFlattenedArrayForAudioGroupSection:section];
+            NSArray *const newFlattenedArray =
+                [self buildFlattenedArrayForAudioGroupSection:section];
             _flattenedRowMappings[@(section)] = newFlattenedArray;
             return newFlattenedArray.count;
         }
-        
+
         return [self arrayForSection:section].count;
     }
-    
+
     return 0;
 }
 
 - (id<NSPasteboardWriting>)tableView:(NSTableView *)tableView pasteboardWriterForRow:(NSInteger)row
 {
-    const id<VLCMediaLibraryItemProtocol> libraryItem = [self libraryItemAtRow:row forTableView:tableView];
+    const id<VLCMediaLibraryItemProtocol> libraryItem = [self libraryItemAtRow:row
+                                                                  forTableView:tableView];
     return [NSPasteboardItem pasteboardItemWithLibraryItem:libraryItem];
 }
 
@@ -348,21 +367,24 @@ NSString * const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotifica
         NSParameterAssert(row >= 0 && (NSUInteger)row < _visibleSectionMapping.count);
         return [self createGroupDescriptorForSection:[self sectionForVisibleIndex:row]];
     } else if (tableView == self.detailTableView && self.masterTableView.selectedRow > -1) {
-        const VLCLibraryFavoritesSection section = [self sectionForVisibleIndex:self.masterTableView.selectedRow];
-        
+        const VLCLibraryFavoritesSection section =
+            [self sectionForVisibleIndex:self.masterTableView.selectedRow];
+
         // For artist and genre sections, use the flattened array
         if ([self isAudioGroupSection:section]) {
-            NSArray<id<VLCMediaLibraryItemProtocol>> * const flattenedArray = _flattenedRowMappings[@(section)];
+            NSArray<id<VLCMediaLibraryItemProtocol>> *const flattenedArray =
+                _flattenedRowMappings[@(section)];
             NSParameterAssert(flattenedArray && (NSUInteger)row < flattenedArray.count);
             return flattenedArray[row];
         } else {
             // For other sections, use the regular array
-            NSArray<id<VLCMediaLibraryItemProtocol>> * const sectionArray = [self arrayForSection:section];
+            NSArray<id<VLCMediaLibraryItemProtocol>> *const sectionArray =
+                [self arrayForSection:section];
             NSParameterAssert(sectionArray && row >= 0 && (NSUInteger)row < sectionArray.count);
             return sectionArray[row];
         }
     }
-    
+
     return nil;
 }
 
@@ -371,17 +393,18 @@ NSString * const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotifica
     if (libraryItem == nil) {
         return NSNotFound;
     }
-    
+
     // Search through all visible sections
-    for (NSNumber * const sectionNumber in _visibleSectionMapping) {
-        const VLCLibraryFavoritesSection section = (VLCLibraryFavoritesSection)[sectionNumber integerValue];
-        NSArray * const sectionArray = [self arrayForSection:section];
+    for (NSNumber *const sectionNumber in _visibleSectionMapping) {
+        const VLCLibraryFavoritesSection section =
+            (VLCLibraryFavoritesSection)[sectionNumber integerValue];
+        NSArray *const sectionArray = [self arrayForSection:section];
         const NSInteger index = [self indexOfMediaItem:libraryItem.libraryID inArray:sectionArray];
         if (index != NSNotFound) {
             return index;
         }
     }
-    
+
     return NSNotFound;
 }
 
@@ -392,11 +415,14 @@ NSString * const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotifica
     NSString *fallbackDetail = nil;
 
     if (self.masterTableView.selectedRow >= 0) {
-        const VLCLibraryFavoritesSection section = [self sectionForVisibleIndex:self.masterTableView.selectedRow];
-        id<VLCMediaLibraryItemProtocol> const groupDescriptor = [self createGroupDescriptorForSection:section];
+        const VLCLibraryFavoritesSection section =
+            [self sectionForVisibleIndex:self.masterTableView.selectedRow];
+        id<VLCMediaLibraryItemProtocol> const groupDescriptor =
+            [self createGroupDescriptorForSection:section];
         fallbackDetail = groupDescriptor.primaryDetailString;
         const VLCMediaLibraryParentGroupType parentType = [self parentTypeForSection:section];
-        representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:groupDescriptor parentType:parentType];
+        representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:groupDescriptor
+                                                               parentType:parentType];
 
         switch (section) {
             case VLCLibraryFavoritesSectionVideoMedia:
@@ -434,7 +460,8 @@ NSString * const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotifica
                                    fallbackDetail:fallbackDetail];
 }
 
-- (void)updateHeaderInTableView:(NSTableView *)detailTableView forMasterSelection:(NSTableView *)masterTableView
+- (void)updateHeaderInTableView:(NSTableView *)detailTableView
+             forMasterSelection:(NSTableView *)masterTableView
 {
     [self updateHeaderForMasterSelection];
 }
@@ -442,7 +469,8 @@ NSString * const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotifica
 - (VLCMediaLibraryParentGroupType)currentParentType
 {
     if (self.masterTableView.selectedRow > -1) {
-        const VLCLibraryFavoritesSection section = [self sectionForVisibleIndex:self.masterTableView.selectedRow];
+        const VLCLibraryFavoritesSection section =
+            [self sectionForVisibleIndex:self.masterTableView.selectedRow];
         return [self parentTypeForSection:section];
     }
     return VLCMediaLibraryParentGroupTypeVideoLibrary; // Default fallback
@@ -465,83 +493,100 @@ NSString * const VLCLibraryFavoritesDataSourceDisplayedCollectionChangedNotifica
 - (NSCollectionViewItem *)collectionView:(NSCollectionView *)collectionView
      itemForRepresentedObjectAtIndexPath:(NSIndexPath *)indexPath
 {
-    VLCLibraryCollectionViewItem * const viewItem =
+    VLCLibraryCollectionViewItem *const viewItem =
         [collectionView makeItemWithIdentifier:VLCLibraryCellIdentifier forIndexPath:indexPath];
-    
+
     const VLCLibraryFavoritesSection section = [self sectionForVisibleIndex:indexPath.section];
     const VLCMediaLibraryParentGroupType parentType = [self parentTypeForSection:section];
-    const id<VLCMediaLibraryItemProtocol> item =
-        [self libraryItemAtIndexPath:indexPath forCollectionView:collectionView];
-    
-    VLCLibraryRepresentedItem * const representedItem =
+    const id<VLCMediaLibraryItemProtocol> item = [self libraryItemAtIndexPath:indexPath
+                                                            forCollectionView:collectionView];
+
+    VLCLibraryRepresentedItem *const representedItem =
         [[VLCLibraryRepresentedItem alloc] initWithItem:item parentType:parentType];
     viewItem.representedItem = representedItem;
     return viewItem;
 }
 
 - (NSView *)collectionView:(NSCollectionView *)collectionView
-viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
-               atIndexPath:(NSIndexPath *)indexPath
+    viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
+                          atIndexPath:(NSIndexPath *)indexPath
 {
-    if([kind isEqualToString:NSCollectionElementKindSectionHeader]) {
-        VLCLibraryCollectionViewSupplementaryElementView * const sectionHeadingView =
+    if ([kind isEqualToString:NSCollectionElementKindSectionHeader]) {
+        VLCLibraryCollectionViewSupplementaryElementView *const sectionHeadingView =
             [collectionView makeSupplementaryViewOfKind:kind
                                          withIdentifier:VLCLibrarySupplementaryElementViewIdentifier
                                            forIndexPath:indexPath];
-        
+
         const VLCLibraryFavoritesSection section = [self sectionForVisibleIndex:indexPath.section];
         sectionHeadingView.stringValue = [self titleForSection:section];
         return sectionHeadingView;
 
-    } else if ([kind isEqualToString:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind]) {
+    } else if ([kind
+                   isEqualToString:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind]) {
         const VLCLibraryFavoritesSection section = [self sectionForVisibleIndex:indexPath.section];
         if ([self isAudioGroupSection:section]) {
             // Redirect to audio group supplementary view
-            return [self collectionView:collectionView 
-                viewForSupplementaryElementOfKind:VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewKind 
-                               atIndexPath:indexPath];
+            return [self collectionView:collectionView
+                viewForSupplementaryElementOfKind:
+                    VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewKind
+                                      atIndexPath:indexPath];
         } else if ([self isMediaListSection:section]) {
             // Redirect to media list supplementary view
-            return [self collectionView:collectionView 
-                viewForSupplementaryElementOfKind:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind 
-                               atIndexPath:indexPath];
+            return [self collectionView:collectionView
+                viewForSupplementaryElementOfKind:
+                    VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind
+                                      atIndexPath:indexPath];
         }
-        
-        VLCLibraryCollectionViewMediaItemSupplementaryDetailView * const mediaItemSupplementaryDetailView = 
-            [collectionView makeSupplementaryViewOfKind:kind 
-                                         withIdentifier:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind 
-                                           forIndexPath:indexPath];
-        
-        const id<VLCMediaLibraryItemProtocol> item = [self libraryItemAtIndexPath:indexPath forCollectionView:collectionView];
-        VLCLibraryRepresentedItem * const representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:item parentType:self.currentParentType];
+
+        VLCLibraryCollectionViewMediaItemSupplementaryDetailView *const
+            mediaItemSupplementaryDetailView = [collectionView
+                makeSupplementaryViewOfKind:kind
+                             withIdentifier:
+                                 VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind
+                               forIndexPath:indexPath];
+
+        const id<VLCMediaLibraryItemProtocol> item = [self libraryItemAtIndexPath:indexPath
+                                                                forCollectionView:collectionView];
+        VLCLibraryRepresentedItem *const representedItem =
+            [[VLCLibraryRepresentedItem alloc] initWithItem:item parentType:self.currentParentType];
 
         mediaItemSupplementaryDetailView.representedItem = representedItem;
         mediaItemSupplementaryDetailView.selectedItem = [collectionView itemAtIndexPath:indexPath];
         return mediaItemSupplementaryDetailView;
-    } else if ([kind isEqualToString:VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewKind]) {
-        VLCLibraryCollectionViewAudioGroupSupplementaryDetailView * const audioGroupSupplementaryDetailView = 
-            [collectionView makeSupplementaryViewOfKind:kind 
-                                         withIdentifier:VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewIdentifier 
-                                           forIndexPath:indexPath];
-        
-        const id<VLCMediaLibraryItemProtocol> item = [self libraryItemAtIndexPath:indexPath forCollectionView:collectionView];
+    } else if ([kind
+                   isEqualToString:VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewKind]) {
+        VLCLibraryCollectionViewAudioGroupSupplementaryDetailView *const
+            audioGroupSupplementaryDetailView = [collectionView
+                makeSupplementaryViewOfKind:kind
+                             withIdentifier:
+                                 VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewIdentifier
+                               forIndexPath:indexPath];
+
+        const id<VLCMediaLibraryItemProtocol> item = [self libraryItemAtIndexPath:indexPath
+                                                                forCollectionView:collectionView];
         const VLCLibraryFavoritesSection section = [self sectionForVisibleIndex:indexPath.section];
         const VLCMediaLibraryParentGroupType parentType = [self parentTypeForSection:section];
-        VLCLibraryRepresentedItem * const representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:item parentType:parentType];
+        VLCLibraryRepresentedItem *const representedItem =
+            [[VLCLibraryRepresentedItem alloc] initWithItem:item parentType:parentType];
 
         audioGroupSupplementaryDetailView.representedItem = representedItem;
         audioGroupSupplementaryDetailView.selectedItem = [collectionView itemAtIndexPath:indexPath];
         return audioGroupSupplementaryDetailView;
-    } else if ([kind isEqualToString:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind]) {
-        VLCLibraryCollectionViewMediaItemListSupplementaryDetailView * const mediaListSupplementaryDetailView = 
-            [collectionView makeSupplementaryViewOfKind:kind 
-                                         withIdentifier:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewIdentifier 
-                                           forIndexPath:indexPath];
-        
-        const id<VLCMediaLibraryItemProtocol> item = [self libraryItemAtIndexPath:indexPath forCollectionView:collectionView];
+    } else if ([kind isEqualToString:
+                         VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind]) {
+        VLCLibraryCollectionViewMediaItemListSupplementaryDetailView *const
+            mediaListSupplementaryDetailView = [collectionView
+                makeSupplementaryViewOfKind:kind
+                             withIdentifier:
+                                 VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewIdentifier
+                               forIndexPath:indexPath];
+
+        const id<VLCMediaLibraryItemProtocol> item = [self libraryItemAtIndexPath:indexPath
+                                                                forCollectionView:collectionView];
         const VLCLibraryFavoritesSection section = [self sectionForVisibleIndex:indexPath.section];
         const VLCMediaLibraryParentGroupType parentType = [self parentTypeForSection:section];
-        VLCLibraryRepresentedItem * const representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:item parentType:parentType];
+        VLCLibraryRepresentedItem *const representedItem =
+            [[VLCLibraryRepresentedItem alloc] initWithItem:item parentType:parentType];
 
         mediaListSupplementaryDetailView.representedItem = representedItem;
         mediaListSupplementaryDetailView.selectedItem = [collectionView itemAtIndexPath:indexPath];
@@ -555,7 +600,7 @@ viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
 
 - (VLCLibraryCollectionViewItemAspectRatio)collectionView:(NSCollectionView *)collectionView
                                     aspectRatioForSection:(NSInteger)section
-{    
+{
     if ([self sectionForVisibleIndex:section] == VLCLibraryFavoritesSectionVideoMedia) {
         return VLCLibraryCollectionViewItemAspectRatioVideoItem;
     }
@@ -566,12 +611,12 @@ viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
                                         forCollectionView:(NSCollectionView *)collectionView
 {
     const VLCLibraryFavoritesSection section = [self sectionForVisibleIndex:indexPath.section];
-    NSArray * const sectionArray = [self arrayForSection:section];
-    
+    NSArray *const sectionArray = [self arrayForSection:section];
+
     if (indexPath.item >= 0 && (NSUInteger)indexPath.item < sectionArray.count) {
         return sectionArray[indexPath.item];
     }
-    
+
     return nil;
 }
 
@@ -580,34 +625,37 @@ viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
     if (libraryItem == nil) {
         return nil;
     }
-    
+
     // Search through all visible sections
     for (NSUInteger visibleIndex = 0; visibleIndex < _visibleSectionMapping.count; visibleIndex++) {
-        const VLCLibraryFavoritesSection section = (VLCLibraryFavoritesSection)[_visibleSectionMapping[visibleIndex] integerValue];
-        NSArray * const sectionArray = [self arrayForSection:section];
-        const NSInteger itemIndex = [self indexOfMediaItem:libraryItem.libraryID inArray:sectionArray];
+        const VLCLibraryFavoritesSection section =
+            (VLCLibraryFavoritesSection)[_visibleSectionMapping[visibleIndex] integerValue];
+        NSArray *const sectionArray = [self arrayForSection:section];
+        const NSInteger itemIndex = [self indexOfMediaItem:libraryItem.libraryID
+                                                   inArray:sectionArray];
         if (itemIndex != NSNotFound) {
             return [NSIndexPath indexPathForItem:itemIndex inSection:visibleIndex];
         }
     }
-    
+
     return nil;
 }
 
-- (NSArray<VLCLibraryRepresentedItem *> *)representedItemsAtIndexPaths:(NSSet<NSIndexPath *> *)indexPaths
-                                                     forCollectionView:(NSCollectionView *)collectionView
+- (NSArray<VLCLibraryRepresentedItem *> *)
+    representedItemsAtIndexPaths:(NSSet<NSIndexPath *> *)indexPaths
+               forCollectionView:(NSCollectionView *)collectionView
 {
-    NSMutableArray<VLCLibraryRepresentedItem *> * const representedItems =
+    NSMutableArray<VLCLibraryRepresentedItem *> *const representedItems =
         [NSMutableArray arrayWithCapacity:indexPaths.count];
 
-    for (NSIndexPath * const indexPath in indexPaths) {
+    for (NSIndexPath *const indexPath in indexPaths) {
         const VLCLibraryFavoritesSection section = [self sectionForVisibleIndex:indexPath.section];
         const VLCMediaLibraryParentGroupType parentType = [self parentTypeForSection:section];
         const id<VLCMediaLibraryItemProtocol> libraryItem =
             [self libraryItemAtIndexPath:indexPath forCollectionView:collectionView];
-        
+
         if (libraryItem) {
-            VLCLibraryRepresentedItem * const representedItem =
+            VLCLibraryRepresentedItem *const representedItem =
                 [[VLCLibraryRepresentedItem alloc] initWithItem:libraryItem parentType:parentType];
             [representedItems addObject:representedItem];
         }
@@ -619,16 +667,17 @@ viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
 - (NSString *)supplementaryDetailViewKind
 {
     if (self.collectionView.selectionIndexPaths.count > 0) {
-        NSIndexPath * const firstIndexPath = self.collectionView.selectionIndexPaths.anyObject;
-        const VLCLibraryFavoritesSection section = [self sectionForVisibleIndex:firstIndexPath.section];
-        
+        NSIndexPath *const firstIndexPath = self.collectionView.selectionIndexPaths.anyObject;
+        const VLCLibraryFavoritesSection section =
+            [self sectionForVisibleIndex:firstIndexPath.section];
+
         if ([self isAudioGroupSection:section]) {
             return VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewKind;
         } else if ([self isMediaListSection:section]) {
             return VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind;
         }
     }
-    
+
     return VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind;
 }
 

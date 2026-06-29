@@ -26,8 +26,10 @@
 #import "library/VLCLibraryCollectionViewFlowLayout.h"
 #import "library/VLCLibraryUIUnits.h"
 
-NSString * const VLCLibraryCollectionViewItemAdjustmentBigger = @"VLCLibraryCollectionViewItemAdjustmentBigger";
-NSString * const VLCLibraryCollectionViewItemAdjustmentSmaller = @"VLCLibraryCollectionViewItemAdjustmentSmaller";
+NSString *const VLCLibraryCollectionViewItemAdjustmentBigger =
+    @"VLCLibraryCollectionViewItemAdjustmentBigger";
+NSString *const VLCLibraryCollectionViewItemAdjustmentSmaller =
+    @"VLCLibraryCollectionViewItemAdjustmentSmaller";
 
 @implementation VLCLibraryCollectionView
 
@@ -42,9 +44,9 @@ NSString * const VLCLibraryCollectionViewItemAdjustmentSmaller = @"VLCLibraryCol
 
 - (void)keyDown:(NSEvent *)event
 {
-    if (![self.collectionViewLayout isKindOfClass:VLCLibraryCollectionViewFlowLayout.class] ||
-        ![self.delegate isKindOfClass:VLCLibraryCollectionViewDelegate.class] ||
-        !(event.modifierFlags & NSEventModifierFlagCommand)) {
+    if (![self.collectionViewLayout isKindOfClass:VLCLibraryCollectionViewFlowLayout.class]
+        || ![self.delegate isKindOfClass:VLCLibraryCollectionViewDelegate.class]
+        || !(event.modifierFlags & NSEventModifierFlagCommand)) {
         return;
     }
 
@@ -53,21 +55,24 @@ NSString * const VLCLibraryCollectionViewItemAdjustmentSmaller = @"VLCLibraryCol
         return;
     }
 
-    VLCLibraryCollectionViewFlowLayout * const layout =
+    VLCLibraryCollectionViewFlowLayout *const layout =
         (VLCLibraryCollectionViewFlowLayout *)self.collectionViewLayout;
-    VLCLibraryCollectionViewDelegate * const delegate =
+    VLCLibraryCollectionViewDelegate *const delegate =
         (VLCLibraryCollectionViewDelegate *)self.delegate;
-    VLCCollectionViewItemSizing * const currentRowItemSizing =
+    VLCCollectionViewItemSizing *const currentRowItemSizing =
         [VLCLibraryUIUnits adjustedItemSizingForCollectionView:self
                                                     withLayout:layout
                                           withItemsAspectRatio:delegate.itemsAspectRatio];
-    if (currentRowItemSizing.rowItemCount <= VLCLibraryUIUnits.collectionViewMinItemsInRow && key == '+') {
+    if (currentRowItemSizing.rowItemCount <= VLCLibraryUIUnits.collectionViewMinItemsInRow
+        && key == '+') {
         return;
-    } else if (currentRowItemSizing.itemSize.width <= VLCLibraryUIUnits.collectionViewItemMinimumWidth && key == '-') {
+    } else if (currentRowItemSizing.itemSize.width
+                   <= VLCLibraryUIUnits.collectionViewItemMinimumWidth
+               && key == '-') {
         return;
     }
 
-    NSUserDefaults * const defaults = NSUserDefaults.standardUserDefaults;
+    NSUserDefaults *const defaults = NSUserDefaults.standardUserDefaults;
     NSInteger collectionViewAdjustment =
         [defaults integerForKey:VLCLibraryCollectionViewItemAdjustmentKey];
     NSNotification *notification;
@@ -77,7 +82,9 @@ NSString * const VLCLibraryCollectionViewItemAdjustmentSmaller = @"VLCLibraryCol
             [NSNotification notificationWithName:VLCLibraryCollectionViewItemAdjustmentBigger
                                           object:self];
     } else if (key == '-') {
-        if (currentRowItemSizing.rowItemCount == VLCLibraryUIUnits.collectionViewMinItemsInRow && currentRowItemSizing.unclampedRowItemCount <= VLCLibraryUIUnits.collectionViewMinItemsInRow) {
+        if (currentRowItemSizing.rowItemCount == VLCLibraryUIUnits.collectionViewMinItemsInRow
+            && currentRowItemSizing.unclampedRowItemCount
+                <= VLCLibraryUIUnits.collectionViewMinItemsInRow) {
             // The adjustment works independently of the size of the collection view, which can lead
             // to situations where the adjustment is very negative and is being clamped to ensure we
             // do not go below the minimum items in row value. However, that means that when trying
@@ -96,7 +103,8 @@ NSString * const VLCLibraryCollectionViewItemAdjustmentSmaller = @"VLCLibraryCol
             //   <adjustment> = <min items in row> - (<unclamped row item count> - <old adjustment>)
             //
             // To finish, we add 1 to visually change the row item count and show more items.
-            collectionViewAdjustment = VLCLibraryUIUnits.collectionViewMinItemsInRow - (currentRowItemSizing.unclampedRowItemCount - collectionViewAdjustment) + 1;
+            collectionViewAdjustment = VLCLibraryUIUnits.collectionViewMinItemsInRow
+                - (currentRowItemSizing.unclampedRowItemCount - collectionViewAdjustment) + 1;
         } else {
             ++collectionViewAdjustment;
         }

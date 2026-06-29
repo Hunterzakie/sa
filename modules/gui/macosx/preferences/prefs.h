@@ -38,11 +38,11 @@
 @property (readwrite, weak) IBOutlet NSButton *resetButton;
 @property (readwrite, weak) IBOutlet NSButton *showBasicButton;
 
-- (void)setTitle: (NSString *) o_title_name;
+- (void)setTitle:(NSString *)o_title_name;
 - (void)showPrefsWithLevel:(NSInteger)i_window_level;
-- (IBAction)savePrefs: (id)sender;
-- (IBAction)closePrefs: (id)sender;
-- (IBAction)showSimplePrefs: (id)sender;
-- (IBAction)resetPrefs: (id)sender;
+- (IBAction)savePrefs:(id)sender;
+- (IBAction)closePrefs:(id)sender;
+- (IBAction)showSimplePrefs:(id)sender;
+- (IBAction)resetPrefs:(id)sender;
 
 @end

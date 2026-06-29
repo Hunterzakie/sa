@@ -34,7 +34,7 @@
 #import <vlc_plugin.h>
 #import <vlc_modules.h>
 
-@interface VLCHotkeysController()
+@interface VLCHotkeysController ()
 {
     NSArray *_usedHotkeys;
 }
@@ -65,8 +65,7 @@
     for (size_t i = 0; i < confsize; i++) {
         module_config_t *p_item = p_config + i;
 
-        if (p_item->i_type == CONFIG_ITEM_KEY
-            && strncmp( p_item->psz_name, "global-", 7 ) != 0
+        if (p_item->i_type == CONFIG_ITEM_KEY && strncmp(p_item->psz_name, "global-", 7) != 0
             && !EMPTY_STR(p_item->psz_text)) {
             if (p_item->value.psz)
                 [mutArray addObject:toNSStr(p_item->value.psz)];
@@ -79,7 +78,8 @@
 
 - (BOOL)handleVideoOutputKeyDown:(id)anEvent forVideoOutput:(vout_thread_t *)p_vout
 {
-    VLCPlayerController * const playerController = VLCMain.sharedInstance.playQueueController.playerController;
+    VLCPlayerController *const playerController =
+        VLCMain.sharedInstance.playQueueController.playerController;
     unichar key = 0;
     vlc_value_t val;
     NSEventModifierFlags i_pressed_modifiers = 0;
@@ -98,23 +98,24 @@
 
     NSString *characters = [anEvent charactersIgnoringModifiers];
     if ([characters length] > 0) {
-        key = [[characters lowercaseString] characterAtIndex: 0];
+        key = [[characters lowercaseString] characterAtIndex:0];
 
         if (key) {
             /* Escape should always get you out of fullscreen */
-            if (key == (unichar) 0x1b) {
+            if (key == (unichar)0x1b) {
                 if (playerController.fullscreen) {
                     [playerController toggleFullscreen];
                 }
             }
-            /* handle Lion's default key combo for fullscreen-toggle in addition to our own hotkeys */
-            else if (key == 'f' && i_pressed_modifiers & NSEventModifierFlagControl && i_pressed_modifiers & NSEventModifierFlagCommand) {
+            /* handle Lion's default key combo for fullscreen-toggle in addition to our own hotkeys
+             */
+            else if (key == 'f' && i_pressed_modifiers & NSEventModifierFlagControl
+                     && i_pressed_modifiers & NSEventModifierFlagCommand) {
                 [playerController toggleFullscreen];
             } else if (p_vout) {
                 val.i_int |= (int)CocoaKeyToVLC(key);
                 var_Set(vlc_object_instance(p_vout), "key-pressed", val);
-            }
-            else
+            } else
                 msg_Dbg(getIntf(), "could not send keyevent to VLC core");
 
             return YES;
@@ -127,14 +128,13 @@
 - (BOOL)performKeyEquivalent:(NSEvent *)anEvent
 {
     BOOL enforced = NO;
-    // these are key events which should be handled by vlc core, but are attached to a main menu item
-    if (![self isEvent:anEvent forKey:"key-vol-up"] &&
-        ![self isEvent:anEvent forKey:"key-vol-down"] &&
-        ![self isEvent:anEvent forKey:"key-vol-mute"] &&
-        ![self isEvent:anEvent forKey:"key-prev"] &&
-        ![self isEvent:anEvent forKey:"key-next"] &&
-        ![self isEvent:anEvent forKey:"key-jump+short"] &&
-        ![self isEvent:anEvent forKey:"key-jump-short"]) {
+    // these are key events which should be handled by vlc core, but are attached to a main menu
+    // item
+    if (![self isEvent:anEvent forKey:"key-vol-up"] && ![self isEvent:anEvent forKey:"key-vol-down"]
+        && ![self isEvent:anEvent forKey:"key-vol-mute"]
+        && ![self isEvent:anEvent forKey:"key-prev"] && ![self isEvent:anEvent forKey:"key-next"]
+        && ![self isEvent:anEvent forKey:"key-jump+short"]
+        && ![self isEvent:anEvent forKey:"key-jump-short"]) {
         /* We indeed want to prioritize some Cocoa key equivalent against libvlc,
          so we perform the menu equivalent now. */
         if ([[NSApp mainMenu] performKeyEquivalent:anEvent]) {
@@ -156,11 +156,15 @@
 
     NSString *characters = [anEvent charactersIgnoringModifiers];
     if ([characters length] > 0) {
-        return [[characters lowercaseString] isEqualToString: vlcKeyString] &&
-        (keyModifiers & NSEventModifierFlagShift)     == ([anEvent modifierFlags] & NSEventModifierFlagShift) &&
-        (keyModifiers & NSEventModifierFlagControl)   == ([anEvent modifierFlags] & NSEventModifierFlagControl) &&
-        (keyModifiers & NSEventModifierFlagOption) == ([anEvent modifierFlags] & NSEventModifierFlagOption) &&
-        (keyModifiers & NSEventModifierFlagCommand)   == ([anEvent modifierFlags] & NSEventModifierFlagCommand);
+        return [[characters lowercaseString] isEqualToString:vlcKeyString]
+            && (keyModifiers & NSEventModifierFlagShift)
+            == ([anEvent modifierFlags] & NSEventModifierFlagShift)
+            && (keyModifiers & NSEventModifierFlagControl)
+            == ([anEvent modifierFlags] & NSEventModifierFlagControl)
+            && (keyModifiers & NSEventModifierFlagOption)
+            == ([anEvent modifierFlags] & NSEventModifierFlagOption)
+            && (keyModifiers & NSEventModifierFlagCommand)
+            == ([anEvent modifierFlags] & NSEventModifierFlagCommand);
     }
     return NO;
 }
@@ -168,16 +172,17 @@
 - (BOOL)keyEvent:(NSEvent *)anEvent
 {
     BOOL eventHandled = NO;
-    NSString * characters = [anEvent charactersIgnoringModifiers];
+    NSString *characters = [anEvent charactersIgnoringModifiers];
     if ([characters length] > 0) {
-        unichar key = [characters characterAtIndex: 0];
+        unichar key = [characters characterAtIndex:0];
 
         if (key) {
-            VLCPlayerController * const playerController = VLCMain.sharedInstance.playQueueController.playerController;
-            vout_thread_t * const p_vout = playerController.mainVideoOutputThread;
+            VLCPlayerController *const playerController =
+                VLCMain.sharedInstance.playQueueController.playerController;
+            vout_thread_t *const p_vout = playerController.mainVideoOutputThread;
             if (p_vout != NULL) {
                 /* Escape */
-                if (key == (unichar) 0x1b) {
+                if (key == (unichar)0x1b) {
                     if (var_GetBool(p_vout, "fullscreen")) {
                         [playerController toggleFullscreen];
                         eventHandled = YES;
@@ -215,18 +220,19 @@
     if (i_pressed_modifiers & NSEventModifierFlagCommand)
         val.i_int |= KEY_MODIFIER_COMMAND;
 
-    NSString * characters = [o_event charactersIgnoringModifiers];
+    NSString *characters = [o_event charactersIgnoringModifiers];
     if ([characters length] > 0) {
-        key = [[characters lowercaseString] characterAtIndex: 0];
+        key = [[characters lowercaseString] characterAtIndex:0];
 
         /* handle Lion's default key combo for fullscreen-toggle in addition to our own hotkeys */
-        if (key == 'f' && i_pressed_modifiers & NSEventModifierFlagControl && i_pressed_modifiers & NSEventModifierFlagCommand) {
+        if (key == 'f' && i_pressed_modifiers & NSEventModifierFlagControl
+            && i_pressed_modifiers & NSEventModifierFlagCommand) {
             [VLCMain.sharedInstance.playQueueController.playerController toggleFullscreen];
             return YES;
         }
 
         if (!enforced) {
-            switch(key) {
+            switch (key) {
                 case NSDeleteCharacter:
                 case NSDeleteFunctionKey:
                 case NSDeleteCharFunctionKey:
@@ -247,11 +253,15 @@
             const char *str = [[_usedHotkeys objectAtIndex:i] UTF8String];
             unsigned int i_keyModifiers = VLCModifiersToCocoa((char *)str);
 
-            if ([[characters lowercaseString] isEqualToString:VLCKeyToString((char *)str)] &&
-                (i_keyModifiers & NSEventModifierFlagShift)     == (i_pressed_modifiers & NSEventModifierFlagShift) &&
-                (i_keyModifiers & NSEventModifierFlagControl)   == (i_pressed_modifiers & NSEventModifierFlagControl) &&
-                (i_keyModifiers & NSEventModifierFlagOption) == (i_pressed_modifiers & NSEventModifierFlagOption) &&
-                (i_keyModifiers & NSEventModifierFlagCommand)   == (i_pressed_modifiers & NSEventModifierFlagCommand)) {
+            if ([[characters lowercaseString] isEqualToString:VLCKeyToString((char *)str)]
+                && (i_keyModifiers & NSEventModifierFlagShift)
+                    == (i_pressed_modifiers & NSEventModifierFlagShift)
+                && (i_keyModifiers & NSEventModifierFlagControl)
+                    == (i_pressed_modifiers & NSEventModifierFlagControl)
+                && (i_keyModifiers & NSEventModifierFlagOption)
+                    == (i_pressed_modifiers & NSEventModifierFlagOption)
+                && (i_keyModifiers & NSEventModifierFlagCommand)
+                    == (i_pressed_modifiers & NSEventModifierFlagCommand)) {
                 b_found_key = YES;
                 break;
             }

@@ -33,7 +33,7 @@
 
 #import <vlc_media_library.h>
 
-@interface VLCLibraryAddToPlaylistMenuController () <NSMenuDelegate>
+@interface VLCLibraryAddToPlaylistMenuController ()<NSMenuDelegate>
 @end
 
 @implementation VLCLibraryAddToPlaylistMenuController
@@ -52,23 +52,23 @@
 
 - (nullable NSArray<VLCMediaLibraryPlaylist *> *)writablePlaylists
 {
-    VLCLibraryModel * const libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
-    NSArray<VLCMediaLibraryPlaylist *> * const allPlaylists =
+    VLCLibraryModel *const libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
+    NSArray<VLCMediaLibraryPlaylist *> *const allPlaylists =
         [libraryModel listOfPlaylistsOfType:VLC_ML_PLAYLIST_TYPE_ALL];
     if (allPlaylists.count == 0) {
         return nil;
     }
 
-    NSMutableArray<VLCMediaLibraryPlaylist *> * const writable =
+    NSMutableArray<VLCMediaLibraryPlaylist *> *const writable =
         [NSMutableArray arrayWithCapacity:allPlaylists.count];
-    for (VLCMediaLibraryPlaylist * const playlist in allPlaylists) {
+    for (VLCMediaLibraryPlaylist *const playlist in allPlaylists) {
         if (!playlist.readOnly) {
             [writable addObject:playlist];
         }
     }
 
-    [writable sortUsingComparator:^NSComparisonResult(VLCMediaLibraryPlaylist * _Nonnull lhs,
-                                                      VLCMediaLibraryPlaylist * _Nonnull rhs) {
+    [writable sortUsingComparator:^NSComparisonResult(VLCMediaLibraryPlaylist *_Nonnull lhs,
+                                                      VLCMediaLibraryPlaylist *_Nonnull rhs) {
         return [lhs.displayString caseInsensitiveCompare:rhs.displayString];
     }];
 
@@ -77,9 +77,9 @@
 
 - (NSArray<VLCMediaLibraryMediaItem *> *)selectedMediaItems
 {
-    NSMutableArray<VLCMediaLibraryMediaItem *> * const mediaItems =
+    NSMutableArray<VLCMediaLibraryMediaItem *> *const mediaItems =
         [NSMutableArray arrayWithCapacity:self.representedItems.count];
-    for (VLCLibraryRepresentedItem * const representedItem in self.representedItems) {
+    for (VLCLibraryRepresentedItem *const representedItem in self.representedItems) {
         [mediaItems addObjectsFromArray:representedItem.item.mediaItems];
     }
     return mediaItems;
@@ -92,24 +92,24 @@
 {
     [menu removeAllItems];
 
-    NSMenuItem * const newPlaylistItem =
+    NSMenuItem *const newPlaylistItem =
         [[NSMenuItem alloc] initWithTitle:_NS("New Playlist...")
                                    action:@selector(createNewPlaylist:)
                             keyEquivalent:@""];
     newPlaylistItem.target = self;
     [menu addItem:newPlaylistItem];
 
-    NSArray<VLCMediaLibraryPlaylist *> * const playlists = [self writablePlaylists];
+    NSArray<VLCMediaLibraryPlaylist *> *const playlists = [self writablePlaylists];
     if (playlists.count == 0) {
         return;
     }
 
     [menu addItem:NSMenuItem.separatorItem];
 
-    for (VLCMediaLibraryPlaylist * const playlist in playlists) {
-        NSMenuItem * const item = [[NSMenuItem alloc] initWithTitle:playlist.displayString
-                                                             action:@selector(addToSelectedPlaylist:)
-                                                      keyEquivalent:@""];
+    for (VLCMediaLibraryPlaylist *const playlist in playlists) {
+        NSMenuItem *const item = [[NSMenuItem alloc] initWithTitle:playlist.displayString
+                                                            action:@selector(addToSelectedPlaylist:)
+                                                     keyEquivalent:@""];
         item.target = self;
         item.representedObject = playlist;
         [menu addItem:item];
@@ -120,7 +120,7 @@
 
 - (void)createNewPlaylist:(NSMenuItem *)sender
 {
-    NSArray<VLCMediaLibraryMediaItem *> * const mediaItems = [self selectedMediaItems];
+    NSArray<VLCMediaLibraryMediaItem *> *const mediaItems = [self selectedMediaItems];
     if (mediaItems.count == 0) {
         return;
     }
@@ -130,7 +130,7 @@
 
 - (void)addToSelectedPlaylist:(NSMenuItem *)sender
 {
-    VLCMediaLibraryPlaylist * const playlist = sender.representedObject;
+    VLCMediaLibraryPlaylist *const playlist = sender.representedObject;
     if (![playlist isKindOfClass:VLCMediaLibraryPlaylist.class]) {
         return;
     }

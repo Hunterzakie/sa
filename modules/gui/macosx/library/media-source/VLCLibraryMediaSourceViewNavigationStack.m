@@ -42,17 +42,19 @@
 @property (readonly) NSUInteger navigationStackIndex;
 @property (readonly) VLCLibraryMediaSourceViewNavigationState *navigationState;
 
-- (instancetype)initWithStackIndex:(NSUInteger)index andState:(VLCLibraryMediaSourceViewNavigationState *)state;
+- (instancetype)initWithStackIndex:(NSUInteger)index
+                          andState:(VLCLibraryMediaSourceViewNavigationState *)state;
 
 @end
 
 @implementation VLCLibraryMediaSourceViewNavigationCurrentStackPosition
 
-- (instancetype)initWithStackIndex:(NSUInteger)index andState:(VLCLibraryMediaSourceViewNavigationState *)state
+- (instancetype)initWithStackIndex:(NSUInteger)index
+                          andState:(VLCLibraryMediaSourceViewNavigationState *)state
 {
     self = [super init];
 
-    if(self) {
+    if (self) {
         _navigationStackIndex = index;
         _navigationState = state;
     }
@@ -62,14 +64,14 @@
 
 @end
 
-
 @interface VLCLibraryMediaSourceViewNavigationStack ()
 {
     NSMutableArray<VLCLibraryMediaSourceViewNavigationState *> *_navigationStates;
     VLCLibraryMediaSourceViewNavigationCurrentStackPosition *_currentPosition;
 }
 
-@property (readwrite) NSMutableDictionary<NSURL *, VLCLibraryMediaSourceViewNavigationState *> *affectedPathControlStates;
+@property (readwrite) NSMutableDictionary<NSURL *, VLCLibraryMediaSourceViewNavigationState *>
+    *affectedPathControlStates;
 
 @end
 
@@ -87,40 +89,48 @@
 
 - (void)installHandlersOnMediaSource:(VLCMediaSource *)mediaSource
 {
-    mediaSource.willStartGeneratingChildNodesForNodeHandler = ^(input_item_node_t * const node) {
-        const NSInteger rootMostAffectedState = [_navigationStates indexOfObjectPassingTest:^BOOL(VLCLibraryMediaSourceViewNavigationState * const _Nonnull obj, const NSUInteger __unused idx, BOOL * const __unused stop) {
-            return obj.currentNodeDisplayed.vlcInputItemNode == node;
-        }];
+    mediaSource.willStartGeneratingChildNodesForNodeHandler = ^(input_item_node_t *const node) {
+        const NSInteger rootMostAffectedState =
+            [_navigationStates indexOfObjectPassingTest:^BOOL(
+                                   VLCLibraryMediaSourceViewNavigationState *const _Nonnull obj,
+                                   const NSUInteger __unused idx,
+                                   BOOL *const __unused stop) {
+                return obj.currentNodeDisplayed.vlcInputItemNode == node;
+            }];
 
         if (rootMostAffectedState != NSNotFound) {
             for (NSUInteger i = rootMostAffectedState + 1; i < _navigationStates.count; i++) {
-                VLCLibraryMediaSourceViewNavigationState * const state = _navigationStates[i];
-                NSURL * const url = [NSURL URLWithString:state.currentNodeDisplayed.inputItem.MRL];
+                VLCLibraryMediaSourceViewNavigationState *const state = _navigationStates[i];
+                NSURL *const url = [NSURL URLWithString:state.currentNodeDisplayed.inputItem.MRL];
                 [self.affectedPathControlStates setObject:state forKey:url];
             }
         }
     };
 
-    mediaSource.didFinishGeneratingChildNodesForNodeHandler = ^(input_item_node_t * const node) {
+    mediaSource.didFinishGeneratingChildNodesForNodeHandler = ^(input_item_node_t *const node) {
         for (int i = 0; i < node->i_children; i++) {
-            input_item_node_t * const childNode = node->pp_children[i];
-            NSURL * const url = [NSURL URLWithString:toNSStr(childNode->p_item->psz_uri)];
-            VLCLibraryMediaSourceViewNavigationState * const affectedState = [self.affectedPathControlStates objectForKey:url];
+            input_item_node_t *const childNode = node->pp_children[i];
+            NSURL *const url = [NSURL URLWithString:toNSStr(childNode->p_item->psz_uri)];
+            VLCLibraryMediaSourceViewNavigationState *const affectedState =
+                [self.affectedPathControlStates objectForKey:url];
             if (affectedState != nil) {
-                affectedState.currentNodeDisplayed = [[VLCInputNode alloc] initWithInputNode:childNode];
+                affectedState.currentNodeDisplayed =
+                    [[VLCInputNode alloc] initWithInputNode:childNode];
                 [self.affectedPathControlStates removeObjectForKey:url];
             }
         }
 
         // Give orphan input nodes for remaining affected path control nodes
-        for (VLCLibraryMediaSourceViewNavigationState * const state in self.affectedPathControlStates.allValues) {
-            input_item_t * const urlInputItem = input_item_NewExt(state.currentNodeDisplayed.inputItem.MRL.UTF8String,
-                                                                state.currentNodeDisplayed.inputItem.name.UTF8String,
-                                                                0,
-                                                                ITEM_TYPE_DIRECTORY,
-                                                                ITEM_LOCAL);
+        for (VLCLibraryMediaSourceViewNavigationState *const state in self.affectedPathControlStates
+                 .allValues) {
+            input_item_t *const urlInputItem =
+                input_item_NewExt(state.currentNodeDisplayed.inputItem.MRL.UTF8String,
+                                  state.currentNodeDisplayed.inputItem.name.UTF8String,
+                                  0,
+                                  ITEM_TYPE_DIRECTORY,
+                                  ITEM_LOCAL);
             if (urlInputItem != NULL) {
-                input_item_node_t * const urlNode = input_item_node_Create(urlInputItem);
+                input_item_node_t *const urlNode = input_item_node_Create(urlInputItem);
                 if (urlNode) {
                     state.currentNodeDisplayed = [[VLCInputNode alloc] initWithInputNode:urlNode];
                 }
@@ -142,16 +152,15 @@
 {
     NSUInteger numNavigationStates = _navigationStates.count;
 
-    return _currentPosition != nil && 
-        _currentPosition.navigationStackIndex < numNavigationStates - 1 && 
-        numNavigationStates > 1;
+    return _currentPosition != nil
+        && _currentPosition.navigationStackIndex < numNavigationStates - 1
+        && numNavigationStates > 1;
 }
 
 - (BOOL)backwardsAvailable
 {
-    return _currentPosition != nil && 
-        _currentPosition.navigationStackIndex > 0 && 
-        _navigationStates.count > 1;
+    return _currentPosition != nil && _currentPosition.navigationStackIndex > 0
+        && _navigationStates.count > 1;
 }
 
 - (void)forwards
@@ -161,8 +170,9 @@
     }
 
     NSUInteger newPositionIndex = _currentPosition.navigationStackIndex + 1;
-    _currentPosition =
-        [[VLCLibraryMediaSourceViewNavigationCurrentStackPosition alloc] initWithStackIndex:newPositionIndex andState:_navigationStates[newPositionIndex]];
+    _currentPosition = [[VLCLibraryMediaSourceViewNavigationCurrentStackPosition alloc]
+        initWithStackIndex:newPositionIndex
+                  andState:_navigationStates[newPositionIndex]];
 
     [self setMediaSourceViewToState:_currentPosition.navigationState];
 }
@@ -174,8 +184,9 @@
     }
 
     NSUInteger newPositionIndex = _currentPosition.navigationStackIndex - 1;
-    _currentPosition =
-        [[VLCLibraryMediaSourceViewNavigationCurrentStackPosition alloc] initWithStackIndex:newPositionIndex andState:_navigationStates[newPositionIndex]];
+    _currentPosition = [[VLCLibraryMediaSourceViewNavigationCurrentStackPosition alloc]
+        initWithStackIndex:newPositionIndex
+                  andState:_navigationStates[newPositionIndex]];
 
     [self setMediaSourceViewToState:_currentPosition.navigationState];
 }
@@ -189,16 +200,20 @@
     if (self.forwardsAvailable) {
         NSUInteger firstIndexToRemove = _currentPosition.navigationStackIndex + 1;
         // -1 to account for the array count
-        NSRange rangeToRemove = NSMakeRange(firstIndexToRemove, (_navigationStates.count - 1) - _currentPosition.navigationStackIndex);
+        NSRange rangeToRemove =
+            NSMakeRange(firstIndexToRemove,
+                        (_navigationStates.count - 1) - _currentPosition.navigationStackIndex);
         [_navigationStates removeObjectsInRange:rangeToRemove];
     }
 
-    VLCLibraryMediaSourceViewNavigationState * const navigationState =
-        [[VLCLibraryMediaSourceViewNavigationState alloc] initFromMediaSourceDataSource:self.baseDataSource.childDataSource];
+    VLCLibraryMediaSourceViewNavigationState *const navigationState =
+        [[VLCLibraryMediaSourceViewNavigationState alloc]
+            initFromMediaSourceDataSource:self.baseDataSource.childDataSource];
     navigationState.pathControlItems =
         self.libraryWindow.mediaSourcePathControl.orderedInputNodePathControlItems;
-    _currentPosition =
-        [[VLCLibraryMediaSourceViewNavigationCurrentStackPosition alloc] initWithStackIndex:_navigationStates.count andState:navigationState];
+    _currentPosition = [[VLCLibraryMediaSourceViewNavigationCurrentStackPosition alloc]
+        initWithStackIndex:_navigationStates.count
+                  andState:navigationState];
     [_navigationStates addObject:navigationState];
 
     [self updateDelegateNavigationButtons];
@@ -218,7 +233,8 @@
 {
     [self.baseDataSource setChildDataSource:state.currentMediaSource];
     [self.baseDataSource.childDataSource setNodeToDisplay:state.currentNodeDisplayed];
-    [self.libraryWindow.mediaSourcePathControl setPathWithInputNodePathControlItems:state.pathControlItems];
+    [self.libraryWindow.mediaSourcePathControl
+        setPathWithInputNodePathControlItems:state.pathControlItems];
 
     [self updateDelegateNavigationButtons];
 }

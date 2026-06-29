@@ -22,8 +22,8 @@
 
 #import "VLCMediaLibraryFolderObserver.h"
 
-NSString * const VLCMediaLibraryFolderFSEvent = @"VLCMediaLibraryFolderFSEvent";
-NSString * const VLCMediaLibraryFolderFSLastEventIdPrefix = @"VLCMediaLibraryFolderFSLastEventId_";
+NSString *const VLCMediaLibraryFolderFSEvent = @"VLCMediaLibraryFolderFSEvent";
+NSString *const VLCMediaLibraryFolderFSLastEventIdPrefix = @"VLCMediaLibraryFolderFSLastEventId_";
 
 @interface VLCMediaLibraryFolderObserver ()
 
@@ -44,10 +44,10 @@ void fsEventCallback(ConstFSEventStreamRef streamRef,
     if (numEvents == 0) {
         return;
     }
-    
-    VLCMediaLibraryFolderObserver * const observer =
+
+    VLCMediaLibraryFolderObserver *const observer =
         (__bridge VLCMediaLibraryFolderObserver *)clientCallBackInfo;
-    NSNumber * const eventId = @(eventIds[0]);
+    NSNumber *const eventId = @(eventIds[0]);
     dispatch_async(dispatch_get_main_queue(), ^{
         [NSUserDefaults.standardUserDefaults setObject:eventId forKey:observer.defaultsKey];
         [NSNotificationCenter.defaultCenter postNotificationName:VLCMediaLibraryFolderFSEvent
@@ -71,7 +71,7 @@ void fsEventCallback(ConstFSEventStreamRef streamRef,
         const FSEventStreamCreateFlags createFlags =
             kFSEventStreamCreateFlagUseCFTypes | kFSEventStreamCreateFlagIgnoreSelf;
 
-        NSNumber * const lastEventIdDefaults =
+        NSNumber *const lastEventIdDefaults =
             (NSNumber *)[NSUserDefaults.standardUserDefaults objectForKey:self.defaultsKey];
         const FSEventStreamEventId lastEventId = lastEventIdDefaults == nil
             ? kFSEventStreamEventIdSinceNow
@@ -85,7 +85,9 @@ void fsEventCallback(ConstFSEventStreamRef streamRef,
                                       3.0,
                                       createFlags);
 
-        FSEventStreamSetDispatchQueue(_stream, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0));
+        FSEventStreamSetDispatchQueue(_stream,
+                                      dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND,
+                                                                0));
         NSAssert(FSEventStreamStart(_stream), @"FSEvent stream should be started for %@", url.path);
     }
     return self;

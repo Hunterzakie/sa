@@ -35,9 +35,9 @@
 @end
 
 /*****************************************************************************
-* Category that adds AppleScript support to NSApplication
-*****************************************************************************/
-@interface NSApplication(ScriptSupport)
+ * Category that adds AppleScript support to NSApplication
+ *****************************************************************************/
+@interface NSApplication (ScriptSupport)
 
 @property (readwrite) BOOL scriptFullscreenMode;
 @property (readwrite) float audioVolume;

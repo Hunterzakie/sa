@@ -35,7 +35,7 @@ static NSMutableArray *blackoutWindows = NULL;
     blackoutWindows = [[NSMutableArray alloc] initWithCapacity:1];
 }
 
-+ (NSScreen *)screenWithDisplayID: (CGDirectDisplayID)displayID
++ (NSScreen *)screenWithDisplayID:(CGDirectDisplayID)displayID
 {
     for (NSScreen *screen in [NSScreen screens]) {
         if ([screen displayID] == displayID)
@@ -56,7 +56,8 @@ static NSMutableArray *blackoutWindows = NULL;
 {
     NSRect screen_frame = [self frame];
     NSRect screen_visible_frame = [self visibleFrame];
-    CGFloat f_menu_bar_thickness = [self hasMenuBar] ? [[NSStatusBar systemStatusBar] thickness] : 0.0;
+    CGFloat f_menu_bar_thickness =
+        [self hasMenuBar] ? [[NSStatusBar systemStatusBar] thickness] : 0.0;
 
     BOOL b_found_dock = NO;
     if (screen_visible_frame.size.width < screen_frame.size.width)
@@ -67,14 +68,14 @@ static NSMutableArray *blackoutWindows = NULL;
     return b_found_dock;
 }
 
-- (BOOL)isScreen: (NSScreen*)screen
+- (BOOL)isScreen:(NSScreen *)screen
 {
     return ([self displayID] == [screen displayID]);
 }
 
 - (CGDirectDisplayID)displayID
 {
-    return (CGDirectDisplayID)[[[self deviceDescription] objectForKey: @"NSScreenNumber"] intValue];
+    return (CGDirectDisplayID)[[[self deviceDescription] objectForKey:@"NSScreenNumber"] intValue];
 }
 
 - (void)blackoutOtherScreens
@@ -87,7 +88,7 @@ static NSMutableArray *blackoutWindows = NULL;
         VLCWindow *blackoutWindow;
         NSRect screen_rect;
 
-        if ([self isScreen: screen])
+        if ([self isScreen:screen])
             continue;
 
         screen_rect = [screen frame];
@@ -97,16 +98,20 @@ static NSMutableArray *blackoutWindows = NULL;
          - The NSMutableArray blackoutWindows has the blackoutWindow references
          - blackoutOtherDisplays is responsible for alloc/releasing its Windows
          */
-        blackoutWindow = [[VLCWindow alloc] initWithContentRect: screen_rect styleMask: NSWindowStyleMaskBorderless
-                                                        backing: NSBackingStoreBuffered defer: NO screen: screen];
+        blackoutWindow = [[VLCWindow alloc] initWithContentRect:screen_rect
+                                                      styleMask:NSWindowStyleMaskBorderless
+                                                        backing:NSBackingStoreBuffered
+                                                          defer:NO
+                                                         screen:screen];
         [blackoutWindow setBackgroundColor:[NSColor blackColor]];
-        [blackoutWindow setLevel: NSFloatingWindowLevel]; /* Disappear when Expose is triggered */
-        [blackoutWindow setReleasedWhenClosed:NO]; // window is released when deleted from array above
+        [blackoutWindow setLevel:NSFloatingWindowLevel]; /* Disappear when Expose is triggered */
+        [blackoutWindow
+            setReleasedWhenClosed:NO]; // window is released when deleted from array above
 
         [blackoutWindow displayIfNeeded];
-        [blackoutWindow orderFront: self animate: YES];
+        [blackoutWindow orderFront:self animate:YES];
 
-        [blackoutWindows addObject: blackoutWindow];
+        [blackoutWindows addObject:blackoutWindow];
 
         [screen setFullscreenPresentationOptions];
     }
@@ -116,7 +121,7 @@ static NSMutableArray *blackoutWindows = NULL;
 {
     for (VLCWindow *blackoutWindow in blackoutWindows) {
         [[blackoutWindow screen] setNonFullscreenPresentationOptions];
-        [blackoutWindow closeAndAnimate: YES];
+        [blackoutWindow closeAndAnimate:YES];
     }
 }
 
@@ -139,6 +144,5 @@ static NSMutableArray *blackoutWindows = NULL;
         presentationOpts &= (~NSApplicationPresentationAutoHideDock);
     [NSApp setPresentationOptions:presentationOpts];
 }
-
 
 @end

@@ -36,7 +36,9 @@ NS_ASSUME_NONNULL_BEGIN
 @class VLCLibraryTwoPaneSplitViewDelegate;
 @class VLCLibraryHeaderView;
 
-@interface VLCLibraryGroupsViewController : VLCLibraryAbstractMediaLibrarySegmentViewController<NSSplitViewDelegate, VLCLibraryItemPresentingCapable>
+@interface VLCLibraryGroupsViewController
+    : VLCLibraryAbstractMediaLibrarySegmentViewController<NSSplitViewDelegate,
+                                                          VLCLibraryItemPresentingCapable>
 
 @property (readonly) NSScrollView *collectionViewScrollView;
 @property (readonly) VLCLibraryCollectionView *collectionView;

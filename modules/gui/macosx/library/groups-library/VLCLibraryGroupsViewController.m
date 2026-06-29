@@ -80,12 +80,13 @@
     _collectionView = [[VLCLibraryCollectionView alloc] init];
     self.collectionView.translatesAutoresizingMaskIntoConstraints = NO;
 
-    _collectionViewScrollView = [NSScrollView libraryScrollViewWithDocumentView:self.collectionView];
+    _collectionViewScrollView =
+        [NSScrollView libraryScrollViewWithDocumentView:self.collectionView];
 
     const CGFloat collectionItemSpacing = VLCLibraryUIUnits.collectionViewItemSpacing;
     const NSEdgeInsets collectionViewSectionInset = VLCLibraryUIUnits.collectionViewSectionInsets;
 
-    VLCLibraryCollectionViewFlowLayout * const collectionViewLayout =
+    VLCLibraryCollectionViewFlowLayout *const collectionViewLayout =
         [[VLCLibraryCollectionViewFlowLayout alloc] init];
     collectionViewLayout.headerReferenceSize =
         VLCLibraryCollectionViewSupplementaryElementView.defaultHeaderSize;
@@ -110,14 +111,15 @@
             forSupplementaryViewOfKind:NSCollectionElementKindSectionHeader
                         withIdentifier:VLCLibrarySupplementaryElementViewIdentifier];
 
-    NSString * const mediaItemSupplementaryDetailViewString =
+    NSString *const mediaItemSupplementaryDetailViewString =
         NSStringFromClass(VLCLibraryCollectionViewMediaItemSupplementaryDetailView.class);
-    NSNib * const mediaItemSupplementaryDetailViewNib =
+    NSNib *const mediaItemSupplementaryDetailViewNib =
         [[NSNib alloc] initWithNibNamed:mediaItemSupplementaryDetailViewString bundle:nil];
 
     [self.collectionView registerNib:mediaItemSupplementaryDetailViewNib
           forSupplementaryViewOfKind:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind
-                      withIdentifier:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewIdentifier];
+                      withIdentifier:
+                          VLCLibraryCollectionViewMediaItemSupplementaryDetailViewIdentifier];
 
     self.dataSource.collectionView = self.collectionView;
 
@@ -139,8 +141,10 @@
     self.groupsTableView.translatesAutoresizingMaskIntoConstraints = NO;
     self.selectedGroupTableView.translatesAutoresizingMaskIntoConstraints = NO;
 
-    _groupsTableViewScrollView = [NSScrollView libraryScrollViewWithDocumentView:self.groupsTableView];
-    _selectedGroupTableViewScrollView = [NSScrollView libraryDetailScrollViewWithDocumentView:self.selectedGroupTableView];
+    _groupsTableViewScrollView =
+        [NSScrollView libraryScrollViewWithDocumentView:self.groupsTableView];
+    _selectedGroupTableViewScrollView =
+        [NSScrollView libraryDetailScrollViewWithDocumentView:self.selectedGroupTableView];
 
     self.listViewSplitView.vertical = YES;
     self.listViewSplitView.dividerStyle = NSSplitViewDividerStyleThin;
@@ -148,14 +152,14 @@
     [self.listViewSplitView addArrangedSubview:self.groupsTableViewScrollView];
     [self.listViewSplitView addArrangedSubview:self.selectedGroupTableViewScrollView];
 
-    NSTableColumn * const groupsColumn = [[NSTableColumn alloc] initWithIdentifier:@"groups"];
-    NSTableColumn * const selectedGroupColumn =
+    NSTableColumn *const groupsColumn = [[NSTableColumn alloc] initWithIdentifier:@"groups"];
+    NSTableColumn *const selectedGroupColumn =
         [[NSTableColumn alloc] initWithIdentifier:@"selectedGroup"];
 
     [self.groupsTableView addTableColumn:groupsColumn];
     [self.selectedGroupTableView addTableColumn:selectedGroupColumn];
 
-    NSNib * const tableCellViewNib = 
+    NSNib *const tableCellViewNib =
         [[NSNib alloc] initWithNibNamed:NSStringFromClass(VLCLibraryTableCellView.class)
                                  bundle:nil];
     [self.groupsTableView registerNib:tableCellViewNib
@@ -220,9 +224,10 @@
 
 - (void)presentPlaceholderGroupsView
 {
-    [self.libraryWindow displayLibraryPlaceholderViewWithImage:NSImage.VLCPlaceholderVideoImage
-                                              usingConstraints:self.placeholderImageViewSizeConstraints
-                                             displayingMessage:_NS("Your media groups will appear here.")];
+    [self.libraryWindow
+        displayLibraryPlaceholderViewWithImage:NSImage.VLCPlaceholderVideoImage
+                              usingConstraints:self.placeholderImageViewSizeConstraints
+                             displayingMessage:_NS("Your media groups will appear here.")];
 }
 
 - (void)presentGroupsView
@@ -249,12 +254,12 @@
 - (void)presentLibraryItem:(id<VLCMediaLibraryItemProtocol>)libraryItem
 {
     [self presentGroupsView];
-    
+
     const VLCLibraryViewModeSegment viewModeSegment =
         VLCLibraryWindowPersistentPreferences.sharedInstance.groupsLibraryViewMode;
     if (viewModeSegment == VLCLibraryGridViewModeSegment) {
-        NSIndexPath * const groupIndexPath = [self.dataSource indexPathForLibraryItem:libraryItem];
-        NSSet<NSIndexPath *> * const groupIndexPathSet = [NSSet setWithObject:groupIndexPath];
+        NSIndexPath *const groupIndexPath = [self.dataSource indexPathForLibraryItem:libraryItem];
+        NSSet<NSIndexPath *> *const groupIndexPathSet = [NSSet setWithObject:groupIndexPath];
         [self.collectionView scrollToItemsAtIndexPaths:groupIndexPathSet
                                         scrollPosition:NSCollectionViewScrollPositionTop];
     } else {

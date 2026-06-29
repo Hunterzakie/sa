@@ -73,7 +73,8 @@
     }
 
     /* Get timeout and make sure it is not lower than 1 second */
-    long long timeToKeepVisibleInSec = MAX(var_CreateGetInteger(getIntf(), "mouse-hide-timeout") / 1000, 1);
+    long long timeToKeepVisibleInSec =
+        MAX(var_CreateGetInteger(getIntf(), "mouse-hide-timeout") / 1000, 1);
 
     _hideTitlebarTimer = [NSTimer scheduledTimerWithTimeInterval:timeToKeepVisibleInSec
                                                           target:self
@@ -93,36 +94,39 @@
         return;
     }
 
-    [NSAnimationContext runAnimationRespectingPreferencesWithDuration:VLCLibraryUIUnits.controlsFadeAnimationDuration
-                                                              changes:^(NSAnimationContext * const _Nonnull context){
-        self->_isFadingIn = YES;
-        [titlebarView.animator setAlphaValue:1.0f];
-    } completionHandler:^{
-        self->_isFadingIn = NO;
-        [self startTitlebarAutohideTimer];
-    }];
+    [NSAnimationContext
+        runAnimationRespectingPreferencesWithDuration:VLCLibraryUIUnits
+                                                          .controlsFadeAnimationDuration
+        changes:^(NSAnimationContext *const _Nonnull context) {
+            self->_isFadingIn = YES;
+            [titlebarView.animator setAlphaValue:1.0f];
+        }
+        completionHandler:^{
+            self->_isFadingIn = NO;
+            [self startTitlebarAutohideTimer];
+        }];
 }
 
 - (void)hideTitleBar:(id)sender
 {
     [self stopTitlebarAutohideTimer];
 
-    if (self.videoViewController.mouseOnControls ||
-        !_autohideTitlebar ||
-        self.isInNativeFullscreen ||
-        self.videoViewController.view.hidden ||
-        !self.videoViewController.autohideControls) {
-
+    if (self.videoViewController.mouseOnControls || !_autohideTitlebar || self.isInNativeFullscreen
+        || self.videoViewController.view.hidden || !self.videoViewController.autohideControls) {
         [self showTitleBar];
         return;
     }
 
     NSView *titlebarView = [self standardWindowButton:NSWindowCloseButton].superview;
 
-    [NSAnimationContext runAnimationRespectingPreferencesWithDuration:VLCLibraryUIUnits.controlsFadeAnimationDuration
-                                                              changes:^(NSAnimationContext * const _Nonnull context) {
-        [titlebarView.animator setAlphaValue:0.0f];
-    } completionHandler:nil];
+    [NSAnimationContext
+        runAnimationRespectingPreferencesWithDuration:VLCLibraryUIUnits
+                                                          .controlsFadeAnimationDuration
+                                              changes:^(
+                                                  NSAnimationContext *const _Nonnull context) {
+                                                  [titlebarView.animator setAlphaValue:0.0f];
+                                              }
+                                    completionHandler:nil];
 }
 
 - (void)enableVideoTitleBarMode

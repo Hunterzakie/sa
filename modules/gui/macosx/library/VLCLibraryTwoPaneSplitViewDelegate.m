@@ -27,7 +27,7 @@
 
 #import "main/VLCMain.h"
 
-NSString * const VLCLibrarySplitViewDetailViewWidthKey = @"VLCLibrarySplitViewDetailViewWidth";
+NSString *const VLCLibrarySplitViewDetailViewWidthKey = @"VLCLibrarySplitViewDetailViewWidth";
 
 @implementation VLCLibraryTwoPaneSplitViewDelegate
 
@@ -37,8 +37,8 @@ NSString * const VLCLibrarySplitViewDetailViewWidthKey = @"VLCLibrarySplitViewDe
         NSParameterAssert(splitView != nil);
         NSParameterAssert(splitView.window != nil);
         NSParameterAssert(splitView.subviews.count >= 2);
-        
-        NSUserDefaults * const defaults = NSUserDefaults.standardUserDefaults;
+
+        NSUserDefaults *const defaults = NSUserDefaults.standardUserDefaults;
         CGFloat width = [defaults floatForKey:VLCLibrarySplitViewDetailViewWidthKey];
         if (width <= 0) {
             width = VLCLibraryUIUnits.librarySplitViewSelectionViewDefaultWidth;
@@ -48,14 +48,14 @@ NSString * const VLCLibrarySplitViewDetailViewWidthKey = @"VLCLibrarySplitViewDe
 }
 
 - (CGFloat)splitView:(NSSplitView *)splitView
-constrainMaxCoordinate:(CGFloat)proposedMinimumPosition
-         ofSubviewAt:(NSInteger)dividerIndex
+    constrainMaxCoordinate:(CGFloat)proposedMinimumPosition
+               ofSubviewAt:(NSInteger)dividerIndex
 {
     if (dividerIndex != 0) {
         return proposedMinimumPosition;
     }
 
-    VLCLibraryWindow * const libraryWindow = VLCMain.sharedInstance.libraryWindow;
+    VLCLibraryWindow *const libraryWindow = VLCMain.sharedInstance.libraryWindow;
     const CGFloat libraryWindowWidth = libraryWindow.frame.size.width;
     return libraryWindowWidth - VLCLibraryUIUnits.librarySplitViewMainViewMinimumWidth;
 }
@@ -63,16 +63,16 @@ constrainMaxCoordinate:(CGFloat)proposedMinimumPosition
 - (void)splitViewDidResizeSubviews:(NSNotification *)notification
 {
     dispatch_async(dispatch_get_main_queue(), ^{
-        NSSplitView * const splitView = notification.object;
+        NSSplitView *const splitView = notification.object;
         NSParameterAssert(splitView != nil);
         NSParameterAssert(splitView.subviews.count >= 2);
 
-        NSUserDefaults * const defaults = NSUserDefaults.standardUserDefaults;
+        NSUserDefaults *const defaults = NSUserDefaults.standardUserDefaults;
         if ([defaults floatForKey:VLCLibrarySplitViewDetailViewWidthKey] <= 0) {
             return;
         }
-        
-        NSView * const detailView = splitView.arrangedSubviews[0];
+
+        NSView *const detailView = splitView.arrangedSubviews[0];
         const CGFloat detailViewWidth = detailView.frame.size.width;
         [defaults setFloat:detailViewWidth forKey:VLCLibrarySplitViewDetailViewWidthKey];
     });

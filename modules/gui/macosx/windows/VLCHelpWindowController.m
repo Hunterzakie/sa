@@ -50,12 +50,18 @@
     _helpWebView = [[WKWebView alloc] initWithFrame:self.window.contentView.bounds];
     self.helpWebView.navigationDelegate = self;
     self.helpWebView.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.window.contentView addSubview:self.helpWebView positioned:NSWindowBelow relativeTo:self.visualEffectView];
+    [self.window.contentView addSubview:self.helpWebView
+                             positioned:NSWindowBelow
+                             relativeTo:self.visualEffectView];
 
-    [self.helpWebView.topAnchor constraintEqualToAnchor:self.window.contentView.topAnchor].active = YES;
-    [self.helpWebView.bottomAnchor constraintEqualToAnchor:self.visualEffectView.topAnchor].active = YES;
-    [self.helpWebView.leadingAnchor constraintEqualToAnchor:self.window.contentView.leadingAnchor].active = YES;
-    [self.helpWebView.trailingAnchor constraintEqualToAnchor:self.window.contentView.trailingAnchor].active = YES;
+    [self.helpWebView.topAnchor constraintEqualToAnchor:self.window.contentView.topAnchor].active =
+        YES;
+    [self.helpWebView.bottomAnchor constraintEqualToAnchor:self.visualEffectView.topAnchor].active =
+        YES;
+    [self.helpWebView.leadingAnchor constraintEqualToAnchor:self.window.contentView.leadingAnchor]
+        .active = YES;
+    [self.helpWebView.trailingAnchor constraintEqualToAnchor:self.window.contentView.trailingAnchor]
+        .active = YES;
 
     self.forwardButton.toolTip = _NS("Next");
     self.backButton.toolTip = _NS("Previous");
@@ -70,9 +76,9 @@
 
 - (IBAction)helpGoHome:(id)sender
 {
-    NSString * const style = @"<style>body { font-family: -apple-system, Helvetica Neue; }</style>";
-    NSString * const htmlWithStyle = [style stringByAppendingString:NSTR(I_LONGHELP)];
-    NSURL * const baseURL = [NSURL URLWithString:@"https://videolan.org"];
+    NSString *const style = @"<style>body { font-family: -apple-system, Helvetica Neue; }</style>";
+    NSString *const htmlWithStyle = [style stringByAppendingString:NSTR(I_LONGHELP)];
+    NSURL *const baseURL = [NSURL URLWithString:@"https://videolan.org"];
     [self.helpWebView loadHTMLString:htmlWithStyle baseURL:baseURL];
 }
 

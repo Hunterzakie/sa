@@ -223,8 +223,8 @@
 
 /* toolbar */
 - (NSToolbarItem *)toolbar:(NSToolbar *)o_toolbar
-     itemForItemIdentifier:(NSString *)o_itemIdent
- willBeInsertedIntoToolbar:(BOOL)b_willBeInserted;
+        itemForItemIdentifier:(NSString *)o_itemIdent
+    willBeInsertedIntoToolbar:(BOOL)b_willBeInserted;
 - (NSArray *)toolbarDefaultItemIdentifiers:(NSToolbar *)toolbar;
 - (NSArray *)toolbarAllowedItemIdentifiers:(NSToolbar *)toolbar;
 
@@ -254,7 +254,7 @@
 
 /* hotkeys */
 - (IBAction)hotkeySettingChanged:(id)sender;
-- (BOOL)changeHotkeyTo: (NSString *)theKey;
+- (BOOL)changeHotkeyTo:(NSString *)theKey;
 
 /**
  * Updates right to left UI setting according to currently set language code

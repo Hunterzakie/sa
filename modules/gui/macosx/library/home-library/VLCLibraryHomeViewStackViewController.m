@@ -46,7 +46,7 @@
 
 #import "views/VLCSubScrollView.h"
 
-@interface VLCLibraryHomeViewStackViewController()
+@interface VLCLibraryHomeViewStackViewController ()
 {
     NSMutableArray<NSView<VLCLibraryHomeViewContainerView> *> *_containers;
     NSUInteger _leadingContainerCount;
@@ -71,23 +71,23 @@
 
 - (void)setup
 {
-    NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
     [notificationCenter addObserver:self
-                            selector:@selector(recentsChanged:)
-                                name:VLCLibraryModelRecentsMediaListReset
-                                object:nil];
+                           selector:@selector(recentsChanged:)
+                               name:VLCLibraryModelRecentsMediaListReset
+                             object:nil];
     [notificationCenter addObserver:self
-                            selector:@selector(recentsChanged:)
-                                name:VLCLibraryModelAllCachesDropped
-                                object:nil];
+                           selector:@selector(recentsChanged:)
+                               name:VLCLibraryModelAllCachesDropped
+                             object:nil];
     [notificationCenter addObserver:self
-                            selector:@selector(recentsChanged:)
-                                name:VLCLibraryModelAllCachesDropped
-                                object:nil];
+                           selector:@selector(recentsChanged:)
+                               name:VLCLibraryModelAllCachesDropped
+                             object:nil];
     [notificationCenter addObserver:self
-                            selector:@selector(recentsChanged:)
-                                name:VLCLibraryModelRecentsMediaItemDeleted
-                                object:nil];
+                           selector:@selector(recentsChanged:)
+                               name:VLCLibraryModelRecentsMediaItemDeleted
+                             object:nil];
     [notificationCenter addObserver:self
                            selector:@selector(audioRecentsChanged:)
                                name:VLCLibraryModelRecentAudioMediaListReset
@@ -123,13 +123,13 @@
 
 - (BOOL)recentMediaPresent
 {
-    VLCLibraryModel * const model = VLCMain.sharedInstance.libraryController.libraryModel;
+    VLCLibraryModel *const model = VLCMain.sharedInstance.libraryController.libraryModel;
     return model.numberOfRecentMedia > 0;
 }
 
 - (BOOL)recentAudioMediaPresent
 {
-    VLCLibraryModel * const model = VLCMain.sharedInstance.libraryController.libraryModel;
+    VLCLibraryModel *const model = VLCMain.sharedInstance.libraryController.libraryModel;
     return model.numberOfRecentAudioMedia > 0;
 }
 
@@ -187,7 +187,8 @@
     NSUInteger i = VLCMediaLibraryParentGroupTypeRecentVideos + 1;
 
     for (; i <= VLCMediaLibraryParentGroupTypeVideoLibrary; ++i) {
-        VLCLibraryHomeViewVideoGridContainerView * const containerView = [[VLCLibraryHomeViewVideoGridContainerView alloc] init];
+        VLCLibraryHomeViewVideoGridContainerView *const containerView =
+            [[VLCLibraryHomeViewVideoGridContainerView alloc] init];
         containerView.videoGroup = i;
         [_containers addObject:containerView];
     }
@@ -198,9 +199,10 @@
     dispatch_async(dispatch_get_main_queue(), ^{
         [self.heroView setOptimalRepresentedItem];
 
-        for (NSView<VLCLibraryHomeViewContainerView> * const containerView in self->_containers) {
+        for (NSView<VLCLibraryHomeViewContainerView> *const containerView in self->_containers) {
             if ([containerView isKindOfClass:VLCLibraryHomeViewBaseCarouselContainerView.class]) {
-                VLCLibraryHomeViewBaseCarouselContainerView * const baseContainerView = (VLCLibraryHomeViewBaseCarouselContainerView *)containerView;
+                VLCLibraryHomeViewBaseCarouselContainerView *const baseContainerView =
+                    (VLCLibraryHomeViewBaseCarouselContainerView *)containerView;
                 [baseContainerView.dataSource reloadData];
             }
         }
@@ -209,20 +211,20 @@
 
 - (void)connectContainers
 {
-    for (NSView<VLCLibraryHomeViewContainerView> * const container in _containers) {
+    for (NSView<VLCLibraryHomeViewContainerView> *const container in _containers) {
         [container connect];
     }
 }
 
 - (void)disconnectContainers
 {
-    for (NSView<VLCLibraryHomeViewContainerView> * const container in _containers) {
+    for (NSView<VLCLibraryHomeViewContainerView> *const container in _containers) {
         [container disconnect];
     }
 }
 
-- (NSArray<NSLayoutConstraint*> *)setupViewConstraints:(NSView *)view
-                                         withStackView:(NSStackView *)stackView
+- (NSArray<NSLayoutConstraint *> *)setupViewConstraints:(NSView *)view
+                                          withStackView:(NSStackView *)stackView
 {
     if (view == nil || stackView == nil) {
         return @[];
@@ -230,23 +232,21 @@
 
     view.translatesAutoresizingMaskIntoConstraints = NO;
 
-    NSArray<NSLayoutConstraint*> * const constraintsWithSuperview = @[
+    NSArray<NSLayoutConstraint *> *const constraintsWithSuperview = @[
         [NSLayoutConstraint constraintWithItem:view
                                      attribute:NSLayoutAttributeLeft
                                      relatedBy:NSLayoutRelationEqual
                                         toItem:stackView
                                      attribute:NSLayoutAttributeLeft
                                     multiplier:1
-                                      constant:0
-        ],
+                                      constant:0],
         [NSLayoutConstraint constraintWithItem:view
                                      attribute:NSLayoutAttributeRight
                                      relatedBy:NSLayoutRelationEqual
                                         toItem:stackView
                                      attribute:NSLayoutAttributeRight
                                     multiplier:1
-                                      constant:0
-        ],
+                                      constant:0],
     ];
     [stackView addConstraints:constraintsWithSuperview];
 
@@ -254,7 +254,7 @@
 }
 
 - (void)setupContainerView:(NSView<VLCLibraryHomeViewContainerView> *)containerView
-              withStackView:(NSStackView *)stackView
+             withStackView:(NSStackView *)stackView
 {
     if (containerView == nil || stackView == nil) {
         return;
@@ -264,8 +264,7 @@
                                                           withStackView:stackView];
 }
 
-- (void)addView:(NSView *)view
-    toStackView:(NSStackView *)stackView
+- (void)addView:(NSView *)view toStackView:(NSStackView *)stackView
 {
     if (view == nil || stackView == nil) {
         return;
@@ -291,7 +290,7 @@
     NSParameterAssert(collectionsStackView);
 
     if (_collectionsStackView) {
-        for (NSView<VLCLibraryHomeViewContainerView> * const containerView in _containers) {
+        for (NSView<VLCLibraryHomeViewContainerView> *const containerView in _containers) {
             if (containerView.constraintsWithSuperview.count > 0) {
                 [_collectionsStackView removeConstraints:containerView.constraintsWithSuperview];
             }
@@ -306,13 +305,13 @@
     [_collectionsStackView setHuggingPriority:NSLayoutPriorityDefaultHigh
                                forOrientation:NSLayoutConstraintOrientationVertical];
 
-    for (NSView * const view in _collectionsStackView.arrangedSubviews.copy) {
+    for (NSView *const view in _collectionsStackView.arrangedSubviews.copy) {
         [view removeFromSuperview];
     }
 
     [self addCustomContainerViews];
 
-    for (NSView<VLCLibraryHomeViewContainerView> * const containerView in _containers) {
+    for (NSView<VLCLibraryHomeViewContainerView> *const containerView in _containers) {
         [self addContainerView:containerView toStackView:_collectionsStackView];
     }
 }
@@ -321,10 +320,12 @@
 {
     _collectionViewItemSize = collectionViewItemSize;
 
-     for (NSView<VLCLibraryHomeViewContainerView> *containerView in _containers) {
+    for (NSView<VLCLibraryHomeViewContainerView> *containerView in _containers) {
         if ([containerView isKindOfClass:VLCLibraryHomeViewVideoGridContainerView.class]) {
-            VLCLibraryHomeViewVideoGridContainerView * const collectionViewContainerView = (VLCLibraryHomeViewVideoGridContainerView *)containerView;
-            collectionViewContainerView.collectionViewDelegate.staticItemSize = collectionViewItemSize;
+            VLCLibraryHomeViewVideoGridContainerView *const collectionViewContainerView =
+                (VLCLibraryHomeViewVideoGridContainerView *)containerView;
+            collectionViewContainerView.collectionViewDelegate.staticItemSize =
+                collectionViewItemSize;
         }
     }
 }
@@ -333,22 +334,26 @@
 {
     _collectionViewSectionInset = collectionViewSectionInset;
 
-     for (NSView<VLCLibraryHomeViewContainerView> *containerView in _containers) {
+    for (NSView<VLCLibraryHomeViewContainerView> *containerView in _containers) {
         if ([containerView isKindOfClass:VLCLibraryHomeViewVideoGridContainerView.class]) {
-            VLCLibraryHomeViewVideoGridContainerView * const collectionViewContainerView = (VLCLibraryHomeViewVideoGridContainerView *)containerView;
-            collectionViewContainerView.collectionViewLayout.sectionInset = collectionViewSectionInset;
+            VLCLibraryHomeViewVideoGridContainerView *const collectionViewContainerView =
+                (VLCLibraryHomeViewVideoGridContainerView *)containerView;
+            collectionViewContainerView.collectionViewLayout.sectionInset =
+                collectionViewSectionInset;
         }
-     }
+    }
 }
 
 - (void)setCollectionViewMinimumLineSpacing:(CGFloat)collectionViewMinimumLineSpacing
 {
     _collectionViewMinimumLineSpacing = collectionViewMinimumLineSpacing;
 
-     for (NSView<VLCLibraryHomeViewContainerView> *containerView in _containers) {
+    for (NSView<VLCLibraryHomeViewContainerView> *containerView in _containers) {
         if ([containerView isKindOfClass:VLCLibraryHomeViewVideoGridContainerView.class]) {
-            VLCLibraryHomeViewVideoGridContainerView * const collectionViewContainerView = (VLCLibraryHomeViewVideoGridContainerView *)containerView;
-            collectionViewContainerView.collectionViewLayout.minimumLineSpacing = collectionViewMinimumLineSpacing;
+            VLCLibraryHomeViewVideoGridContainerView *const collectionViewContainerView =
+                (VLCLibraryHomeViewVideoGridContainerView *)containerView;
+            collectionViewContainerView.collectionViewLayout.minimumLineSpacing =
+                collectionViewMinimumLineSpacing;
         }
     }
 }
@@ -357,24 +362,30 @@
 {
     _collectionViewMinimumInteritemSpacing = collectionViewMinimumInteritemSpacing;
 
-    for (NSView<VLCLibraryHomeViewContainerView> * const containerView in _containers) {
+    for (NSView<VLCLibraryHomeViewContainerView> *const containerView in _containers) {
         if ([containerView isKindOfClass:VLCLibraryHomeViewVideoGridContainerView.class]) {
-            VLCLibraryHomeViewVideoGridContainerView * const collectionViewContainerView = (VLCLibraryHomeViewVideoGridContainerView *)containerView;
-            collectionViewContainerView.collectionViewLayout.minimumInteritemSpacing = collectionViewMinimumInteritemSpacing;
+            VLCLibraryHomeViewVideoGridContainerView *const collectionViewContainerView =
+                (VLCLibraryHomeViewVideoGridContainerView *)containerView;
+            collectionViewContainerView.collectionViewLayout.minimumInteritemSpacing =
+                collectionViewMinimumInteritemSpacing;
         }
     }
 }
 
-
-- (NSView<VLCLibraryHomeViewContainerView> *)containerViewForGroup:(VLCMediaLibraryParentGroupType)group
+- (NSView<VLCLibraryHomeViewContainerView> *)containerViewForGroup:
+    (VLCMediaLibraryParentGroupType)group
 {
-    const NSUInteger index = [_containers indexOfObjectPassingTest:^BOOL(NSView<VLCLibraryHomeViewContainerView> * const container, const NSUInteger __unused idx, BOOL * const __unused stop) {
-        if ([container conformsToProtocol:@protocol(VLCLibraryHomeViewVideoContainerView)]) {
-            NSView<VLCLibraryHomeViewVideoContainerView> * const videoContainer = (NSView<VLCLibraryHomeViewVideoContainerView> *)container;
-            return videoContainer.videoGroup == group;
-        }
-        return NO;
-    }];
+    const NSUInteger index = [_containers
+        indexOfObjectPassingTest:^BOOL(NSView<VLCLibraryHomeViewContainerView> *const container,
+                                       const NSUInteger __unused idx,
+                                       BOOL *const __unused stop) {
+            if ([container conformsToProtocol:@protocol(VLCLibraryHomeViewVideoContainerView)]) {
+                NSView<VLCLibraryHomeViewVideoContainerView> *const videoContainer =
+                    (NSView<VLCLibraryHomeViewVideoContainerView> *)container;
+                return videoContainer.videoGroup == group;
+            }
+            return NO;
+        }];
 
     if (index == NSNotFound) {
         return nil;
@@ -390,7 +401,9 @@
     }
 
     // TODO: Make this work agnostically of video type
-    NSView<VLCLibraryHomeViewVideoContainerView> * const containerView = (NSView<VLCLibraryHomeViewVideoContainerView> *)[self containerViewForGroup:VLCMediaLibraryParentGroupTypeVideoLibrary];
+    NSView<VLCLibraryHomeViewVideoContainerView> *const containerView =
+        (NSView<VLCLibraryHomeViewVideoContainerView> *)[self
+            containerViewForGroup:VLCMediaLibraryParentGroupTypeVideoLibrary];
     if (containerView == nil) {
         return;
     }

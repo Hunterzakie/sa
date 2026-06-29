@@ -56,7 +56,7 @@
 {
     if (@available(macOS 10.14, *)) {
         return [self.effectiveAppearance.name isEqualToString:NSAppearanceNameDarkAqua] ||
-               [self.effectiveAppearance.name isEqualToString:NSAppearanceNameVibrantDark];
+            [self.effectiveAppearance.name isEqualToString:NSAppearanceNameVibrantDark];
     }
 
     return NO;
@@ -79,7 +79,6 @@
                 [(NSTextField *)view setTextColor:[NSColor controlTextColor]];
             }
         }
-
     }
 }
 
@@ -91,7 +90,7 @@
 
 - (NSArray<NSLayoutConstraint *> *)constraintsToFillView:(NSView *)view activate:(BOOL)activate
 {
-    NSArray<NSLayoutConstraint *> * const constraints = @[
+    NSArray<NSLayoutConstraint *> *const constraints = @[
         [self.leadingAnchor constraintEqualToAnchor:view.leadingAnchor],
         [self.trailingAnchor constraintEqualToAnchor:view.trailingAnchor],
         [self.topAnchor constraintEqualToAnchor:view.topAnchor],

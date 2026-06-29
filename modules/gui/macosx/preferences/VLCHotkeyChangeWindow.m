@@ -119,12 +119,13 @@
         [tempString appendString:@"Esc"];
     else if (key == ' ')
         [tempString appendString:@"Space"];
-    else if (![[[theEvent charactersIgnoringModifiers] lowercaseString] isEqualToString:@""]) //plain characters
+    else if (![[[theEvent charactersIgnoringModifiers] lowercaseString]
+                 isEqualToString:@""]) // plain characters
         [tempString appendString:[[theEvent charactersIgnoringModifiers] lowercaseString]];
     else
         return NO;
 
-    return [VLCMain.sharedInstance.simplePreferences changeHotkeyTo: tempString];
+    return [VLCMain.sharedInstance.simplePreferences changeHotkeyTo:tempString];
 }
 
 @end

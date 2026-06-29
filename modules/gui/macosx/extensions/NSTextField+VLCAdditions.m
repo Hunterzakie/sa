@@ -26,7 +26,7 @@
 
 + (instancetype)defaultLabelWithString:(NSString *)stringValue
 {
-    NSTextField * const textField = [NSTextField wrappingLabelWithString:stringValue];
+    NSTextField *const textField = [NSTextField wrappingLabelWithString:stringValue];
     textField.translatesAutoresizingMaskIntoConstraints = NO;
     textField.selectable = NO;
     return textField;

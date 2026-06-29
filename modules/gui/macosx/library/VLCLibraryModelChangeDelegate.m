@@ -22,15 +22,15 @@
 
 #import "VLCLibraryModelChangeDelegate.h"
 
-NSString * const VLCTimerNotificationNameUserInfoKey = @"notificationName";
-NSString * const VLCTimerNotificationObjectUserInfoKey = @"notificationObject";
-NSString * const VLCLongNotificationNameStartSuffix = @"Loading";
-NSString * const VLCLongNotificationNameFinishSuffix = @"Finished";
+NSString *const VLCTimerNotificationNameUserInfoKey = @"notificationName";
+NSString *const VLCTimerNotificationObjectUserInfoKey = @"notificationObject";
+NSString *const VLCLongNotificationNameStartSuffix = @"Loading";
+NSString *const VLCLongNotificationNameFinishSuffix = @"Finished";
 
 @interface VLCLibraryModelChangeDelegate ()
 
 @property (readonly) NSNotificationCenter *notificationCenter;
-@property (readonly) NSMutableDictionary<NSString *, NSTimer*> *recentNotifications;
+@property (readonly) NSMutableDictionary<NSString *, NSTimer *> *recentNotifications;
 @property (readonly) NSMutableSet<NSString *> *longNotifications;
 
 @end
@@ -59,23 +59,25 @@ NSString * const VLCLongNotificationNameFinishSuffix = @"Finished";
         return;
     }
 
-    NSTimer * const existingTimer = [self.recentNotifications objectForKey:notificationName];
+    NSTimer *const existingTimer = [self.recentNotifications objectForKey:notificationName];
     if (existingTimer != nil) {
         [existingTimer invalidate];
-        NSString * const loadingNotification = [notificationName stringByAppendingString:VLCLongNotificationNameStartSuffix];
+        NSString *const loadingNotification =
+            [notificationName stringByAppendingString:VLCLongNotificationNameStartSuffix];
         [self.notificationCenter postNotificationName:loadingNotification object:object];
         [self.longNotifications addObject:notificationName];
     }
 
-    NSDictionary<NSString *, NSString *> * const userInfo = @{
-        VLCTimerNotificationNameUserInfoKey: notificationName,
-        VLCTimerNotificationObjectUserInfoKey: object,
+    NSDictionary<NSString *, NSString *> *const userInfo = @{
+        VLCTimerNotificationNameUserInfoKey : notificationName,
+        VLCTimerNotificationObjectUserInfoKey : object,
     };
-    NSTimer * const throttleTimer = [NSTimer scheduledTimerWithTimeInterval:self.throttleInterval
-                                                                     target:self
-                                                                   selector:@selector(throttleTimerFired:)
-                                                                   userInfo:userInfo
-                                                                    repeats:NO];
+    NSTimer *const throttleTimer =
+        [NSTimer scheduledTimerWithTimeInterval:self.throttleInterval
+                                         target:self
+                                       selector:@selector(throttleTimerFired:)
+                                       userInfo:userInfo
+                                        repeats:NO];
     [self.recentNotifications setObject:throttleTimer forKey:notificationName];
 }
 
@@ -85,14 +87,15 @@ NSString * const VLCLongNotificationNameFinishSuffix = @"Finished";
         return;
     }
 
-    NSDictionary * const userInfo = timer.userInfo;
-    NSString * const notificationName = [userInfo objectForKey:VLCTimerNotificationNameUserInfoKey];
+    NSDictionary *const userInfo = timer.userInfo;
+    NSString *const notificationName = [userInfo objectForKey:VLCTimerNotificationNameUserInfoKey];
     const id notificationObject = [userInfo objectForKey:VLCTimerNotificationObjectUserInfoKey];
     [self.recentNotifications removeObjectForKey:notificationName];
     [self.notificationCenter postNotificationName:notificationName object:notificationObject];
 
     if ([self.longNotifications containsObject:notificationName]) {
-        NSString * const finishedName = [notificationName stringByAppendingString:VLCLongNotificationNameFinishSuffix];
+        NSString *const finishedName =
+            [notificationName stringByAppendingString:VLCLongNotificationNameFinishSuffix];
         [self.notificationCenter postNotificationName:finishedName object:notificationObject];
     }
 }

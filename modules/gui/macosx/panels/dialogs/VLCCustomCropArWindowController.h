@@ -38,14 +38,15 @@ NS_ASSUME_NONNULL_BEGIN
  * \param returnCode Result from panel. Can be NSModalResponseOK or NSModalResponseCancel.
  * \param geometry Geometry based on numbers entered in panel
  */
-typedef void(^CustomCropArCompletionHandler)(NSInteger returnCode, NSString *geometry);
+typedef void (^CustomCropArCompletionHandler)(NSInteger returnCode, NSString *geometry);
 
 /**
  * Shows the panel as a modal dialog with window as its owner.
  * \param window Parent window for the dialog.
  * \param handler Completion block.
  */
-- (void)runModalForWindow:(NSWindow *)window completionHandler:(CustomCropArCompletionHandler)handler;
+- (void)runModalForWindow:(NSWindow *)window
+        completionHandler:(CustomCropArCompletionHandler)handler;
 
 @end
 

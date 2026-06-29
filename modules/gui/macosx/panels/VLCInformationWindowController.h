@@ -118,6 +118,7 @@
 - (IBAction)saveMetaData:(id)sender;
 - (IBAction)chooseArtwork:(id)sender;
 
-- (void)setRepresentedMediaLibraryItems:(NSArray<VLCLibraryRepresentedItem *> *)representedMediaLibraryItems;
+- (void)setRepresentedMediaLibraryItems:
+    (NSArray<VLCLibraryRepresentedItem *> *)representedMediaLibraryItems;
 
 @end

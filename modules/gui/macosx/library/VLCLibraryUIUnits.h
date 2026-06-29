@@ -31,9 +31,9 @@ typedef NS_ENUM(NSUInteger, VLCLibraryCollectionViewItemAspectRatio) {
 
 NS_ASSUME_NONNULL_BEGIN
 
-extern NSString * const VLCLibraryCollectionViewItemAdjustmentKey;
+extern NSString *const VLCLibraryCollectionViewItemAdjustmentKey;
 
-@interface VLCCollectionViewItemSizing: NSObject
+@interface VLCCollectionViewItemSizing : NSObject
 
 @property (readwrite) NSInteger unclampedRowItemCount;
 @property (readwrite) NSUInteger rowItemCount;
@@ -98,13 +98,17 @@ extern NSString * const VLCLibraryCollectionViewItemAdjustmentKey;
 
 @property (class, readonly) const CGFloat sliderTickThickness;
 
-+ (const NSSize)adjustedCollectionViewItemSizeForCollectionView:(NSCollectionView *)collectionView
-                                                     withLayout:(VLCLibraryCollectionViewFlowLayout *)collectionViewLayout
-                                           withItemsAspectRatio:(VLCLibraryCollectionViewItemAspectRatio)itemsAspectRatio;
++ (const NSSize)
+    adjustedCollectionViewItemSizeForCollectionView:(NSCollectionView *)collectionView
+                                         withLayout:(VLCLibraryCollectionViewFlowLayout *)
+                                                        collectionViewLayout
+                               withItemsAspectRatio:
+                                   (VLCLibraryCollectionViewItemAspectRatio)itemsAspectRatio;
 
-+ (VLCCollectionViewItemSizing *)adjustedItemSizingForCollectionView:(NSCollectionView *)collectionView
-                                                          withLayout:(VLCLibraryCollectionViewFlowLayout *)collectionViewLayout
-                                                withItemsAspectRatio:(VLCLibraryCollectionViewItemAspectRatio)itemsAspectRatio;
++ (VLCCollectionViewItemSizing *)
+    adjustedItemSizingForCollectionView:(NSCollectionView *)collectionView
+                             withLayout:(VLCLibraryCollectionViewFlowLayout *)collectionViewLayout
+                   withItemsAspectRatio:(VLCLibraryCollectionViewItemAspectRatio)itemsAspectRatio;
 
 @end
 

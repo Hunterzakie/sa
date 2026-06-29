@@ -62,12 +62,12 @@
 
 - (void)dealloc
 {
-    [NSNotificationCenter.defaultCenter removeObserver: self];
+    [NSNotificationCenter.defaultCenter removeObserver:self];
 }
 
 /*****************************************************************************
-* VLC About Window
-*****************************************************************************/
+ * VLC About Window
+ *****************************************************************************/
 
 - (void)showAbout
 {
@@ -87,22 +87,34 @@
 
 - (void)windowDidLoad
 {
-    [[self window] setCollectionBehavior: NSWindowCollectionBehaviorFullScreenAuxiliary];
+    [[self window] setCollectionBehavior:NSWindowCollectionBehaviorFullScreenAuxiliary];
 
-    NSString *copyrightText = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"NSHumanReadableCopyright"];
-    [o_copyright_field setStringValue: copyrightText];
+    NSString *copyrightText =
+        [[[NSBundle mainBundle] infoDictionary] objectForKey:@"NSHumanReadableCopyright"];
+    [o_copyright_field setStringValue:copyrightText];
 
     /* l10n */
-    [[self window] setTitle: _NS("About VLC media player")];
-    NSDictionary *stringAttributes = [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithInt:NSUnderlineStyleSingle], NSUnderlineStyleAttributeName, [NSColor secondaryLabelColor], NSForegroundColorAttributeName, [NSFont systemFontOfSize:13], NSFontAttributeName, nil];
+    [[self window] setTitle:_NS("About VLC media player")];
+    NSDictionary *stringAttributes =
+        [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithInt:NSUnderlineStyleSingle],
+                                                   NSUnderlineStyleAttributeName,
+                                                   [NSColor secondaryLabelColor],
+                                                   NSForegroundColorAttributeName,
+                                                   [NSFont systemFontOfSize:13],
+                                                   NSFontAttributeName,
+                                                   nil];
     NSAttributedString *attrStr;
-    attrStr = [[NSAttributedString alloc] initWithString:_NS("Credits") attributes:stringAttributes];
+    attrStr = [[NSAttributedString alloc] initWithString:_NS("Credits")
+                                              attributes:stringAttributes];
     [o_credits_btn setAttributedTitle:attrStr];
-    attrStr = [[NSAttributedString alloc] initWithString:_NS("License") attributes:stringAttributes];
+    attrStr = [[NSAttributedString alloc] initWithString:_NS("License")
+                                              attributes:stringAttributes];
     [o_gpl_btn setAttributedTitle:attrStr];
-    attrStr = [[NSAttributedString alloc] initWithString:_NS("Authors") attributes:stringAttributes];
+    attrStr = [[NSAttributedString alloc] initWithString:_NS("Authors")
+                                              attributes:stringAttributes];
     [o_authors_btn setAttributedTitle:attrStr];
-    [o_trademarks_txt setStringValue:_NS("VLC media player and VideoLAN are trademarks of the VideoLAN Association.")];
+    [o_trademarks_txt setStringValue:_NS("VLC media player and VideoLAN are trademarks of the "
+                                         "VideoLAN Association.")];
 
     /* setup the creator / revision field */
     NSString *compiler;
@@ -111,48 +123,84 @@
 #else
     compiler = [NSString stringWithFormat:@"llvm-gcc %s", __VERSION__];
 #endif
-    [o_revision_field setStringValue: [NSString stringWithFormat:@"Compiled by %s with %@ (%s %s)", VLC_CompileBy(), compiler, __DATE__, __TIME__]];
+    [o_revision_field setStringValue:[NSString stringWithFormat:@"Compiled by %s with %@ (%s %s)",
+                                                                VLC_CompileBy(),
+                                                                compiler,
+                                                                __DATE__,
+                                                                __TIME__]];
 
     /* Setup the nameversion field */
-    [o_name_version_field setStringValue: [NSString stringWithFormat:@"Version %s (%s)", VERSION_MESSAGE, PLATFORM]];
+    [o_name_version_field
+        setStringValue:[NSString stringWithFormat:@"Version %s (%s)", VERSION_MESSAGE, PLATFORM]];
 
-    NSMutableArray *tmpArray = [NSMutableArray arrayWithArray: [toNSStr(psz_authors) componentsSeparatedByString:@"\n\n"]];
+    NSMutableArray *tmpArray =
+        [NSMutableArray arrayWithArray:[toNSStr(psz_authors) componentsSeparatedByString:@"\n\n"]];
     NSUInteger count = [tmpArray count];
     for (NSUInteger i = 0; i < count; i++) {
-        [tmpArray replaceObjectAtIndex:i withObject:[[tmpArray objectAtIndex:i]stringByReplacingOccurrencesOfString:@"\n" withString:@", "]];
-        [tmpArray replaceObjectAtIndex:i withObject:[[tmpArray objectAtIndex:i]stringByReplacingOccurrencesOfString:@", -" withString:@"\n-" options:0 range:NSRangeFromString(@"0 30")]];
-        [tmpArray replaceObjectAtIndex:i withObject:[[tmpArray objectAtIndex:i]stringByReplacingOccurrencesOfString:@"-, " withString:@"-\n" options:0 range:NSRangeFromString(@"0 30")]];
-        [tmpArray replaceObjectAtIndex:i withObject:[[tmpArray objectAtIndex:i]stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@","]]];
+        [tmpArray replaceObjectAtIndex:i
+                            withObject:[[tmpArray objectAtIndex:i]
+                                           stringByReplacingOccurrencesOfString:@"\n"
+                                                                     withString:@", "]];
+        [tmpArray replaceObjectAtIndex:i
+                            withObject:[[tmpArray objectAtIndex:i]
+                                           stringByReplacingOccurrencesOfString:@", -"
+                                                                     withString:@"\n-"
+                                                                        options:0
+                                                                          range:NSRangeFromString(
+                                                                                    @"0 30")]];
+        [tmpArray replaceObjectAtIndex:i
+                            withObject:[[tmpArray objectAtIndex:i]
+                                           stringByReplacingOccurrencesOfString:@"-, "
+                                                                     withString:@"-\n"
+                                                                        options:0
+                                                                          range:NSRangeFromString(
+                                                                                    @"0 30")]];
+        [tmpArray
+            replaceObjectAtIndex:i
+                      withObject:[[tmpArray objectAtIndex:i]
+                                     stringByTrimmingCharactersInSet:
+                                         [NSCharacterSet characterSetWithCharactersInString:@","]]];
     }
     _authorsString = [tmpArray componentsJoinedByString:@"\n\n"];
 
     /* setup join us! */
-    NSString *joinus = toNSStr(_(""
-                                 "<p>VLC media player is a free and open source media player, encoder, and "
-                                 "streamer made by the volunteers of the <a href=\"https://www.videolan.org/"
-                                 "\"><span style=\" text-decoration: underline; color:#0057ae;\">VideoLAN</"
-                                 "span></a> community.</p><p>VLC uses its internal codecs, works on "
-                                 "essentially every popular platform, and can read almost all files, CDs, "
-                                 "DVDs, network streams, capture cards and other media formats!</p><p><a href="
-                                 "\"https://www.videolan.org/contribute/\"><span style=\" text-decoration: "
-                                 "underline; color:#0057ae;\">Help and join us!</span></a>"));
+    NSString *joinus =
+        toNSStr(_(""
+                  "<p>VLC media player is a free and open source media player, encoder, and "
+                  "streamer made by the volunteers of the <a href=\"https://www.videolan.org/"
+                  "\"><span style=\" text-decoration: underline; color:#0057ae;\">VideoLAN</"
+                  "span></a> community.</p><p>VLC uses its internal codecs, works on "
+                  "essentially every popular platform, and can read almost all files, CDs, "
+                  "DVDs, network streams, capture cards and other media formats!</p><p><a href="
+                  "\"https://www.videolan.org/contribute/\"><span style=\" text-decoration: "
+                  "underline; color:#0057ae;\">Help and join us!</span></a>"));
 
-    NSString *joinUsWithStyle = [NSString stringWithFormat:@"<div style=\"text-align:left;font-family: -apple-system, Helvetica Neue;\">%@</div>", joinus];
-    NSMutableAttributedString *joinus_readytorender = [[NSMutableAttributedString alloc] initWithHTML:[joinUsWithStyle dataUsingEncoding:NSUTF8StringEncoding allowLossyConversion:YES]
-                                                                                              options:@{NSCharacterEncodingDocumentOption : [NSNumber numberWithInt:NSUTF8StringEncoding]}
-                                                                                   documentAttributes:NULL];
-    [joinus_readytorender setAttributes:@{NSForegroundColorAttributeName : [NSColor secondaryLabelColor],
-                                          NSFontAttributeName : [NSFont systemFontOfSize:12.]}
+    NSString *joinUsWithStyle =
+        [NSString stringWithFormat:@"<div style=\"text-align:left;font-family: -apple-system, "
+                                   @"Helvetica Neue;\">%@</div>",
+                                   joinus];
+    NSMutableAttributedString *joinus_readytorender = [[NSMutableAttributedString alloc]
+              initWithHTML:[joinUsWithStyle dataUsingEncoding:NSUTF8StringEncoding
+                                         allowLossyConversion:YES]
+                   options:@{
+                       NSCharacterEncodingDocumentOption :
+                           [NSNumber numberWithInt:NSUTF8StringEncoding]
+                   }
+        documentAttributes:NULL];
+    [joinus_readytorender setAttributes:@{
+        NSForegroundColorAttributeName : [NSColor secondaryLabelColor],
+        NSFontAttributeName : [NSFont systemFontOfSize:12.]
+    }
                                   range:NSMakeRange(0, joinus_readytorender.length)];
-    [o_joinus_txt setAllowsEditingTextAttributes: YES];
-    [o_joinus_txt setSelectable: YES];
+    [o_joinus_txt setAllowsEditingTextAttributes:YES];
+    [o_joinus_txt setSelectable:YES];
     [o_joinus_txt setAttributedStringValue:joinus_readytorender];
 
-    [o_credits_textview setString: @""];
+    [o_credits_textview setString:@""];
 
     /* Setup the window */
-    [o_credits_textview setDrawsBackground: NO];
-    [o_credits_scrollview setDrawsBackground: NO];
+    [o_credits_textview setDrawsBackground:NO];
+    [o_credits_scrollview setDrawsBackground:NO];
     [[self window] setExcludedFromWindowsMenu:YES];
     [[self window] setMenu:nil];
 
@@ -182,14 +230,20 @@
     if (sender == o_authors_btn)
         stringToDisplay = _authorsString;
     else if (sender == o_credits_btn)
-        stringToDisplay = [toNSStr(psz_thanks) stringByReplacingOccurrencesOfString:@"\n" withString:@" "
-                                                                            options:0 range:NSRangeFromString(@"680 2")];
+        stringToDisplay =
+            [toNSStr(psz_thanks) stringByReplacingOccurrencesOfString:@"\n"
+                                                           withString:@" "
+                                                              options:0
+                                                                range:NSRangeFromString(@"680 2")];
     else
         stringToDisplay = toNSStr(psz_license);
 
-    NSAttributedString *attributedString = [[NSAttributedString alloc] initWithString:stringToDisplay
-                                                                           attributes:@{NSForegroundColorAttributeName : [NSColor secondaryLabelColor],
-                                                                                        NSFontAttributeName : [NSFont systemFontOfSize:12.]}];
+    NSAttributedString *attributedString = [[NSAttributedString alloc]
+        initWithString:stringToDisplay
+            attributes:@{
+                NSForegroundColorAttributeName : [NSColor secondaryLabelColor],
+                NSFontAttributeName : [NSFont systemFontOfSize:12.]
+            }];
     [[o_credits_textview textStorage] setAttributedString:attributedString];
 
     VLCScrollingClipView *scrollView = (VLCScrollingClipView *)[o_credits_scrollview contentView];
@@ -198,8 +252,8 @@
 }
 
 /*****************************************************************************
-* VLC GPL Window, action called from the about window and the help menu
-*****************************************************************************/
+ * VLC GPL Window, action called from the about window and the help menu
+ *****************************************************************************/
 
 - (void)showGPL
 {

@@ -30,7 +30,7 @@
 - (instancetype)init
 {
     self = [super init];
-    if(self) {
+    if (self) {
         [self connect];
     }
     return self;
@@ -38,7 +38,7 @@
 
 - (void)connect
 {
-    NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
 
     [notificationCenter addObserver:self
                            selector:@selector(libraryModelShowsListReset:)
@@ -78,8 +78,8 @@
 
 - (void)libraryModelShowUpdated:(NSNotification *)notification
 {
-    VLCMediaLibraryShow * const show = notification.object;
-    NSIndexPath * const indexPath = [self indexPathForLibraryItem:show];
+    VLCMediaLibraryShow *const show = notification.object;
+    NSIndexPath *const indexPath = [self indexPathForLibraryItem:show];
 
     if (indexPath != nil) {
         [self.collectionView reloadItemsAtIndexPaths:[NSSet setWithObject:indexPath]];
@@ -104,16 +104,19 @@
 
 - (void)libraryModelShowDeleted:(NSNotification *)notification
 {
-    NSNumber * const showIdNumber = notification.object;
+    NSNumber *const showIdNumber = notification.object;
     const NSInteger showLibraryId = showIdNumber.integerValue;
-    const NSInteger rowIndex = [self.backingArray indexOfObjectPassingTest:^BOOL(VLCMediaLibraryShow * const show, const NSUInteger __unused idx, BOOL * const __unused stop) {
-        return show.libraryID == showLibraryId;
-    }];
+    const NSInteger rowIndex =
+        [self.backingArray indexOfObjectPassingTest:^BOOL(VLCMediaLibraryShow *const show,
+                                                          const NSUInteger __unused idx,
+                                                          BOOL *const __unused stop) {
+            return show.libraryID == showLibraryId;
+        }];
     if (rowIndex == NSNotFound) {
         return;
     }
 
-    NSIndexPath * const indexPath = [NSIndexPath indexPathForItem:0 inSection:rowIndex];
+    NSIndexPath *const indexPath = [NSIndexPath indexPathForItem:0 inSection:rowIndex];
     if (indexPath != nil) {
         [self.collectionView deleteItemsAtIndexPaths:[NSSet setWithObject:indexPath]];
     }

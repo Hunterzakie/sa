@@ -28,8 +28,8 @@
 #import "main/VLCMain.h"
 #import "menus/VLCMainMenu.h"
 
-NSString * const VLCTimeFieldDisplayTimeAsElapsed = @"DisplayTimeAsTimeElapsed";
-NSString * const VLCTimeFieldDisplayTimeAsRemaining = @"DisplayTimeAsTimeRemaining";
+NSString *const VLCTimeFieldDisplayTimeAsElapsed = @"DisplayTimeAsTimeElapsed";
+NSString *const VLCTimeFieldDisplayTimeAsRemaining = @"DisplayTimeAsTimeRemaining";
 
 @interface VLCTimeField ()
 {
@@ -42,15 +42,15 @@ NSString * const VLCTimeFieldDisplayTimeAsRemaining = @"DisplayTimeAsTimeRemaini
 
 + (void)initialize
 {
-    NSDictionary * const appDefaults = @{VLCTimeFieldDisplayTimeAsRemaining : @NO};
+    NSDictionary *const appDefaults = @{ VLCTimeFieldDisplayTimeAsRemaining : @NO };
     [NSUserDefaults.standardUserDefaults registerDefaults:appDefaults];
 }
 
 - (void)setPreferencesIdentifier:(NSString *)preferencesIdentifier
 {
     _preferencesIdentifier = preferencesIdentifier;
-    self.isTimeRemaining = [NSUserDefaults.standardUserDefaults
-                            boolForKey:self.preferencesIdentifier];
+    self.isTimeRemaining =
+        [NSUserDefaults.standardUserDefaults boolForKey:self.preferencesIdentifier];
 }
 
 - (void)setIsTimeRemaining:(BOOL)isTimeRemaining

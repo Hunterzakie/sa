@@ -28,24 +28,30 @@
 
 #import <vlc_media_source.h>
 
-static inline void getMediaSourcesForCategory(NSMutableArray <VLCMediaSource *> *const restrict __unsafe_unretained outputArray,
-                                              vlc_preparser_t * restrict p_preparser,
-                                              vlc_media_source_provider_t *const restrict p_sourceProvider,
-                                              enum services_discovery_category_e const category)
+static inline void getMediaSourcesForCategory(
+    NSMutableArray<VLCMediaSource *> *const restrict __unsafe_unretained outputArray,
+    vlc_preparser_t *restrict p_preparser,
+    vlc_media_source_provider_t *const restrict p_sourceProvider,
+    enum services_discovery_category_e const category)
 {
-    vlc_media_source_meta_list_t *const p_sourceMetaList = vlc_media_source_provider_List(p_sourceProvider,
-                                                                                          category);
+    vlc_media_source_meta_list_t *const p_sourceMetaList =
+        vlc_media_source_provider_List(p_sourceProvider, category);
     const size_t count = vlc_media_source_meta_list_Count(p_sourceMetaList);
 
     for (size_t i = 0; i < count; ++i) {
-        struct vlc_media_source_meta *const p_sourceMetaItem = vlc_media_source_meta_list_Get(p_sourceMetaList, i);
+        struct vlc_media_source_meta *const p_sourceMetaItem =
+            vlc_media_source_meta_list_Get(p_sourceMetaList, i);
 
-        vlc_media_source_t *const p_mediaSource = vlc_media_source_provider_GetMediaSource(p_sourceProvider, p_sourceMetaItem->name);
+        vlc_media_source_t *const p_mediaSource =
+            vlc_media_source_provider_GetMediaSource(p_sourceProvider, p_sourceMetaItem->name);
         if (p_mediaSource == NULL) {
             continue;
         }
 
-        VLCMediaSource *const mediaSource = [[VLCMediaSource alloc] initWithMediaSource:p_mediaSource andPreparser:p_preparser forCategory:category];
+        VLCMediaSource *const mediaSource =
+            [[VLCMediaSource alloc] initWithMediaSource:p_mediaSource
+                                           andPreparser:p_preparser
+                                            forCategory:category];
         [outputArray addObject:mediaSource];
     }
 
@@ -54,7 +60,8 @@ static inline void getMediaSourcesForCategory(NSMutableArray <VLCMediaSource *> 
 
 @implementation VLCMediaSourceProvider
 
-+ (NSArray <VLCMediaSource *> *)listOfMediaSourcesForCategory:(enum services_discovery_category_e)category
++ (NSArray<VLCMediaSource *> *)listOfMediaSourcesForCategory:
+    (enum services_discovery_category_e)category
 {
     libvlc_int_t *p_libvlcInstance = vlc_object_instance(getIntf());
     vlc_preparser_t *p_preparser = getNetworkPreparser();
@@ -75,15 +82,20 @@ static inline void getMediaSourcesForCategory(NSMutableArray <VLCMediaSource *> 
 {
     libvlc_int_t *p_libvlcInstance = vlc_object_instance(getIntf());
     vlc_preparser_t *p_preparser = getNetworkPreparser();
-    NSMutableArray<VLCMediaSource *> * const mutableArray = [[NSMutableArray alloc] initWithCapacity:32]; // A sane default
+    NSMutableArray<VLCMediaSource *> *const mutableArray =
+        [[NSMutableArray alloc] initWithCapacity:32]; // A sane default
 
-    // "My Folders" and "My Machine" entries are a bit of a custom implementation so it gets treated differently
-    VLCMediaSource * const myFoldersMediaSource = [[VLCMediaSource alloc] initMyFoldersMediaSourceWithPreparser:p_preparser];
-    VLCMediaSource * const localDevicesMediaSource = [[VLCMediaSource alloc] initForLocalDevices:p_preparser];
+    // "My Folders" and "My Machine" entries are a bit of a custom implementation so it gets treated
+    // differently
+    VLCMediaSource *const myFoldersMediaSource =
+        [[VLCMediaSource alloc] initMyFoldersMediaSourceWithPreparser:p_preparser];
+    VLCMediaSource *const localDevicesMediaSource =
+        [[VLCMediaSource alloc] initForLocalDevices:p_preparser];
     [mutableArray addObject:myFoldersMediaSource];
     [mutableArray addObject:localDevicesMediaSource];
 
-    vlc_media_source_provider_t * const p_sourceProvider = vlc_media_source_provider_Get(p_libvlcInstance);
+    vlc_media_source_provider_t *const p_sourceProvider =
+        vlc_media_source_provider_Get(p_libvlcInstance);
     if (p_sourceProvider != NULL) {
         // Currently, SD_CAT_MYCOMPUTER and SD_CAT_DEVICES return empty list.
         // They are left for future implementation.

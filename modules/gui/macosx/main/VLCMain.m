@@ -27,12 +27,12 @@
  * Preamble
  *****************************************************************************/
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif
 
 #import "main/VLCMain.h"
 
-#include <stdlib.h>                                      /* malloc(), free() */
+#include <stdlib.h> /* malloc(), free() */
 #include <string.h>
 #include <stdatomic.h>
 #include <sys/sysctl.h>
@@ -89,23 +89,24 @@
 #import "windows/video/VLCMainVideoViewController.h"
 
 #ifdef HAVE_SPARKLE
-#import <Sparkle/Sparkle.h>                 /* we're the update delegate */
-NSString *const kIntel64UpdateURLString = @"https://update.videolan.org/vlc/sparkle/vlc-intel64.xml";
+#import <Sparkle/Sparkle.h> /* we're the update delegate */
+NSString *const kIntel64UpdateURLString =
+    @"https://update.videolan.org/vlc/sparkle/vlc-intel64.xml";
 NSString *const kARM64UpdateURLString = @"https://update.videolan.org/vlc/sparkle/vlc-arm64.xml";
 #endif
 
 NSString *VLCConfigurationChangedNotification = @"VLCConfigurationChangedNotification";
 
-NSString * const kVLCPreferencesVersion = @"VLCPreferencesVersion";
+NSString *const kVLCPreferencesVersion = @"VLCPreferencesVersion";
 
 #pragma mark -
 #pragma mark Private extension
 
 @interface VLCMain ()
 #ifdef HAVE_SPARKLE
-<SUUpdaterDelegate, NSApplicationDelegate>
+    <SUUpdaterDelegate, NSApplicationDelegate>
 #else
-<NSApplicationDelegate>
+    <NSApplicationDelegate>
 #endif
 {
     intf_thread_t *_p_intf;
@@ -155,13 +156,13 @@ vlc_preparser_t *getNetworkPreparser()
     return p_network_preparser;
 }
 
-int OpenIntf (vlc_object_t *p_this)
+int OpenIntf(vlc_object_t *p_this)
 {
     __block int retcode = VLC_SUCCESS;
     __block dispatch_semaphore_t sem = dispatch_semaphore_create(0);
     CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode, ^{
         @autoreleasepool {
-            intf_thread_t *p_intf = (intf_thread_t*) p_this;
+            intf_thread_t *p_intf = (intf_thread_t *)p_this;
             p_interface_thread = p_intf;
 
             const struct vlc_preparser_cfg cfg = {
@@ -171,8 +172,7 @@ int OpenIntf (vlc_object_t *p_this)
                 .external_process = false,
             };
             p_network_preparser = vlc_preparser_New(p_this, &cfg);
-            if (p_network_preparser == nil)
-            {
+            if (p_network_preparser == nil) {
                 retcode = VLC_ENOMEM;
                 dispatch_semaphore_signal(sem);
                 return;
@@ -180,16 +180,17 @@ int OpenIntf (vlc_object_t *p_this)
             msg_Dbg(p_intf, "Starting macosx interface");
 
             @try {
-                VLCApplication * const application = VLCApplication.sharedApplication;
+                VLCApplication *const application = VLCApplication.sharedApplication;
                 NSCAssert(application != nil, @"VLCApplication must not be nil");
                 [application setIntf:p_intf];
 
-                VLCMain * const main = VLCMain.sharedInstance;
+                VLCMain *const main = VLCMain.sharedInstance;
                 NSCAssert(main != nil, @"VLCMain must not be nil");
 
                 msg_Dbg(p_intf, "Finished loading macosx interface");
             } @catch (NSException *exception) {
-                msg_Err(p_intf, "Loading the macosx interface failed. Do you have a valid window server?");
+                msg_Err(p_intf,
+                        "Loading the macosx interface failed. Do you have a valid window server?");
                 retcode = VLC_EGENERIC;
                 dispatch_semaphore_signal(sem);
                 return;
@@ -206,7 +207,7 @@ int OpenIntf (vlc_object_t *p_this)
     return retcode;
 }
 
-void CloseIntf (vlc_object_t *p_this)
+void CloseIntf(vlc_object_t *p_this)
 {
     void (^release_intf)() = ^{
         @autoreleasepool {
@@ -216,15 +217,15 @@ void CloseIntf (vlc_object_t *p_this)
         }
         vlc_preparser_Delete(p_network_preparser);
         [NSApp stop:nil];
-        NSEvent* event = [NSEvent otherEventWithType:NSEventTypeApplicationDefined
-            location:NSMakePoint(0,0)
-            modifierFlags:0
-            timestamp:0.0
-            windowNumber:0
-            context:nil
-            subtype:0
-            data1:0
-            data2:0];
+        NSEvent *event = [NSEvent otherEventWithType:NSEventTypeApplicationDefined
+                                            location:NSMakePoint(0, 0)
+                                       modifierFlags:0
+                                           timestamp:0.0
+                                        windowNumber:0
+                                             context:nil
+                                             subtype:0
+                                               data1:0
+                                               data2:0];
         [NSApp postEvent:event atStart:YES];
     };
     if (CFRunLoopGetCurrent() == CFRunLoopGetMain())
@@ -247,9 +248,7 @@ static VLCMain *sharedInstance = nil;
 + (VLCMain *)sharedInstance
 {
     static dispatch_once_t pred;
-    dispatch_once(&pred, ^{
-        sharedInstance = [[VLCMain alloc] init];
-    });
+    dispatch_once(&pred, ^{ sharedInstance = [[VLCMain alloc] init]; });
 
     return sharedInstance;
 }
@@ -278,7 +277,8 @@ static VLCMain *sharedInstance = nil;
 
         VLCApplication.sharedApplication.delegate = self;
 
-        _playQueueController = [[VLCPlayQueueController alloc] initWithPlaylist:vlc_intf_GetMainPlaylist(_p_intf)];
+        _playQueueController =
+            [[VLCPlayQueueController alloc] initWithPlaylist:vlc_intf_GetMainPlaylist(_p_intf)];
         _libraryController = [[VLCLibraryController alloc] init];
         _continuityController = [[VLCPlaybackContinuityController alloc] init];
 
@@ -307,8 +307,8 @@ static VLCMain *sharedInstance = nil;
     // Change this if you are going to add new shaders!
     if (((VLCApplication *)NSApplication.sharedApplication).winterHolidaysTheming) {
         _metalDevice = MTLCreateSystemDefaultDevice();
-        NSString * const libraryPath =
-            [NSBundle.mainBundle pathForResource:@"Shaders" ofType:@"metallib"];
+        NSString *const libraryPath = [NSBundle.mainBundle pathForResource:@"Shaders"
+                                                                    ofType:@"metallib"];
         if (libraryPath) {
             NSError *error = nil;
             _metalLibrary = [_metalDevice newLibraryWithFile:libraryPath error:&error];
@@ -329,8 +329,7 @@ static VLCMain *sharedInstance = nil;
 #endif
 
     NSImage *appIconImage = [VLCApplication.sharedApplication vlcAppIconImage];
-    [VLCApplication.sharedApplication
-        setApplicationIconImage:appIconImage];
+    [VLCApplication.sharedApplication setApplicationIconImage:appIconImage];
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
@@ -346,7 +345,7 @@ static VLCMain *sharedInstance = nil;
     if (!_p_intf)
         return;
 
-    NSUserDefaults * const defaults = NSUserDefaults.standardUserDefaults;
+    NSUserDefaults *const defaults = NSUserDefaults.standardUserDefaults;
     if ([defaults integerForKey:kVLCPreferencesVersion] != 4) {
         [defaults setBool:YES forKey:VLCPlaybackEndViewEnabledKey];
         [defaults setBool:NO forKey:VLCDisplayTrackNumberPlayQueueKey];
@@ -367,14 +366,14 @@ static VLCMain *sharedInstance = nil;
 
 - (int)processIsTranslated
 {
-   int ret = 0;
-   size_t size = sizeof(ret);
-   if (sysctlbyname("sysctl.proc_translated", &ret, &size, NULL, 0) == -1) {
-      if (errno == ENOENT)
-         return 0;
-      return -1;
-   }
-   return ret;
+    int ret = 0;
+    size_t size = sizeof(ret);
+    if (sysctlbyname("sysctl.proc_translated", &ret, &size, NULL, 0) == -1) {
+        if (errno == ENOENT)
+            return 0;
+        return -1;
+    }
+    return ret;
 }
 
 #pragma mark -
@@ -393,9 +392,9 @@ static VLCMain *sharedInstance = nil;
 
     NSNotificationCenter *notiticationCenter = NSNotificationCenter.defaultCenter;
     if (notification == nil) {
-        [notiticationCenter postNotificationName: NSApplicationWillTerminateNotification object: nil];
+        [notiticationCenter postNotificationName:NSApplicationWillTerminateNotification object:nil];
     }
-    [notiticationCenter removeObserver: self];
+    [notiticationCenter removeObserver:self];
 
     // closes all open vouts
     _voutProvider = nil;
@@ -431,7 +430,8 @@ static VLCMain *sharedInstance = nil;
 #ifdef __x86_64__
     if (OSX_BIGSUR_AND_HIGHER) {
         if ([self processIsTranslated] > 0) {
-            msg_Dbg(getIntf(), "Process is translated. On update, VLC will install the native ARM-64 binary.");
+            msg_Dbg(getIntf(),
+                    "Process is translated. On update, VLC will install the native ARM-64 binary.");
             return kARM64UpdateURLString;
         }
     }
@@ -439,7 +439,7 @@ static VLCMain *sharedInstance = nil;
 #elif __arm64__
     return kARM64UpdateURLString;
 #else
-    #error unsupported architecture
+#error unsupported architecture
 #endif
 }
 
@@ -448,7 +448,9 @@ static VLCMain *sharedInstance = nil;
     msg_Dbg(getIntf(), "No update found");
 }
 
-- (void)updater:(SUUpdater *)updater failedToDownloadUpdate:(SUAppcastItem *)item error:(NSError *)error
+- (void)updater:(SUUpdater *)updater
+    failedToDownloadUpdate:(SUAppcastItem *)item
+                     error:(NSError *)error
 {
     msg_Warn(getIntf(), "Failed to download update with error %li", error.code);
 }
@@ -480,8 +482,9 @@ static VLCMain *sharedInstance = nil;
         }
     }
 
-    NSArray *o_sorted_names = [resultItems sortedArrayUsingSelector: @selector(caseInsensitiveCompare:)];
-    NSMutableArray *o_result = [NSMutableArray arrayWithCapacity: [o_sorted_names count]];
+    NSArray *o_sorted_names =
+        [resultItems sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
+    NSMutableArray *o_result = [NSMutableArray arrayWithCapacity:[o_sorted_names count]];
     for (NSString *filepath in o_sorted_names) {
         VLCOpenInputMetadata *inputMetadata;
 
@@ -496,7 +499,8 @@ static VLCMain *sharedInstance = nil;
 }
 
 /* When user click in the Dock icon our double click in the finder */
-- (BOOL)applicationShouldHandleReopen:(NSApplication *)theApplication hasVisibleWindows:(BOOL)hasVisibleWindows
+- (BOOL)applicationShouldHandleReopen:(NSApplication *)theApplication
+                    hasVisibleWindows:(BOOL)hasVisibleWindows
 {
     if (!hasVisibleWindows)
         [[self libraryWindow] makeKeyAndOrderFront:self];
@@ -600,7 +604,8 @@ static VLCMain *sharedInstance = nil;
 - (VLCDetachedAudioWindow *)detachedAudioWindow
 {
     if (_detachedAudioWindow == nil) {
-        NSWindowController * const windowController = [[NSWindowController alloc] initWithWindowNibName:NSStringFromClass(VLCDetachedAudioWindow.class)];
+        NSWindowController *const windowController = [[NSWindowController alloc]
+            initWithWindowNibName:NSStringFromClass(VLCDetachedAudioWindow.class)];
         [windowController loadWindow];
         _detachedAudioWindow = (VLCDetachedAudioWindow *)windowController.window;
     }

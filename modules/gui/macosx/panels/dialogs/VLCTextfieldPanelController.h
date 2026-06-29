@@ -40,14 +40,15 @@
  * \param returnCode Result from panel. Can be NSModalResponseOK or NSModalResponseCancel.
  * \param resultingText Resulting text string entered in panel.
  */
-typedef void(^TextfieldPanelCompletionBlock)(NSInteger returnCode, NSString *resultingText);
+typedef void (^TextfieldPanelCompletionBlock)(NSInteger returnCode, NSString *resultingText);
 
 /**
  * Shows the panel as a modal dialog with window as its owner.
  * \param window Parent window for the dialog.
  * \param handler Completion block.
  */
-- (void)runModalForWindow:(NSWindow *)window completionHandler:(TextfieldPanelCompletionBlock)handler;
+- (void)runModalForWindow:(NSWindow *)window
+        completionHandler:(TextfieldPanelCompletionBlock)handler;
 
 - (IBAction)windowElementAction:(id)sender;
 

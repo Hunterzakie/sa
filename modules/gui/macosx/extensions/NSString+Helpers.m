@@ -60,19 +60,16 @@ NSString *const kVLCMediaUnknown = @"Unknown";
     if (negative && duration > 0) {
         vlc_tick_t remaining = (duration > time) ? (duration - time) : 0;
 
-        return [NSString stringWithFormat:@"-%s",
-                vlc_tick_to_str(psz_time, remaining)];
+        return [NSString stringWithFormat:@"-%s", vlc_tick_to_str(psz_time, remaining)];
     } else {
-        return [NSString stringWithUTF8String:
-                vlc_tick_to_str(psz_time, time)];
+        return [NSString stringWithUTF8String:vlc_tick_to_str(psz_time, time)];
     }
 }
 
 + (instancetype)stringWithTimeFromTicks:(vlc_tick_t)time
 {
     char psz_time[MSTRTIME_MAX_SIZE];
-    return [NSString stringWithUTF8String:
-            vlc_tick_to_str(psz_time, time)];
+    return [NSString stringWithUTF8String:vlc_tick_to_str(psz_time, time)];
 }
 
 + (instancetype)stringWithTime:(long long int)time
@@ -80,15 +77,15 @@ NSString *const kVLCMediaUnknown = @"Unknown";
     if (time > 0) {
         if (time > 3600)
             return [NSString stringWithFormat:@"%s%01ld:%02ld:%02ld",
-                    time < 0 ? "-" : "",
-                    (long) (time / 3600),
-                    (long)((time / 60) % 60),
-                    (long) (time % 60)];
+                                              time < 0 ? "-" : "",
+                                              (long)(time / 3600),
+                                              (long)((time / 60) % 60),
+                                              (long)(time % 60)];
         else
             return [NSString stringWithFormat:@"%s%02ld:%02ld",
-                    time < 0 ? "-" : "",
-                    (long)((time / 60) % 60),
-                    (long) (time % 60)];
+                                              time < 0 ? "-" : "",
+                                              (long)((time / 60) % 60),
+                                              (long)(time % 60)];
     } else {
         // Return a string that represents an undefined time.
         return @"--:--";
@@ -102,11 +99,14 @@ NSString *const kVLCMediaUnknown = @"Unknown";
     NSInteger returnValue = 0;
     switch (componentCount) {
         case 3:
-            returnValue = [[components firstObject] intValue] * 3600 + [[components objectAtIndex:1] intValue] * 60 + [[components objectAtIndex:2] intValue];
+            returnValue = [[components firstObject] intValue] * 3600 +
+                [[components objectAtIndex:1] intValue] * 60 +
+                [[components objectAtIndex:2] intValue];
             break;
 
         case 2:
-            returnValue = [[components firstObject] intValue] * 60 + [[components objectAtIndex:1] intValue];
+            returnValue =
+                [[components firstObject] intValue] * 60 + [[components objectAtIndex:1] intValue];
             break;
 
         default:
@@ -163,34 +163,29 @@ NSString *const kVLCMediaUnknown = @"Unknown";
 
     NSMutableString *wrapped_string = [self mutableCopy];
 
-    NSTextStorage *text_storage =
-    [[NSTextStorage alloc] initWithString:wrapped_string
-                               attributes:@{
-                                            NSFontAttributeName : [NSFont labelFontOfSize: 0.0]
-                                            }];
+    NSTextStorage *text_storage = [[NSTextStorage alloc]
+        initWithString:wrapped_string
+            attributes:@{ NSFontAttributeName : [NSFont labelFontOfSize:0.0] }];
 
     NSLayoutManager *layout_manager = [[NSLayoutManager alloc] init];
     NSTextContainer *text_container =
-    [[NSTextContainer alloc] initWithContainerSize:NSMakeSize(width, 2000)];
+        [[NSTextContainer alloc] initWithContainerSize:NSMakeSize(width, 2000)];
 
     [layout_manager addTextContainer:text_container];
     [text_storage addLayoutManager:layout_manager];
 
     glyphRange = [layout_manager glyphRangeForTextContainer:text_container];
 
-    for (NSUInteger glyphIndex = glyphRange.location;
-         glyphIndex < NSMaxRange(glyphRange);
-         glyphIndex += effectiveRange.length)
-    {
-        [layout_manager lineFragmentRectForGlyphAtIndex:glyphIndex
-                                         effectiveRange:&effectiveRange];
+    for (NSUInteger glyphIndex = glyphRange.location; glyphIndex < NSMaxRange(glyphRange);
+         glyphIndex += effectiveRange.length) {
+        [layout_manager lineFragmentRectForGlyphAtIndex:glyphIndex effectiveRange:&effectiveRange];
 
         charRange = [layout_manager characterRangeForGlyphRange:effectiveRange
                                                actualGlyphRange:&effectiveRange];
-        if ([wrapped_string lineRangeForRange:
-             NSMakeRange(charRange.location + breaksInserted, charRange.length)
-             ].length > charRange.length)
-        {
+        if ([wrapped_string lineRangeForRange:NSMakeRange(charRange.location + breaksInserted,
+                                                          charRange.length)]
+                .length
+            > charRange.length) {
             [wrapped_string insertString:@"\n" atIndex:NSMaxRange(charRange) + breaksInserted];
             breaksInserted++;
         }
@@ -207,7 +202,7 @@ NSString *const kVLCMediaUnknown = @"Unknown";
     //   \\)    - matches ')'
     //   $      - position at the end of the string
     NSError *error = nil;
-    NSRegularExpression * const regex =
+    NSRegularExpression *const regex =
         [NSRegularExpression regularExpressionWithPattern:@"\\((\\d+)\\)$" options:0 error:&error];
     if (error) {
         NSLog(@"Regex creation error: %@", error);
@@ -215,19 +210,20 @@ NSString *const kVLCMediaUnknown = @"Unknown";
     }
 
     const NSRange fullRange = NSMakeRange(0, self.length);
-    NSTextCheckingResult * const match = [regex firstMatchInString:self options:0 range:fullRange];
+    NSTextCheckingResult *const match = [regex firstMatchInString:self options:0 range:fullRange];
 
     if (match == nil) {
         return [self stringByAppendingString:@" (2)"];
     }
     // Extract the captured digits.
     const NSRange numberRange = [match rangeAtIndex:1];
-    NSString * const numberString = [self substringWithRange:numberRange];
+    NSString *const numberString = [self substringWithRange:numberRange];
     const NSInteger number = numberString.integerValue + 1;
 
     // Replace the old number with the incremented number.
-    NSMutableString * const result = self.mutableCopy;
-    [result replaceCharactersInRange:numberRange withString:[NSString stringWithFormat:@"%ld", number]];
+    NSMutableString *const result = self.mutableCopy;
+    [result replaceCharactersInRange:numberRange
+                          withString:[NSString stringWithFormat:@"%ld", number]];
     return result.copy;
 }
 
@@ -237,7 +233,8 @@ NSString *const kVLCMediaUnknown = @"Unknown";
         return @[];
     }
 
-    NSString *extensions = [NSString stringWithCString:extensionsString encoding:NSUTF8StringEncoding];
+    NSString *extensions = [NSString stringWithCString:extensionsString
+                                              encoding:NSUTF8StringEncoding];
     extensions = [extensions stringByReplacingOccurrencesOfString:@"*." withString:@""];
     return [extensions componentsSeparatedByString:@";"];
 }
@@ -251,37 +248,34 @@ static struct
 {
     unichar i_nskey;
     unsigned int i_vlckey;
-} nskeys_to_vlckeys[] =
-{
-    { NSUpArrowFunctionKey, KEY_UP },
-    { NSDownArrowFunctionKey, KEY_DOWN },
-    { NSLeftArrowFunctionKey, KEY_LEFT },
-    { NSRightArrowFunctionKey, KEY_RIGHT },
-    { NSF1FunctionKey, KEY_F1 },
-    { NSF2FunctionKey, KEY_F2 },
-    { NSF3FunctionKey, KEY_F3 },
-    { NSF4FunctionKey, KEY_F4 },
-    { NSF5FunctionKey, KEY_F5 },
-    { NSF6FunctionKey, KEY_F6 },
-    { NSF7FunctionKey, KEY_F7 },
-    { NSF8FunctionKey, KEY_F8 },
-    { NSF9FunctionKey, KEY_F9 },
-    { NSF10FunctionKey, KEY_F10 },
-    { NSF11FunctionKey, KEY_F11 },
-    { NSF12FunctionKey, KEY_F12 },
-    { NSInsertFunctionKey, KEY_INSERT },
-    { NSHomeFunctionKey, KEY_HOME },
-    { NSEndFunctionKey, KEY_END },
-    { NSPageUpFunctionKey, KEY_PAGEUP },
-    { NSPageDownFunctionKey, KEY_PAGEDOWN },
-    { NSMenuFunctionKey, KEY_MENU },
-    { NSTabCharacter, KEY_TAB },
-    { NSCarriageReturnCharacter, KEY_ENTER },
-    { NSEnterCharacter, KEY_ENTER },
-    { NSBackspaceCharacter, KEY_BACKSPACE },
-    { NSDeleteCharacter, KEY_DELETE },
-    {0,0}
-};
+} nskeys_to_vlckeys[] = { { NSUpArrowFunctionKey, KEY_UP },
+                          { NSDownArrowFunctionKey, KEY_DOWN },
+                          { NSLeftArrowFunctionKey, KEY_LEFT },
+                          { NSRightArrowFunctionKey, KEY_RIGHT },
+                          { NSF1FunctionKey, KEY_F1 },
+                          { NSF2FunctionKey, KEY_F2 },
+                          { NSF3FunctionKey, KEY_F3 },
+                          { NSF4FunctionKey, KEY_F4 },
+                          { NSF5FunctionKey, KEY_F5 },
+                          { NSF6FunctionKey, KEY_F6 },
+                          { NSF7FunctionKey, KEY_F7 },
+                          { NSF8FunctionKey, KEY_F8 },
+                          { NSF9FunctionKey, KEY_F9 },
+                          { NSF10FunctionKey, KEY_F10 },
+                          { NSF11FunctionKey, KEY_F11 },
+                          { NSF12FunctionKey, KEY_F12 },
+                          { NSInsertFunctionKey, KEY_INSERT },
+                          { NSHomeFunctionKey, KEY_HOME },
+                          { NSEndFunctionKey, KEY_END },
+                          { NSPageUpFunctionKey, KEY_PAGEUP },
+                          { NSPageDownFunctionKey, KEY_PAGEDOWN },
+                          { NSMenuFunctionKey, KEY_MENU },
+                          { NSTabCharacter, KEY_TAB },
+                          { NSCarriageReturnCharacter, KEY_ENTER },
+                          { NSEnterCharacter, KEY_ENTER },
+                          { NSBackspaceCharacter, KEY_BACKSPACE },
+                          { NSDeleteCharacter, KEY_DELETE },
+                          { 0, 0 } };
 
 unsigned int CocoaKeyToVLC(unichar i_key)
 {
@@ -297,7 +291,8 @@ unsigned int CocoaKeyToVLC(unichar i_key)
 
 /* takes a good old const c string and converts it to NSString without UTF8 loss */
 
-NSString *toNSStr(const char *str) {
+NSString *toNSStr(const char *str)
+{
     return str != NULL ? [NSString stringWithUTF8String:str] : @"";
 }
 
@@ -308,28 +303,32 @@ NSImage *imageFromRes(NSString *name)
 
 bool fixIntfSettings(void)
 {
-    NSMutableString * o_workString;
+    NSMutableString *o_workString;
     NSRange returnedRange;
     NSRange fullRange;
     BOOL b_needsRestart = NO;
 
-    #define fixpref(pref) \
-    o_workString = [[NSMutableString alloc] initWithFormat:@"%s", config_GetPsz(pref)]; \
-    if ([o_workString length] > 0) \
-    { \
-        returnedRange = [o_workString rangeOfString:@"macosx" options: NSCaseInsensitiveSearch]; \
-        if (returnedRange.location != NSNotFound) \
-        { \
-            if ([o_workString isEqualToString:@"macosx"]) \
-                [o_workString setString:@""]; \
-            fullRange = NSMakeRange(0, [o_workString length]); \
-            [o_workString replaceOccurrencesOfString:@":macosx" withString:@"" options: NSCaseInsensitiveSearch range: fullRange]; \
-            fullRange = NSMakeRange(0, [o_workString length]); \
-            [o_workString replaceOccurrencesOfString:@"macosx:" withString:@"" options: NSCaseInsensitiveSearch range: fullRange]; \
-            \
-            config_PutPsz(pref, [o_workString UTF8String]); \
-            b_needsRestart = YES; \
-        } \
+#define fixpref(pref)                                                                              \
+    o_workString = [[NSMutableString alloc] initWithFormat:@"%s", config_GetPsz(pref)];            \
+    if ([o_workString length] > 0) {                                                               \
+        returnedRange = [o_workString rangeOfString:@"macosx" options:NSCaseInsensitiveSearch];    \
+        if (returnedRange.location != NSNotFound) {                                                \
+            if ([o_workString isEqualToString:@"macosx"])                                          \
+                [o_workString setString:@""];                                                      \
+            fullRange = NSMakeRange(0, [o_workString length]);                                     \
+            [o_workString replaceOccurrencesOfString:@":macosx"                                    \
+                                          withString:@""                                           \
+                                             options:NSCaseInsensitiveSearch                       \
+                                               range:fullRange];                                   \
+            fullRange = NSMakeRange(0, [o_workString length]);                                     \
+            [o_workString replaceOccurrencesOfString:@"macosx:"                                    \
+                                          withString:@""                                           \
+                                             options:NSCaseInsensitiveSearch                       \
+                                               range:fullRange];                                   \
+                                                                                                   \
+            config_PutPsz(pref, [o_workString UTF8String]);                                        \
+            b_needsRestart = YES;                                                                  \
+        }                                                                                          \
     }
 
     fixpref("control");
@@ -339,7 +338,7 @@ bool fixIntfSettings(void)
     return b_needsRestart;
 }
 
-NSString * getVolumeTypeFromMountPath(NSString *mountPath)
+NSString *getVolumeTypeFromMountPath(NSString *mountPath)
 {
     struct statfs stf;
     int ret = statfs([mountPath fileSystemRepresentation], &stf);
@@ -351,7 +350,8 @@ NSString * getVolumeTypeFromMountPath(NSString *mountPath)
     NSString *bsdMount = [NSString stringWithUTF8String:stf.f_mntfromname];
     NSString *bsdName = [bsdMount lastPathComponent];
 
-    CFMutableDictionaryRef matchingDict = IOBSDNameMatching(kIOMasterPortDefault, 0, [bsdName UTF8String]);
+    CFMutableDictionaryRef matchingDict =
+        IOBSDNameMatching(kIOMasterPortDefault, 0, [bsdName UTF8String]);
     NSString *returnValue;
 
     io_service_t service = IOServiceGetMatchingService(kIOMasterPortDefault, matchingDict);
@@ -370,7 +370,8 @@ NSString * getVolumeTypeFromMountPath(NSString *mountPath)
             [fileManager fileExistsAtPath:audioTSPath isDirectory:&audioTSExists];
             if (audioTSExists) {
                 NSSet *audioExtensions = [NSSet setWithObjects:@"aob", @"ifo", nil];
-                NSArray *audioTSFolderItems = [fileManager contentsOfDirectoryAtPath:audioTSPath error:nil];
+                NSArray *audioTSFolderItems = [fileManager contentsOfDirectoryAtPath:audioTSPath
+                                                                               error:nil];
 
                 for (NSString *fileItem in audioTSFolderItems) {
                     NSString *fileItemExtension = fileItem.pathExtension.lowercaseString;
@@ -390,9 +391,13 @@ NSString * getVolumeTypeFromMountPath(NSString *mountPath)
         }
     }
 
-    if ([mountPath rangeOfString:@"VIDEO_TS" options:NSCaseInsensitiveSearch | NSBackwardsSearch].location != NSNotFound) {
+    if ([mountPath rangeOfString:@"VIDEO_TS" options:NSCaseInsensitiveSearch | NSBackwardsSearch]
+            .location
+        != NSNotFound) {
         returnValue = kVLCMediaVideoTSFolder;
-    } else if ([mountPath rangeOfString:@"BDMV" options:NSCaseInsensitiveSearch | NSBackwardsSearch].location != NSNotFound) {
+    } else if ([mountPath rangeOfString:@"BDMV" options:NSCaseInsensitiveSearch | NSBackwardsSearch]
+                   .location
+               != NSNotFound) {
         returnValue = kVLCMediaBDMVFolder;
     } else {
         // NSFileManager is not thread-safe, don't use defaultManager outside of the main thread
@@ -403,8 +408,7 @@ NSString * getVolumeTypeFromMountPath(NSString *mountPath)
             NSString *fullPath = [mountPath stringByAppendingPathComponent:currentFile];
 
             BOOL isDirectory;
-            if ([fileManager fileExistsAtPath:fullPath isDirectory:&isDirectory] && isDirectory)
-            {
+            if ([fileManager fileExistsAtPath:fullPath isDirectory:&isDirectory] && isDirectory) {
                 if ([currentFile caseInsensitiveCompare:@"SVCD"] == NSOrderedSame) {
                     returnValue = kVLCMediaSVCD;
                     break;
@@ -431,7 +435,7 @@ NSString * getVolumeTypeFromMountPath(NSString *mountPath)
     return returnValue;
 }
 
-NSString * getBSDNodeFromMountPath(NSString *mountPath)
+NSString *getBSDNodeFromMountPath(NSString *mountPath)
 {
     struct statfs stf;
     int ret = statfs([mountPath fileSystemRepresentation], &stf);
@@ -446,7 +450,7 @@ NSString * getBSDNodeFromMountPath(NSString *mountPath)
     return fixedBsdName;
 }
 
-NSString * OSXStringKeyToString(NSString *theString)
+NSString *OSXStringKeyToString(NSString *theString)
 {
     if (![theString isEqualToString:@""]) {
         /* remove cruft */
@@ -463,28 +467,57 @@ NSString * OSXStringKeyToString(NSString *theString)
             theString = [NSString stringWithFormat:@"%@-", theString];
         }
         /* modifiers */
-        theString = [theString stringByReplacingOccurrencesOfString:@"Command" withString: [NSString stringWithUTF8String:"\xE2\x8C\x98"]];
-        theString = [theString stringByReplacingOccurrencesOfString:@"Alt" withString: [NSString stringWithUTF8String:"\xE2\x8C\xA5"]];
-        theString = [theString stringByReplacingOccurrencesOfString:@"Shift" withString: [NSString stringWithUTF8String:"\xE2\x87\xA7"]];
-        theString = [theString stringByReplacingOccurrencesOfString:@"Ctrl" withString: [NSString stringWithUTF8String:"\xE2\x8C\x83"]];
+        theString = [theString
+            stringByReplacingOccurrencesOfString:@"Command"
+                                      withString:[NSString stringWithUTF8String:"\xE2\x8C\x98"]];
+        theString = [theString
+            stringByReplacingOccurrencesOfString:@"Alt"
+                                      withString:[NSString stringWithUTF8String:"\xE2\x8C\xA5"]];
+        theString = [theString
+            stringByReplacingOccurrencesOfString:@"Shift"
+                                      withString:[NSString stringWithUTF8String:"\xE2\x87\xA7"]];
+        theString = [theString
+            stringByReplacingOccurrencesOfString:@"Ctrl"
+                                      withString:[NSString stringWithUTF8String:"\xE2\x8C\x83"]];
         /* show non-character keys correctly */
-        theString = [theString stringByReplacingOccurrencesOfString:@"Right" withString:[NSString stringWithUTF8String:"\xE2\x86\x92"]];
-        theString = [theString stringByReplacingOccurrencesOfString:@"Left" withString:[NSString stringWithUTF8String:"\xE2\x86\x90"]];
-        theString = [theString stringByReplacingOccurrencesOfString:@"Page Up" withString:[NSString stringWithUTF8String:"\xE2\x87\x9E"]];
-        theString = [theString stringByReplacingOccurrencesOfString:@"Page Down" withString:[NSString stringWithUTF8String:"\xE2\x87\x9F"]];
-        theString = [theString stringByReplacingOccurrencesOfString:@"Up" withString:[NSString stringWithUTF8String:"\xE2\x86\x91"]];
-        theString = [theString stringByReplacingOccurrencesOfString:@"Down" withString:[NSString stringWithUTF8String:"\xE2\x86\x93"]];
-        theString = [theString stringByReplacingOccurrencesOfString:@"Enter" withString:[NSString stringWithUTF8String:"\xe2\x86\xb5"]];
-        theString = [theString stringByReplacingOccurrencesOfString:@"Tab" withString:[NSString stringWithUTF8String:"\xe2\x87\xa5"]];
-        theString = [theString stringByReplacingOccurrencesOfString:@"Delete" withString:[NSString stringWithUTF8String:"\xe2\x8c\xab"]];        /* capitalize plain characters to suit the menubar's look */
+        theString = [theString
+            stringByReplacingOccurrencesOfString:@"Right"
+                                      withString:[NSString stringWithUTF8String:"\xE2\x86\x92"]];
+        theString = [theString
+            stringByReplacingOccurrencesOfString:@"Left"
+                                      withString:[NSString stringWithUTF8String:"\xE2\x86\x90"]];
+        theString = [theString
+            stringByReplacingOccurrencesOfString:@"Page Up"
+                                      withString:[NSString stringWithUTF8String:"\xE2\x87\x9E"]];
+        theString = [theString
+            stringByReplacingOccurrencesOfString:@"Page Down"
+                                      withString:[NSString stringWithUTF8String:"\xE2\x87\x9F"]];
+        theString = [theString
+            stringByReplacingOccurrencesOfString:@"Up"
+                                      withString:[NSString stringWithUTF8String:"\xE2\x86\x91"]];
+        theString = [theString
+            stringByReplacingOccurrencesOfString:@"Down"
+                                      withString:[NSString stringWithUTF8String:"\xE2\x86\x93"]];
+        theString = [theString
+            stringByReplacingOccurrencesOfString:@"Enter"
+                                      withString:[NSString stringWithUTF8String:"\xe2\x86\xb5"]];
+        theString = [theString
+            stringByReplacingOccurrencesOfString:@"Tab"
+                                      withString:[NSString stringWithUTF8String:"\xe2\x87\xa5"]];
+        theString = [theString
+            stringByReplacingOccurrencesOfString:@"Delete"
+                                      withString:[NSString
+                                                     stringWithUTF8String:
+                                                         "\xe2\x8c\xab"]]; /* capitalize plain
+                                                                              characters to suit the
+                                                                              menubar's look */
         theString = [theString capitalizedString];
-    }
-    else
+    } else
         theString = [NSString stringWithString:_NS("Not Set")];
     return theString;
 }
 
-NSString * VLCKeyToString(char *theChar)
+NSString *VLCKeyToString(char *theChar)
 {
     if (theChar == NULL) {
         return @"";
@@ -527,7 +560,9 @@ NSString * VLCKeyToString(char *theChar)
         else if ([theString rangeOfString:@"Left"].location != NSNotFound)
             return [NSString stringWithFormat:@"%C", NSLeftArrowFunctionKey];
         else if ([theString rangeOfString:@"Enter"].location != NSNotFound)
-            return [NSString stringWithFormat:@"%C", NSEnterCharacter]; // we treat NSCarriageReturnCharacter as aquivalent
+            return [NSString
+                stringWithFormat:@"%C", NSEnterCharacter]; // we treat NSCarriageReturnCharacter as
+                                                           // aquivalent
         else if ([theString rangeOfString:@"Insert"].location != NSNotFound)
             return [NSString stringWithFormat:@"%C", NSInsertFunctionKey];
         else if ([theString rangeOfString:@"Home"].location != NSNotFound)

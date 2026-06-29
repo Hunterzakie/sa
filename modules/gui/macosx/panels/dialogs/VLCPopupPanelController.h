@@ -41,7 +41,7 @@
  * \param returnCode Result from panel. Can be NSModalResponseOK or NSModalResponseCancel.
  * \param selectedIndex Selected index of the popup in panel.
  */
-typedef void(^PopupPanelCompletionBlock)(NSInteger returnCode, NSInteger selectedIndex);
+typedef void (^PopupPanelCompletionBlock)(NSInteger returnCode, NSInteger selectedIndex);
 
 /**
  * Shows the panel as a modal dialog with window as its owner.

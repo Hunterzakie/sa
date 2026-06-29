@@ -39,9 +39,9 @@ extern const CGFloat VLCVideoWindowCommonMinimalHeight;
  *  Common code for main window, detached window and extra video window
  *****************************************************************************/
 
-@interface VLCVideoWindowCommon : VLCWindow <NSWindowDelegate, NSAnimationDelegate>
+@interface VLCVideoWindowCommon : VLCWindow<NSWindowDelegate, NSAnimationDelegate>
 
-@property (nonatomic, strong) IBOutlet VLCMainVideoViewController* videoViewController;
+@property (nonatomic, strong) IBOutlet VLCMainVideoViewController *videoViewController;
 @property (readonly) BOOL inFullscreenTransition;
 @property (readonly) BOOL windowShouldExitFullscreenWhenFinished;
 @property (readwrite, assign) NSRect previousSavedFrame;

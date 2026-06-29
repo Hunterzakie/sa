@@ -36,7 +36,8 @@
     return self;
 }
 
-- (void)windowDidLoad {
+- (void)windowDidLoad
+{
     [super windowDidLoad];
 
     [_applyButton setTitle:_NS("Apply")];
@@ -47,14 +48,18 @@
 - (void)buttonPressed:(id)sender
 {
     [self.window orderOut:sender];
-    [NSApp endSheet: self.window];
-    NSString *geometry = [NSString stringWithFormat:@"%@:%@", _numeratorTextField.stringValue, _denominatorTextField.stringValue];
+    [NSApp endSheet:self.window];
+    NSString *geometry = [NSString stringWithFormat:@"%@:%@",
+                                                    _numeratorTextField.stringValue,
+                                                    _denominatorTextField.stringValue];
 
     if (_completionHandler)
-        _completionHandler(sender == _applyButton ? NSModalResponseOK : NSModalResponseCancel, geometry);
+        _completionHandler(sender == _applyButton ? NSModalResponseOK : NSModalResponseCancel,
+                           geometry);
 }
 
-- (void)runModalForWindow:(NSWindow *)window completionHandler:(CustomCropArCompletionHandler)handler
+- (void)runModalForWindow:(NSWindow *)window
+        completionHandler:(CustomCropArCompletionHandler)handler
 {
     _completionHandler = handler;
     [window beginSheet:self.window completionHandler:nil];

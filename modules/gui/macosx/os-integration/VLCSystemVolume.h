@@ -36,8 +36,8 @@ static const Float32 kVLCSystemVolumeDecreaseDefault = -0.0625; // 1/16 to match
 /**
  Class which provides helpers to manage the system default output device volume
 
- This class can not be instantiated, it only provides class methods that help to manage the volume of the
- systems default audio output device.
+ This class can not be instantiated, it only provides class methods that help to manage the volume
+ of the systems default audio output device.
 */
 @interface VLCSystemVolume : NSObject
 

@@ -24,7 +24,7 @@
  *****************************************************************************/
 
 #ifdef HAVE_CONFIG_H
-#   include "config.h"
+#include "config.h"
 #endif
 
 #import <Cocoa/Cocoa.h>
@@ -43,7 +43,7 @@ intf_thread_t *getIntf(void);
 vlc_preparser_t *getNetworkPreparser();
 
 extern NSString *VLCConfigurationChangedNotification;
-extern NSString * const kVLCPreferencesVersion;
+extern NSString *const kVLCPreferencesVersion;
 
 /*****************************************************************************
  * VLCMain interface

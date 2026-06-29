@@ -26,7 +26,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface VLCLibraryCollectionViewDelegate : NSObject <NSCollectionViewDelegate, NSCollectionViewDelegateFlowLayout>
+@interface VLCLibraryCollectionViewDelegate
+    : NSObject<NSCollectionViewDelegate, NSCollectionViewDelegateFlowLayout>
 
 @property (readwrite, assign) BOOL dynamicItemSizing;
 @property (readwrite, assign) NSSize staticItemSize;

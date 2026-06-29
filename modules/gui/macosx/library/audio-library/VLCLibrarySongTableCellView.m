@@ -64,7 +64,7 @@ NSString *VLCAudioLibrarySongCellIdentifier = @"VLCAudioLibrarySongCellIdentifie
         self.playInstantlyButton.contentTintColor = NSColor.VLCAccentColor;
     }
 
-    NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
     [notificationCenter addObserver:self
                            selector:@selector(playStateOrItemChanged:)
                                name:VLCPlayerCurrentMediaItemChanged
@@ -79,9 +79,9 @@ NSString *VLCAudioLibrarySongCellIdentifier = @"VLCAudioLibrarySongCellIdentifie
 
 - (void)playStateOrItemChanged:(NSNotification *)notification
 {
-    const BOOL isCurrentItemAndIsPlaying =
-        [self.representedItem.item.firstMediaItem.inputItem.MRL isEqualToString:VLCMain.sharedInstance.playQueueController.currentlyPlayingInputItem.MRL];
-    NSFont * const fontToUse = isCurrentItemAndIsPlaying
+    const BOOL isCurrentItemAndIsPlaying = [self.representedItem.item.firstMediaItem.inputItem.MRL
+        isEqualToString:VLCMain.sharedInstance.playQueueController.currentlyPlayingInputItem.MRL];
+    NSFont *const fontToUse = isCurrentItemAndIsPlaying
         ? [NSFont boldSystemFontOfSize:NSFont.systemFontSize]
         : [NSFont systemFontOfSize:NSFont.systemFontSize];
     self.songNameTextField.font = fontToUse;
@@ -114,7 +114,7 @@ NSString *VLCAudioLibrarySongCellIdentifier = @"VLCAudioLibrarySongCellIdentifie
 
     _representedItem = representedItem;
 
-    VLCMediaLibraryMediaItem * const mediaItem = (VLCMediaLibraryMediaItem *)representedItem.item;
+    VLCMediaLibraryMediaItem *const mediaItem = (VLCMediaLibraryMediaItem *)representedItem.item;
     NSAssert(mediaItem != nil, @"Represented item should be a medialibrarymediaitem!");
 
     self.songNameTextField.stringValue = mediaItem.displayString;
@@ -123,7 +123,8 @@ NSString *VLCAudioLibrarySongCellIdentifier = @"VLCAudioLibrarySongCellIdentifie
     if (mediaItem.trackNumber == 0) {
         self.trackNumberTextField.stringValue = @"—";
     } else {
-        self.trackNumberTextField.stringValue = [NSString stringWithFormat:@"%d", mediaItem.trackNumber];
+        self.trackNumberTextField.stringValue =
+            [NSString stringWithFormat:@"%d", mediaItem.trackNumber];
     }
 
     [self playStateOrItemChanged:nil];

@@ -30,13 +30,12 @@
 
 @implementation VLCRendererItem
 
-- (instancetype)initWithRendererItem:(vlc_renderer_item_t*)item
+- (instancetype)initWithRendererItem:(vlc_renderer_item_t *)item
 {
     self = [super init];
     if (self) {
         if (!item)
-            [NSException raise:NSInvalidArgumentException
-                        format:@"item must not be nil"];
+            [NSException raise:NSInvalidArgumentException format:@"item must not be nil"];
         _rendererItem = vlc_renderer_item_hold(item);
     }
     return self;
@@ -50,7 +49,8 @@
 
 - (NSString *)description
 {
-    return [NSString stringWithFormat:@"%@: name: %@, type: %@", [self className], self.name, self.type];
+    return [NSString
+        stringWithFormat:@"%@: name: %@, type: %@", [self className], self.name, self.type];
 }
 
 - (NSString *)name
@@ -58,12 +58,12 @@
     return toNSStr(vlc_renderer_item_name(_rendererItem));
 }
 
-- (NSString*)identifier
+- (NSString *)identifier
 {
     return toNSStr(vlc_renderer_item_sout(_rendererItem));
 }
 
-- (NSString*)iconURI
+- (NSString *)iconURI
 {
     return toNSStr(vlc_renderer_item_icon_uri(_rendererItem));
 }

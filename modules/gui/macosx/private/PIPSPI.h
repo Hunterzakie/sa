@@ -37,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-@protocol PIPViewControllerDelegate <NSObject>
+@protocol PIPViewControllerDelegate<NSObject>
 @optional
 - (BOOL)pipShouldClose:(PIPViewController *)pip;
 - (void)pipWillClose:(PIPViewController *)pip;

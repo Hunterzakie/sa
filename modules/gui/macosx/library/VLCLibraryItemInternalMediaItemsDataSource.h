@@ -28,14 +28,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol VLCMediaLibraryItemProtocol;
 
-@interface VLCLibraryItemInternalMediaItemsDataSource : NSObject <VLCLibraryTableViewDataSource>
+@interface VLCLibraryItemInternalMediaItemsDataSource : NSObject<VLCLibraryTableViewDataSource>
 
 extern const CGFloat VLCLibraryInternalMediaItemRowHeight;
 
 @property (readwrite, retain, nonatomic, nullable) id<VLCMediaLibraryItemProtocol> representedItem;
 
 - (void)setRepresentedItem:(id<VLCMediaLibraryItemProtocol>)item
-            withCompletion:(nullable void(^)(void))completionHandler;
+            withCompletion:(nullable void (^)(void))completionHandler;
 
 @end
 

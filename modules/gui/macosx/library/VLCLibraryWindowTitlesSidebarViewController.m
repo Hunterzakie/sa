@@ -41,8 +41,7 @@
 
 - (instancetype)initWithLibraryWindow:(VLCLibraryWindow *)libraryWindow
 {
-    return [super initWithLibraryWindow:libraryWindow
-                                nibName:@"VLCLibraryWindowTitlesView"];
+    return [super initWithLibraryWindow:libraryWindow nibName:@"VLCLibraryWindowTitlesView"];
 }
 
 - (void)viewDidLoad
@@ -68,7 +67,7 @@
     [self updateTitleList];
     [self updateTitleSelection];
 
-    NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
     [notificationCenter addObserver:self
                            selector:@selector(titleListChanged:)
                                name:VLCPlayerTitleListChanged
@@ -102,7 +101,7 @@
 
 - (void)updateTitleList
 {
-    VLCPlayerController * const playerController =
+    VLCPlayerController *const playerController =
         VLCMain.sharedInstance.playQueueController.playerController;
     const size_t titleCount = playerController.numberOfTitlesOfCurrentMedia;
     self.internalItemCount = titleCount;
@@ -112,13 +111,13 @@
 
 - (IBAction)tableViewAction:(id)sender
 {
-    VLCPlayerTitle * const selectedTitle =
-        self.titlesArrayController.selectedObjects.firstObject;
+    VLCPlayerTitle *const selectedTitle = self.titlesArrayController.selectedObjects.firstObject;
     if (selectedTitle == nil) {
         return;
     }
 
-    [VLCMain.sharedInstance.playQueueController.playerController setSelectedTitleIndex:selectedTitle.index];
+    [VLCMain.sharedInstance.playQueueController.playerController
+        setSelectedTitleIndex:selectedTitle.index];
 }
 
 - (void)titleSelectionChanged:(NSNotification *)notification
@@ -128,36 +127,38 @@
 
 - (void)updateTitleSelection
 {
-    VLCPlayerController * const playerController =
+    VLCPlayerController *const playerController =
         VLCMain.sharedInstance.playQueueController.playerController;
     const NSUInteger selectedTitleIndex = playerController.selectedTitleIndex;
-    NSIndexSet * const indexSet = [NSIndexSet indexSetWithIndex:selectedTitleIndex];
+    NSIndexSet *const indexSet = [NSIndexSet indexSetWithIndex:selectedTitleIndex];
     [self.tableView selectRowIndexes:indexSet byExtendingSelection:NO];
 }
 
-# pragma mark - NSTableView delegation
+#pragma mark - NSTableView delegation
 
 - (NSView *)tableView:(NSTableView *)tableView
-   viewForTableColumn:(NSTableColumn *)tableColumn
-                  row:(NSInteger)row
+    viewForTableColumn:(NSTableColumn *)tableColumn
+                   row:(NSInteger)row
 {
-    if ([tableColumn.identifier isEqualToString:@"VLCLibraryWindowTitlesTableViewNameColumnIdentifier"]) {
-        NSTableCellView * const cellView =
+    if ([tableColumn.identifier
+            isEqualToString:@"VLCLibraryWindowTitlesTableViewNameColumnIdentifier"]) {
+        NSTableCellView *const cellView =
             [tableView makeViewWithIdentifier:@"VLCLibraryWindowTitlesTableViewNameCellIdentifier"
                                         owner:self];
         [cellView.textField bind:NSValueBinding
-                            toObject:cellView
-                         withKeyPath:@"objectValue.name"
-                             options:nil];
+                        toObject:cellView
+                     withKeyPath:@"objectValue.name"
+                         options:nil];
         return cellView;
-    } else if ([tableColumn.identifier isEqualToString:@"VLCLibraryWindowTitlesTableViewLengthColumnIdentifier"]) {
-        NSTableCellView * const cellView =
+    } else if ([tableColumn.identifier
+                   isEqualToString:@"VLCLibraryWindowTitlesTableViewLengthColumnIdentifier"]) {
+        NSTableCellView *const cellView =
             [tableView makeViewWithIdentifier:@"VLCLibraryWindowTitlesTableViewLengthCellIdentifier"
                                         owner:self];
         [cellView.textField bind:NSValueBinding
-                            toObject:cellView
-                         withKeyPath:@"objectValue.lengthString"
-                             options:nil];
+                        toObject:cellView
+                     withKeyPath:@"objectValue.lengthString"
+                         options:nil];
         return cellView;
     }
 

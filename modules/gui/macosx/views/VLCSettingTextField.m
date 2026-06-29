@@ -29,7 +29,7 @@
     if ([stateString isEqualToString:_originalStateString]) {
         return;
     }
-    
+
     _originalStateString = stateString;
     _settingChanged = NO;
 

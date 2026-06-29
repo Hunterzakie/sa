@@ -28,7 +28,7 @@
 
 #import <vlc_media_library.h>
 
-@interface VLCLibrarySortingMenuController () <NSMenuDelegate>
+@interface VLCLibrarySortingMenuController ()<NSMenuDelegate>
 {
     VLCLibraryController *_libraryController;
     NSMenu *_librarySortingMenu;
@@ -51,21 +51,25 @@
 {
     _librarySortingMenu = [[NSMenu alloc] init];
 
-    NSArray *titles = @[_NS("Default"),
-                        _NS("Alphabetically"),
-                        _NS("Duration"),
-                        _NS("Insertion Date"),
-                        _NS("Last Modification Date"),
-                        _NS("Release Date"),
-                        _NS("File Size"),
-                        _NS("Artist"),
-                        _NS("Play Count"),
-                        _NS("Album"),
-                        _NS("Filename"),
-                        _NS("Track Number")];
+    NSArray *titles = @[
+        _NS("Default"),
+        _NS("Alphabetically"),
+        _NS("Duration"),
+        _NS("Insertion Date"),
+        _NS("Last Modification Date"),
+        _NS("Release Date"),
+        _NS("File Size"),
+        _NS("Artist"),
+        _NS("Play Count"),
+        _NS("Album"),
+        _NS("Filename"),
+        _NS("Track Number")
+    ];
     NSUInteger count = titles.count;
     for (NSUInteger x = 0; x < count; x++) {
-        NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:titles[x] action:@selector(selectSortKey:) keyEquivalent:@""];
+        NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:titles[x]
+                                                          action:@selector(selectSortKey:)
+                                                   keyEquivalent:@""];
         menuItem.target = self;
         menuItem.tag = x;
         [_librarySortingMenu addItem:menuItem];
@@ -73,11 +77,12 @@
 
     [_librarySortingMenu addItem:[NSMenuItem separatorItem]];
 
-    titles = @[_NS("Ascending"),
-               _NS("Descending")];
+    titles = @[ _NS("Ascending"), _NS("Descending") ];
     count = titles.count;
     for (NSUInteger x = 0; x < count; x++) {
-        NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:titles[x] action:@selector(selectSortOrder:) keyEquivalent:@""];
+        NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:titles[x]
+                                                          action:@selector(selectSortOrder:)
+                                                   keyEquivalent:@""];
         menuItem.target = self;
         menuItem.tag = x + 100;
         [_librarySortingMenu addItem:menuItem];
@@ -109,7 +114,8 @@
     enum vlc_ml_sorting_criteria_t sortCriteria = (enum vlc_ml_sorting_criteria_t)[sender tag];
     bool descending;
     if (_libraryController.unsorted) {
-        /* we don't have an order and the user can only do a single selection - pick the most popular */
+        /* we don't have an order and the user can only do a single selection - pick the most
+         * popular */
         descending = NO;
     } else {
         descending = YES;
@@ -123,7 +129,8 @@
     enum vlc_ml_sorting_criteria_t sortCriteria = (enum vlc_ml_sorting_criteria_t)[sender tag];
     bool descending = ([sender tag] - 100);
     if (_libraryController.unsorted) {
-        /* we don't have a key and the user can only do a single selection - pick the most popular */
+        /* we don't have a key and the user can only do a single selection - pick the most popular
+         */
         sortCriteria = VLC_ML_SORTING_DEFAULT;
     } else {
         sortCriteria = _libraryController.lastSortingCriteria;

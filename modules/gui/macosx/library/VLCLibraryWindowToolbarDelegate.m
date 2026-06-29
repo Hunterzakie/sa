@@ -33,7 +33,7 @@
 #import "menus/VLCMainMenu.h"
 #import "menus/renderers/VLCRendererMenuController.h"
 
-NSString * const VLCLibraryWindowTrackingSeparatorToolbarItemIdentifier = 
+NSString *const VLCLibraryWindowTrackingSeparatorToolbarItemIdentifier =
     @"VLCLibraryWindowTrackingSeparatorToolbarItemIdentifier";
 
 @implementation VLCLibraryWindowToolbarDelegate
@@ -43,23 +43,23 @@ NSString * const VLCLibraryWindowTrackingSeparatorToolbarItemIdentifier =
 - (void)awakeFromNib
 {
     self.toolbar.allowsUserCustomization = NO;
-    
+
     if (@available(macOS 11.0, *)) {
-        const NSInteger navSidebarToggleToolbarItemIndex = 
+        const NSInteger navSidebarToggleToolbarItemIndex =
             [self.toolbar.items indexOfObject:self.toggleNavSidebarToolbarItem];
 
         NSAssert(navSidebarToggleToolbarItemIndex != NSNotFound,
                  @"Could not find navigation sidebar toggle toolbar item!");
 
         const NSInteger trackingSeparatorItemIndex = navSidebarToggleToolbarItemIndex + 1;
-        [self.toolbar 
+        [self.toolbar
             insertItemWithItemIdentifier:VLCLibraryWindowTrackingSeparatorToolbarItemIdentifier
                                  atIndex:trackingSeparatorItemIndex];
         _trackingSeparatorToolbarItem =
             [self.toolbar.items objectAtIndex:trackingSeparatorItemIndex];
     }
 
-    NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
     [notificationCenter addObserver:self
                            selector:@selector(renderersChanged:)
                                name:VLCRendererAddedNotification
@@ -76,9 +76,10 @@ NSString * const VLCLibraryWindowTrackingSeparatorToolbarItemIdentifier =
     self.vlcIconToolbarItem.minSize = NSMakeSize(18, 18);
     self.vlcIconToolbarItem.maxSize = NSMakeSize(18, 18);
 
-    NSImageView * const vlcIconImageView = [[NSImageView alloc] initWithFrame:NSZeroRect];
+    NSImageView *const vlcIconImageView = [[NSImageView alloc] initWithFrame:NSZeroRect];
     vlcIconImageView.image = NSApp.applicationIconImage;
-    self.vlcIconToolbarItem.view = vlcIconImageView;;
+    self.vlcIconToolbarItem.view = vlcIconImageView;
+    ;
 
     // Hide renderers toolbar item at first. Start discoveries and wait for notifications about
     // renderers being added or removed to keep hidden or show depending on outcome
@@ -91,15 +92,16 @@ NSString * const VLCLibraryWindowTrackingSeparatorToolbarItemIdentifier =
 #pragma mark - toolbar delegate methods
 
 - (NSToolbarItem *)toolbar:(NSToolbar *)toolbar
-     itemForItemIdentifier:(NSToolbarItemIdentifier)itemIdentifier
- willBeInsertedIntoToolbar:(BOOL)flag
+        itemForItemIdentifier:(NSToolbarItemIdentifier)itemIdentifier
+    willBeInsertedIntoToolbar:(BOOL)flag
 {
     if ([itemIdentifier isEqualToString:VLCLibraryWindowTrackingSeparatorToolbarItemIdentifier]) {
         if (@available(macOS 11.0, *)) {
             return [NSTrackingSeparatorToolbarItem
-                    trackingSeparatorToolbarItemWithIdentifier:itemIdentifier
-                    splitView:self.libraryWindow.mainSplitView
-                    dividerIndex:VLCLibraryWindowNavigationSidebarSplitViewDividerIndex];
+                trackingSeparatorToolbarItemWithIdentifier:itemIdentifier
+                                                 splitView:self.libraryWindow.mainSplitView
+                                              dividerIndex:
+                                                  VLCLibraryWindowNavigationSidebarSplitViewDividerIndex];
         }
     }
 
@@ -124,13 +126,15 @@ NSString * const VLCLibraryWindowTrackingSeparatorToolbarItemIdentifier =
 
     if (rendererCount > 0 && !rendererToolbarItemVisible) {
         [self insertToolbarItem:self.renderersToolbarItem
-                      inFrontOf:@[self.sortOrderToolbarItem,
-                                  self.libraryViewModeToolbarItem,
-                                  self.forwardsToolbarItem,
-                                  self.backwardsToolbarItem,
-                                  self.trackingSeparatorToolbarItem,
-                                  self.toggleNavSidebarToolbarItem,
-                                  self.vlcIconToolbarItem]];
+                      inFrontOf:@[
+                          self.sortOrderToolbarItem,
+                          self.libraryViewModeToolbarItem,
+                          self.forwardsToolbarItem,
+                          self.backwardsToolbarItem,
+                          self.trackingSeparatorToolbarItem,
+                          self.toggleNavSidebarToolbarItem,
+                          self.vlcIconToolbarItem
+                      ]];
     } else if (rendererCount == 0 && rendererToolbarItemVisible) {
         [self hideToolbarItem:self.renderersToolbarItem];
     }
@@ -140,14 +144,14 @@ NSString * const VLCLibraryWindowTrackingSeparatorToolbarItemIdentifier =
 
 - (void)updatePlayqueueToggleState
 {
-    NSView * const multifunctionSidebar =
+    NSView *const multifunctionSidebar =
         self.libraryWindow.splitViewController.multifunctionSidebarViewController.view;
-    NSSplitView * const sv = self.libraryWindow.mainSplitView;
+    NSSplitView *const sv = self.libraryWindow.mainSplitView;
     self.libraryWindow.playQueueToggle.state =
         ![sv.arrangedSubviews containsObject:multifunctionSidebar] ||
-        [sv isSubviewCollapsed:multifunctionSidebar]
-            ? NSControlStateValueOff
-            : NSControlStateValueOn;
+            [sv isSubviewCollapsed:multifunctionSidebar]
+        ? NSControlStateValueOff
+        : NSControlStateValueOn;
 }
 
 #pragma mark - item visibility handling
@@ -169,7 +173,7 @@ NSString * const VLCLibraryWindowTrackingSeparatorToolbarItemIdentifier =
  * and the "items" parameter is an array containing @[item6, item5, item2, item1]
  * then the "toolbarItem" provided to this function will place toolbarItem thus:
  * | item1 | item2 | toolbarItem | item3 | item4 |
-*/
+ */
 
 - (void)insertToolbarItem:(NSToolbarItem *)toolbarItem inFrontOf:(NSArray<NSToolbarItem *> *)items
 {
@@ -178,19 +182,19 @@ NSString * const VLCLibraryWindowTrackingSeparatorToolbarItemIdentifier =
     NSParameterAssert(toolbarItem.itemIdentifier.length > 0);
 
     // Build toolbar item index map once to avoid double iteration
-    NSArray<NSToolbarItem *> * const toolbarItems = self.toolbar.items;
-    NSMapTable * const itemIndexMap = [NSMapTable strongToStrongObjectsMapTable];
+    NSArray<NSToolbarItem *> *const toolbarItems = self.toolbar.items;
+    NSMapTable *const itemIndexMap = [NSMapTable strongToStrongObjectsMapTable];
     for (NSUInteger i = 0; i < toolbarItems.count; i++) {
         [itemIndexMap setObject:@(i) forKey:toolbarItems[i]];
     }
 
-    NSNumber * const toolbarItemIndexNumber = [itemIndexMap objectForKey:toolbarItem];
+    NSNumber *const toolbarItemIndexNumber = [itemIndexMap objectForKey:toolbarItem];
     if (toolbarItemIndexNumber != nil) {
         return;
     }
 
-    for (NSToolbarItem * const item in items) {
-        NSNumber * const itemIndexNumber = [itemIndexMap objectForKey:item];
+    for (NSToolbarItem *const item in items) {
+        NSNumber *const itemIndexNumber = [itemIndexMap objectForKey:item];
         if (itemIndexNumber != nil) {
             const NSInteger itemIndex = itemIndexNumber.integerValue;
             [self.toolbar insertItemWithItemIdentifier:toolbarItem.itemIdentifier
@@ -212,16 +216,20 @@ NSString * const VLCLibraryWindowTrackingSeparatorToolbarItemIdentifier =
         return;
     }
 
-    [self insertToolbarItem:self.backwardsToolbarItem 
-                  inFrontOf:@[self.trackingSeparatorToolbarItem,
-                              self.toggleNavSidebarToolbarItem,
-                              self.vlcIconToolbarItem]];
+    [self insertToolbarItem:self.backwardsToolbarItem
+                  inFrontOf:@[
+                      self.trackingSeparatorToolbarItem,
+                      self.toggleNavSidebarToolbarItem,
+                      self.vlcIconToolbarItem
+                  ]];
 
     [self insertToolbarItem:self.forwardsToolbarItem
-                  inFrontOf:@[self.backwardsToolbarItem,
-                              self.trackingSeparatorToolbarItem,
-                              self.toggleNavSidebarToolbarItem,
-                              self.vlcIconToolbarItem]];
+                  inFrontOf:@[
+                      self.backwardsToolbarItem,
+                      self.trackingSeparatorToolbarItem,
+                      self.toggleNavSidebarToolbarItem,
+                      self.vlcIconToolbarItem
+                  ]];
 }
 
 - (void)setSortOrderToolbarItemVisible:(BOOL)visible
@@ -232,12 +240,14 @@ NSString * const VLCLibraryWindowTrackingSeparatorToolbarItemIdentifier =
     }
 
     [self insertToolbarItem:self.sortOrderToolbarItem
-                  inFrontOf:@[self.libraryViewModeToolbarItem,
-                              self.forwardsToolbarItem,
-                              self.backwardsToolbarItem,
-                              self.trackingSeparatorToolbarItem,
-                              self.toggleNavSidebarToolbarItem,
-                              self.vlcIconToolbarItem]];
+                  inFrontOf:@[
+                      self.libraryViewModeToolbarItem,
+                      self.forwardsToolbarItem,
+                      self.backwardsToolbarItem,
+                      self.trackingSeparatorToolbarItem,
+                      self.toggleNavSidebarToolbarItem,
+                      self.vlcIconToolbarItem
+                  ]];
 }
 
 - (void)setLibrarySearchToolbarItemVisible:(BOOL)visible
@@ -249,15 +259,14 @@ NSString * const VLCLibraryWindowTrackingSeparatorToolbarItemIdentifier =
     }
 
     // Display as far to the right as possible, but not in front of the multifunc bar toggle button
-    NSMutableArray<NSToolbarItem *> * const currentToolbarItems = self.toolbar.items.mutableCopy;
+    NSMutableArray<NSToolbarItem *> *const currentToolbarItems = self.toolbar.items.mutableCopy;
     if (currentToolbarItems.lastObject == self.togglePlayQueueToolbarItem) {
         [currentToolbarItems removeLastObject];
     }
 
-    NSArray * const reversedCurrentToolbarItems =
+    NSArray *const reversedCurrentToolbarItems =
         currentToolbarItems.reverseObjectEnumerator.allObjects;
-    [self insertToolbarItem:self.librarySearchToolbarItem
-                  inFrontOf:reversedCurrentToolbarItems];
+    [self insertToolbarItem:self.librarySearchToolbarItem inFrontOf:reversedCurrentToolbarItems];
 }
 
 - (void)setViewModeToolbarItemVisible:(BOOL)visible
@@ -268,19 +277,24 @@ NSString * const VLCLibraryWindowTrackingSeparatorToolbarItemIdentifier =
     }
 
     [self insertToolbarItem:self.libraryViewModeToolbarItem
-                  inFrontOf:@[self.forwardsToolbarItem,
-                              self.backwardsToolbarItem,
-                              self.trackingSeparatorToolbarItem,
-                              self.toggleNavSidebarToolbarItem,
-                              self.vlcIconToolbarItem]];
+                  inFrontOf:@[
+                      self.forwardsToolbarItem,
+                      self.backwardsToolbarItem,
+                      self.trackingSeparatorToolbarItem,
+                      self.toggleNavSidebarToolbarItem,
+                      self.vlcIconToolbarItem
+                  ]];
 }
 
 - (void)applyVisiblityFlags:(VLCLibraryWindowToolbarDisplayFlags)flags
 {
-    [self setForwardsBackwardsToolbarItemsVisible:flags & VLCLibraryWindowToolbarDisplayFlagNavigationButtons];
+    [self setForwardsBackwardsToolbarItemsVisible:flags &
+          VLCLibraryWindowToolbarDisplayFlagNavigationButtons];
     [self setSortOrderToolbarItemVisible:flags & VLCLibraryWindowToolbarDisplayFlagSortOrderButton];
-    [self setLibrarySearchToolbarItemVisible:flags & VLCLibraryWindowToolbarDisplayFlagLibrarySearchBar];
-    [self setViewModeToolbarItemVisible:flags & VLCLibraryWindowToolbarDisplayFlagToggleViewModeSegmentButton];
+    [self setLibrarySearchToolbarItemVisible:flags &
+          VLCLibraryWindowToolbarDisplayFlagLibrarySearchBar];
+    [self setViewModeToolbarItemVisible:flags &
+          VLCLibraryWindowToolbarDisplayFlagToggleViewModeSegmentButton];
 }
 
 @end

@@ -29,7 +29,7 @@
 + (instancetype)libraryScrollViewWithDocumentView:(NSView *)documentView
                                     contentInsets:(NSEdgeInsets)contentInsets
 {
-    NSScrollView * const scrollView = [[NSScrollView alloc] init];
+    NSScrollView *const scrollView = [[NSScrollView alloc] init];
     scrollView.translatesAutoresizingMaskIntoConstraints = NO;
     scrollView.hasHorizontalScroller = NO;
     scrollView.borderType = NSNoBorder;
@@ -42,14 +42,17 @@
 
 + (instancetype)libraryScrollViewWithDocumentView:(NSView *)documentView
 {
-    return [self libraryScrollViewWithDocumentView:documentView
-                                     contentInsets:VLCLibraryUIUnits.libraryViewScrollViewContentInsets];
+    return [self
+        libraryScrollViewWithDocumentView:documentView
+                            contentInsets:VLCLibraryUIUnits.libraryViewScrollViewContentInsets];
 }
 
 + (instancetype)libraryDetailScrollViewWithDocumentView:(NSView *)documentView
 {
-    return [self libraryScrollViewWithDocumentView:documentView
-                                     contentInsets:VLCLibraryUIUnits.libraryViewScrollViewDetailListContentInsets];
+    return
+        [self libraryScrollViewWithDocumentView:documentView
+                                  contentInsets:VLCLibraryUIUnits
+                                                    .libraryViewScrollViewDetailListContentInsets];
 }
 
 @end
