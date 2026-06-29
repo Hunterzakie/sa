@@ -19,24 +19,23 @@ Authored-by: Steve Lhomme <robux4@ycbcr.xyz>
  1 file changed, 8 insertions(+)
 
 diff --git a/src/vulkan/meson.build b/src/vulkan/meson.build
-index fe77f699..915df90b 100644
+index 9b23d92e..cf3f5e93 100644
 --- a/src/vulkan/meson.build
 +++ b/src/vulkan/meson.build
-@@ -6,6 +6,14 @@ registry_xml = get_option('vulkan-registry')
- 
- if vulkan_loader.found()
-   vulkan_headers = vulkan_loader.partial_dependency(includes: true, compile_args: true)
+@@ -3,6 +3,14 @@ vulkan_link = get_option('vk-proc-addr')
+ vulkan_loader = dependency('vulkan', required: false)
+ vulkan_headers = vulkan_loader.partial_dependency(includes: true, compile_args: true)
+ registry_xml = get_option('vulkan-registry')
 +
 +# add the C++ runtime that vulkan needs but may not expose in its pkg-config
-+  if cxx.get_id() == 'clang'
-+    build_deps += cxx.find_library('c++', required: true)
-+  elif cxx.get_id() == 'gcc'
-+    build_deps += cxx.find_library('stdc++', required: true)
-+  endif
++if vulkan_loader.found() and cxx.get_id() == 'clang'
++  build_deps += cxx.find_library('c++', required: true)
++elif vulkan_loader.found() and cxx.get_id() == 'gcc'
++  build_deps += cxx.find_library('stdc++', required: true)
++endif
 +
- # Probe for <vulkan/vulkan.h> as a fallback for the vulkan headers
- elif cc.has_header_symbol('vulkan/vulkan_core.h', 'VK_VERSION_1_2')
-   vulkan_headers = declare_dependency()
+
+ # Prefer our Vulkan headers for portability
+ vulkan_headers_dir = thirdparty/'Vulkan-Headers'
 -- 
 2.38.0
-
