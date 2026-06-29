@@ -1,7 +1,7 @@
 # fontconfig
 
-FONTCONFIG_VERSION := 2.14.2
-FONTCONFIG_URL := https://www.freedesktop.org/software/fontconfig/release/fontconfig-$(FONTCONFIG_VERSION).tar.gz
+FONTCONFIG_VERSION := 2.16.0
+FONTCONFIG_URL := https://www.freedesktop.org/software/fontconfig/release/fontconfig-$(FONTCONFIG_VERSION).tar.xz
 
 ifndef HAVE_WIN32
 PKGS += fontconfig
@@ -10,12 +10,12 @@ ifeq ($(call need_pkg,"fontconfig >= 2.11"),)
 PKGS_FOUND += fontconfig
 endif
 
-$(TARBALLS)/fontconfig-$(FONTCONFIG_VERSION).tar.gz:
+$(TARBALLS)/fontconfig-$(FONTCONFIG_VERSION).tar.xz:
 	$(call download_pkg,$(FONTCONFIG_URL),fontconfig)
 
-.sum-fontconfig: fontconfig-$(FONTCONFIG_VERSION).tar.gz
+.sum-fontconfig: fontconfig-$(FONTCONFIG_VERSION).tar.xz
 
-fontconfig: fontconfig-$(FONTCONFIG_VERSION).tar.gz .sum-fontconfig
+fontconfig: fontconfig-$(FONTCONFIG_VERSION).tar.xz .sum-fontconfig
 	$(UNPACK)
 	$(call update_autoconfig,.)
 	$(RM) $(UNPACK_DIR)/src/fcobjshash.gperf
