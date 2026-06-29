@@ -116,6 +116,13 @@ vlc_modules += {
     'sources' : files('stereo_widen.c')
 }
 
+# SRS WoW 3D stereo widening
+vlc_modules += {
+    'name' : 'stereo_srs_wow',
+    'sources' : files('stereo_srs_wow.c'),
+    'dependencies' : [m_lib]
+}
+
 # Spatializer module
 vlc_modules += {
     'name' : 'spatializer',
