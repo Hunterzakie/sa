@@ -24,6 +24,7 @@ import QtQml.Models
 import VLC.MediaLibrary
 
 import VLC.MainInterface
+import VLC.Playlist
 import VLC.Util
 import VLC.Widgets as Widgets
 import VLC.Style
@@ -119,6 +120,18 @@ Widgets.ExpandGridItemView {
                     break
                 case Qt.RightButton:
                     gridView.rightClickOnItem(index)
+                    break
+                case Qt.MiddleButton:
+                    const urlRole = MainCtx.getRoleByName(gridView.model, ["url", "mrl"])
+                    if (urlRole >= 0) {
+                        MainPlaylistController.append(Helpers.itemSelectionToDataList(index,
+                                                                                      gridView.selectionModel,
+                                                                                      urlRole), false)
+                    } else if (root.model.ml) {
+                        MediaLib.addToPlaylist(Helpers.itemSelectionToDataList(index,
+                                                                               gridView.selectionModel,
+                                                                               MainCtx.getRoleByName(gridView.model, "id")))
+                    }
                     break
             }
         }

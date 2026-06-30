@@ -25,6 +25,7 @@ import VLC.MediaLibrary
 import VLC.Util
 import VLC.Widgets as Widgets
 import VLC.MainInterface
+import VLC.Playlist
 import VLC.Style
 
 MainViewLoader {
@@ -64,6 +65,19 @@ MainViewLoader {
     list: tableComponent
     grid: gridComponent
     emptyLabel: emptyLabelComponent
+
+    function _onItemMiddleClicked(index : int, view : Item /* ItemView */) {
+        const urlRole = MainCtx.getRoleByName(view.model, ["url", "mrl"])
+        if (urlRole >= 0) {
+            MainPlaylistController.append(Helpers.itemSelectionToDataList(index,
+                                                                          view.selectionModel,
+                                                                          urlRole), false)
+        } else if (root.model.ml) {
+            MediaLib.addToPlaylist(Helpers.itemSelectionToDataList(index,
+                                                                   view.selectionModel,
+                                                                   MainCtx.getRoleByName(view.model, "id")))
+        }
+    }
 
     MLGenreModel {
         id: genreModel
@@ -167,6 +181,9 @@ MainViewLoader {
                             break
                         case Qt.RightButton:
                             gridView_id.rightClickOnItem(index)
+                            break
+                        case Qt.MiddleButton:
+                            root._onItemMiddleClicked(index, gridView_id)
                             break
                     }
                 }
@@ -300,6 +317,10 @@ MainViewLoader {
 
             onRightClick: (_,_,globalMousePos) => {
                 contextMenu.popup(selectionModel.selectedIndexes, globalMousePos)
+            }
+
+            onMiddleClick: (index, point) => {
+                root._onItemMiddleClicked(index, tableView_id)
             }
 
             MLTableColumns {

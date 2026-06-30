@@ -22,6 +22,7 @@ import QtQuick.Layouts
 
 import VLC.MediaLibrary
 import VLC.MainInterface
+import VLC.Playlist
 import VLC.Util
 import VLC.Widgets as Widgets
 import VLC.Style
@@ -186,6 +187,18 @@ Widgets.TableViewExt {
     onItemDoubleClicked: (index, model) => MediaLib.addAndPlay(model.id)
     onRightClick: (_,_, globalMousePos) => {
         contextMenu.popup(selectionModel.selectedIndexes, globalMousePos)
+    }
+    onMiddleClick: (index, point) => {
+        const urlRole = MainCtx.getRoleByName(root.model, ["url", "mrl"])
+        if (urlRole >= 0) {
+            MainPlaylistController.append(Helpers.itemSelectionToDataList(index,
+                                                                          root.selectionModel,
+                                                                          urlRole), false)
+        } else {
+            MediaLib.addToPlaylist(Helpers.itemSelectionToDataList(index,
+                                                                   root.selectionModel,
+                                                                   MainCtx.getRoleByName(root.model, "id")))
+        }
     }
 
     MLDragItem {

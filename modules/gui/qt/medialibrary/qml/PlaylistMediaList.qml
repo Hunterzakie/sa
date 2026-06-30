@@ -27,6 +27,7 @@ import VLC.MediaLibrary
 
 import VLC.Widgets as Widgets
 import VLC.MainInterface
+import VLC.Playlist
 import VLC.Util
 import VLC.Style
 import VLC.Dialogs
@@ -207,6 +208,19 @@ MainViewLoader {
         }
     }
 
+    function _onItemMiddleClicked(index : int, view : Item /* ItemView */) {
+        const urlRole = MainCtx.getRoleByName(view.model, ["url", "mrl"])
+        if (urlRole >= 0) {
+            MainPlaylistController.append(Helpers.itemSelectionToDataList(index,
+                                                                          view.selectionModel,
+                                                                          urlRole), false)
+        } else if (root.model.ml) {
+            MediaLib.addToPlaylist(Helpers.itemSelectionToDataList(index,
+                                                                   view.selectionModel,
+                                                                   MainCtx.getRoleByName(view.model, "id")))
+        }
+    }
+
     //---------------------------------------------------------------------------------------------
     // Childs
     //---------------------------------------------------------------------------------------------
@@ -350,6 +364,9 @@ MainViewLoader {
                             break
                         case Qt.RightButton:
                             gridView.rightClickOnItem(index)
+                            break
+                        case Qt.MiddleButton:
+                            root._onItemMiddleClicked(index, gridView)
                             break
                     }
                 }
@@ -504,6 +521,10 @@ MainViewLoader {
 
             onRightClick: (_, _, globalMousePos) => {
                 contextMenu.popup(selectionModel.selectedRows(), globalMousePos)
+            }
+
+            onMiddleClick: (index, point) => {
+                root._onItemMiddleClicked(index, tableView)
             }
 
             //-------------------------------------------------------------------------------------

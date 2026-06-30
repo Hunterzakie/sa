@@ -22,6 +22,7 @@ import QtQuick
 import VLC.MediaLibrary
 
 import VLC.MainInterface
+import VLC.Playlist
 import VLC.Widgets as Widgets
 import VLC.Util
 import VLC.Style
@@ -91,6 +92,19 @@ MainViewLoader {
     function _onItemDoubleClicked(model) {
         MediaLib.addAndPlay(model.id)
         History.push(["player"])
+    }
+
+    function _onItemMiddleClicked(index : int, view : Item /* ItemView */) {
+        const urlRole = MainCtx.getRoleByName(view.model, ["url", "mrl"])
+        if (urlRole >= 0) {
+            MainPlaylistController.append(Helpers.itemSelectionToDataList(index,
+                                                                          view.selectionModel,
+                                                                          urlRole), false)
+        } else if (root.model.ml) {
+            MediaLib.addToPlaylist(Helpers.itemSelectionToDataList(index,
+                                                                   view.selectionModel,
+                                                                   MainCtx.getRoleByName(view.model, "id")))
+        }
     }
 
     function _onActionAtIndex() {
@@ -194,6 +208,9 @@ MainViewLoader {
                         case Qt.RightButton:
                             gridView.rightClickOnItem(index)
                             break
+                        case Qt.MiddleButton:
+                            root._onItemMiddleClicked(index, gridView)
+                            break
                     }
                 }
 
@@ -289,6 +306,10 @@ MainViewLoader {
 
             onItemDoubleClicked: (_, model) => {
                 root._onItemDoubleClicked(model)
+            }
+
+            onMiddleClick: (index, point) => {
+                root._onItemMiddleClicked(index, tableView)
             }
 
             onRightClick: (_, _, globalMousePos) => {
