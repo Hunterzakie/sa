@@ -65,6 +65,7 @@ T.Control {
 
     property Item artworkTextureProvider
 
+    signal middleClick(var point) // TODO: Qt 6.2 can not use `eventPoint` type.
     signal rightClick(Item menuParent, var menuModel, point globalMousePos)
     signal itemDoubleClicked(var index, var model)
 
@@ -158,7 +159,7 @@ T.Control {
         TapHandler {
             acceptedDevices: PointerDevice.AllDevices & ~(PointerDevice.TouchScreen)
 
-            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
 
             gesturePolicy: TapHandler.ReleaseWithinBounds // TODO: Qt 6.2 bug: Use TapHandler.DragThreshold
 
@@ -167,7 +168,7 @@ T.Control {
             onSingleTapped: (eventPoint, button) => {
                 initialAction()
 
-                if (!(delegate.selected && button === Qt.RightButton)) {
+                if (!(delegate.selected && button !== Qt.LeftButton)) {
                     const view = delegate.ListView.view
                     delegate.selectionModel.updateSelection(point.modifiers, view.currentIndex, index)
                     view.currentIndex = index
@@ -175,6 +176,8 @@ T.Control {
 
                 if (button === Qt.RightButton)
                     delegate.rightClick(delegate, delegate.rowModel, eventPoint.globalPosition)
+                else if (button === Qt.MiddleButton)
+                    delegate.middleClick(eventPoint)
             }
 
             onDoubleTapped: (point, button) => {
