@@ -185,8 +185,16 @@ MainViewLoader {
                     contextMenu.popup(selectionModel.selectedIndexes, globalMousePos)
                 }
 
-                onItemClicked: (modifier, select) => {
-                    gridView.leftClickOnItem(modifier, index, select)
+                onItemClicked: (modifier, select, button) => {
+                    switch (button) {
+                        default:
+                        case Qt.LeftButton:
+                            gridView.leftClickOnItem(modifier, index, select)
+                            break
+                        case Qt.RightButton:
+                            gridView.rightClickOnItem(index)
+                            break
+                    }
                 }
 
                 Behavior on opacity {

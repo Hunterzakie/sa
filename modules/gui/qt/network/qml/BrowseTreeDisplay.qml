@@ -177,9 +177,17 @@ Widgets.PageExt {
                     dragItem: networkDragItem
 
                     onPlayClicked: playAt(index)
-                    onItemClicked : (modifier, select) => {
-                        gridView.leftClickOnItem(modifier, index, select)
+                    onItemClicked: (modifier, select, button) => {
+                    switch (button) {
+                        default:
+                        case Qt.LeftButton:
+                            gridView.leftClickOnItem(modifier, index, select)
+                            break
+                        case Qt.RightButton:
+                            gridView.rightClickOnItem(index)
+                            break
                     }
+                }
 
                     onItemDoubleClicked: {
                         if (model.type === NetworkMediaModel.TYPE_NODE

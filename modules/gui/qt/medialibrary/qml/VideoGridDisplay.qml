@@ -111,7 +111,17 @@ Widgets.ExpandGridItemView {
 
         // Events
 
-        onItemClicked: (modifier, select) => { gridView.leftClickOnItem(modifier, index, select) }
+        onItemClicked: (modifier, select, button) => {
+            switch (button) {
+                default:
+                case Qt.LeftButton:
+                    gridView.leftClickOnItem(modifier, index, select)
+                    break
+                case Qt.RightButton:
+                    gridView.rightClickOnItem(index)
+                    break
+            }
+        }
 
         onItemDoubleClicked: gridView.itemDoubleClicked(model)
 

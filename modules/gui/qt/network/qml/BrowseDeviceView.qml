@@ -205,7 +205,7 @@ FocusScope {
                 pictureWidth: gridView.maxPictureWidth
                 pictureHeight: gridView.maxPictureHeight
 
-                onItemClicked: (modifier, select) => { root.onClicked(model, index, modifier, select) }
+                onItemClicked: (modifier, select, button) => { root.onClicked(model, index, modifier, select) }
 
                 onItemDoubleClicked: root.onDoubleClicked(model, index)
 

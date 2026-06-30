@@ -604,8 +604,16 @@ FocusScope {
                 opacity: gridView_id.expandIndex !== -1 && gridView_id.expandIndex !== audioGridItem.index ? .7 : 1
                 dragItem: albumDragItem
 
-                onItemClicked : (modifier, select) => {
-                    gridView_id.leftClickOnItem(modifier, index, select)
+                onItemClicked: (modifier, select, button) => {
+                    switch (button) {
+                        default:
+                        case Qt.LeftButton:
+                            gridView_id.leftClickOnItem(modifier, index, select)
+                            break
+                        case Qt.RightButton:
+                            gridView_id.rightClickOnItem(index)
+                            break
+                    }
                 }
 
                 onItemDoubleClicked: {

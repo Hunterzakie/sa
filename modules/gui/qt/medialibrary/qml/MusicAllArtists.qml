@@ -146,7 +146,17 @@ MainViewLoader {
                 textAlignHCenter: true
                 dragItem: artistsDragItem
 
-                onItemClicked: (modifier, select) => { artistGrid.leftClickOnItem(modifier, index, select) }
+                onItemClicked: (modifier, select, button) => {
+                    switch (button) {
+                        default:
+                        case Qt.LeftButton:
+                            artistGrid.leftClickOnItem(modifier, index, select)
+                            break
+                        case Qt.RightButton:
+                            artistGrid.rightClickOnItem(index)
+                            break
+                    }
+                }
 
                 onItemDoubleClicked: root.requestArtistAlbumView(Qt.MouseFocusReason, model.id)
 
