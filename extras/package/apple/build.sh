@@ -307,6 +307,7 @@ validate_sdk_name()
         iphoneos*)
             VLC_HOST_PLATFORM="iOS"
             VLC_HOST_OS="ios"
+            eval "VLC_DEPLOYMENT_TARGET_IOS=\$VLC_DEPLOYMENT_TARGET_IOS_$VLC_HOST_ARCH"
             set_deployment_target "$VLC_DEPLOYMENT_TARGET_IOS"
             ;;
         iphonesimulator*)

@@ -5,7 +5,7 @@ Platform support changes:
  * 4.0.x requires:
      - Windows 7/2008 R2 or later (with KB2533623 installed)
      - macOS 10.13 or later
-     - iOS 9 or later
+     - iOS 12 or later
      - Android 4.1.x or later (API-16)
      - GCC 8.0 or Clang 8 (or equivalent)
      - MetalToolchain XCode component for macOS
