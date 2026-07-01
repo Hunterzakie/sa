@@ -380,6 +380,8 @@ libvlccore_la_SOURCES = \
 	network/stream.c \
 	network/tls.c \
 	text/charset.c \
+	text/charset_detect.c \
+	text/charset_detect.h \
 	text/memstream.c \
 	text/strings.c \
 	text/unicode.c \
@@ -491,6 +493,7 @@ libvlccore_la_SOURCES += \
 	darwin/specific.c \
 	darwin/thread.c
 libvlccore_objc_la_SOURCES = \
+	darwin/charset_detect.m \
 	darwin/dirs.m \
 	darwin/netconf.m
 noinst_LTLIBRARIES = libvlccore_objc.la
