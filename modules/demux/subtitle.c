@@ -176,6 +176,8 @@ typedef struct
 
     vlc_tick_t  i_length;
 
+    char       *psz_detected_encoding;
+
     /* */
     subs_properties_t props;
 
@@ -322,6 +324,7 @@ static int Open ( vlc_object_t *p_this )
     if( p_sys == NULL )
         return VLC_ENOMEM;
 
+    p_sys->psz_detected_encoding = NULL;
     p_sys->b_slave = false;
     p_sys->b_first_time = true;
     p_sys->b_sorted = false;
@@ -420,6 +423,19 @@ static int Open ( vlc_object_t *p_this )
         return VLC_EGENERIC;
     }
 
+    if( e_bom == NOBOM )
+    {
+        char *psz_subsdec = var_InheritString( p_demux, "subsdec-encoding" );
+        if( !(psz_subsdec && *psz_subsdec) )
+        {
+            p_sys->psz_detected_encoding = vlc_DetectCharset( p_peek, i_peek );
+            if( p_sys->psz_detected_encoding != NULL )
+                msg_Dbg( p_demux, "detected '%s' character encoding",
+                         p_sys->psz_detected_encoding );
+        }
+        free( psz_subsdec );
+    }
+
     stream_t *p_probestream = NULL;
     if( e_bom != UTF8BOM && e_bom != NOBOM )
     {
@@ -441,6 +457,7 @@ static int Open ( vlc_object_t *p_this )
 
     if( p_probestream == NULL )
     {
+        free( p_sys->psz_detected_encoding );
         free( p_sys );
         return VLC_EGENERIC;
     }
@@ -627,6 +644,7 @@ static int Open ( vlc_object_t *p_this )
         assert( i_start_pos == vlc_stream_Tell( p_demux->s ) );
 #endif
         msg_Warn( p_demux, "failed to recognize subtitle type" );
+        free( p_sys->psz_detected_encoding );
         free( p_sys );
         return VLC_EGENERIC;
     }
@@ -699,6 +717,9 @@ static int Open ( vlc_object_t *p_this )
     else
         es_format_Init( &fmt, SPU_ES, VLC_CODEC_SUBT );
 
+    if( p_sys->psz_detected_encoding != NULL )
+        fmt.subs.psz_encoding = p_sys->psz_detected_encoding;
+
     p_sys->subtitles.i_current = 0;
     p_sys->i_length = 0;
     if( p_sys->subtitles.i_count > 0 )
@@ -754,6 +775,7 @@ static void Close( vlc_object_t *p_this )
         free( p_sys->subtitles.p_array[i].psz_text );
     free( p_sys->subtitles.p_array );
     free( p_sys->props.psz_header );
+    free( p_sys->psz_detected_encoding );
 
     free( p_sys );
 }
