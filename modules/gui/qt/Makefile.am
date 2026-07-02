@@ -1037,6 +1037,9 @@ endif
 #   3. Add a QML_MODULE_foo_SRC / QML_MODULE_foo_NODIST_EXTRA pair to the
 #      "if HAVE_QMLCACHEGEN" block below.
 #
+# The import path for QML modules is located in `qmlimportdir`, which can
+# be used to configure `qmlls`. If you use Qt Creator, you may create
+# `.qmlls.ini` file with `importPaths` entry pointing to `qmlimportdir`.
 noinst_LIBRARIES =
 QML_MODULE_LIBS =
 
@@ -1656,6 +1659,13 @@ $(QML_MODULE_QMLDIR):
 	--sources $(libqml_module_$(@D)_a_QML) \
 	--singletons $(libqml_module_$(@D)_a_Singleton_QML) \
 	--typeinfo=plugins.qmltypes
+	$(AM_V_GEN) mkdir -p qmlimportdir/$(libqml_module_$(@D)_a_ModulePath) || true
+	$(AM_V_GEN) for f in $(libqml_module_$(@D)_a_QML); do \
+		ln -f -r -s $(srcdir)/$$f -t qmlimportdir/$(libqml_module_$(@D)_a_ModulePath) || true; \
+	done
+	$(AM_V_GEN) for f in $(libqml_module_$(@D)_a_Singleton_QML); do \
+		ln -f -r -s $(srcdir)/$$f -t qmlimportdir/$(libqml_module_$(@D)_a_ModulePath) || true; \
+	done
 
 # Akin to QML_RULES_DEPS:
 QML_SYMLINK_FILE_LISTS = $(libqt_plugin_la_QML_MODULES:=/qmlsymlink.files)
@@ -1665,6 +1675,7 @@ $(QML_SYMLINK_FILE_LISTS): Makefile
 	$(AM_V_GEN){ \
 	  for f in $(libqml_module_$(@D)_a_QML) $(libqml_module_$(@D)_a_Singleton_QML); do \
 	    echo "CLEANFILES += $(@D)/$$(basename $$f)"; \
+	    echo "CLEANFILES += qmlimportdir/$(libqml_module_$(@D)_a_ModulePath)/$$(basename $$f)"; \
 	  done; \
 	} > $@.tmp && \
 	if cmp -s $@.tmp $@; then rm -f $@.tmp; else mv $@.tmp $@; fi
