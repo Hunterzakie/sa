@@ -46,6 +46,10 @@ Item {
                                       && MainCtx.clientSideDecoration
                                       && (MainCtx.intfMainWindow.visibility === Window.Windowed)
 
+    WindowFocusRecoveryManager {
+
+    }
+
     Item {
         id: g_mainInterface
 
