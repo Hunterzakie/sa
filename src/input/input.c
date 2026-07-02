@@ -1407,7 +1407,7 @@ error:
         if( input_priv(p_input)->p_sout )
             input_resource_PutSout( input_priv(p_input)->p_resource,
                                     input_priv(p_input)->p_sout );
-        input_resource_SetInput( input_priv(p_input)->p_resource, NULL );
+        input_resource_ClearInputIfOwner( input_priv(p_input)->p_resource, p_input );
         if( input_priv(p_input)->p_resource )
         {
             input_resource_Release( input_priv(p_input)->p_resource );
@@ -1478,7 +1478,7 @@ static void End( input_thread_t * p_input )
     /* */
     input_resource_PutSout( input_priv(p_input)->p_resource,
                             input_priv(p_input)->p_sout );
-    input_resource_SetInput( input_priv(p_input)->p_resource, NULL );
+    input_resource_ClearInputIfOwner( input_priv(p_input)->p_resource, p_input );
     if( input_priv(p_input)->p_resource )
     {
         input_resource_Release( input_priv(p_input)->p_resource );
