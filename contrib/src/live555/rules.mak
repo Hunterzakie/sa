@@ -19,7 +19,15 @@ $(TARBALLS)/$(LIVE555_FILE):
 
 .sum-live555: $(LIVE555_FILE)
 
-LIVE_EXTRA_CFLAGS := $(EXTRA_CFLAGS) -fexceptions -DNO_OPENSSL=1 $(CFLAGS)
+LIVE_EXTRA_CFLAGS := $(EXTRA_CFLAGS) -fexceptions $(CFLAGS)
+
+HAVE_OPENSSL := $(shell pkg-config --exists openssl && echo 1 || echo 0)
+ifeq ($(HAVE_OPENSSL), 1)
+PKG_EXTRA_LDFLAGS := $(shell pkg-config --libs openssl)
+else
+PKG_EXTRA_CFLAGS := -DNO_OPENSSL=1
+endif
+LIVE_EXTRA_CFLAGS += $(PKG_EXTRA_CFLAGS)
 
 LIVE_TARGET = $(error live555 target not defined!)
 ifdef HAVE_LINUX
@@ -101,5 +109,5 @@ LIVE555_SUBDIRS=groupsock liveMedia UsageEnvironment BasicUsageEnvironment
 	cd $< && ./genMakefiles $(LIVE_TARGET)
 	cd $< && for subdir in $(LIVE555_SUBDIRS); do $(MAKE) $(HOSTVARS) -C $$subdir; done
 	cd $< && for subdir in $(LIVE555_SUBDIRS); do $(MAKE) $(HOSTVARS) -C $$subdir install; done
-	$(MAKE) -C $< install_shared_libraries
+	$(MAKE) -C $< install_shared_libraries EXTRA_LDFLAGS="$(PKG_EXTRA_LDFLAGS)" EXTRA_CFLAGS="$(PKG_EXTRA_CFLAGS)"
 	touch $@
