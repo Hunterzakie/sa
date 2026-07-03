@@ -1212,7 +1212,7 @@ std::array<matroska_segment_c::tracks_map_t::key_type, ES_CATEGORY_COUNT>
 
     auto default_spu_track_ids = get_defaults_of_cat(SPU_ES);
     auto preferred_spu = most_preferred_default(default_spu_track_ids, "sub-language");
-    result_track_ids[SPU_ES] = preferred_spu.value_or(0);
+    result_track_ids[SPU_ES] = preferred_spu.value_or(TRACK_NUMBER_INVALID);
 
 
     std::vector<tracks_map_t::key_type> default_audio_track_ids =
