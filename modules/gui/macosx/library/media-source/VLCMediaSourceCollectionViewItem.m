@@ -45,7 +45,7 @@
 
 NSString *VLCMediaSourceCellIdentifier = @"VLCLibraryCellIdentifier";
 
-@interface VLCMediaSourceCollectionViewItem()
+@interface VLCMediaSourceCollectionViewItem ()
 {
     VLCLibraryMenuController *_menuController;
 }
@@ -64,31 +64,35 @@ NSString *VLCMediaSourceCellIdentifier = @"VLCLibraryCellIdentifier";
 - (void)awakeFromNib
 {
     [(VLCTrackingView *)self.view setViewToHide:self.playInstantlyButton];
-    self.annotationTextField.font = [NSFont systemFontOfSize:NSFont.systemFontSize weight:NSFontWeightBold];
+    self.annotationTextField.font = [NSFont systemFontOfSize:NSFont.systemFontSize
+                                                      weight:NSFontWeightBold];
     self.annotationTextField.textColor = NSColor.VLClibraryAnnotationColor;
     self.annotationTextField.backgroundColor = NSColor.VLClibraryAnnotationBackgroundColor;
     self.highlightBox.borderColor = NSColor.VLCAccentColor;
 
-        if (@available(macOS 26.0, *)) {
+    if (@available(macOS 26.0, *)) {
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 260000
         self.playInstantlyButton.bordered = YES;
         self.playInstantlyButton.bezelStyle = NSBezelStyleGlass;
         self.playInstantlyButton.borderShape = NSControlBorderShapeCircle;
-        self.playInstantlyButton.image = [NSImage imageWithSystemSymbolName:@"play.fill" accessibilityDescription:nil];
+        self.playInstantlyButton.image = [NSImage imageWithSystemSymbolName:@"play.fill"
+                                                   accessibilityDescription:nil];
         self.playInstantlyButton.imageScaling = NSImageScaleProportionallyUpOrDown;
         self.playInstantlyButton.controlSize = NSControlSizeExtraLarge;
         [NSLayoutConstraint activateConstraints:@[
-            [self.playInstantlyButton.widthAnchor constraintEqualToConstant:VLCLibraryUIUnits.mediumPlaybackControlButtonSize],
-            [self.playInstantlyButton.heightAnchor constraintEqualToConstant:VLCLibraryUIUnits.mediumPlaybackControlButtonSize],
+            [self.playInstantlyButton.widthAnchor
+                constraintEqualToConstant:VLCLibraryUIUnits.mediumPlaybackControlButtonSize],
+            [self.playInstantlyButton.heightAnchor
+                constraintEqualToConstant:VLCLibraryUIUnits.mediumPlaybackControlButtonSize],
         ]];
 #endif
     }
 
     if (@available(macOS 10.14, *)) {
         [NSApplication.sharedApplication addObserver:self
-                                            forKeyPath:@"effectiveAppearance"
-                                               options:NSKeyValueObservingOptionNew
-                                               context:nil];
+                                          forKeyPath:@"effectiveAppearance"
+                                             options:NSKeyValueObservingOptionNew
+                                             context:nil];
     }
 
     [self updateColoredAppearance:self.view.effectiveAppearance];
@@ -99,7 +103,7 @@ NSString *VLCMediaSourceCellIdentifier = @"VLCLibraryCellIdentifier";
 
 - (void)observeValueForKeyPath:(NSString *)keyPath
                       ofObject:(id)object
-                        change:(NSDictionary<NSKeyValueChangeKey,id> *)change
+                        change:(NSDictionary<NSKeyValueChangeKey, id> *)change
                        context:(void *)context
 {
     if ([keyPath isEqualToString:@"effectiveAppearance"]) {
@@ -108,15 +112,17 @@ NSString *VLCMediaSourceCellIdentifier = @"VLCLibraryCellIdentifier";
     }
 }
 
-- (void)updateColoredAppearance:(NSAppearance*)appearance
+- (void)updateColoredAppearance:(NSAppearance *)appearance
 {
     NSParameterAssert(appearance);
     BOOL isDark = NO;
     if (@available(macOS 10.14, *)) {
-        isDark = [appearance.name isEqualToString:NSAppearanceNameDarkAqua] || [appearance.name isEqualToString:NSAppearanceNameVibrantDark];
+        isDark = [appearance.name isEqualToString:NSAppearanceNameDarkAqua] ||
+            [appearance.name isEqualToString:NSAppearanceNameVibrantDark];
     }
 
-    self.mediaTitleTextField.textColor = isDark ? NSColor.VLClibraryDarkTitleColor : NSColor.VLClibraryLightTitleColor;
+    self.mediaTitleTextField.textColor =
+        isDark ? NSColor.VLClibraryDarkTitleColor : NSColor.VLClibraryLightTitleColor;
 }
 
 #pragma mark - view representation
@@ -151,19 +157,19 @@ NSString *VLCMediaSourceCellIdentifier = @"VLCLibraryCellIdentifier";
         return;
     }
 
-    VLCInputItem * const inputItem = _representedInputItem;
+    VLCInputItem *const inputItem = _representedInputItem;
     _mediaTitleTextField.stringValue = inputItem.name;
 
     __weak typeof(self) weakSelf = self;
-    [VLCLibraryImageCache thumbnailForInputItem:inputItem
-                                 withCompletion:^(NSImage * const thumbnail) {
-        VLCMediaSourceCollectionViewItem * const strongSelf = weakSelf;
-        if (!strongSelf || strongSelf->_representedInputItem != inputItem) {
-            return;
-        }
-        strongSelf->_mediaImageView.image = thumbnail;
-    }];
-
+    [VLCLibraryImageCache
+        thumbnailForInputItem:inputItem
+               withCompletion:^(NSImage *const thumbnail) {
+                   VLCMediaSourceCollectionViewItem *const strongSelf = weakSelf;
+                   if (!strongSelf || strongSelf->_representedInputItem != inputItem) {
+                       return;
+                   }
+                   strongSelf->_mediaImageView.image = thumbnail;
+               }];
 
     switch (_representedInputItem.inputType) {
         case ITEM_TYPE_STREAM:
@@ -190,12 +196,16 @@ NSString *VLCMediaSourceCellIdentifier = @"VLCLibraryCellIdentifier";
 
 - (IBAction)playInstantly:(id)sender
 {
-    [VLCMain.sharedInstance.playQueueController addInputItem:_representedInputItem.vlcInputItem atPosition:-1 startPlayback:YES];
+    [VLCMain.sharedInstance.playQueueController addInputItem:_representedInputItem.vlcInputItem
+                                                  atPosition:-1
+                                               startPlayback:YES];
 }
 
 - (IBAction)addToPlayQueue:(id)sender
 {
-    [VLCMain.sharedInstance.playQueueController addInputItem:_representedInputItem.vlcInputItem atPosition:-1 startPlayback:NO];
+    [VLCMain.sharedInstance.playQueueController addInputItem:_representedInputItem.vlcInputItem
+                                                  atPosition:-1
+                                               startPlayback:NO];
 }
 
 - (void)openContextMenu:(NSEvent *)event
@@ -204,22 +214,23 @@ NSString *VLCMediaSourceCellIdentifier = @"VLCLibraryCellIdentifier";
         _menuController = [[VLCLibraryMenuController alloc] init];
     }
 
-    NSCollectionView * const collectionView = self.collectionView;
-    VLCMediaSourceDataSource * const dataSource =
+    NSCollectionView *const collectionView = self.collectionView;
+    VLCMediaSourceDataSource *const dataSource =
         (VLCMediaSourceDataSource *)collectionView.dataSource;
     NSParameterAssert(dataSource != nil);
-    NSSet<NSIndexPath *> * const indexPaths = collectionView.selectionIndexPaths;
-    NSArray<VLCInputItem *> * const selectedInputItems =
+    NSSet<NSIndexPath *> *const indexPaths = collectionView.selectionIndexPaths;
+    NSArray<VLCInputItem *> *const selectedInputItems =
         [dataSource mediaSourceInputItemsAtIndexPaths:indexPaths];
-    const NSInteger mediaSourceItemIndex = [selectedInputItems indexOfObjectPassingTest:^BOOL(
-        VLCInputItem * const inputItem, const NSUInteger __unused idx, BOOL * const __unused stop
-    ) {
-        return [inputItem.MRL isEqualToString:_representedInputItem.MRL];
-    }];
+    const NSInteger mediaSourceItemIndex =
+        [selectedInputItems indexOfObjectPassingTest:^BOOL(VLCInputItem *const inputItem,
+                                                           const NSUInteger __unused idx,
+                                                           BOOL *const __unused stop) {
+            return [inputItem.MRL isEqualToString:_representedInputItem.MRL];
+        }];
     NSArray<VLCInputItem *> *items = nil;
 
     if (mediaSourceItemIndex == NSNotFound) {
-        items = @[_representedInputItem];
+        items = @[ _representedInputItem ];
     } else {
         items = selectedInputItems;
     }

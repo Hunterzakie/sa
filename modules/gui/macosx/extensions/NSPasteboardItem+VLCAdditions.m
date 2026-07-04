@@ -28,17 +28,17 @@
 
 + (instancetype)pasteboardItemWithLibraryItem:(id<VLCMediaLibraryItemProtocol>)libraryItem
 {
-    NSPasteboardItem * const pboardItem = [[NSPasteboardItem alloc] init];
-    NSMutableArray * const encodedLibraryItemsArray = [NSMutableArray array];
+    NSPasteboardItem *const pboardItem = [[NSPasteboardItem alloc] init];
+    NSMutableArray *const encodedLibraryItemsArray = [NSMutableArray array];
 
-    [libraryItem iterateMediaItemsWithBlock:^(VLCMediaLibraryMediaItem * const mediaItem) {
+    [libraryItem iterateMediaItemsWithBlock:^(VLCMediaLibraryMediaItem *const mediaItem) {
         [encodedLibraryItemsArray addObject:mediaItem];
     }];
 
     NSError *archiveError = nil;
-    NSData * const data = [NSKeyedArchiver archivedDataWithRootObject:encodedLibraryItemsArray
-                                                requiringSecureCoding:YES
-                                                                error:&archiveError];
+    NSData *const data = [NSKeyedArchiver archivedDataWithRootObject:encodedLibraryItemsArray
+                                               requiringSecureCoding:YES
+                                                               error:&archiveError];
     if (data == nil) {
         NSLog(@"Failed to archive MediaLibrary Item drag payload: %@", archiveError);
         return nil;

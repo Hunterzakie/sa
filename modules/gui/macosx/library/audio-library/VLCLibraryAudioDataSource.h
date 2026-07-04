@@ -43,27 +43,29 @@ typedef NS_ENUM(NSInteger, VLCAudioLibrarySegment) {
     VLCAudioLibraryRecentsSegment
 };
 
-extern NSString * const VLCLibrarySongsTableViewSongPlayingColumnIdentifier;
-extern NSString * const VLCLibrarySongsTableViewTitleColumnIdentifier;
-extern NSString * const VLCLibrarySongsTableViewDurationColumnIdentifier;
-extern NSString * const VLCLibrarySongsTableViewArtistColumnIdentifier;
-extern NSString * const VLCLibrarySongsTableViewAlbumColumnIdentifier;
-extern NSString * const VLCLibrarySongsTableViewGenreColumnIdentifier;
-extern NSString * const VLCLibrarySongsTableViewPlayCountColumnIdentifier;
-extern NSString * const VLCLibrarySongsTableViewYearColumnIdentifier;
+extern NSString *const VLCLibrarySongsTableViewSongPlayingColumnIdentifier;
+extern NSString *const VLCLibrarySongsTableViewTitleColumnIdentifier;
+extern NSString *const VLCLibrarySongsTableViewDurationColumnIdentifier;
+extern NSString *const VLCLibrarySongsTableViewArtistColumnIdentifier;
+extern NSString *const VLCLibrarySongsTableViewAlbumColumnIdentifier;
+extern NSString *const VLCLibrarySongsTableViewGenreColumnIdentifier;
+extern NSString *const VLCLibrarySongsTableViewPlayCountColumnIdentifier;
+extern NSString *const VLCLibrarySongsTableViewYearColumnIdentifier;
 
-extern NSString * const VLCLibraryTitleSortDescriptorKey;
-extern NSString * const VLCLibraryDurationSortDescriptorKey;
-extern NSString * const VLCLibraryArtistSortDescriptorKey;
-extern NSString * const VLCLibraryAlbumSortDescriptorKey;
-extern NSString * const VLCLibraryPlayCountSortDescriptorKey;
-extern NSString * const VLCLibraryYearSortDescriptorKey;
+extern NSString *const VLCLibraryTitleSortDescriptorKey;
+extern NSString *const VLCLibraryDurationSortDescriptorKey;
+extern NSString *const VLCLibraryArtistSortDescriptorKey;
+extern NSString *const VLCLibraryAlbumSortDescriptorKey;
+extern NSString *const VLCLibraryPlayCountSortDescriptorKey;
+extern NSString *const VLCLibraryYearSortDescriptorKey;
 
-extern NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification;
+extern NSString *const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotification;
 
 @class VLCLibraryRepresentedItem;
 
-@interface VLCLibraryAudioDataSource : NSObject <VLCLibraryTableViewDataSource, VLCLibraryCollectionViewDataSource, iCarouselDataSource>
+@interface VLCLibraryAudioDataSource : NSObject<VLCLibraryTableViewDataSource,
+                                                VLCLibraryCollectionViewDataSource,
+                                                iCarouselDataSource>
 
 @property (readwrite, weak) VLCLibraryModel *libraryModel;
 @property (readwrite, weak, nonatomic) NSTableView *collectionSelectionTableView;
@@ -83,7 +85,7 @@ extern NSString * const VLCLibraryAudioDataSourceDisplayedCollectionChangedNotif
 + (void)setupCollectionView:(NSCollectionView *)collectionView;
 - (void)setup;
 - (void)reloadData;
-- (void)tableView:(NSTableView * const)tableView selectRowIndices:(NSIndexSet * const)indices;
+- (void)tableView:(NSTableView *const)tableView selectRowIndices:(NSIndexSet *const)indices;
 - (void)applySelectionForTableView:(NSTableView *)tableView;
 
 @end

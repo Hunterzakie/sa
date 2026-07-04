@@ -10,7 +10,7 @@
 
 #import <Foundation/Foundation.h>
 
-@protocol VLCLibraryDataSource <NSObject>
+@protocol VLCLibraryDataSource<NSObject>
 
 @optional
 - (void)connect;

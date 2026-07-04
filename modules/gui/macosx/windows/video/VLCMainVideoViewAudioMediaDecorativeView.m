@@ -35,7 +35,7 @@
 #import "playqueue/VLCPlayQueueController.h"
 #import "playqueue/VLCPlayerController.h"
 
-@interface VLCMainVideoViewAudioMediaDecorativeView () <NSTableViewDataSource, NSTableViewDelegate>
+@interface VLCMainVideoViewAudioMediaDecorativeView ()<NSTableViewDataSource, NSTableViewDelegate>
 
 @property (readwrite) NSArray<NSDictionary<NSString *, id> *> *lyricsEntries;
 @property (readwrite) NSInteger currentLyricIndex;
@@ -55,7 +55,7 @@
     self.lyricsTableView.backgroundColor = [NSColor clearColor];
     self.lyricsTableView.selectionHighlightStyle = NSTableViewSelectionHighlightStyleNone;
 
-    NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
     [notificationCenter addObserver:self
                            selector:@selector(playerMetadataChanged:)
                                name:VLCPlayerMetadataChangedForCurrentMedia
@@ -95,18 +95,18 @@
 
 - (void)updateCoverArt
 {
-    VLCPlayerController * const controller =
+    VLCPlayerController *const controller =
         VLCMain.sharedInstance.playQueueController.playerController;
-    VLCInputItem * const currentInputItem = controller.currentMedia;
+    VLCInputItem *const currentInputItem = controller.currentMedia;
     if (controller.currentMedia) {
         __weak typeof(self) weakSelf = self;
         [VLCLibraryImageCache thumbnailForInputItem:currentInputItem
-                                     withCompletion:^(NSImage * const thumbnail) {
-            if (currentInputItem != controller.currentMedia) {
-                return;
-            }
-            [weakSelf setCoverArt:thumbnail];
-        }];
+                                     withCompletion:^(NSImage *const thumbnail) {
+                                         if (currentInputItem != controller.currentMedia) {
+                                             return;
+                                         }
+                                         [weakSelf setCoverArt:thumbnail];
+                                     }];
     }
 }
 
@@ -118,7 +118,7 @@
 
 - (void)updateLyricsData
 {
-    VLCPlayerController * const playerController =
+    VLCPlayerController *const playerController =
         VLCMain.sharedInstance.playQueueController.playerController;
 
     NSString *syltData = nil;
@@ -135,18 +135,16 @@
         return;
     }
 
-    NSMutableArray * const entries = [NSMutableArray array];
-    NSArray<NSString *> * const rawEntries = [syltData componentsSeparatedByString:@"\x1E"];
-    for (NSString * const rawEntry in rawEntries) {
+    NSMutableArray *const entries = [NSMutableArray array];
+    NSArray<NSString *> *const rawEntries = [syltData componentsSeparatedByString:@"\x1E"];
+    for (NSString *const rawEntry in rawEntries) {
         if (rawEntry.length == 0) {
             continue;
         }
-        NSArray<NSString *> * const parts = [rawEntry componentsSeparatedByString:@"\x1F"];
+        NSArray<NSString *> *const parts = [rawEntry componentsSeparatedByString:@"\x1F"];
         if (parts.count >= 2) {
-            NSDictionary<NSString *, id> * const entry = @{
-                @"time": @([parts[0] longLongValue]),
-                @"text": parts[1]
-            };
+            NSDictionary<NSString *, id> *const entry =
+                @{ @"time" : @([parts[0] longLongValue]), @"text" : parts[1] };
             [entries addObject:entry];
         }
     }
@@ -169,7 +167,7 @@
         return;
     }
 
-    VLCPlayerController * const playerController =
+    VLCPlayerController *const playerController =
         VLCMain.sharedInstance.playQueueController.playerController;
     const vlc_tick_t currentTime = playerController.time;
     const long long currentTimeMs = MS_FROM_VLC_TICK(currentTime);
@@ -191,9 +189,8 @@
         if (!isLast && currentTimeMs >= nextStartTime) {
             const NSInteger nextIndex = self.currentLyricIndex + 1;
             const BOOL isNextLast = (nextIndex == lyricCount - 1);
-            const long long nextNextStartTime = isNextLast
-                ? LLONG_MAX
-                : [self.lyricsEntries[nextIndex + 1][@"time"] longLongValue];
+            const long long nextNextStartTime =
+                isNextLast ? LLONG_MAX : [self.lyricsEntries[nextIndex + 1][@"time"] longLongValue];
 
             if (currentTimeMs < nextNextStartTime) {
                 [self updateToLyricIndex:nextIndex];
@@ -220,7 +217,7 @@
 - (void)updateToLyricIndex:(NSInteger)newIndex
 {
     const NSInteger lyricCount = (NSInteger)self.lyricsEntries.count;
-    NSMutableIndexSet * const indicesToUpdate = [NSMutableIndexSet indexSet];
+    NSMutableIndexSet *const indicesToUpdate = [NSMutableIndexSet indexSet];
     if (self.currentLyricIndex != -1 && self.currentLyricIndex < lyricCount) {
         [indicesToUpdate addIndex:self.currentLyricIndex];
     }
@@ -234,7 +231,7 @@
     if (indicesToUpdate.count > 0) {
         [self.lyricsTableView noteHeightOfRowsWithIndexesChanged:indicesToUpdate];
         [self.lyricsTableView reloadDataForRowIndexes:indicesToUpdate
-                                         columnIndexes:[NSIndexSet indexSetWithIndex:0]];
+                                        columnIndexes:[NSIndexSet indexSetWithIndex:0]];
     }
 
     if (self.currentLyricIndex != -1) {
@@ -252,16 +249,16 @@
 #pragma mark - Table View Delegate
 
 - (NSView *)tableView:(NSTableView *)tableView
-   viewForTableColumn:(NSTableColumn *)tableColumn 
-                  row:(NSInteger)row
+    viewForTableColumn:(NSTableColumn *)tableColumn
+                   row:(NSInteger)row
 {
-    NSTableCellView * const cellView =
-        [tableView makeViewWithIdentifier:@"LyricCellIdentifier" owner:self];
+    NSTableCellView *const cellView = [tableView makeViewWithIdentifier:@"LyricCellIdentifier"
+                                                                  owner:self];
     if (row < 0 || row >= (NSInteger)self.lyricsEntries.count) {
         return cellView;
     }
 
-    NSString * const text = self.lyricsEntries[row][@"text"];
+    NSString *const text = self.lyricsEntries[row][@"text"];
     cellView.textField.stringValue = text;
 
     if (row == self.currentLyricIndex) {
@@ -290,7 +287,7 @@
     const long long lyricTimeMs = [self.lyricsEntries[clickedRow][@"time"] longLongValue];
     const vlc_tick_t vlcTime = VLC_TICK_FROM_MS(lyricTimeMs);
 
-    VLCPlayerController * const playerController =
+    VLCPlayerController *const playerController =
         VLCMain.sharedInstance.playQueueController.playerController;
     [playerController setTimePrecise:vlcTime];
 }

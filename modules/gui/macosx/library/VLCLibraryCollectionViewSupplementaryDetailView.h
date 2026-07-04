@@ -30,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
 // This class can be subclassed to create new supplementary detail views for library views.
 // It provides a consistent background and properties. It is not meant to be used directly.
 
-@interface VLCLibraryCollectionViewSupplementaryDetailView : NSView <NSCollectionViewElement>
+@interface VLCLibraryCollectionViewSupplementaryDetailView : NSView<NSCollectionViewElement>
 
 @property (readwrite, retain, nonatomic) VLCLibraryRepresentedItem *representedItem;
 

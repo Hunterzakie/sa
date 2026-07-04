@@ -20,14 +20,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
-
 /*****************************************************************************
  * Note:
  * the code used to bind with VLC's modules is heavily based upon
  * ../wxwidgets/bookmarks.cpp, written by Gildas Bazin.
  * (he is a member of the VideoLAN team)
  *****************************************************************************/
-
 
 /*****************************************************************************
  * Preamble
@@ -50,7 +48,7 @@
 
 #import "windows/video/VLCVideoOutputProvider.h"
 
-@interface VLCBookmarksWindowController()
+@interface VLCBookmarksWindowController ()
 {
     VLCBookmarksTableViewDataSource *_tableViewDataSource;
     VLCBookmarksTableViewDelegate *_tableViewDelegate;
@@ -82,10 +80,11 @@
 
 - (void)windowDidLoad
 {
-    [self.window setCollectionBehavior: NSWindowCollectionBehaviorFullScreenAuxiliary];
+    [self.window setCollectionBehavior:NSWindowCollectionBehaviorFullScreenAuxiliary];
 
     _tableViewDataSource = [[VLCBookmarksTableViewDataSource alloc] initWithTableView:_dataTable];
-    _tableViewDelegate = [[VLCBookmarksTableViewDelegate alloc] initWithBookmarksWindowController:self];
+    _tableViewDelegate =
+        [[VLCBookmarksTableViewDelegate alloc] initWithBookmarksWindowController:self];
 
     _dataTable.dataSource = _tableViewDataSource;
     _dataTable.delegate = _tableViewDelegate;
@@ -93,23 +92,23 @@
     _dataTable.target = self;
 
     /* main window */
-    [self.window setTitle: _NS("Bookmarks")];
-    [_addButton setTitle: _NS("Add")];
-    [_clearButton setTitle: _NS("Clear")];
-    [_removeButton setTitle: _NS("Remove")];
-    [[[_dataTable tableColumnWithIdentifier:VLCBookmarksTableViewNameTableColumnIdentifier] headerCell]
-     setStringValue: _NS("Name")];
-    [[[_dataTable tableColumnWithIdentifier:VLCBookmarksTableViewDescriptionTableColumnIdentifier] headerCell]
-     setStringValue: _NS("Description")];
-    [[[_dataTable tableColumnWithIdentifier:VLCBookmarksTableViewTimeTableColumnIdentifier] headerCell]
-     setStringValue: _NS("Time")];
+    [self.window setTitle:_NS("Bookmarks")];
+    [_addButton setTitle:_NS("Add")];
+    [_clearButton setTitle:_NS("Clear")];
+    [_removeButton setTitle:_NS("Remove")];
+    [[[_dataTable tableColumnWithIdentifier:VLCBookmarksTableViewNameTableColumnIdentifier]
+        headerCell] setStringValue:_NS("Name")];
+    [[[_dataTable tableColumnWithIdentifier:VLCBookmarksTableViewDescriptionTableColumnIdentifier]
+        headerCell] setStringValue:_NS("Description")];
+    [[[_dataTable tableColumnWithIdentifier:VLCBookmarksTableViewTimeTableColumnIdentifier]
+        headerCell] setStringValue:_NS("Time")];
 }
 
 - (void)updateCocoaWindowLevel:(NSNotification *)aNotification
 {
     NSInteger i_level = [aNotification.userInfo[VLCWindowLevelKey] integerValue];
     if (self.isWindowLoaded && [self.window isVisible] && [self.window level] != i_level)
-        [self.window setLevel: i_level];
+        [self.window setLevel:i_level];
 }
 
 - (IBAction)toggleWindow:(id)sender
@@ -117,12 +116,12 @@
     if ([self.window isVisible])
         [self.window orderOut:sender];
     else {
-        [self.window setLevel: VLCMain.sharedInstance.voutProvider.currentStatusWindowLevel];
+        [self.window setLevel:VLCMain.sharedInstance.voutProvider.currentStatusWindowLevel];
         [self.window makeKeyAndOrderFront:sender];
     }
 }
 
--(void)inputChangedEvent:(NSNotification *)o_notification
+- (void)inputChangedEvent:(NSNotification *)o_notification
 {
     [_dataTable reloadData];
 }
@@ -144,10 +143,11 @@
         return;
     }
 
-    VLCBookmark * const bookmark = [_tableViewDataSource bookmarkForRow:selectedRow];
+    VLCBookmark *const bookmark = [_tableViewDataSource bookmarkForRow:selectedRow];
     vlc_tick_t bookmarkTime = VLC_TICK_FROM_MS(bookmark.bookmarkTime);
 
-    VLCPlayerController * const playerController = VLCMain.sharedInstance.playQueueController.playerController;
+    VLCPlayerController *const playerController =
+        VLCMain.sharedInstance.playQueueController.playerController;
     [playerController setTimeFast:bookmarkTime];
 }
 
@@ -158,7 +158,7 @@
         return;
     }
 
-    VLCBookmark * const bookmark = [_tableViewDataSource bookmarkForRow:selectedRow];
+    VLCBookmark *const bookmark = [_tableViewDataSource bookmarkForRow:selectedRow];
     [_tableViewDataSource removeBookmark:bookmark];
 }
 
@@ -166,13 +166,13 @@
  */
 - (void)copy:(id)sender
 {
-    NSArray<VLCBookmark *> * const bookmarks = _tableViewDataSource.bookmarks;
+    NSArray<VLCBookmark *> *const bookmarks = _tableViewDataSource.bookmarks;
     if (bookmarks == nil || bookmarks.count == 0) {
         return;
     }
 
-    NSPasteboard * const pasteBoard = [NSPasteboard generalPasteboard];
-    NSIndexSet * const selectionIndices = [_dataTable selectedRowIndexes];
+    NSPasteboard *const pasteBoard = [NSPasteboard generalPasteboard];
+    NSIndexSet *const selectionIndices = [_dataTable selectedRowIndexes];
     NSUInteger index = [selectionIndices firstIndex];
 
     while (index != NSNotFound) {
@@ -181,11 +181,11 @@
             break;
         }
 
-        VLCBookmark * const bookmark = bookmarks[index];
-        NSString * const name = bookmark.bookmarkName;
-        NSString * const time = [NSString stringWithTime:bookmark.bookmarkTime / 1000];
-        NSString * const message = [NSString stringWithFormat:@"%@ - %@", name, time];
-        [pasteBoard writeObjects:@[message]];
+        VLCBookmark *const bookmark = bookmarks[index];
+        NSString *const name = bookmark.bookmarkName;
+        NSString *const time = [NSString stringWithTime:bookmark.bookmarkTime / 1000];
+        NSString *const message = [NSString stringWithFormat:@"%@ - %@", name, time];
+        [pasteBoard writeObjects:@[ message ]];
 
         /* Get next index */
         index = [selectionIndices indexGreaterThanIndex:index];
@@ -197,7 +197,7 @@
 
 /* Validate the copy menu item
  */
-- (BOOL)validateUserInterfaceItem:(id <NSValidatedUserInterfaceItem>)anItem
+- (BOOL)validateUserInterfaceItem:(id<NSValidatedUserInterfaceItem>)anItem
 {
     SEL theAction = [anItem action];
 

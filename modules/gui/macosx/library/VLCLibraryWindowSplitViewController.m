@@ -46,7 +46,7 @@
 {
     [super viewDidLoad];
 
-    VLCLibraryWindow * const libraryWindow = VLCMain.sharedInstance.libraryWindow;
+    VLCLibraryWindow *const libraryWindow = VLCMain.sharedInstance.libraryWindow;
     [libraryWindow addObserver:self
                     forKeyPath:VLCLibraryWindowEmbeddedVideoPlaybackActiveKey
                        options:0
@@ -54,18 +54,20 @@
 
     self.splitView.wantsLayer = YES;
 
-    _navSidebarViewController =
-        [[VLCLibraryWindowNavigationSidebarViewController alloc] initWithLibraryWindow:VLCMain.sharedInstance.libraryWindow];
+    _navSidebarViewController = [[VLCLibraryWindowNavigationSidebarViewController alloc]
+        initWithLibraryWindow:VLCMain.sharedInstance.libraryWindow];
     _libraryTargetViewController = [[NSViewController alloc] init];
-    _multifunctionSidebarViewController =
-        [[VLCLibraryWindowSidebarRootViewController alloc] initWithLibraryWindow:VLCMain.sharedInstance.libraryWindow];
+    _multifunctionSidebarViewController = [[VLCLibraryWindowSidebarRootViewController alloc]
+        initWithLibraryWindow:VLCMain.sharedInstance.libraryWindow];
 
     self.libraryTargetViewController.view = self.libraryWindow.libraryTargetView;
 
     _navSidebarItem = [NSSplitViewItem sidebarWithViewController:self.navSidebarViewController];
-    _libraryTargetViewItem = [NSSplitViewItem splitViewItemWithViewController:self.libraryTargetViewController];
+    _libraryTargetViewItem =
+        [NSSplitViewItem splitViewItemWithViewController:self.libraryTargetViewController];
 
-    _multifunctionSidebarItem = [NSSplitViewItem splitViewItemWithViewController:self.multifunctionSidebarViewController];
+    _multifunctionSidebarItem =
+        [NSSplitViewItem splitViewItemWithViewController:self.multifunctionSidebarViewController];
 
     if (@available(macOS 11.0, *)) {
         _navSidebarItem.allowsFullHeightLayout = YES;
@@ -82,16 +84,19 @@
     self.multifunctionSidebarItem.collapseBehavior =
         NSSplitViewItemCollapseBehaviorPreferResizingSiblingsWithFixedSplitView;
 
-    self.splitViewItems = @[_navSidebarItem, _libraryTargetViewItem, self.multifunctionSidebarItem];
+    self.splitViewItems =
+        @[ _navSidebarItem, _libraryTargetViewItem, self.multifunctionSidebarItem ];
 
-    VLCMainWindowControlsBar * const controlsBar = libraryWindow.controlsBar;
-    VLCBottomBarView * const bottomBarView = controlsBar.bottomBarView;
+    VLCMainWindowControlsBar *const controlsBar = libraryWindow.controlsBar;
+    VLCBottomBarView *const bottomBarView = controlsBar.bottomBarView;
     bottomBarView.translatesAutoresizingMaskIntoConstraints = NO;
     [NSLayoutConstraint activateConstraints:@[
-        [bottomBarView.leadingAnchor constraintEqualToAnchor:self.libraryTargetViewController.view.leadingAnchor
-                                                    constant:VLCLibraryUIUnits.largeSpacing * 2],
-        [bottomBarView.trailingAnchor constraintEqualToAnchor:self.libraryTargetViewController.view.trailingAnchor
-                                                     constant:-(VLCLibraryUIUnits.largeSpacing * 2)],
+        [bottomBarView.leadingAnchor
+            constraintEqualToAnchor:self.libraryTargetViewController.view.leadingAnchor
+                           constant:VLCLibraryUIUnits.largeSpacing * 2],
+        [bottomBarView.trailingAnchor
+            constraintEqualToAnchor:self.libraryTargetViewController.view.trailingAnchor
+                           constant:-(VLCLibraryUIUnits.largeSpacing * 2)],
     ]];
 }
 
@@ -100,8 +105,8 @@
                         change:(NSDictionary *)change
                        context:(void *)context
 {
-    if([keyPath isEqualToString:VLCLibraryWindowEmbeddedVideoPlaybackActiveKey]) {
-        VLCLibraryWindow * const libraryWindow = VLCMain.sharedInstance.libraryWindow;
+    if ([keyPath isEqualToString:VLCLibraryWindowEmbeddedVideoPlaybackActiveKey]) {
+        VLCLibraryWindow *const libraryWindow = VLCMain.sharedInstance.libraryWindow;
         const BOOL videoPlaybackActive = libraryWindow.embeddedVideoPlaybackActive;
         _navSidebarItem.collapsed = videoPlaybackActive;
     }
@@ -144,9 +149,8 @@
 
 - (BOOL)splitView:(NSSplitView *)splitView canCollapseSubview:(NSView *)subview
 {
-    return subview != self.navSidebarViewController.view
-           || !self.mainVideoModeEnabled
-           || [super splitView:splitView canCollapseSubview:subview];
+    return subview != self.navSidebarViewController.view || !self.mainVideoModeEnabled ||
+        [super splitView:splitView canCollapseSubview:subview];
 }
 
 @end

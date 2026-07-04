@@ -27,7 +27,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface VLCPlayQueueDataSource : NSObject <NSTableViewDataSource, NSTableViewDelegate>
+@interface VLCPlayQueueDataSource : NSObject<NSTableViewDataSource, NSTableViewDelegate>
 
 @property (readwrite, assign, nonatomic) VLCPlayQueueController *playQueueController;
 @property (readwrite, assign) NSTableView *tableView;

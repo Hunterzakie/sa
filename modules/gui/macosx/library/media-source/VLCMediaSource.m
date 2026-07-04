@@ -39,19 +39,19 @@ NSString *VLCMediaSourceChildrenAdded = @"VLCMediaSourceChildrenAdded";
 NSString *VLCMediaSourceChildrenRemoved = @"VLCMediaSourceChildrenRemoved";
 NSString *VLCMediaSourcePreparsingEnded = @"VLCMediaSourcePreparsingEnded";
 
-static void cb_children_reset(vlc_media_tree_t * __unused p_tree,
-                              input_item_node_t * __unused p_node,
+static void cb_children_reset(vlc_media_tree_t *__unused p_tree,
+                              input_item_node_t *__unused p_node,
                               void *p_data)
 {
     dispatch_async(dispatch_get_main_queue(), ^{
         VLCMediaSource *mediaSource = (__bridge VLCMediaSource *)p_data;
         [NSNotificationCenter.defaultCenter postNotificationName:VLCMediaSourceChildrenReset
-                                                            object:mediaSource];
+                                                          object:mediaSource];
     });
 }
 
-static void cb_children_added(vlc_media_tree_t * __unused p_tree,
-                              input_item_node_t * __unused p_node,
+static void cb_children_added(vlc_media_tree_t *__unused p_tree,
+                              input_item_node_t *__unused p_node,
                               input_item_node_t *const __unused p_children[],
                               size_t __unused count,
                               void *p_data)
@@ -59,12 +59,12 @@ static void cb_children_added(vlc_media_tree_t * __unused p_tree,
     dispatch_async(dispatch_get_main_queue(), ^{
         VLCMediaSource *mediaSource = (__bridge VLCMediaSource *)p_data;
         [NSNotificationCenter.defaultCenter postNotificationName:VLCMediaSourceChildrenAdded
-                                                            object:mediaSource];
+                                                          object:mediaSource];
     });
 }
 
-static void cb_children_removed(vlc_media_tree_t * __unused p_tree,
-                                input_item_node_t * __unused p_node,
+static void cb_children_removed(vlc_media_tree_t *__unused p_tree,
+                                input_item_node_t *__unused p_node,
                                 input_item_node_t *const __unused p_children[],
                                 size_t __unused count,
                                 void *p_data)
@@ -72,19 +72,19 @@ static void cb_children_removed(vlc_media_tree_t * __unused p_tree,
     dispatch_async(dispatch_get_main_queue(), ^{
         VLCMediaSource *mediaSource = (__bridge VLCMediaSource *)p_data;
         [NSNotificationCenter.defaultCenter postNotificationName:VLCMediaSourceChildrenRemoved
-                                                            object:mediaSource];
+                                                          object:mediaSource];
     });
 }
 
-static void cb_preparse_ended(vlc_media_tree_t * __unused p_tree,
-                              input_item_node_t * __unused p_node,
+static void cb_preparse_ended(vlc_media_tree_t *__unused p_tree,
+                              input_item_node_t *__unused p_node,
                               int __unused status,
                               void *p_data)
 {
     dispatch_async(dispatch_get_main_queue(), ^{
         VLCMediaSource *mediaSource = (__bridge VLCMediaSource *)p_data;
         [NSNotificationCenter.defaultCenter postNotificationName:VLCMediaSourcePreparsingEnded
-                                                            object:mediaSource];
+                                                          object:mediaSource];
     });
 }
 
@@ -108,21 +108,21 @@ static const char *const remoteBrowseDescription = "Remote Browse";
     if (self) {
         _respondsToDiskChanges = NO;
         _p_preparser = p_preparser;
-        
+
         _p_mediaSource = malloc(sizeof(vlc_media_source_t));
         if (!_p_mediaSource) {
             return self;
         }
-        
+
         _p_mediaSource->description = localDevicesDescription;
         _p_mediaSource->tree = vlc_media_tree_New();
-        
+
         if (_p_mediaSource->tree == NULL) {
             free(_p_mediaSource);
             _p_mediaSource = NULL;
             return self;
         }
-        
+
         _category = SD_CAT_MYCOMPUTER;
     }
     return self;
@@ -153,7 +153,7 @@ static const char *const remoteBrowseDescription = "Remote Browse";
     if (self) {
         _p_preparser = p_preparser;
 
-         _p_mediaSource = malloc(sizeof(vlc_media_source_t));
+        _p_mediaSource = malloc(sizeof(vlc_media_source_t));
         if (!_p_mediaSource) {
             return self;
         }
@@ -169,64 +169,60 @@ static const char *const remoteBrowseDescription = "Remote Browse";
 
         _category = SD_CAT_MYCOMPUTER;
 
-        NSFileManager * const fileManager = NSFileManager.defaultManager;
+        NSFileManager *const fileManager = NSFileManager.defaultManager;
 
         void (^addIfNotEmpty)(NSArray<NSURL *> *directories) = ^(NSArray<NSURL *> *directories) {
             if (directories == nil || directories.count == 0) {
                 return;
             }
 
-            NSURL * const directory = directories.firstObject;
-            const char * const directoryPath = directory.absoluteString.UTF8String;
-            const char * const directoryDesc = directory.lastPathComponent.UTF8String;
-            input_item_t * const directoryItem = input_item_NewExt(directoryPath,
-                                                                   directoryDesc,
-                                                                   0,
-                                                                   ITEM_TYPE_DIRECTORY,
-                                                                   ITEM_LOCAL);
-            input_item_node_t * const directoryNode = input_item_node_Create(directoryItem);
+            NSURL *const directory = directories.firstObject;
+            const char *const directoryPath = directory.absoluteString.UTF8String;
+            const char *const directoryDesc = directory.lastPathComponent.UTF8String;
+            input_item_t *const directoryItem =
+                input_item_NewExt(directoryPath, directoryDesc, 0, ITEM_TYPE_DIRECTORY, ITEM_LOCAL);
+            input_item_node_t *const directoryNode = input_item_node_Create(directoryItem);
             input_item_node_AppendNode(&(_p_mediaSource->tree->root), directoryNode);
             input_item_Release(directoryItem);
         };
 
-        NSArray<NSURL *> * const documentUrls = [fileManager URLsForDirectory:NSDocumentDirectory
-                                                                    inDomains:NSUserDomainMask];
+        NSArray<NSURL *> *const documentUrls = [fileManager URLsForDirectory:NSDocumentDirectory
+                                                                   inDomains:NSUserDomainMask];
         addIfNotEmpty(documentUrls);
 
-        NSArray<NSURL *> * const desktopUrls = [fileManager URLsForDirectory:NSDesktopDirectory
-                                                                   inDomains:NSUserDomainMask];
+        NSArray<NSURL *> *const desktopUrls = [fileManager URLsForDirectory:NSDesktopDirectory
+                                                                  inDomains:NSUserDomainMask];
         addIfNotEmpty(desktopUrls);
 
-        NSArray<NSURL *> * const downloadsUrls = [fileManager URLsForDirectory:NSDownloadsDirectory
-                                                                     inDomains:NSUserDomainMask];
+        NSArray<NSURL *> *const downloadsUrls = [fileManager URLsForDirectory:NSDownloadsDirectory
+                                                                    inDomains:NSUserDomainMask];
         addIfNotEmpty(downloadsUrls);
 
-        NSArray<NSURL *> * const moviesUrls = [fileManager URLsForDirectory:NSMoviesDirectory
-                                                                  inDomains:NSUserDomainMask];
+        NSArray<NSURL *> *const moviesUrls = [fileManager URLsForDirectory:NSMoviesDirectory
+                                                                 inDomains:NSUserDomainMask];
         addIfNotEmpty(moviesUrls);
 
-        NSArray<NSURL *> * const musicUrls = [fileManager URLsForDirectory:NSMusicDirectory
-                                                                 inDomains:NSUserDomainMask];
+        NSArray<NSURL *> *const musicUrls = [fileManager URLsForDirectory:NSMusicDirectory
+                                                                inDomains:NSUserDomainMask];
         addIfNotEmpty(musicUrls);
 
-        NSArray<NSURL *> * const picturesUrls = [fileManager URLsForDirectory:NSPicturesDirectory
-                                                                    inDomains:NSUserDomainMask];
+        NSArray<NSURL *> *const picturesUrls = [fileManager URLsForDirectory:NSPicturesDirectory
+                                                                   inDomains:NSUserDomainMask];
         addIfNotEmpty(picturesUrls);
     }
     return self;
 }
 
-- (instancetype)initWithFolderMrl:(NSString *)mrl
-                     andPreparser:(vlc_preparser_t *)p_preparser
+- (instancetype)initWithFolderMrl:(NSString *)mrl andPreparser:(vlc_preparser_t *)p_preparser
 {
     self = [super init];
     if (self) {
         _p_preparser = p_preparser;
 
-        NSURL * const directoryUrl = [NSURL URLWithString:mrl];
+        NSURL *const directoryUrl = [NSURL URLWithString:mrl];
         const BOOL isFileUrl = directoryUrl.isFileURL;
 
-         _p_mediaSource = malloc(sizeof(vlc_media_source_t));
+        _p_mediaSource = malloc(sizeof(vlc_media_source_t));
         if (!_p_mediaSource) {
             return self;
         }
@@ -237,9 +233,9 @@ static const char *const remoteBrowseDescription = "Remote Browse";
             _p_mediaSource->tree = vlc_media_tree_New();
 
             BOOL mrlTargetIsDirectory = NO;
-            const BOOL mrlTargetExists = [NSFileManager.defaultManager
-                                          fileExistsAtPath:directoryUrl.path
-                                               isDirectory:&mrlTargetIsDirectory];
+            const BOOL mrlTargetExists =
+                [NSFileManager.defaultManager fileExistsAtPath:directoryUrl.path
+                                                   isDirectory:&mrlTargetIsDirectory];
             if (!mrlTargetExists || !mrlTargetIsDirectory) {
                 return nil;
             }
@@ -255,20 +251,20 @@ static const char *const remoteBrowseDescription = "Remote Browse";
             return self;
         }
 
-        const char * const directoryPath = mrl.UTF8String;
-        const char * const directoryDesc = mrl.lastPathComponent.UTF8String;
-        input_item_t * const directoryItem = input_item_NewExt(directoryPath,
-                                                               directoryDesc,
-                                                               0,
-                                                               ITEM_TYPE_DIRECTORY,
-                                                               isFileUrl ? ITEM_LOCAL : ITEM_NET);
+        const char *const directoryPath = mrl.UTF8String;
+        const char *const directoryDesc = mrl.lastPathComponent.UTF8String;
+        input_item_t *const directoryItem = input_item_NewExt(directoryPath,
+                                                              directoryDesc,
+                                                              0,
+                                                              ITEM_TYPE_DIRECTORY,
+                                                              isFileUrl ? ITEM_LOCAL : ITEM_NET);
 
         if (isFileUrl) {
             // vlc_media_tree_New already initialised root with empty children;
             // just set the root item directly.
             _p_mediaSource->tree->root.p_item = directoryItem;
         } else {
-            input_item_node_t * const directoryNode = input_item_node_Create(directoryItem);
+            input_item_node_t *const directoryNode = input_item_node_Create(directoryItem);
             input_item_node_AppendNode(&_p_mediaSource->tree->root, directoryNode);
             input_item_Release(directoryItem);
             _p_treeListenerID = vlc_media_tree_AddListener(_p_mediaSource->tree,
@@ -284,10 +280,10 @@ static const char *const remoteBrowseDescription = "Remote Browse";
 {
     if (_p_mediaSource != NULL) {
         if (_p_treeListenerID) {
-            vlc_media_tree_RemoveListener(_p_mediaSource->tree,
-                                          _p_treeListenerID);
+            vlc_media_tree_RemoveListener(_p_mediaSource->tree, _p_treeListenerID);
         }
-        if (_p_mediaSource->description == localDevicesDescription || _p_mediaSource->description == myFoldersDescription) {
+        if (_p_mediaSource->description == localDevicesDescription
+            || _p_mediaSource->description == myFoldersDescription) {
             _p_mediaSource->description = NULL;
 
             if (_p_mediaSource->tree->root.p_item != NULL) {
@@ -329,16 +325,15 @@ static const char *const remoteBrowseDescription = "Remote Browse";
         return [self generateChildNodesForDirectoryNode:inputNode withUrl:dirUrl];
     }
 
-    vlc_media_tree_Preparse(_p_mediaSource->tree, _p_preparser,
-                            inputNode.inputItem.vlcInputItem);
+    vlc_media_tree_Preparse(_p_mediaSource->tree, _p_preparser, inputNode.inputItem.vlcInputItem);
     return nil;
 }
 
-- (void)clearChildNodesForNode:(nonnull input_item_node_t*)inputNode
+- (void)clearChildNodesForNode:(nonnull input_item_node_t *)inputNode
 {
     NSAssert(inputNode != NULL, @"Could not clear child nodes for input node as node is null");
 
-    while(inputNode->i_children > 0) {
+    while (inputNode->i_children > 0) {
         input_item_node_t *childNode = inputNode->pp_children[0];
         input_item_node_RemoveNode(inputNode, childNode);
         input_item_node_Delete(childNode);
@@ -350,17 +345,25 @@ static const char *const remoteBrowseDescription = "Remote Browse";
     if (_p_mediaSource->tree->root.i_children > 0) {
         return;
     }
-    
+
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_BACKGROUND, 0), ^{
         NSArray<NSURL *> *mountedVolumesUrls = [[NSFileManager defaultManager]
-                                                mountedVolumeURLsIncludingResourceValuesForKeys:@[NSURLVolumeIsEjectableKey, NSURLVolumeIsRemovableKey]
-                                                                                        options:NSVolumeEnumerationSkipHiddenVolumes];
-        
+            mountedVolumeURLsIncludingResourceValuesForKeys:@[
+                NSURLVolumeIsEjectableKey,
+                NSURLVolumeIsRemovableKey
+            ]
+                                                    options:NSVolumeEnumerationSkipHiddenVolumes];
+
         NSURL *homeDirectoryURL = [NSURL fileURLWithPath:NSHomeDirectoryForUser(NSUserName())];
         NSString *homeDirectoryDescription = [NSString stringWithFormat:@"%@'s home", NSUserName()];
-        
+
         if (homeDirectoryURL) {
-            input_item_t *homeDirItem = input_item_NewExt(homeDirectoryURL.absoluteString.UTF8String, homeDirectoryDescription.UTF8String, 0, ITEM_TYPE_DIRECTORY, ITEM_LOCAL);
+            input_item_t *homeDirItem =
+                input_item_NewExt(homeDirectoryURL.absoluteString.UTF8String,
+                                  homeDirectoryDescription.UTF8String,
+                                  0,
+                                  ITEM_TYPE_DIRECTORY,
+                                  ITEM_LOCAL);
             if (homeDirItem != NULL) {
                 input_item_node_t *homeDirNode = input_item_node_Create(homeDirItem);
                 if (homeDirNode) {
@@ -370,7 +373,7 @@ static const char *const remoteBrowseDescription = "Remote Browse";
                 homeDirItem = NULL;
             }
         }
-        
+
         for (NSURL *url in mountedVolumesUrls) {
             NSNumber *isVolume;
             NSNumber *isEjectable;
@@ -379,7 +382,9 @@ static const char *const remoteBrowseDescription = "Remote Browse";
 
             NSString *localizedDescription;
 
-            BOOL const getKeyResult = [url getResourceValue:&isVolume forKey:NSURLIsVolumeKey error:nil];
+            BOOL const getKeyResult = [url getResourceValue:&isVolume
+                                                     forKey:NSURLIsVolumeKey
+                                                      error:nil];
             if (unlikely(!getKeyResult || !isVolume.boolValue)) {
                 continue;
             }
@@ -387,12 +392,19 @@ static const char *const remoteBrowseDescription = "Remote Browse";
             [url getResourceValue:&isEjectable forKey:NSURLVolumeIsEjectableKey error:nil];
             [url getResourceValue:&isInternal forKey:NSURLVolumeIsInternalKey error:nil];
             [url getResourceValue:&isLocal forKey:NSURLVolumeIsLocalKey error:nil];
-            [url getResourceValue:&localizedDescription forKey:NSURLVolumeLocalizedNameKey error:nil];
-            
-            const enum input_item_type_e inputType = isEjectable.boolValue ? ITEM_TYPE_DISC : ITEM_TYPE_DIRECTORY;
+            [url getResourceValue:&localizedDescription
+                           forKey:NSURLVolumeLocalizedNameKey
+                            error:nil];
+
+            const enum input_item_type_e inputType =
+                isEjectable.boolValue ? ITEM_TYPE_DISC : ITEM_TYPE_DIRECTORY;
             const enum input_item_net_type netType = isLocal.boolValue ? ITEM_LOCAL : ITEM_NET;
-            
-            input_item_t *urlInputItem = input_item_NewExt(url.absoluteString.UTF8String, localizedDescription.UTF8String, 0, inputType, netType);
+
+            input_item_t *urlInputItem = input_item_NewExt(url.absoluteString.UTF8String,
+                                                           localizedDescription.UTF8String,
+                                                           0,
+                                                           inputType,
+                                                           netType);
             if (urlInputItem != NULL) {
                 input_item_node_t *urlNode = input_item_node_Create(urlInputItem);
                 if (urlNode) {
@@ -402,14 +414,17 @@ static const char *const remoteBrowseDescription = "Remote Browse";
                 urlInputItem = NULL;
             }
         }
-        
+
         dispatch_async(dispatch_get_main_queue(), ^{
-            [NSNotificationCenter.defaultCenter postNotificationName:VLCMediaSourceChildrenReset object:self];
-            
+            [NSNotificationCenter.defaultCenter postNotificationName:VLCMediaSourceChildrenReset
+                                                              object:self];
+
             if (!self->_respondsToDiskChanges) {
                 // We register the notifications here, as they are retrieved from the OS.
-                // We need to avoid receiving a notification while the array is still being populated.
-                NSNotificationCenter *workspaceNotificationCenter = NSWorkspace.sharedWorkspace.notificationCenter;
+                // We need to avoid receiving a notification while the array is still being
+                // populated.
+                NSNotificationCenter *workspaceNotificationCenter =
+                    NSWorkspace.sharedWorkspace.notificationCenter;
                 [workspaceNotificationCenter addObserver:self
                                                 selector:@selector(volumeIsMounted:)
                                                     name:NSWorkspaceDidMountNotification
@@ -418,7 +433,7 @@ static const char *const remoteBrowseDescription = "Remote Browse";
                                                 selector:@selector(volumeIsUnmounted:)
                                                     name:NSWorkspaceWillUnmountNotification
                                                   object:nil];
-                
+
                 self->_respondsToDiskChanges = YES;
             }
         });
@@ -430,29 +445,29 @@ static const char *const remoteBrowseDescription = "Remote Browse";
 {
     NSParameterAssert(directoryInputNode != NULL && directoryUrl != nil);
     [directoryInputNode clearChildrenCache];
-    input_item_node_t * const directoryNode = directoryInputNode.vlcInputItemNode;
+    input_item_node_t *const directoryNode = directoryInputNode.vlcInputItemNode;
 
-    @synchronized (self) {
+    @synchronized(self) {
         if (self.willStartGeneratingChildNodesForNodeHandler) {
             self.willStartGeneratingChildNodesForNodeHandler(directoryNode);
         }
 
         // Clear pre-existing child nodes
         while (directoryNode->i_children > 0) {
-            input_item_node_t * const childNode = directoryNode->pp_children[0];
+            input_item_node_t *const childNode = directoryNode->pp_children[0];
             input_item_node_RemoveNode(directoryNode, childNode);
             input_item_node_Delete(childNode);
         }
 
         NSError *error;
-        const NSDirectoryEnumerationOptions options =
-            NSDirectoryEnumerationSkipsHiddenFiles | NSDirectoryEnumerationSkipsSubdirectoryDescendants;
-        NSArray<NSURLResourceKey> * const keys = @[NSURLIsDirectoryKey];
+        const NSDirectoryEnumerationOptions options = NSDirectoryEnumerationSkipsHiddenFiles
+            | NSDirectoryEnumerationSkipsSubdirectoryDescendants;
+        NSArray<NSURLResourceKey> *const keys = @[ NSURLIsDirectoryKey ];
         NSArray<NSURL *> *children =
             [NSFileManager.defaultManager contentsOfDirectoryAtURL:directoryUrl
                                         includingPropertiesForKeys:keys
-                                                        options:options
-                                                            error:&error];
+                                                           options:options
+                                                             error:&error];
 
         if (error) {
             NSLog(@"Failed to get directories: %@.", error);
@@ -462,23 +477,24 @@ static const char *const remoteBrowseDescription = "Remote Browse";
             return error;
         }
 
-        children = [children sortedArrayUsingComparator:^NSComparisonResult(NSURL *url1, NSURL *url2) {
-            NSNumber *isDirectory1 = nil;
-            NSNumber *isDirectory2 = nil;
-            [url1 getResourceValue:&isDirectory1 forKey:NSURLIsDirectoryKey error:NULL];
-            [url2 getResourceValue:&isDirectory2 forKey:NSURLIsDirectoryKey error:NULL];
+        children =
+            [children sortedArrayUsingComparator:^NSComparisonResult(NSURL *url1, NSURL *url2) {
+                NSNumber *isDirectory1 = nil;
+                NSNumber *isDirectory2 = nil;
+                [url1 getResourceValue:&isDirectory1 forKey:NSURLIsDirectoryKey error:NULL];
+                [url2 getResourceValue:&isDirectory2 forKey:NSURLIsDirectoryKey error:NULL];
 
-            if (isDirectory1.boolValue && !isDirectory2.boolValue) {
-                return NSOrderedAscending;
-            } else if (!isDirectory1.boolValue && isDirectory2.boolValue) {
-                return NSOrderedDescending;
-            }
+                if (isDirectory1.boolValue && !isDirectory2.boolValue) {
+                    return NSOrderedAscending;
+                } else if (!isDirectory1.boolValue && isDirectory2.boolValue) {
+                    return NSOrderedDescending;
+                }
 
-            return [url1.lastPathComponent compare:url2.lastPathComponent
-                                        options:NSCaseInsensitiveSearch];
-        }];
+                return [url1.lastPathComponent compare:url2.lastPathComponent
+                                               options:NSCaseInsensitiveSearch];
+            }];
 
-        for (NSURL * const url in children) {
+        for (NSURL *const url in children) {
             NSNumber *isDirectory;
             NSNumber *isVolume;
             NSNumber *isEjectable;
@@ -490,16 +506,21 @@ static const char *const remoteBrowseDescription = "Remote Browse";
             [url getResourceValue:&isEjectable forKey:NSURLVolumeIsEjectableKey error:nil];
             [url getResourceValue:&isInternal forKey:NSURLVolumeIsInternalKey error:nil];
             [url getResourceValue:&isLocal forKey:NSURLVolumeIsLocalKey error:nil];
-            
-            const enum input_item_type_e inputType = isDirectory.boolValue ? (isVolume.boolValue && isEjectable.boolValue) ? ITEM_TYPE_DISC : ITEM_TYPE_DIRECTORY : ITEM_TYPE_FILE;
+
+            const enum input_item_type_e inputType = isDirectory.boolValue
+                ? (isVolume.boolValue && isEjectable.boolValue) ? ITEM_TYPE_DISC
+                                                                : ITEM_TYPE_DIRECTORY
+                : ITEM_TYPE_FILE;
             const enum input_item_net_type netType = isLocal.boolValue ? ITEM_LOCAL : ITEM_NET;
 
-            const char * const psz_filename = url.absoluteString.UTF8String;
-            const char * const psz_name = url.lastPathComponent.UTF8String;
-            
-            input_item_t *urlInputItem = input_item_NewExt(psz_filename, psz_name, 0, inputType, netType);
-            if (urlInputItem != NULL && (inputType != ITEM_TYPE_FILE || input_item_Playable(psz_filename))) {
-                input_item_node_t * const urlNode = input_item_node_Create(urlInputItem);
+            const char *const psz_filename = url.absoluteString.UTF8String;
+            const char *const psz_name = url.lastPathComponent.UTF8String;
+
+            input_item_t *urlInputItem =
+                input_item_NewExt(psz_filename, psz_name, 0, inputType, netType);
+            if (urlInputItem != NULL
+                && (inputType != ITEM_TYPE_FILE || input_item_Playable(psz_filename))) {
+                input_item_node_t *const urlNode = input_item_node_Create(urlInputItem);
                 if (urlNode) {
                     input_item_node_AppendNode(directoryNode, urlNode);
                 }
@@ -526,13 +547,15 @@ static const char *const remoteBrowseDescription = "Remote Browse";
 
 - (NSString *)description
 {
-    return [NSString stringWithFormat:@"%@ — %@", NSStringFromClass([self class]), self.mediaSourceDescription];
+    return [NSString
+        stringWithFormat:@"%@ — %@", NSStringFromClass([self class]), self.mediaSourceDescription];
 }
 
 - (VLCInputNode *)rootNode
 {
     VLCInputNode *inputNode = nil;
-    if (_p_mediaSource->description == localDevicesDescription || _p_mediaSource->description == myFoldersDescription) {
+    if (_p_mediaSource->description == localDevicesDescription
+        || _p_mediaSource->description == myFoldersDescription) {
         // Since it is a manually constructed tree, we skip the locking
         inputNode = [[VLCInputNode alloc] initWithInputNode:&_p_mediaSource->tree->root];
     } else {
@@ -550,21 +573,27 @@ static const char *const remoteBrowseDescription = "Remote Browse";
     if (mountedUrl == nil) {
         return;
     }
-        
+
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_BACKGROUND, 0), ^{
-        
         NSNumber *isEjectable;
         NSNumber *isLocal;
         NSString *localizedDescription;
 
         [mountedUrl getResourceValue:&isEjectable forKey:NSURLVolumeIsEjectableKey error:nil];
         [mountedUrl getResourceValue:&isLocal forKey:NSURLVolumeIsLocalKey error:nil];
-        [mountedUrl getResourceValue:&localizedDescription forKey:NSURLVolumeLocalizedNameKey error:nil];
+        [mountedUrl getResourceValue:&localizedDescription
+                              forKey:NSURLVolumeLocalizedNameKey
+                               error:nil];
 
-        enum input_item_type_e const inputType = isEjectable.boolValue ? ITEM_TYPE_DISC : ITEM_TYPE_DIRECTORY;
+        enum input_item_type_e const inputType =
+            isEjectable.boolValue ? ITEM_TYPE_DISC : ITEM_TYPE_DIRECTORY;
         enum input_item_net_type const netType = isLocal.boolValue ? ITEM_LOCAL : ITEM_NET;
-        
-        input_item_t *urlInputItem = input_item_NewExt(mountedUrl.absoluteString.UTF8String, localizedDescription.UTF8String, 0, inputType, netType);
+
+        input_item_t *urlInputItem = input_item_NewExt(mountedUrl.absoluteString.UTF8String,
+                                                       localizedDescription.UTF8String,
+                                                       0,
+                                                       inputType,
+                                                       netType);
         if (urlInputItem != NULL) {
             input_item_node_t *urlNode = input_item_node_Create(urlInputItem);
             if (urlNode) {
@@ -573,10 +602,10 @@ static const char *const remoteBrowseDescription = "Remote Browse";
             input_item_Release(urlInputItem);
             urlInputItem = NULL;
         }
-        
+
         dispatch_async(dispatch_get_main_queue(), ^{
             [NSNotificationCenter.defaultCenter postNotificationName:VLCMediaSourceChildrenAdded
-                                                                object:self];
+                                                              object:self];
         });
     });
 }
@@ -587,18 +616,17 @@ static const char *const remoteBrowseDescription = "Remote Browse";
     if (unmountedUrl == nil) {
         return;
     }
-        
+
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_BACKGROUND, 0), ^{
-        
         const char *const urlString = unmountedUrl.absoluteString.UTF8String;
-        
+
         input_item_node_t *nodeToRemove = NULL;
         input_item_node_t **childrenNodes = self->_p_mediaSource->tree->root.pp_children;
-        
+
         if (childrenNodes == NULL) {
             return;
         }
-        
+
         for (int i = 0; i < self->_p_mediaSource->tree->root.i_children; ++i) {
             input_item_node_t *childNode = childrenNodes[i];
             if (childNode->p_item == NULL) {
@@ -609,21 +637,19 @@ static const char *const remoteBrowseDescription = "Remote Browse";
                 break;
             }
         }
-        
+
         if (nodeToRemove == NULL) {
             return;
         }
-        
+
         input_item_node_RemoveNode(&(self->_p_mediaSource->tree->root), nodeToRemove);
         input_item_node_Delete(nodeToRemove);
-        
+
         dispatch_async(dispatch_get_main_queue(), ^{
             [NSNotificationCenter.defaultCenter postNotificationName:VLCMediaSourceChildrenRemoved
-                                                                object:self];
+                                                              object:self];
         });
-        
     });
 }
-
 
 @end

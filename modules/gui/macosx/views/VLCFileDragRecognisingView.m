@@ -35,16 +35,18 @@
         return NO;
     }
 
-    NSArray * const values = [propertyList sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
+    NSArray *const values =
+        [propertyList sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
     const NSUInteger valueCount = values.count;
     if (valueCount <= 0) {
         return NO;
     }
 
-    NSMutableArray * const metadataArray = [NSMutableArray arrayWithCapacity:valueCount];
+    NSMutableArray *const metadataArray = [NSMutableArray arrayWithCapacity:valueCount];
 
-    for (NSString * const filepath in values) {
-        VLCOpenInputMetadata * const inputMetadata = [VLCOpenInputMetadata inputMetaWithPath:filepath];
+    for (NSString *const filepath in values) {
+        VLCOpenInputMetadata *const inputMetadata =
+            [VLCOpenInputMetadata inputMetaWithPath:filepath];
         if (inputMetadata != nil) {
             [metadataArray addObject:inputMetadata];
         }
@@ -93,7 +95,7 @@
 
 - (void)setupDragRecognition
 {
-    [self registerForDraggedTypes:@[NSFilenamesPboardType]];
+    [self registerForDraggedTypes:@[ NSFilenamesPboardType ]];
 }
 
 - (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender
@@ -111,7 +113,7 @@
 
 - (BOOL)performDragOperation:(id<NSDraggingInfo>)sender
 {
-    NSPasteboard * const pasteboard = [sender draggingPasteboard];
+    NSPasteboard *const pasteboard = [sender draggingPasteboard];
     if (pasteboard == nil) {
         return NO;
     }

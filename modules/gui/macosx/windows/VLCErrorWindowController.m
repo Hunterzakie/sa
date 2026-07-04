@@ -25,7 +25,7 @@
 
 #import "extensions/NSString+Helpers.h"
 
-@interface VLCErrorWindowController()
+@interface VLCErrorWindowController ()
 {
     NSMutableArray *_errors;
     NSMutableArray *_icons;
@@ -49,10 +49,11 @@
 - (void)windowDidLoad
 {
     /* init strings */
-    [self.window setTitle: _NS("Errors and Warnings")];
-    [self.cleanupButton setTitle: _NS("Clean up")];
+    [self.window setTitle:_NS("Errors and Warnings")];
+    [self.cleanupButton setTitle:_NS("Clean up")];
 
-    if ([NSApplication.sharedApplication userInterfaceLayoutDirection] == NSUserInterfaceLayoutDirectionRightToLeft) {
+    if ([NSApplication.sharedApplication userInterfaceLayoutDirection]
+        == NSUserInterfaceLayoutDirectionRightToLeft) {
         [self.errorTable moveColumn:0 toColumn:1];
     }
 }
@@ -60,21 +61,22 @@
 - (void)addError:(NSString *)title withMsg:(NSString *)message;
 {
     /* format our string as desired */
-    NSMutableAttributedString * ourError;
-    ourError = [[NSMutableAttributedString alloc] initWithString:
-                [NSString stringWithFormat:@"%@\n%@", title, message]
-                                                      attributes:@{NSFontAttributeName : [NSFont systemFontOfSize:11]}];
-    [ourError addAttribute: NSFontAttributeName
-                     value: [NSFont boldSystemFontOfSize:11]
-                     range: NSMakeRange(0, [title length])];
-    [_errors addObject: ourError];
+    NSMutableAttributedString *ourError;
+    ourError = [[NSMutableAttributedString alloc]
+        initWithString:[NSString stringWithFormat:@"%@\n%@", title, message]
+            attributes:@{ NSFontAttributeName : [NSFont systemFontOfSize:11] }];
+    [ourError addAttribute:NSFontAttributeName
+                     value:[NSFont boldSystemFontOfSize:11]
+                     range:NSMakeRange(0, [title length])];
+    [_errors addObject:ourError];
 
-    [_icons addObject: [NSWorkspace.sharedWorkspace iconForFileType:NSFileTypeForHFSTypeCode(kAlertStopIcon)]];
+    [_icons addObject:[NSWorkspace.sharedWorkspace
+                          iconForFileType:NSFileTypeForHFSTypeCode(kAlertStopIcon)]];
 
     [self.errorTable reloadData];
 }
 
--(IBAction)cleanupTable:(id)sender
+- (IBAction)cleanupTable:(id)sender
 {
     [_errors removeAllObjects];
     [_icons removeAllObjects];
@@ -89,13 +91,14 @@
     return [_errors count];
 }
 
-- (id)tableView:(NSTableView *)theDataTable objectValueForTableColumn:(NSTableColumn *)theTableColumn
-            row: (NSInteger)row
+- (id)tableView:(NSTableView *)theDataTable
+    objectValueForTableColumn:(NSTableColumn *)theTableColumn
+                          row:(NSInteger)row
 {
-    if ([[theTableColumn identifier] isEqualToString: @"error_msg"])
+    if ([[theTableColumn identifier] isEqualToString:@"error_msg"])
         return [_errors objectAtIndex:row];
 
-    if ([[theTableColumn identifier] isEqualToString: @"icon"])
+    if ([[theTableColumn identifier] isEqualToString:@"icon"])
         return [_icons objectAtIndex:row];
 
     return @"";

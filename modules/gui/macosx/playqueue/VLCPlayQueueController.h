@@ -32,13 +32,13 @@ NS_ASSUME_NONNULL_BEGIN
 @class VLCOpenInputMetadata;
 @class VLCInputItem;
 
-extern NSString * const VLCPlaybackOrderChanged;
-extern NSString * const VLCPlaybackRepeatChanged;
-extern NSString * const VLCPlaybackHasPreviousChanged;
-extern NSString * const VLCPlaybackHasNextChanged;
-extern NSString * const VLCPlayQueueCurrentItemIndexChanged;
-extern NSString * const VLCPlayQueueItemsAdded;
-extern NSString * const VLCPlayQueueItemsRemoved;
+extern NSString *const VLCPlaybackOrderChanged;
+extern NSString *const VLCPlaybackRepeatChanged;
+extern NSString *const VLCPlaybackHasPreviousChanged;
+extern NSString *const VLCPlaybackHasNextChanged;
+extern NSString *const VLCPlayQueueCurrentItemIndexChanged;
+extern NSString *const VLCPlayQueueItemsAdded;
+extern NSString *const VLCPlayQueueItemsRemoved;
 
 @interface VLCPlayQueueController : NSObject
 
@@ -108,17 +108,17 @@ extern NSString * const VLCPlayQueueItemsRemoved;
 
 /**
  * Define the action to perform after playback of the current media stopped (for any reason)
- * Options are: continue with next time, pause on last frame, stop even if there is a next item and quit VLC
+ * Options are: continue with next time, pause on last frame, stop even if there is a next item and
+ * quit VLC
  * @see the vlc_playlist_media_stopped_action enum for details
  */
 @property (readwrite, nonatomic) enum vlc_playlist_media_stopped_action actionAfterStop;
-
 
 /**
  * Simplified version to add new items to the end of the current playlist
  * @param array array of items. Each item is an instance of VLCOpenInputMetadata.
  */
-- (void)addPlayQueueItems:(NSArray <VLCOpenInputMetadata *> *)array;
+- (void)addPlayQueueItems:(NSArray<VLCOpenInputMetadata *> *)array;
 
 /**
  * Add new items to the playlist, at specified index.
@@ -126,7 +126,7 @@ extern NSString * const VLCPlayQueueItemsRemoved;
  * @param insertionIndex index for new items, -1 for appending at end
  * @param startPlayback starts playback of first item if true
  */
-- (void)addPlayQueueItems:(NSArray <VLCOpenInputMetadata *> *)itemArray
+- (void)addPlayQueueItems:(NSArray<VLCOpenInputMetadata *> *)itemArray
                atPosition:(size_t)insertionIndex
             startPlayback:(BOOL)startPlayback;
 
@@ -166,7 +166,8 @@ extern NSString * const VLCPlayQueueItemsRemoved;
  * @param sortOrder sort ascending or descending..
  * @return Returns VLC_SUCCESS on success.
  */
-- (int)sortByKey:(enum vlc_playlist_sort_key)sortKey andOrder:(enum vlc_playlist_sort_order)sortOrder;
+- (int)sortByKey:(enum vlc_playlist_sort_key)sortKey
+        andOrder:(enum vlc_playlist_sort_order)sortOrder;
 
 /**
  * Initially, the playlist is unsorted until the user decides to do so
@@ -227,7 +228,7 @@ extern NSString * const VLCPlayQueueItemsRemoved;
 /**
  * returns an array of module descriptions available for export a playlist. Content may vary
  */
-@property (readonly) NSArray <VLCPlaylistExportModuleDescription *> *availablePlaylistExportModules;
+@property (readonly) NSArray<VLCPlaylistExportModuleDescription *> *availablePlaylistExportModules;
 
 /**
  * exports the playlist owned by the controller to a given file using the provided module
@@ -235,7 +236,8 @@ extern NSString * const VLCPlayQueueItemsRemoved;
  * @param exportModule the VLCPlaylistExportModuleDescription for the respective export module
  * @return VLC_SUCCESS or an error
  */
-- (int)exportPlaylistToPath:(NSString *)path exportModule:(VLCPlaylistExportModuleDescription *)exportModule;
+- (int)exportPlaylistToPath:(NSString *)path
+               exportModule:(VLCPlaylistExportModuleDescription *)exportModule;
 
 @end
 

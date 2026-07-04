@@ -36,7 +36,8 @@
 NS_ASSUME_NONNULL_BEGIN
 
 // Controller for the video library views
-@interface VLCLibraryVideoViewController : VLCLibraryAbstractMediaLibrarySegmentViewController<VLCLibraryItemPresentingCapable>
+@interface VLCLibraryVideoViewController
+    : VLCLibraryAbstractMediaLibrarySegmentViewController<VLCLibraryItemPresentingCapable>
 
 @property (readonly, weak) NSView *videoLibraryView;
 @property (readonly, weak) NSScrollView *videoLibraryCollectionViewScrollView;

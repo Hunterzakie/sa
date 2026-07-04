@@ -42,7 +42,8 @@ extern NSString *const NSCollectionViewSupplementaryElementKind;
 
 #ifndef MAC_OS_VERSION_13_0
 
-enum {
+enum
+{
     NSWindowCollectionBehaviorCanJoinAllApplications = 1 << 18,
 };
 

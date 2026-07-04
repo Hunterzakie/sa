@@ -30,13 +30,16 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-extern NSString * const VLCLibraryVideoCollectionViewDataSourceDisplayedCollectionChangedNotification;
+extern NSString *const
+    VLCLibraryVideoCollectionViewDataSourceDisplayedCollectionChangedNotification;
 
-@interface VLCLibraryHomeViewVideoContainerViewDataSource : NSObject <VLCLibraryCollectionViewDataSource, iCarouselDataSource>
+@interface VLCLibraryHomeViewVideoContainerViewDataSource
+    : NSObject<VLCLibraryCollectionViewDataSource, iCarouselDataSource>
 
 @property (readwrite, weak) NSCollectionView *collectionView;
 @property (readwrite, weak) iCarousel *carouselView;
-@property (readwrite, assign, nonatomic) VLCLibraryVideoCollectionViewGroupDescriptor *groupDescriptor;
+@property (readwrite, assign, nonatomic)
+    VLCLibraryVideoCollectionViewGroupDescriptor *groupDescriptor;
 @property (readwrite, assign) VLCLibraryHomeViewVideoGridContainerView *parentCell;
 
 - (void)setup;

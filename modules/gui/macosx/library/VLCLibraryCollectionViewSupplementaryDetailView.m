@@ -45,7 +45,7 @@ static const CGFloat kBackgroundCornerRadius = 10.;
 
 - (void)drawRect:(NSRect)dirtyRect
 {
-    if(NSEqualSizes(_arrowSize, NSZeroSize)) {
+    if (NSEqualSizes(_arrowSize, NSZeroSize)) {
         _arrowSize = NSMakeSize(kArrowWidth, kArrowHeight);
     }
 
@@ -59,8 +59,9 @@ static const CGFloat kBackgroundCornerRadius = 10.;
 - (void)drawBackgroundWithTopArrow
 {
     const NSRect selectedItemFrame = _selectedItem.view.frame;
-    const NSPoint itemCenterPoint = NSMakePoint(NSMinX(selectedItemFrame) + NSWidth(selectedItemFrame) / 2,
-                                                NSMinY(selectedItemFrame) + NSHeight(selectedItemFrame) / 2);
+    const NSPoint itemCenterPoint =
+        NSMakePoint(NSMinX(selectedItemFrame) + NSWidth(selectedItemFrame) / 2,
+                    NSMinY(selectedItemFrame) + NSHeight(selectedItemFrame) / 2);
     const NSRect backgroundRect = NSMakeRect(NSMinX(self.bounds),
                                              NSMinY(self.bounds),
                                              NSWidth(self.bounds) + 2,
@@ -68,22 +69,32 @@ static const CGFloat kBackgroundCornerRadius = 10.;
     const CGFloat backgroundTop = NSMaxY(backgroundRect);
     const CGFloat backgroundLeft = NSMinX(backgroundRect);
 
-    const NSPoint arrowLeftPoint = NSMakePoint(itemCenterPoint.x - _arrowSize.width / 2, backgroundTop);
+    const NSPoint arrowLeftPoint =
+        NSMakePoint(itemCenterPoint.x - _arrowSize.width / 2, backgroundTop);
     const NSPoint arrowTopPoint = NSMakePoint(itemCenterPoint.x, backgroundTop + kArrowHeight - 1);
-    const NSPoint arrowRightPoint = NSMakePoint(itemCenterPoint.x + _arrowSize.width / 2, backgroundTop);
+    const NSPoint arrowRightPoint =
+        NSMakePoint(itemCenterPoint.x + _arrowSize.width / 2, backgroundTop);
 
-    const NSPoint topLeftCornerAfterCurve = NSMakePoint(backgroundLeft + kBackgroundCornerRadius, backgroundTop);
+    const NSPoint topLeftCornerAfterCurve =
+        NSMakePoint(backgroundLeft + kBackgroundCornerRadius, backgroundTop);
 
-    const NSBezierPath *backgroundPath = [NSBezierPath bezierPathWithRoundedRect:backgroundRect xRadius:kBackgroundCornerRadius yRadius:kBackgroundCornerRadius];
+    const NSBezierPath *backgroundPath =
+        [NSBezierPath bezierPathWithRoundedRect:backgroundRect
+                                        xRadius:kBackgroundCornerRadius
+                                        yRadius:kBackgroundCornerRadius];
 
     [backgroundPath moveToPoint:topLeftCornerAfterCurve];
     [backgroundPath lineToPoint:arrowLeftPoint];
-    [backgroundPath curveToPoint:arrowTopPoint
-                   controlPoint1:NSMakePoint(itemCenterPoint.x - _arrowSize.width / 6, backgroundTop)
-                   controlPoint2:NSMakePoint(itemCenterPoint.x - kArrowTipRadius, backgroundTop + _arrowSize.height)];
-    [backgroundPath curveToPoint:arrowRightPoint
-                   controlPoint1:NSMakePoint(itemCenterPoint.x + kArrowTipRadius, backgroundTop + _arrowSize.height)
-                   controlPoint2:NSMakePoint(itemCenterPoint.x + _arrowSize.width / 6, backgroundTop)];
+    [backgroundPath
+         curveToPoint:arrowTopPoint
+        controlPoint1:NSMakePoint(itemCenterPoint.x - _arrowSize.width / 6, backgroundTop)
+        controlPoint2:NSMakePoint(itemCenterPoint.x - kArrowTipRadius,
+                                  backgroundTop + _arrowSize.height)];
+    [backgroundPath
+         curveToPoint:arrowRightPoint
+        controlPoint1:NSMakePoint(itemCenterPoint.x + kArrowTipRadius,
+                                  backgroundTop + _arrowSize.height)
+        controlPoint2:NSMakePoint(itemCenterPoint.x + _arrowSize.width / 6, backgroundTop)];
 
     [backgroundPath closePath];
     [self colorBackground:backgroundPath];
@@ -92,8 +103,9 @@ static const CGFloat kBackgroundCornerRadius = 10.;
 - (void)drawBackgroundWithLeftArrow
 {
     const NSRect selectedItemFrame = _selectedItem.view.frame;
-    const NSPoint itemCenterPoint = NSMakePoint(NSMinX(selectedItemFrame) + NSWidth(selectedItemFrame) / 2,
-                                                NSMinY(selectedItemFrame) + NSHeight(selectedItemFrame) / 2);
+    const NSPoint itemCenterPoint =
+        NSMakePoint(NSMinX(selectedItemFrame) + NSWidth(selectedItemFrame) / 2,
+                    NSMinY(selectedItemFrame) + NSHeight(selectedItemFrame) / 2);
     const NSRect backgroundRect = NSMakeRect(NSMinX(self.bounds) + _arrowSize.height,
                                              NSMinY(self.bounds),
                                              NSWidth(self.bounds) - _arrowSize.height,
@@ -101,28 +113,39 @@ static const CGFloat kBackgroundCornerRadius = 10.;
     const CGFloat backgroundBottom = NSMinY(backgroundRect);
     const CGFloat backgroundLeft = NSMinX(backgroundRect);
 
-    const NSPoint arrowBottomPoint = NSMakePoint(backgroundLeft, itemCenterPoint.y + _arrowSize.width / 2);
-    const NSPoint arrowLeftMostPoint = NSMakePoint(backgroundLeft - kArrowHeight + 1, itemCenterPoint.y);
-    const NSPoint arrowTopPoint = NSMakePoint(backgroundLeft, itemCenterPoint.y - _arrowSize.width / 2);
+    const NSPoint arrowBottomPoint =
+        NSMakePoint(backgroundLeft, itemCenterPoint.y + _arrowSize.width / 2);
+    const NSPoint arrowLeftMostPoint =
+        NSMakePoint(backgroundLeft - kArrowHeight + 1, itemCenterPoint.y);
+    const NSPoint arrowTopPoint =
+        NSMakePoint(backgroundLeft, itemCenterPoint.y - _arrowSize.width / 2);
 
-    const NSPoint bottomLeftCornerAfterCurve = NSMakePoint(backgroundLeft, backgroundBottom + kBackgroundCornerRadius);
+    const NSPoint bottomLeftCornerAfterCurve =
+        NSMakePoint(backgroundLeft, backgroundBottom + kBackgroundCornerRadius);
 
-    const NSBezierPath *backgroundPath = [NSBezierPath bezierPathWithRoundedRect:backgroundRect xRadius:kBackgroundCornerRadius yRadius:kBackgroundCornerRadius];
+    const NSBezierPath *backgroundPath =
+        [NSBezierPath bezierPathWithRoundedRect:backgroundRect
+                                        xRadius:kBackgroundCornerRadius
+                                        yRadius:kBackgroundCornerRadius];
 
     [backgroundPath moveToPoint:bottomLeftCornerAfterCurve];
     [backgroundPath lineToPoint:arrowBottomPoint];
-    [backgroundPath curveToPoint:arrowLeftMostPoint
-                   controlPoint1:NSMakePoint(backgroundLeft, itemCenterPoint.y + _arrowSize.width / 6)
-                   controlPoint2:NSMakePoint(backgroundLeft - _arrowSize.height, itemCenterPoint.y + kArrowTipRadius)];
-    [backgroundPath curveToPoint:arrowTopPoint
-                   controlPoint1:NSMakePoint(backgroundLeft - _arrowSize.height, itemCenterPoint.y - kArrowTipRadius)
-                   controlPoint2:NSMakePoint(backgroundLeft, itemCenterPoint.y - _arrowSize.width / 6)];
+    [backgroundPath
+         curveToPoint:arrowLeftMostPoint
+        controlPoint1:NSMakePoint(backgroundLeft, itemCenterPoint.y + _arrowSize.width / 6)
+        controlPoint2:NSMakePoint(backgroundLeft - _arrowSize.height,
+                                  itemCenterPoint.y + kArrowTipRadius)];
+    [backgroundPath
+         curveToPoint:arrowTopPoint
+        controlPoint1:NSMakePoint(backgroundLeft - _arrowSize.height,
+                                  itemCenterPoint.y - kArrowTipRadius)
+        controlPoint2:NSMakePoint(backgroundLeft, itemCenterPoint.y - _arrowSize.width / 6)];
 
     [backgroundPath closePath];
     [self colorBackground:backgroundPath];
 }
 
-- (void)colorBackground:(const NSBezierPath*)backgroundPath
+- (void)colorBackground:(const NSBezierPath *)backgroundPath
 {
     //[[NSColor.gridColor colorWithAlphaComponent:self.container.alphaValue] setFill];
     [NSColor.gridColor setFill];
@@ -135,22 +158,22 @@ static const CGFloat kBackgroundCornerRadius = 10.;
 
 - (BOOL)validConstraintProps
 {
-    return _contentViewTopConstraint != nil &&
-           _contentViewLeftConstraint != nil &&
-           _contentViewRightConstraint != nil &&
-           _contentViewBottomConstraint != nil;
+    return _contentViewTopConstraint != nil && _contentViewLeftConstraint != nil
+        && _contentViewRightConstraint != nil && _contentViewBottomConstraint != nil;
 }
 
 - (void)setLayoutScrollDirection:(NSCollectionViewScrollDirection)layoutScrollDirection
 {
     _layoutScrollDirection = layoutScrollDirection;
 
-    if (_layoutScrollDirection == NSCollectionViewScrollDirectionVertical && [self validConstraintProps]) {
+    if (_layoutScrollDirection == NSCollectionViewScrollDirectionVertical &&
+        [self validConstraintProps]) {
         _contentViewTopConstraint.constant = kArrowHeight + [VLCLibraryUIUnits mediumSpacing];
         _contentViewBottomConstraint.constant = [VLCLibraryUIUnits mediumSpacing];
         _contentViewLeftConstraint.constant = [VLCLibraryUIUnits mediumSpacing];
         _contentViewRightConstraint.constant = [VLCLibraryUIUnits mediumSpacing];
-    } else if (_layoutScrollDirection == NSCollectionViewScrollDirectionHorizontal  && [self validConstraintProps]) {
+    } else if (_layoutScrollDirection == NSCollectionViewScrollDirectionHorizontal &&
+               [self validConstraintProps]) {
         _contentViewTopConstraint.constant = [VLCLibraryUIUnits mediumSpacing];
         _contentViewBottomConstraint.constant = [VLCLibraryUIUnits mediumSpacing];
         _contentViewLeftConstraint.constant = kArrowHeight + [VLCLibraryUIUnits mediumSpacing];

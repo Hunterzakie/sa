@@ -31,8 +31,8 @@
  * we need the implementation to catch our click-event in the controller window
  *****************************************************************************/
 
-extern NSString * const VLCTimeFieldDisplayTimeAsElapsed;
-extern NSString * const VLCTimeFieldDisplayTimeAsRemaining;
+extern NSString *const VLCTimeFieldDisplayTimeAsElapsed;
+extern NSString *const VLCTimeFieldDisplayTimeAsRemaining;
 
 @interface VLCTimeField : NSButton
 

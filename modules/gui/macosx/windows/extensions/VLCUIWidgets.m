@@ -27,24 +27,21 @@
 
 @end
 
-
 @implementation VLCDialogPopUpButton
 
 @end
-
 
 @implementation VLCDialogTextField
 
 @end
 
-
 @implementation VLCDialogSecureTextField
 
 @end
 
-
 @implementation VLCDialogLabel
-- (void)resetCursorRects {
+- (void)resetCursorRects
+{
     [self addCursorRect:[self bounds] cursor:[NSCursor arrowCursor]];
 }
 @end
@@ -53,7 +50,6 @@
 
 @end
 
-
 @implementation VLCDialogList
 
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)aTableView
@@ -61,13 +57,15 @@
     return [self.contentArray count];
 }
 
-- (id)tableView:(NSTableView *)aTableView objectValueForTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
+- (id)tableView:(NSTableView *)aTableView
+    objectValueForTableColumn:(NSTableColumn *)aTableColumn
+                          row:(NSInteger)rowIndex
 {
     return [[self.contentArray objectAtIndex:rowIndex] objectForKey:@"text"];
 }
 @end
 
-@interface VLCDialogGridView()
+@interface VLCDialogGridView ()
 {
     NSUInteger _rowCount, _colCount;
     NSMutableArray *_griddedViews;
@@ -108,7 +106,9 @@
 
 - (void)recomputeWindowSize
 {
-    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(recomputeWindowSize) object:nil];
+    [NSObject cancelPreviousPerformRequestsWithTarget:self
+                                             selector:@selector(recomputeWindowSize)
+                                               object:nil];
 
     NSWindow *window = [self window];
     NSRect frame = [window frame];
@@ -141,7 +141,7 @@
 - (CGFloat)constrainedHeightOfRow:(NSUInteger)targetRow
 {
     CGFloat height = 0;
-    for(NSDictionary *obj in _griddedViews) {
+    for (NSDictionary *obj in _griddedViews) {
         NSUInteger row = [[obj objectForKey:@"row"] intValue];
         if (row != targetRow)
             continue;
@@ -188,7 +188,6 @@
     return height;
 }
 
-
 - (CGFloat)topOfRow:(NSUInteger)targetRow
 {
     CGFloat top = [self marginY];
@@ -201,7 +200,7 @@
 - (CGFloat)constrainedWidthOfColumn:(NSUInteger)targetColumn
 {
     CGFloat width = 0;
-    for(NSDictionary *obj in _griddedViews) {
+    for (NSDictionary *obj in _griddedViews) {
         NSUInteger col = [[obj objectForKey:@"col"] intValue];
         if (col != targetColumn)
             continue;
@@ -246,7 +245,6 @@
     return width;
 }
 
-
 - (CGFloat)leftOfColumn:(NSUInteger)targetColumn
 {
     CGFloat left = [self marginX];
@@ -258,7 +256,7 @@
 
 - (void)relayout
 {
-    for(NSDictionary *obj in _griddedViews) {
+    for (NSDictionary *obj in _griddedViews) {
         NSUInteger row = [[obj objectForKey:@"row"] intValue];
         NSUInteger col = [[obj objectForKey:@"col"] intValue];
         NSUInteger rowSpan = [[obj objectForKey:@"rowSpan"] intValue];
@@ -275,8 +273,7 @@
                 height += [self heightOfRow:row + r] + [self marginY];
             }
             rect.size.height = height - [self marginY];
-        }
-        else
+        } else
             rect.size.height = [self objectSizeToFit:view].height;
 
         // Get the width
@@ -285,8 +282,7 @@
             for (NSUInteger c = 0; c < colSpan; c++)
                 width += [self widthOfColumn:col + c] + [self marginX];
             rect.size.width = width - [self marginX];
-        }
-        else
+        } else
             rect.size.width = [self objectSizeToFit:view].width;
 
         // Top corner
@@ -300,8 +296,7 @@
 
 - (NSMutableDictionary *)objectForView:(NSView *)view
 {
-    for (NSMutableDictionary *dict in _griddedViews)
-    {
+    for (NSMutableDictionary *dict in _griddedViews) {
         if ([dict objectForKey:@"view"] == view)
             return dict;
     }
@@ -334,7 +329,9 @@
     [self relayout];
 
     // Recompute the size of the window after making sure we won't see anymore update
-    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(recomputeWindowSize) object:nil];
+    [NSObject cancelPreviousPerformRequestsWithTarget:self
+                                             selector:@selector(recomputeWindowSize)
+                                               object:nil];
     [self performSelector:@selector(recomputeWindowSize) withObject:nil afterDelay:0.1];
 }
 
@@ -346,11 +343,7 @@
 {
     NSDictionary *oldDict = [self objectForView:view];
     if (!oldDict) {
-        [self addSubview:view
-                   atRow:row
-                  column:column
-                 rowSpan:rowSpan
-                 colSpan:colSpan];
+        [self addSubview:view atRow:row column:column rowSpan:rowSpan colSpan:colSpan];
         return;
     }
     [self relayout];

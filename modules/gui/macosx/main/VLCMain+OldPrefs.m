@@ -32,14 +32,15 @@
 #import "extensions/NSString+Helpers.h"
 #import "preferences/VLCSimplePrefsController.h"
 
-@implementation VLCMain(OldPrefs)
+@implementation VLCMain (OldPrefs)
 
 static const int kCurrentPreferencesVersion = 4;
 
 + (void)initialize
 {
-    NSDictionary *appDefaults = [NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCurrentPreferencesVersion]
-                                                            forKey:kVLCPreferencesVersion];
+    NSDictionary *appDefaults =
+        [NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCurrentPreferencesVersion]
+                                    forKey:kVLCPreferencesVersion];
 
     [[NSUserDefaults standardUserDefaults] registerDefaults:appDefaults];
 }
@@ -59,7 +60,7 @@ static const int kCurrentPreferencesVersion = 4;
 
 - (void)migrateOldPreferences
 {
-    NSUserDefaults * defaults = [NSUserDefaults standardUserDefaults];
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSInteger version = [defaults integerForKey:kVLCPreferencesVersion];
 
     // This was set in user defaults in VLC 2.0.x (preferences version 2), overriding any
@@ -83,10 +84,11 @@ static const int kCurrentPreferencesVersion = 4;
         if (!fixIntfSettings())
             return;
         else
-            config_SaveConfigFile(getIntf()); // we need to do manually, since we won't quit libvlc cleanly
+            config_SaveConfigFile(
+                getIntf()); // we need to do manually, since we won't quit libvlc cleanly
     } else if (version == 2) {
-        /* version 2 (used by VLC 2.0.x and early versions of 2.1) can lead to exceptions within 2.1 or later
-         * so we reset the OS X specific prefs here - in practice, no user will notice */
+        /* version 2 (used by VLC 2.0.x and early versions of 2.1) can lead to exceptions within 2.1
+         * or later so we reset the OS X specific prefs here - in practice, no user will notice */
         [self resetAndReinitializeUserDefaults];
 
     } else if (version == 3) {
@@ -103,16 +105,18 @@ static const int kCurrentPreferencesVersion = 4;
         config_PutPsz("video-filter", "");
         config_SaveConfigFile(getIntf());
     } else {
-        NSArray *libraries = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
-                                                                 NSUserDomainMask, YES);
+        NSArray *libraries =
+            NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
         if (!libraries || [libraries count] == 0)
             return;
-        NSString *preferences = [[libraries firstObject] stringByAppendingPathComponent:@"Preferences"];
+        NSString *preferences =
+            [[libraries firstObject] stringByAppendingPathComponent:@"Preferences"];
 
         NSAlert *alert = [[NSAlert alloc] init];
         [alert setAlertStyle:NSAlertStyleInformational];
         [alert setMessageText:_NS("Remove old preferences?")];
-        [alert setInformativeText:_NS("We just found an older version of VLC's preferences files.")];
+        [alert
+            setInformativeText:_NS("We just found an older version of VLC's preferences files.")];
         [alert addButtonWithTitle:_NS("Move To Trash and Relaunch VLC")];
         [alert addButtonWithTitle:_NS("Ignore")];
         NSModalResponse res = [alert runModal];
@@ -123,13 +127,19 @@ static const int kCurrentPreferencesVersion = 4;
 
         // Do NOT add the current plist file here as this would conflict with caching.
         // Instead, just reset below.
-        NSArray *ourPreferences = @[[[NSURL alloc] initFileURLWithPath:[preferences stringByAppendingPathComponent:@"org.videolan.vlc"]],
-                                    [[NSURL alloc] initFileURLWithPath:[preferences stringByAppendingPathComponent:@"VLC"]]];
+        NSArray *ourPreferences = @[
+            [[NSURL alloc]
+                initFileURLWithPath:[preferences
+                                        stringByAppendingPathComponent:@"org.videolan.vlc"]],
+            [[NSURL alloc]
+                initFileURLWithPath:[preferences stringByAppendingPathComponent:@"VLC"]]
+        ];
 
-        [NSWorkspace.sharedWorkspace recycleURLs:ourPreferences completionHandler:^(NSDictionary *newURLs, NSError *error){
-            [self resetAndReinitializeUserDefaults];
-            [VLCMain relaunchApplication];
-        }];
+        [NSWorkspace.sharedWorkspace recycleURLs:ourPreferences
+                               completionHandler:^(NSDictionary *newURLs, NSError *error) {
+                                   [self resetAndReinitializeUserDefaults];
+                                   [VLCMain relaunchApplication];
+                               }];
         return;
     }
 

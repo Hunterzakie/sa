@@ -61,7 +61,7 @@
 // The shared mediaSourceView is the source of truth for the active overlay.
 - (nullable VLCLoadingOverlayView *)currentLoadingOverlayInMediaSourceView
 {
-    for (NSView * const subview in self.mediaSourceView.subviews) {
+    for (NSView *const subview in self.mediaSourceView.subviews) {
         if ([subview isKindOfClass:VLCLoadingOverlayView.class]) {
             return (VLCLoadingOverlayView *)subview;
         }
@@ -80,7 +80,7 @@
         [self setupMediaSourceLibraryViews];
         [self setupPlaceholderLabel];
 
-        NSNotificationCenter * const defaultCenter = NSNotificationCenter.defaultCenter;
+        NSNotificationCenter *const defaultCenter = NSNotificationCenter.defaultCenter;
         [defaultCenter addObserver:self
                           selector:@selector(updatePlaceholderLabel:)
                               name:VLCMediaSourceBaseDataSourceNodeChanged
@@ -150,7 +150,8 @@
 {
     self.collectionView.allowsMultipleSelection = YES;
 
-    VLCLibraryCollectionViewFlowLayout * const mediaSourceCollectionViewLayout = VLCLibraryCollectionViewFlowLayout.standardLayout;
+    VLCLibraryCollectionViewFlowLayout *const mediaSourceCollectionViewLayout =
+        VLCLibraryCollectionViewFlowLayout.standardLayout;
     self.collectionView.collectionViewLayout = mediaSourceCollectionViewLayout;
     mediaSourceCollectionViewLayout.itemSize = VLCLibraryCollectionViewItem.defaultSize;
 }
@@ -180,8 +181,10 @@
     self.browsePlaceholderLabel.drawsBackground = NO;
     [self.mediaSourceView addSubview:self.browsePlaceholderLabel];
     [self.mediaSourceView addConstraints:@[
-        [self.browsePlaceholderLabel.centerXAnchor constraintEqualToAnchor:self.mediaSourceView.centerXAnchor],
-        [self.browsePlaceholderLabel.centerYAnchor constraintEqualToAnchor:self.mediaSourceView.centerYAnchor],
+        [self.browsePlaceholderLabel.centerXAnchor
+            constraintEqualToAnchor:self.mediaSourceView.centerXAnchor],
+        [self.browsePlaceholderLabel.centerYAnchor
+            constraintEqualToAnchor:self.mediaSourceView.centerYAnchor],
     ]];
     [self updatePlaceholderLabel:nil];
 }
@@ -190,11 +193,12 @@
 {
     if (@available(macOS 26.0, *)) {
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 260000
-        NSButton * const homeButton = self.homeButton;
-        VLCInputNodePathControl * const pathControl = self.pathControl;
+        NSButton *const homeButton = self.homeButton;
+        VLCInputNodePathControl *const pathControl = self.pathControl;
         pathControl.translatesAutoresizingMaskIntoConstraints = NO;
-        
-        _pathControlGlassEffectView = [[NSGlassEffectView alloc] initWithFrame:self.pathControlVisualEffectView.frame];
+
+        _pathControlGlassEffectView =
+            [[NSGlassEffectView alloc] initWithFrame:self.pathControlVisualEffectView.frame];
         self.pathControlGlassEffectView.translatesAutoresizingMaskIntoConstraints = NO;
         [self.pathControlVisualEffectView removeFromSuperview];
         [self.mediaSourceView addSubview:self.pathControlGlassEffectView];
@@ -203,26 +207,42 @@
         const CGFloat topConstant = VLCLibraryUIUnits.libraryWindowContentSafeTopInset;
 
         _pathControlViewTopConstraintToSuperview =
-            [self.pathControlGlassEffectView.topAnchor constraintEqualToAnchor:topAnchor constant:topConstant];
+            [self.pathControlGlassEffectView.topAnchor constraintEqualToAnchor:topAnchor
+                                                                      constant:topConstant];
         [NSLayoutConstraint activateConstraints:@[
-            [self.pathControlGlassEffectView.leadingAnchor constraintEqualToAnchor:self.mediaSourceView.leadingAnchor constant:VLCLibraryUIUnits.smallSpacing],
-            [self.pathControlGlassEffectView.trailingAnchor constraintEqualToAnchor:self.mediaSourceView.trailingAnchor constant:-VLCLibraryUIUnits.smallSpacing],
+            [self.pathControlGlassEffectView.leadingAnchor
+                constraintEqualToAnchor:self.mediaSourceView.leadingAnchor
+                               constant:VLCLibraryUIUnits.smallSpacing],
+            [self.pathControlGlassEffectView.trailingAnchor
+                constraintEqualToAnchor:self.mediaSourceView.trailingAnchor
+                               constant:-VLCLibraryUIUnits.smallSpacing],
         ]];
-        NSView * const pathControlContainer = [[NSView alloc] init];
+        NSView *const pathControlContainer = [[NSView alloc] init];
         pathControlContainer.translatesAutoresizingMaskIntoConstraints = NO;
         homeButton.translatesAutoresizingMaskIntoConstraints = NO;
         [pathControlContainer addSubview:homeButton];
         [pathControlContainer addSubview:pathControl];
         [NSLayoutConstraint activateConstraints:@[
-            [homeButton.leadingAnchor constraintEqualToAnchor:pathControlContainer.leadingAnchor constant:VLCLibraryUIUnits.smallSpacing],
+            [homeButton.leadingAnchor constraintEqualToAnchor:pathControlContainer.leadingAnchor
+                                                     constant:VLCLibraryUIUnits.smallSpacing],
             [homeButton.centerYAnchor constraintEqualToAnchor:pathControlContainer.centerYAnchor],
-            [homeButton.topAnchor constraintGreaterThanOrEqualToAnchor:pathControlContainer.topAnchor constant:VLCLibraryUIUnits.smallSpacing],
-            [homeButton.bottomAnchor constraintLessThanOrEqualToAnchor:pathControlContainer.bottomAnchor constant:-VLCLibraryUIUnits.smallSpacing],
-            [pathControl.leadingAnchor constraintEqualToAnchor:homeButton.trailingAnchor constant:VLCLibraryUIUnits.smallSpacing],
-            [pathControl.trailingAnchor constraintEqualToAnchor:pathControlContainer.trailingAnchor constant:-VLCLibraryUIUnits.smallSpacing],
+            [homeButton.topAnchor
+                constraintGreaterThanOrEqualToAnchor:pathControlContainer.topAnchor
+                                            constant:VLCLibraryUIUnits.smallSpacing],
+            [homeButton.bottomAnchor
+                constraintLessThanOrEqualToAnchor:pathControlContainer.bottomAnchor
+                                         constant:-VLCLibraryUIUnits.smallSpacing],
+            [pathControl.leadingAnchor constraintEqualToAnchor:homeButton.trailingAnchor
+                                                      constant:VLCLibraryUIUnits.smallSpacing],
+            [pathControl.trailingAnchor constraintEqualToAnchor:pathControlContainer.trailingAnchor
+                                                       constant:-VLCLibraryUIUnits.smallSpacing],
             [pathControl.centerYAnchor constraintEqualToAnchor:pathControlContainer.centerYAnchor],
-            [pathControl.topAnchor constraintGreaterThanOrEqualToAnchor:pathControlContainer.topAnchor constant:VLCLibraryUIUnits.smallSpacing],
-            [pathControl.bottomAnchor constraintLessThanOrEqualToAnchor:pathControlContainer.bottomAnchor constant:-VLCLibraryUIUnits.smallSpacing],
+            [pathControl.topAnchor
+                constraintGreaterThanOrEqualToAnchor:pathControlContainer.topAnchor
+                                            constant:VLCLibraryUIUnits.smallSpacing],
+            [pathControl.bottomAnchor
+                constraintLessThanOrEqualToAnchor:pathControlContainer.bottomAnchor
+                                         constant:-VLCLibraryUIUnits.smallSpacing],
         ]];
         self.pathControlGlassEffectView.contentView = pathControlContainer;
 #endif
@@ -231,7 +251,8 @@
         const CGFloat topConstant = VLCLibraryUIUnits.libraryWindowContentSafeTopInset;
 
         _pathControlViewTopConstraintToSuperview =
-            [self.pathControlVisualEffectView.topAnchor constraintEqualToAnchor:topAnchor constant:topConstant];
+            [self.pathControlVisualEffectView.topAnchor constraintEqualToAnchor:topAnchor
+                                                                       constant:topConstant];
     }
     _pathControlViewTopConstraintToSuperview.active = YES;
 }
@@ -276,13 +297,15 @@
         return;
 
     _loadingOverlayView.alphaValue = 1.0;
-    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
-        _loadingOverlayView.animator.alphaValue = 0.0;
-    } completionHandler:^{
-        [_loadingOverlayView removeFromSuperview];
-        [_loadingOverlayView.indicator stopAnimation:self];
-        [self updatePlaceholderLabel:nil];
-    }];
+    [NSAnimationContext
+        runAnimationGroup:^(NSAnimationContext *context) {
+            _loadingOverlayView.animator.alphaValue = 0.0;
+        }
+        completionHandler:^{
+            [_loadingOverlayView removeFromSuperview];
+            [_loadingOverlayView.indicator stopAnimation:self];
+            [self updatePlaceholderLabel:nil];
+        }];
 }
 
 - (NSView *)pathControlContainerView
@@ -314,7 +337,8 @@
         [self mediaSourceLoadingEnded:nil];
     }
 
-    _baseDataSource.mediaSourceMode = isStreams ? VLCMediaSourceModeInternet : VLCMediaSourceModeLAN;
+    _baseDataSource.mediaSourceMode =
+        isStreams ? VLCMediaSourceModeInternet : VLCMediaSourceModeLAN;
     [_baseDataSource reloadViews];
 }
 

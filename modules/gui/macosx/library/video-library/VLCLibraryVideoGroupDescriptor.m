@@ -47,12 +47,15 @@
                 _name = _NS("Library");
                 break;
             default:
-                NSAssert(1, @"Cannot construct group descriptor from invalid VLCMediaLibraryParentGroupTypexs value");
+                NSAssert(1,
+                         @"Cannot construct group descriptor from invalid "
+                         @"VLCMediaLibraryParentGroupTypexs value");
                 _group = VLCMediaLibraryParentGroupTypeUnknown;
                 break;
         }
 
-        _libraryModelDataMethodSignature = [VLCLibraryModel instanceMethodSignatureForSelector:_libraryModelDataSelector];
+        _libraryModelDataMethodSignature =
+            [VLCLibraryModel instanceMethodSignatureForSelector:_libraryModelDataSelector];
     }
 
     return self;

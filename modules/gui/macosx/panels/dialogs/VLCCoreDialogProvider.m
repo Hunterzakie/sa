@@ -35,8 +35,7 @@
     VLCErrorWindowController *_errorPanel;
 }
 
-- (void)displayErrorWithTitle:(NSString *)title
-                         text:(NSString *)text;
+- (void)displayErrorWithTitle:(NSString *)title text:(NSString *)text;
 
 - (void)displayLoginDialog:(vlc_dialog_id *)dialogID
                      title:(NSString *)title
@@ -65,17 +64,14 @@
 
 @end
 
-static void displayErrorCallback(void *p_data,
-                                 const char *psz_title,
-                                 const char *psz_text)
+static void displayErrorCallback(void *p_data, const char *psz_title, const char *psz_text)
 {
     @autoreleasepool {
         VLCCoreDialogProvider *dialogProvider = (__bridge VLCCoreDialogProvider *)p_data;
         NSString *title = toNSStr(psz_title);
         NSString *text = toNSStr(psz_text);
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [dialogProvider displayErrorWithTitle:title text:text];
-        });
+        dispatch_async(dispatch_get_main_queue(),
+                       ^{ [dialogProvider displayErrorWithTitle:title text:text]; });
     }
 }
 
@@ -111,7 +107,7 @@ static void displayQuestionCallback(void *p_data,
                                     const char *psz_action2)
 {
     @autoreleasepool {
-        VLCCoreDialogProvider *dialogProvider = (__bridge  VLCCoreDialogProvider *)p_data;
+        VLCCoreDialogProvider *dialogProvider = (__bridge VLCCoreDialogProvider *)p_data;
         NSString *title = toNSStr(psz_title);
         NSString *text = toNSStr(psz_text);
         NSString *cancelText = toNSStr(psz_cancel);
@@ -150,20 +146,15 @@ static void displayProgressCallback(void *p_data,
     }
 }
 
-static void cancelCallback(void *p_data,
-                           vlc_dialog_id *p_id)
+static void cancelCallback(void *p_data, vlc_dialog_id *p_id)
 {
     @autoreleasepool {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [NSApp stopModalWithCode: 0];
-        });
+        dispatch_async(dispatch_get_main_queue(), ^{ [NSApp stopModalWithCode:0]; });
     }
 }
 
-static void updateProgressCallback(void *p_data,
-                                   vlc_dialog_id *p_id,
-                                   float f_value,
-                                   const char *psz_text)
+static void
+updateProgressCallback(void *p_data, vlc_dialog_id *p_id, float f_value, const char *psz_text)
 {
     @autoreleasepool {
         VLCCoreDialogProvider *dialogProvider = (__bridge VLCCoreDialogProvider *)p_data;
@@ -188,13 +179,11 @@ static void updateProgressCallback(void *p_data,
         intf_thread_t *p_intf = getIntf();
         /* subscribe to various interactive dialogues */
 
-        const vlc_dialog_cbs cbs = {
-            displayLoginCallback,
-            displayQuestionCallback,
-            displayProgressCallback,
-            cancelCallback,
-            updateProgressCallback
-        };
+        const vlc_dialog_cbs cbs = { displayLoginCallback,
+                                     displayQuestionCallback,
+                                     displayProgressCallback,
+                                     cancelCallback,
+                                     updateProgressCallback };
 
         vlc_dialog_provider_set_error_callback(p_intf, displayErrorCallback, (__bridge void *)self);
         vlc_dialog_provider_set_callbacks(p_intf, &cbs, (__bridge void *)self);
@@ -212,16 +201,16 @@ static void updateProgressCallback(void *p_data,
     vlc_dialog_provider_set_error_callback(p_intf, NULL, NULL);
 }
 
--(void)awakeFromNib
+- (void)awakeFromNib
 {
-    [_authenticationLoginLabel setStringValue: _NS("Username")];
-    [_authenticationPasswordLabel setStringValue: _NS("Password")];
-    [_authenticationCancelButton setTitle: _NS("Cancel")];
-    [_authenticationOkButton setTitle: _NS("OK")];
+    [_authenticationLoginLabel setStringValue:_NS("Username")];
+    [_authenticationPasswordLabel setStringValue:_NS("Password")];
+    [_authenticationCancelButton setTitle:_NS("Cancel")];
+    [_authenticationOkButton setTitle:_NS("OK")];
     [_authenticationStorePasswordCheckbox setTitle:_NS("Remember")];
 
-    [_progressCancelButton setTitle: _NS("Cancel")];
-    [_progressIndicator setUsesThreadedAnimation: YES];
+    [_progressCancelButton setTitle:_NS("Cancel")];
+    [_progressIndicator setUsesThreadedAnimation:YES];
 }
 
 - (void)displayErrorWithTitle:(NSString *)title text:(NSString *)text
@@ -267,10 +256,10 @@ static void updateProgressCallback(void *p_data,
 
 - (IBAction)authenticationDialogAction:(id)sender
 {
-    if ([[sender title] isEqualToString: _NS("OK")])
-        [NSApp stopModalWithCode: 1];
+    if ([[sender title] isEqualToString:_NS("OK")])
+        [NSApp stopModalWithCode:1];
     else
-        [NSApp stopModalWithCode: 0];
+        [NSApp stopModalWithCode:0];
 }
 
 - (void)displayQuestion:(vlc_dialog_id *)dialogID
@@ -315,7 +304,6 @@ static void updateProgressCallback(void *p_data,
         default:
             vlc_dialog_id_dismiss(dialogID);
     }
-
 }
 
 - (void)displayProgressDialog:(vlc_dialog_id *)dialogID
@@ -373,7 +361,7 @@ static void updateProgressCallback(void *p_data,
 
 - (IBAction)progressDialogAction:(id)sender
 {
-    [NSApp stopModalWithCode: -1];
+    [NSApp stopModalWithCode:-1];
 }
 
 @end

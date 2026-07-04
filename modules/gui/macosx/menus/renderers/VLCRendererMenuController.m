@@ -33,12 +33,12 @@
 
 @interface VLCRendererMenuController ()
 {
-    NSMutableArray              *_rendererDiscoveries;
-    BOOL                         _isDiscoveryEnabled;
-    NSMenuItem                  *_selectedItem;
+    NSMutableArray *_rendererDiscoveries;
+    BOOL _isDiscoveryEnabled;
+    NSMenuItem *_selectedItem;
 
-    intf_thread_t               *p_intf;
-    vlc_renderer_discovery_t    *p_rd;
+    intf_thread_t *p_intf;
+    vlc_renderer_discovery_t *p_rd;
 }
 @end
 
@@ -80,8 +80,9 @@
     char **ppsz_name = ppsz_names;
     char **ppsz_longname = ppsz_longnames;
 
-    for( ; *ppsz_name; ppsz_name++, ppsz_longname++) {
-        VLCRendererDiscovery *dc = [[VLCRendererDiscovery alloc] initWithName:*ppsz_name andLongname:*ppsz_longname];
+    for (; *ppsz_name; ppsz_name++, ppsz_longname++) {
+        VLCRendererDiscovery *dc = [[VLCRendererDiscovery alloc] initWithName:*ppsz_name
+                                                                  andLongname:*ppsz_longname];
         [dc setDelegate:self];
         [_rendererDiscoveries addObject:dc];
         free(*ppsz_name);
@@ -97,7 +98,7 @@
 {
     NSParameterAssert(item != nil);
 
-    NSMutableArray * const mutableRenderers = _rendererItems.mutableCopy;
+    NSMutableArray *const mutableRenderers = _rendererItems.mutableCopy;
     [mutableRenderers addObject:item];
     _rendererItems = mutableRenderers.copy;
 
@@ -120,12 +121,16 @@
         menuItem.image = NSImage.VLCSidebarMusicImage;
     menuItem.representedObject = item;
 
-    NSString *unformattedTitle = [NSString stringWithFormat:@"%@ %@", item.name, item.userReadableType];
-    NSMutableAttributedString *title = [[NSMutableAttributedString alloc] initWithString:unformattedTitle
-                                                                              attributes:nil];
-    [title addAttributes:@{NSBaselineOffsetAttributeName : @(2),
-                           NSFontAttributeName : [NSFont boldSystemFontOfSize:8]}
-                   range:[unformattedTitle rangeOfString:item.userReadableType options:NSBackwardsSearch]];
+    NSString *unformattedTitle =
+        [NSString stringWithFormat:@"%@ %@", item.name, item.userReadableType];
+    NSMutableAttributedString *title =
+        [[NSMutableAttributedString alloc] initWithString:unformattedTitle attributes:nil];
+    [title addAttributes:@{
+        NSBaselineOffsetAttributeName : @(2),
+        NSFontAttributeName : [NSFont boldSystemFontOfSize:8]
+    }
+                   range:[unformattedTitle rangeOfString:item.userReadableType
+                                                 options:NSBackwardsSearch]];
     menuItem.attributedTitle = title;
 
     [_rendererMenu insertItem:menuItem atIndex:[_rendererMenu indexOfItem:_rendererNoneItem] + 1];
@@ -135,13 +140,13 @@
 {
     NSParameterAssert(item != nil);
 
-    NSMutableArray * const mutableRenderers = _rendererItems.mutableCopy;
+    NSMutableArray *const mutableRenderers = _rendererItems.mutableCopy;
     [mutableRenderers removeObject:item];
     _rendererItems = mutableRenderers.copy;
 
     const NSInteger index = [_rendererMenu indexOfItemWithRepresentedObject:item];
     if (index >= 0) {
-        NSMenuItem * const menuItem = [_rendererMenu itemAtIndex:index];
+        NSMenuItem *const menuItem = [_rendererMenu itemAtIndex:index];
         // Don't remove selected item
         if (menuItem != _selectedItem) {
             [_rendererMenu removeItemAtIndex:index];
@@ -165,7 +170,8 @@
     }
 }
 
-- (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem
+{
     if (menuItem == _rendererNoneItem ||
         [[menuItem representedObject] isKindOfClass:[VLCRendererItem class]]) {
         return _isDiscoveryEnabled;
@@ -182,7 +188,8 @@
     _selectedItem = sender;
 
     VLCRendererItem *item = [sender representedObject];
-    VLCPlayerController *playerController = VLCMain.sharedInstance.playQueueController.playerController;
+    VLCPlayerController *playerController =
+        VLCMain.sharedInstance.playQueueController.playerController;
 
     if (item) {
         [item setRendererForPlayerController:playerController];
@@ -203,7 +210,8 @@
 }
 
 #pragma mark Menu actions
-- (IBAction)toggleRendererDiscovery:(id)sender {
+- (IBAction)toggleRendererDiscovery:(id)sender
+{
     if (_isDiscoveryEnabled) {
         [self stopRendererDiscoveries];
     } else {

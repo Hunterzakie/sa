@@ -1,0 +1,47 @@
+BasedOnStyle:    WebKit
+IndentWidth:     4
+IndentCaseLabels: true
+ColumnLimit:     100
+PointerAlignment: Right
+KeepEmptyLinesAtTheStartOfBlocks: false
+ObjCBlockIndentWidth: 4
+ObjCSpaceAfterProperty: true
+ObjCSpaceBeforeProtocolList: false
+AlignAfterOpenBracket: Align
+BinPackArguments: false
+BinPackParameters: false
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+BreakBeforeBinaryOperators: NonAssignment
+# Note: clang-format 23 will support a per-operator form that gives "one
+# per line" breaking for boolean chains (&&, ||) without affecting
+# arithmetic/comparison operators. Once that is released, replace the
+# above with:
+#   BreakBinaryOperations:
+#     Default: Never
+#     PerOperator:
+#       - Operators: ['&&', '||']
+#         Style: OnePerLine
+#         MinChainLength: 3
+# Until then, long boolean conditions are refactored in source into
+# helpers or local BOOLs to keep them readable.
+SortIncludes:    false
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass:      true
+  AfterControlStatement: false
+  AfterEnum:       true
+  AfterFunction:   true
+  AfterNamespace:  true
+  AfterObjCDeclaration: true
+  AfterStruct:     true
+  AfterUnion:      true
+  BeforeCatch:     false
+  BeforeElse:      false
+  IndentBraces:    false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+PenaltyBreakString: 200
+PenaltyBreakBeforeFirstCallParameter: 100

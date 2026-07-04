@@ -38,7 +38,7 @@
 @interface VLCLibraryRepresentedItem ()
 {
     NSInteger _itemIndexInParent; // Call self.itemIndexInParent, don't access directly
-    NSArray<VLCMediaLibraryMediaItem *> * _parentMediaArray;
+    NSArray<VLCMediaLibraryMediaItem *> *_parentMediaArray;
 }
 
 @property (readwrite) enum vlc_ml_media_type_t mediaType;
@@ -50,7 +50,10 @@
 - (instancetype)initWithItem:(const id<VLCMediaLibraryItemProtocol>)item
                   parentType:(const VLCMediaLibraryParentGroupType)parentType
 {
-    return [self initWithItem:item parentType:parentType parentItem:nil positionInParent:NSNotFound];
+    return [self initWithItem:item
+                   parentType:parentType
+                   parentItem:nil
+             positionInParent:NSNotFound];
 }
 
 - (instancetype)initWithItem:(const id<VLCMediaLibraryItemProtocol>)item
@@ -101,12 +104,12 @@
 
 - (NSInteger)findItemIndexInParent
 {
-    NSArray<VLCMediaLibraryMediaItem *> * items = nil;
+    NSArray<VLCMediaLibraryMediaItem *> *items = nil;
 
     if (self.parentItem != nil) {
         items = self.parentItem.mediaItems;
     } else if (self.parentType == VLCMediaLibraryParentGroupTypeUnknown) {
-        VLCLibraryModel * const libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
+        VLCLibraryModel *const libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
         const BOOL isVideo = self.mediaType == VLC_ML_MEDIA_TYPE_VIDEO;
         items = isVideo ? libraryModel.listOfVideoMedia : libraryModel.listOfAudioMedia;
     } else {
@@ -122,9 +125,9 @@
     // cannot use these to search the list of audio media
 
     const int64_t itemId = self.item.firstMediaItem.libraryID;
-    return [items indexOfObjectPassingTest:^BOOL(VLCMediaLibraryMediaItem * const mediaItem,
+    return [items indexOfObjectPassingTest:^BOOL(VLCMediaLibraryMediaItem *const mediaItem,
                                                  const NSUInteger __unused idx,
-                                                 BOOL * const __unused stop) {
+                                                 BOOL *const __unused stop) {
         return mediaItem.libraryID == itemId;
     }];
 }
@@ -136,57 +139,61 @@
     int64_t parentItemId = NSNotFound;
 
     if ([item isKindOfClass:VLCMediaLibraryMediaItem.class]) {
-        VLCMediaLibraryMediaItem * const mediaItem = (VLCMediaLibraryMediaItem *)item;
+        VLCMediaLibraryMediaItem *const mediaItem = (VLCMediaLibraryMediaItem *)item;
 
         switch (self.parentType) {
-        case VLCMediaLibraryParentGroupTypeAlbum:
-            parentItemId = mediaItem.albumID;
-            break;
-        case VLCMediaLibraryParentGroupTypeArtist:
-            parentItemId = mediaItem.artistID;
-            break;
-        case VLCMediaLibraryParentGroupTypeGenre:
-            parentItemId = mediaItem.genreID;
-            break;
-        default:
-            break;
+            case VLCMediaLibraryParentGroupTypeAlbum:
+                parentItemId = mediaItem.albumID;
+                break;
+            case VLCMediaLibraryParentGroupTypeArtist:
+                parentItemId = mediaItem.artistID;
+                break;
+            case VLCMediaLibraryParentGroupTypeGenre:
+                parentItemId = mediaItem.genreID;
+                break;
+            default:
+                break;
         }
     } else if ([item isKindOfClass:VLCMediaLibraryAlbum.class]) {
-        VLCMediaLibraryAlbum * const album = (VLCMediaLibraryAlbum *)item;
+        VLCMediaLibraryAlbum *const album = (VLCMediaLibraryAlbum *)item;
 
         switch (self.parentType) {
-        case VLCMediaLibraryParentGroupTypeArtist:
-            parentItemId = album.artistID;
-            break;
-        case VLCMediaLibraryParentGroupTypeGenre:
-        {
-            VLCMediaLibraryMediaItem * const firstChildItem = album.firstMediaItem;
-            parentItemId = firstChildItem.genreID;
-            break;
-        }
-        default:
-            break;
+            case VLCMediaLibraryParentGroupTypeArtist:
+                parentItemId = album.artistID;
+                break;
+            case VLCMediaLibraryParentGroupTypeGenre: {
+                VLCMediaLibraryMediaItem *const firstChildItem = album.firstMediaItem;
+                parentItemId = firstChildItem.genreID;
+                break;
+            }
+            default:
+                break;
         }
     }
 
     return parentItemId;
 }
 
-- (const id<VLCMediaLibraryItemProtocol>)parentItemForAudioItem:(const id<VLCMediaLibraryItemProtocol>)item
+- (const id<VLCMediaLibraryItemProtocol>)parentItemForAudioItem:
+    (const id<VLCMediaLibraryItemProtocol>)item
 {
     // If we have no defined parent type, use the all audio groups item.
     // This item essentially represents the entirety of the library and all of its media items.
     const VLCMediaLibraryParentGroupType parentType = self.parentType;
-    if (parentType == VLCMediaLibraryParentGroupTypeUnknown || parentType == VLCMediaLibraryParentGroupTypeAudioLibrary) {
-        return [[VLCLibraryAllAudioGroupsMediaLibraryItem alloc] initWithDisplayString:_NS("All items")];
+    if (parentType == VLCMediaLibraryParentGroupTypeUnknown
+        || parentType == VLCMediaLibraryParentGroupTypeAudioLibrary) {
+        return [[VLCLibraryAllAudioGroupsMediaLibraryItem alloc]
+            initWithDisplayString:_NS("All items")];
     } else if ([self.item conformsToProtocol:@protocol(VLCMediaLibraryAudioGroupProtocol)]) {
         // If the parent item class and the actual item class are the same, we likely want
         // to also play the entirety of the library -- think of playing an album within the
         // albums view, or playing a song within the songs view.
-        const id<VLCMediaLibraryAudioGroupProtocol> audioGroupItem = (id<VLCMediaLibraryAudioGroupProtocol>)self.item;
+        const id<VLCMediaLibraryAudioGroupProtocol> audioGroupItem =
+            (id<VLCMediaLibraryAudioGroupProtocol>)self.item;
         if (audioGroupItem.matchingParentType == parentType) {
-            return [[VLCLibraryAllAudioGroupsMediaLibraryItem alloc] initWithDisplayString:_NS("All items")
-                                                                     accordingToParentType:self.parentType];
+            return [[VLCLibraryAllAudioGroupsMediaLibraryItem alloc]
+                initWithDisplayString:_NS("All items")
+                accordingToParentType:self.parentType];
         }
     }
 
@@ -196,31 +203,32 @@
     }
 
     switch (parentType) {
-    case VLCMediaLibraryParentGroupTypeAlbum:
-        return [VLCMediaLibraryAlbum albumWithID:parentItemId];
-    case VLCMediaLibraryParentGroupTypeArtist:
-        return [VLCMediaLibraryArtist artistWithID:parentItemId];
-    case VLCMediaLibraryParentGroupTypeGenre:
-        return [VLCMediaLibraryGenre genreWithID:parentItemId];
-    default:
-        return nil;
+        case VLCMediaLibraryParentGroupTypeAlbum:
+            return [VLCMediaLibraryAlbum albumWithID:parentItemId];
+        case VLCMediaLibraryParentGroupTypeArtist:
+            return [VLCMediaLibraryArtist artistWithID:parentItemId];
+        case VLCMediaLibraryParentGroupTypeGenre:
+            return [VLCMediaLibraryGenre genreWithID:parentItemId];
+        default:
+            return nil;
     }
 }
 
-- (NSArray<VLCMediaLibraryMediaItem *> *)parentMediaArrayForItem:(const id<VLCMediaLibraryItemProtocol>)item
+- (NSArray<VLCMediaLibraryMediaItem *> *)parentMediaArrayForItem:
+    (const id<VLCMediaLibraryItemProtocol>)item
 {
     if (self.parentItem != nil) {
         return self.parentItem.mediaItems;
     }
 
     if (self.parentType == VLCMediaLibraryParentGroupTypeAllFavorites) {
-        VLCLibraryModel * const libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
+        VLCLibraryModel *const libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
         return [libraryModel listOfMediaItemsForParentType:self.parentType];
     }
 
     const BOOL isVideo = self.mediaType == VLC_ML_MEDIA_TYPE_VIDEO;
     if (isVideo) {
-        VLCLibraryModel * const libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
+        VLCLibraryModel *const libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
         return [libraryModel listOfMediaItemsForParentType:self.parentType];
     } else {
         const id<VLCMediaLibraryItemProtocol> parentAudioItem = [self parentItemForAudioItem:item];
@@ -231,8 +239,8 @@
 - (NSArray<VLCMediaLibraryMediaItem *> *)parentMediaArray
 {
     @synchronized(self) {
-        if ((self.parentType != VLCMediaLibraryParentGroupTypeUnknown || self.parentItem != nil) &&
-            (_parentMediaArray == nil || _parentMediaArray.count == 0)) {
+        if ((self.parentType != VLCMediaLibraryParentGroupTypeUnknown || self.parentItem != nil)
+            && (_parentMediaArray == nil || _parentMediaArray.count == 0)) {
             _parentMediaArray = [self parentMediaArrayForItem:self.item];
         }
 
@@ -242,13 +250,13 @@
 
 - (void)playIndividualModeImmediately:(BOOL)playImmediately
 {
-    VLCLibraryController * const libraryController = VLCMain.sharedInstance.libraryController;
+    VLCLibraryController *const libraryController = VLCMain.sharedInstance.libraryController;
 
     // If play immediately, play first item, queue following items
     // If not then just queue all items
     __block BOOL startingPlayImmediately = playImmediately;
 
-    [self.item iterateMediaItemsWithBlock:^(VLCMediaLibraryMediaItem* mediaItem) {
+    [self.item iterateMediaItemsWithBlock:^(VLCMediaLibraryMediaItem *mediaItem) {
         [libraryController appendItemToPlayQueue:mediaItem playImmediately:startingPlayImmediately];
 
         if (startingPlayImmediately) {
@@ -259,14 +267,14 @@
 
 - (void)playLibraryModeImmediately:(BOOL)playImmediately
 {
-    VLCPlayQueueController * const playQueueController = VLCMain.sharedInstance.playQueueController;
-    VLCLibraryController * const libraryController = VLCMain.sharedInstance.libraryController;
+    VLCPlayQueueController *const playQueueController = VLCMain.sharedInstance.playQueueController;
+    VLCLibraryController *const libraryController = VLCMain.sharedInstance.libraryController;
 
     // If play immediately, play first item, queue following items
     // If not then just queue all items
     __block BOOL startingPlayImmediately = playImmediately;
 
-    NSArray<VLCMediaLibraryMediaItem *> * const parentItems = self.parentMediaArray;
+    NSArray<VLCMediaLibraryMediaItem *> *const parentItems = self.parentMediaArray;
     const NSUInteger parentItemCount = parentItems.count;
 
     if (parentItemCount == 0) {
@@ -278,7 +286,7 @@
     const NSUInteger startingIndex = itemIndexInParent == NSNotFound ? 0 : itemIndexInParent;
 
     for (NSUInteger i = startingIndex; i < parentItemCount; i++) {
-        VLCMediaLibraryMediaItem * const mediaItem = [parentItems objectAtIndex:i];
+        VLCMediaLibraryMediaItem *const mediaItem = [parentItems objectAtIndex:i];
         [libraryController appendItemToPlayQueue:mediaItem playImmediately:startingPlayImmediately];
 
         if (startingPlayImmediately) {
@@ -288,7 +296,7 @@
 
     if (playQueueController.playbackRepeat != VLC_PLAYLIST_PLAYBACK_REPEAT_NONE) {
         for (NSUInteger i = 0; i < startingIndex; i++) {
-            VLCMediaLibraryMediaItem * const mediaItem = [parentItems objectAtIndex:i];
+            VLCMediaLibraryMediaItem *const mediaItem = [parentItems objectAtIndex:i];
             [libraryController appendItemToPlayQueue:mediaItem playImmediately:NO];
         }
     }
@@ -296,9 +304,9 @@
 
 - (void)playImmediately:(BOOL)playImmediately
 {
-    VLCPlayQueueController * const playQueueController = VLCMain.sharedInstance.playQueueController;
-    if (playQueueController.libraryPlayQueueMode &&
-        (self.parentType != VLCMediaLibraryParentGroupTypeUnknown || self.parentItem != nil)) {
+    VLCPlayQueueController *const playQueueController = VLCMain.sharedInstance.playQueueController;
+    if (playQueueController.libraryPlayQueueMode
+        && (self.parentType != VLCMediaLibraryParentGroupTypeUnknown || self.parentItem != nil)) {
         [self playLibraryModeImmediately:playImmediately];
     } else {
         [self playIndividualModeImmediately:playImmediately];

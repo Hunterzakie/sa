@@ -38,7 +38,7 @@
         if (@available(macOS 10.14, *)) {
             [self viewDidChangeEffectiveAppearance];
         } else {
-            [(VLCVolumeSliderCell*)self.cell setSliderStyleLight];
+            [(VLCVolumeSliderCell *)self.cell setSliderStyleLight];
         }
     }
     return self;
@@ -51,16 +51,17 @@
 
 // Workaround for 10.7
 // http://stackoverflow.com/questions/3985816/custom-nsslidercell
-- (void)setNeedsDisplayInRect:(NSRect)invalidRect {
+- (void)setNeedsDisplayInRect:(NSRect)invalidRect
+{
     [super setNeedsDisplayInRect:[self bounds]];
 }
 
 - (void)viewDidChangeEffectiveAppearance
 {
     if (self.shouldShowDarkAppearance) {
-        [(VLCVolumeSliderCell*)self.cell setSliderStyleDark];
+        [(VLCVolumeSliderCell *)self.cell setSliderStyleDark];
     } else {
-        [(VLCVolumeSliderCell*)self.cell setSliderStyleLight];
+        [(VLCVolumeSliderCell *)self.cell setSliderStyleLight];
     }
 }
 

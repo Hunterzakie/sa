@@ -24,7 +24,8 @@
 
 #import "VLCLibrarySearchProvider.h"
 
-NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibrarySearchDataSourceDidReloadNotification";
+NSString *const VLCLibrarySearchDataSourceDidReloadNotification =
+    @"VLCLibrarySearchDataSourceDidReloadNotification";
 
 #import "library/VLCLibraryCollectionViewFlowLayout.h"
 #import "library/VLCLibraryCollectionViewItem.h"
@@ -60,7 +61,7 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
 
 + (instancetype)headerForProvider:(NSUInteger)providerIndex
 {
-    VLCLibrarySearchFlattenedRow * const row = [VLCLibrarySearchFlattenedRow new];
+    VLCLibrarySearchFlattenedRow *const row = [VLCLibrarySearchFlattenedRow new];
     row->_isHeader = YES;
     row->_providerIndex = providerIndex;
     row->_itemIndex = -1;
@@ -69,7 +70,7 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
 
 + (instancetype)itemAtIndex:(NSInteger)index forProvider:(NSUInteger)providerIndex
 {
-    VLCLibrarySearchFlattenedRow * const row = [VLCLibrarySearchFlattenedRow new];
+    VLCLibrarySearchFlattenedRow *const row = [VLCLibrarySearchFlattenedRow new];
     row->_isHeader = NO;
     row->_providerIndex = providerIndex;
     row->_itemIndex = index;
@@ -143,7 +144,7 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
         if (strongSelf == nil) {
             return;
         }
-        NSArray<NSNumber *> * const newVisibleIndices = [strongSelf visibleProviderIndices];
+        NSArray<NSNumber *> *const newVisibleIndices = [strongSelf visibleProviderIndices];
         dispatch_async(dispatch_get_main_queue(), ^{
             if (strongSelf == nil) {
                 return;
@@ -163,8 +164,8 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
         if (strongSelf == nil) {
             return;
         }
-        NSArray<NSNumber *> * const newVisibleIndices = [strongSelf visibleProviderIndices];
-        NSArray<VLCLibrarySearchFlattenedRow *> * const newFlattenedRows =
+        NSArray<NSNumber *> *const newVisibleIndices = [strongSelf visibleProviderIndices];
+        NSArray<VLCLibrarySearchFlattenedRow *> *const newFlattenedRows =
             [strongSelf flattenedRowsForVisibleIndices:newVisibleIndices];
 
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -182,13 +183,14 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
 
 - (void)postDidReloadNotification
 {
-    [NSNotificationCenter.defaultCenter postNotificationName:VLCLibrarySearchDataSourceDidReloadNotification
-                                                      object:self];
+    [NSNotificationCenter.defaultCenter
+        postNotificationName:VLCLibrarySearchDataSourceDidReloadNotification
+                      object:self];
 }
 
 - (NSArray<NSNumber *> *)visibleProviderIndices
 {
-    NSMutableArray<NSNumber *> * const visible = [NSMutableArray array];
+    NSMutableArray<NSNumber *> *const visible = [NSMutableArray array];
     for (NSUInteger i = 0; i < _providers.count; i++) {
         if (_providers[i].results.count > 0) {
             [visible addObject:@(i)];
@@ -197,12 +199,13 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
     return [visible copy];
 }
 
-- (NSArray<VLCLibrarySearchFlattenedRow *> *)flattenedRowsForVisibleIndices:(NSArray<NSNumber *> *)visibleIndices
+- (NSArray<VLCLibrarySearchFlattenedRow *> *)flattenedRowsForVisibleIndices:
+    (NSArray<NSNumber *> *)visibleIndices
 {
-    NSMutableArray<VLCLibrarySearchFlattenedRow *> * const rows = [NSMutableArray array];
-    for (NSNumber * const indexNumber in visibleIndices) {
+    NSMutableArray<VLCLibrarySearchFlattenedRow *> *const rows = [NSMutableArray array];
+    for (NSNumber *const indexNumber in visibleIndices) {
         const NSUInteger providerIndex = indexNumber.unsignedIntegerValue;
-        VLCLibrarySearchProvider * const provider = _providers[providerIndex];
+        VLCLibrarySearchProvider *const provider = _providers[providerIndex];
         const NSUInteger resultCount = provider.results.count;
         [rows addObject:[VLCLibrarySearchFlattenedRow headerForProvider:providerIndex]];
         for (NSUInteger i = 0; i < resultCount; i++) {
@@ -228,7 +231,7 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
 {
     _pendingProviderCount = _providers.count;
     _searching = YES;
-    for (VLCLibrarySearchProvider * const provider in _providers) {
+    for (VLCLibrarySearchProvider *const provider in _providers) {
         [provider searchForString:string];
     }
 }
@@ -237,7 +240,7 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
 {
     _pendingProviderCount = 0;
     _searching = NO;
-    for (VLCLibrarySearchProvider * const provider in _providers) {
+    for (VLCLibrarySearchProvider *const provider in _providers) {
         [provider clearSearch];
     }
     [self reloadData];
@@ -260,7 +263,8 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
 
 - (VLCLibrarySearchProvider *)providerForVisibleSection:(NSInteger)visibleSection
 {
-    NSParameterAssert(visibleSection >= 0 && (NSUInteger)visibleSection < _visibleProviderIndices.count);
+    NSParameterAssert(visibleSection >= 0
+                      && (NSUInteger)visibleSection < _visibleProviderIndices.count);
     const NSUInteger providerIndex = _visibleProviderIndices[visibleSection].unsignedIntegerValue;
     return _providers[providerIndex];
 }
@@ -272,7 +276,7 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
         return cached;
     }
 
-    NSMutableArray<VLCMediaLibraryMediaItem *> * const mediaItems = [NSMutableArray array];
+    NSMutableArray<VLCMediaLibraryMediaItem *> *const mediaItems = [NSMutableArray array];
     for (id<VLCMediaLibraryItemProtocol> item in provider.results) {
         [item iterateMediaItemsWithBlock:^(VLCMediaLibraryMediaItem *mediaItem) {
             [mediaItems addObject:mediaItem];
@@ -288,7 +292,7 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
                                          inProvider:(VLCLibrarySearchProvider *)provider
 {
     NSInteger offset = 0;
-    NSArray<id<VLCMediaLibraryItemProtocol>> * const results = provider.results;
+    NSArray<id<VLCMediaLibraryItemProtocol>> *const results = provider.results;
     for (NSInteger i = 0; i < resultIndex && (NSUInteger)i < results.count; i++) {
         offset += results[i].mediaItems.count;
     }
@@ -299,13 +303,13 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
                                            atPosition:(NSInteger)position
                                          fromProvider:(VLCLibrarySearchProvider *)provider
 {
-    VLCMediaLibraryDummyItem * const parentItem = [self dummyParentItemForProvider:provider];
-    const NSInteger flattenedPosition =
-        [self flattenedMediaItemOffsetForResultIndex:position inProvider:provider];
+    VLCMediaLibraryDummyItem *const parentItem = [self dummyParentItemForProvider:provider];
+    const NSInteger flattenedPosition = [self flattenedMediaItemOffsetForResultIndex:position
+                                                                          inProvider:provider];
     return [[VLCLibraryRepresentedItem alloc] initWithItem:item
-                                               parentType:VLCMediaLibraryParentGroupTypeUnknown
-                                               parentItem:parentItem
-                                         positionInParent:flattenedPosition];
+                                                parentType:VLCMediaLibraryParentGroupTypeUnknown
+                                                parentItem:parentItem
+                                          positionInParent:flattenedPosition];
 }
 
 #pragma mark - VLCLibraryTableViewDataSource
@@ -320,10 +324,10 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
 {
     NSParameterAssert(row >= 0 && (NSUInteger)row < _flattenedRows.count);
 
-    VLCLibrarySearchFlattenedRow * const flatRow = _flattenedRows[row];
+    VLCLibrarySearchFlattenedRow *const flatRow = _flattenedRows[row];
     NSParameterAssert(!flatRow.isHeader || (flatRow.providerIndex < _providers.count));
 
-    VLCLibrarySearchProvider * const provider = _providers[flatRow.providerIndex];
+    VLCLibrarySearchProvider *const provider = _providers[flatRow.providerIndex];
     return provider.results[flatRow.itemIndex];
 }
 
@@ -334,8 +338,8 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
         return [self representedItemForHeaderRow:row];
     }
 
-    VLCLibrarySearchFlattenedRow * const flatRow = _flattenedRows[row];
-    VLCLibrarySearchProvider * const provider = _providers[flatRow.providerIndex];
+    VLCLibrarySearchFlattenedRow *const flatRow = _flattenedRows[row];
+    VLCLibrarySearchProvider *const provider = _providers[flatRow.providerIndex];
     id<VLCMediaLibraryItemProtocol> const item = provider.results[flatRow.itemIndex];
 
     return [self representedItemForItem:item atPosition:flatRow.itemIndex fromProvider:provider];
@@ -347,12 +351,12 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
 
     const NSUInteger rowCount = _flattenedRows.count;
     for (NSUInteger i = 0; i < rowCount; i++) {
-        VLCLibrarySearchFlattenedRow * const flatRow = _flattenedRows[i];
+        VLCLibrarySearchFlattenedRow *const flatRow = _flattenedRows[i];
         if (flatRow.isHeader) {
             continue;
         }
 
-        VLCLibrarySearchProvider * const provider = _providers[flatRow.providerIndex];
+        VLCLibrarySearchProvider *const provider = _providers[flatRow.providerIndex];
         if (flatRow.itemIndex >= 0 && (NSUInteger)flatRow.itemIndex < provider.results.count) {
             const id<VLCMediaLibraryItemProtocol> item = provider.results[flatRow.itemIndex];
             if (item.libraryID == libraryItem.libraryID) {
@@ -375,7 +379,7 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
 - (NSString *)titleForRow:(NSInteger)row
 {
     NSParameterAssert(row >= 0 && (NSUInteger)row < _flattenedRows.count);
-    VLCLibrarySearchFlattenedRow * const flatRow = _flattenedRows[row];
+    VLCLibrarySearchFlattenedRow *const flatRow = _flattenedRows[row];
     return _providers[flatRow.providerIndex].displayTitle;
 }
 
@@ -383,11 +387,11 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
 {
     NSParameterAssert([self isHeaderRow:row]);
 
-    VLCLibrarySearchFlattenedRow * const flatRow = _flattenedRows[row];
-    VLCLibrarySearchProvider * const provider = _providers[flatRow.providerIndex];
+    VLCLibrarySearchFlattenedRow *const flatRow = _flattenedRows[row];
+    VLCLibrarySearchProvider *const provider = _providers[flatRow.providerIndex];
     NSParameterAssert(provider.results.count > 0);
 
-    VLCMediaLibraryDummyItem * const groupItem = [self dummyParentItemForProvider:provider];
+    VLCMediaLibraryDummyItem *const groupItem = [self dummyParentItemForProvider:provider];
     return [[VLCLibraryRepresentedItem alloc] initWithItem:groupItem
                                                 parentType:VLCMediaLibraryParentGroupTypeUnknown];
 }
@@ -404,7 +408,8 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
     if ([self isHeaderRow:row]) {
         return nil;
     }
-    const id<VLCMediaLibraryItemProtocol> libraryItem = [self libraryItemAtRow:row forTableView:tableView];
+    const id<VLCMediaLibraryItemProtocol> libraryItem = [self libraryItemAtRow:row
+                                                                  forTableView:tableView];
     return [NSPasteboardItem pasteboardItemWithLibraryItem:libraryItem];
 }
 
@@ -418,49 +423,54 @@ NSString * const VLCLibrarySearchDataSourceDidReloadNotification = @"VLCLibraryS
 - (NSInteger)collectionView:(NSCollectionView *)collectionView
      numberOfItemsInSection:(NSInteger)section
 {
-    VLCLibrarySearchProvider * const provider = [self providerForVisibleSection:section];
+    VLCLibrarySearchProvider *const provider = [self providerForVisibleSection:section];
     return provider ? provider.results.count : 0;
 }
 
 - (NSCollectionViewItem *)collectionView:(NSCollectionView *)collectionView
      itemForRepresentedObjectAtIndexPath:(NSIndexPath *)indexPath
 {
-    VLCLibraryCollectionViewItem * const viewItem =
+    VLCLibraryCollectionViewItem *const viewItem =
         [collectionView makeItemWithIdentifier:VLCLibraryCellIdentifier forIndexPath:indexPath];
-    const id<VLCMediaLibraryItemProtocol> item =
-        [self libraryItemAtIndexPath:indexPath forCollectionView:collectionView];
-    VLCLibrarySearchProvider * const provider = [self providerForVisibleSection:indexPath.section];
-    VLCLibraryRepresentedItem * const representedItem =
-        [self representedItemForItem:item atPosition:indexPath.item fromProvider:provider];
+    const id<VLCMediaLibraryItemProtocol> item = [self libraryItemAtIndexPath:indexPath
+                                                            forCollectionView:collectionView];
+    VLCLibrarySearchProvider *const provider = [self providerForVisibleSection:indexPath.section];
+    VLCLibraryRepresentedItem *const representedItem = [self representedItemForItem:item
+                                                                         atPosition:indexPath.item
+                                                                       fromProvider:provider];
     viewItem.representedItem = representedItem;
     return viewItem;
 }
 
 - (NSView *)collectionView:(NSCollectionView *)collectionView
-viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
-               atIndexPath:(NSIndexPath *)indexPath
+    viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
+                          atIndexPath:(NSIndexPath *)indexPath
 {
     if ([kind isEqualToString:NSCollectionElementKindSectionHeader]) {
-        VLCLibraryCollectionViewSupplementaryElementView * const sectionHeadingView =
+        VLCLibraryCollectionViewSupplementaryElementView *const sectionHeadingView =
             [collectionView makeSupplementaryViewOfKind:kind
                                          withIdentifier:VLCLibrarySupplementaryElementViewIdentifier
                                            forIndexPath:indexPath];
-        VLCLibrarySearchProvider * const provider = [self providerForVisibleSection:indexPath.section];
+        VLCLibrarySearchProvider *const provider =
+            [self providerForVisibleSection:indexPath.section];
         sectionHeadingView.stringValue = provider.displayTitle;
         return sectionHeadingView;
 
-    } else if ([kind isEqualToString:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind] ||
-               [kind isEqualToString:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind] ||
-               [kind isEqualToString:VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewKind]) {
-        VLCLibraryCollectionViewSupplementaryDetailView * const detailView =
-            (VLCLibraryCollectionViewSupplementaryDetailView *)
-            [collectionView makeSupplementaryViewOfKind:kind
-                                         withIdentifier:kind
-                                           forIndexPath:indexPath];
-        const id<VLCMediaLibraryItemProtocol> item =
-            [self libraryItemAtIndexPath:indexPath forCollectionView:collectionView];
-        VLCLibrarySearchProvider * const provider = [self providerForVisibleSection:indexPath.section];
-        VLCLibraryRepresentedItem * const representedItem =
+    } else if ([kind isEqualToString:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind]
+               || [kind
+                   isEqualToString:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind]
+               || [kind
+                   isEqualToString:VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewKind]) {
+        VLCLibraryCollectionViewSupplementaryDetailView *const detailView =
+            (VLCLibraryCollectionViewSupplementaryDetailView *)[collectionView
+                makeSupplementaryViewOfKind:kind
+                             withIdentifier:kind
+                               forIndexPath:indexPath];
+        const id<VLCMediaLibraryItemProtocol> item = [self libraryItemAtIndexPath:indexPath
+                                                                forCollectionView:collectionView];
+        VLCLibrarySearchProvider *const provider =
+            [self providerForVisibleSection:indexPath.section];
+        VLCLibraryRepresentedItem *const representedItem =
             [self representedItemForItem:item atPosition:indexPath.item fromProvider:provider];
         detailView.representedItem = representedItem;
         detailView.selectedItem = [collectionView itemAtIndexPath:indexPath];
@@ -478,13 +488,13 @@ viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
         return VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind;
     }
 
-    NSIndexPath * const selectedIndexPath = self.collectionView.selectionIndexPaths.anyObject;
+    NSIndexPath *const selectedIndexPath = self.collectionView.selectionIndexPaths.anyObject;
     if (selectedIndexPath == nil) {
         return VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind;
     }
 
-    const id<VLCMediaLibraryItemProtocol> item =
-        [self libraryItemAtIndexPath:selectedIndexPath forCollectionView:self.collectionView];
+    const id<VLCMediaLibraryItemProtocol> item = [self libraryItemAtIndexPath:selectedIndexPath
+                                                            forCollectionView:self.collectionView];
     if ([item isKindOfClass:VLCMediaLibraryAlbum.class]) {
         return VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind;
     } else if ([item conformsToProtocol:@protocol(VLCMediaLibraryAudioGroupProtocol)]) {
@@ -496,8 +506,9 @@ viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
 - (id<VLCMediaLibraryItemProtocol>)libraryItemAtIndexPath:(NSIndexPath *)indexPath
                                         forCollectionView:(NSCollectionView *)collectionView
 {
-    VLCLibrarySearchProvider * const provider = [self providerForVisibleSection:indexPath.section];
-    NSParameterAssert(provider != nil && indexPath.item >= 0 && (NSUInteger)indexPath.item < provider.results.count);
+    VLCLibrarySearchProvider *const provider = [self providerForVisibleSection:indexPath.section];
+    NSParameterAssert(provider != nil && indexPath.item >= 0
+                      && (NSUInteger)indexPath.item < provider.results.count);
     return provider.results[indexPath.item];
 }
 
@@ -505,9 +516,10 @@ viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
 {
     NSParameterAssert(libraryItem != nil);
 
-    for (NSUInteger visibleIndex = 0; visibleIndex < _visibleProviderIndices.count; visibleIndex++) {
+    for (NSUInteger visibleIndex = 0; visibleIndex < _visibleProviderIndices.count;
+         visibleIndex++) {
         const NSUInteger providerIndex = _visibleProviderIndices[visibleIndex].unsignedIntegerValue;
-        VLCLibrarySearchProvider * const provider = _providers[providerIndex];
+        VLCLibrarySearchProvider *const provider = _providers[providerIndex];
         for (NSUInteger i = 0; i < provider.results.count; i++) {
             if (provider.results[i].libraryID == libraryItem.libraryID) {
                 return [NSIndexPath indexPathForItem:i inSection:visibleIndex];
@@ -518,19 +530,23 @@ viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
     return nil;
 }
 
-- (NSArray<VLCLibraryRepresentedItem *> *)representedItemsAtIndexPaths:(NSSet<NSIndexPath *> *)indexPaths
-                                                     forCollectionView:(NSCollectionView *)collectionView
+- (NSArray<VLCLibraryRepresentedItem *> *)
+    representedItemsAtIndexPaths:(NSSet<NSIndexPath *> *)indexPaths
+               forCollectionView:(NSCollectionView *)collectionView
 {
-    NSMutableArray<VLCLibraryRepresentedItem *> * const representedItems =
+    NSMutableArray<VLCLibraryRepresentedItem *> *const representedItems =
         [NSMutableArray arrayWithCapacity:indexPaths.count];
 
-    for (NSIndexPath * const indexPath in indexPaths) {
+    for (NSIndexPath *const indexPath in indexPaths) {
         const id<VLCMediaLibraryItemProtocol> libraryItem =
             [self libraryItemAtIndexPath:indexPath forCollectionView:collectionView];
         if (libraryItem) {
-            VLCLibrarySearchProvider * const provider = [self providerForVisibleSection:indexPath.section];
-            VLCLibraryRepresentedItem * const representedItem =
-                [self representedItemForItem:libraryItem atPosition:indexPath.item fromProvider:provider];
+            VLCLibrarySearchProvider *const provider =
+                [self providerForVisibleSection:indexPath.section];
+            VLCLibraryRepresentedItem *const representedItem =
+                [self representedItemForItem:libraryItem
+                                  atPosition:indexPath.item
+                                fromProvider:provider];
             [representedItems addObject:representedItem];
         }
     }

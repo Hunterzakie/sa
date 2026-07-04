@@ -102,13 +102,14 @@
     [NSLayoutConstraint activateConstraints:@[
         [self.leadingAnchor constraintEqualToAnchor:self.carouselView.leadingAnchor],
         [self.trailingAnchor constraintEqualToAnchor:self.carouselView.trailingAnchor],
-        [self.titleView.bottomAnchor constraintEqualToAnchor:self.carouselView.topAnchor], // titleView bottom
+        [self.titleView.bottomAnchor
+            constraintEqualToAnchor:self.carouselView.topAnchor], // titleView bottom
         [self.bottomAnchor constraintEqualToAnchor:self.carouselView.bottomAnchor]
     ]];
 
     const CGFloat buttonSize = VLCLibraryUIUnits.largeSpacing;
 
-    NSImage * const leftImage = [NSImage imageNamed:NSImageNameGoLeftTemplate];
+    NSImage *const leftImage = [NSImage imageNamed:NSImageNameGoLeftTemplate];
     _leftButton = [[NSButton alloc] initWithFrame:NSZeroRect];
     self.leftButton.translatesAutoresizingMaskIntoConstraints = NO;
     self.leftButton.image = leftImage;
@@ -122,7 +123,7 @@
         [self.leftButton.heightAnchor constraintEqualToConstant:buttonSize],
     ]];
 
-    NSImage * const rightImage = [NSImage imageNamed:NSImageNameGoRightTemplate];
+    NSImage *const rightImage = [NSImage imageNamed:NSImageNameGoRightTemplate];
     _rightButton = [[NSButton alloc] initWithFrame:NSZeroRect];
     self.rightButton.translatesAutoresizingMaskIntoConstraints = NO;
     self.rightButton.image = rightImage;
@@ -171,9 +172,8 @@
 
 - (void)updateCarouselViewHeight
 {
-    const CGFloat viewHeight = self.titleView.frame.size.height +
-                               VLCLibraryUIUnits.largeSpacing * 2 +
-                               _itemHeight;
+    const CGFloat viewHeight =
+        self.titleView.frame.size.height + VLCLibraryUIUnits.largeSpacing * 2 + _itemHeight;
 
     if (self.heightConstraint == nil) {
         _heightConstraint = [self.carouselView.heightAnchor constraintEqualToConstant:viewHeight];
@@ -217,7 +217,7 @@
         return;
     }
 
-    NSIndexPath * const itemIndexPath = [self.dataSource indexPathForLibraryItem:libraryItem];
+    NSIndexPath *const itemIndexPath = [self.dataSource indexPathForLibraryItem:libraryItem];
     if (itemIndexPath == nil) {
         return;
     }
@@ -258,34 +258,34 @@
         withDefault:(CGFloat)value
 {
     switch (option) {
-    case iCarouselOptionSpacing:
-    {
-        // iCarousel calculates spacing as a multiplier on the item width.
-        // So a spacing of 1.2 means the item's width will grow to 1.2x its
-        // width, with the extra width as spacing.
-        //
-        // Because of this... interesting approach to spacing, we calculate
-        // the constant VLC-wide spacing relative to the width of the carousel's
-        // itemWidth.
-        const CGFloat itemWidth = carousel.itemWidth;
-        const CGFloat bothSidesSpacing = VLCLibraryUIUnits.mediumSpacing * 2;
-        const CGFloat desiredWidthWithSpacing = itemWidth + bothSidesSpacing;
-        const CGFloat desiredMultiple = desiredWidthWithSpacing / itemWidth;
-        return desiredMultiple;
-    }
-    default:
-        return value;
+        case iCarouselOptionSpacing: {
+            // iCarousel calculates spacing as a multiplier on the item width.
+            // So a spacing of 1.2 means the item's width will grow to 1.2x its
+            // width, with the extra width as spacing.
+            //
+            // Because of this... interesting approach to spacing, we calculate
+            // the constant VLC-wide spacing relative to the width of the carousel's
+            // itemWidth.
+            const CGFloat itemWidth = carousel.itemWidth;
+            const CGFloat bothSidesSpacing = VLCLibraryUIUnits.mediumSpacing * 2;
+            const CGFloat desiredWidthWithSpacing = itemWidth + bothSidesSpacing;
+            const CGFloat desiredMultiple = desiredWidthWithSpacing / itemWidth;
+            return desiredMultiple;
+        }
+        default:
+            return value;
     }
 }
 
 - (void)carouselCurrentItemIndexDidChange:(iCarousel *)carousel
 {
-    NSView * const currentItemView = carousel.currentItemView;
+    NSView *const currentItemView = carousel.currentItemView;
     if (currentItemView == nil) {
         return;
     }
 
-    VLCLibraryCarouselViewItemView * const carouselItemView = (VLCLibraryCarouselViewItemView *)currentItemView;
+    VLCLibraryCarouselViewItemView *const carouselItemView =
+        (VLCLibraryCarouselViewItemView *)currentItemView;
     NSAssert(carouselItemView != nil, @"Expected carousel item view to be non-nil!");
     self.selectedItemView.selected = NO;
     carouselItemView.selected = YES;
@@ -296,7 +296,8 @@
 
 - (void)carousel:(iCarousel *)carousel didSelectItemAtIndex:(NSInteger)index
 {
-    VLCLibraryCarouselViewItemView * const carouselItemView = (VLCLibraryCarouselViewItemView *)[carousel itemViewAtIndex:index];
+    VLCLibraryCarouselViewItemView *const carouselItemView =
+        (VLCLibraryCarouselViewItemView *)[carousel itemViewAtIndex:index];
     NSAssert(carouselItemView != nil, @"Expected carousel item view to be non-nil!");
     [carouselItemView playRepresentedItem];
 }

@@ -45,24 +45,27 @@
     [window setRestorationClass:[self class]];
     [window setExcludedFromWindowsMenu:YES];
     [window setAcceptsMouseMovedEvents:YES];
-    [window setContentMinSize:NSMakeSize(VLCLibraryWindowMinimalWidth, VLCLibraryWindowMinimalHeight)];
+    [window
+        setContentMinSize:NSMakeSize(VLCLibraryWindowMinimalWidth, VLCLibraryWindowMinimalHeight)];
 }
 
 + (void)restoreWindowWithIdentifier:(NSUserInterfaceItemIdentifier)identifier
                               state:(NSCoder *)state
                   completionHandler:(void (^)(NSWindow *, NSError *))completionHandler
 {
-    if([identifier isEqualToString:VLCLibraryWindowIdentifier] == NO) {
+    if ([identifier isEqualToString:VLCLibraryWindowIdentifier] == NO) {
         return;
     }
 
-    if(VLCMain.sharedInstance.libraryWindowController == nil) {
-        VLCMain.sharedInstance.libraryWindowController = [[VLCLibraryWindowController alloc] initWithLibraryWindow];
+    if (VLCMain.sharedInstance.libraryWindowController == nil) {
+        VLCMain.sharedInstance.libraryWindowController =
+            [[VLCLibraryWindowController alloc] initWithLibraryWindow];
     }
 
-    VLCLibraryWindow * const libraryWindow = VLCMain.sharedInstance.libraryWindow;
+    VLCLibraryWindow *const libraryWindow = VLCMain.sharedInstance.libraryWindow;
 
-    const NSInteger selectedSegment = [state decodeIntegerForKey:@"macosx-library-selected-segment"];
+    const NSInteger selectedSegment =
+        [state decodeIntegerForKey:@"macosx-library-selected-segment"];
     [libraryWindow.splitViewController.navSidebarViewController selectSegment:selectedSegment];
 
     completionHandler(libraryWindow, nil);

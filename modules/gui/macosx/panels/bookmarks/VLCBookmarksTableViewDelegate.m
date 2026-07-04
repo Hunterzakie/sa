@@ -32,7 +32,7 @@
 
 @interface VLCBookmarksTableViewDelegate ()
 {
-    VLCBookmarksWindowController* _parentController;
+    VLCBookmarksWindowController *_parentController;
 }
 @end
 
@@ -50,7 +50,7 @@
 - (void)tableViewSelectionDidChange:(NSNotification *)notification
 {
     NSParameterAssert(notification);
-    NSTableView * const tableView = notification.object;
+    NSTableView *const tableView = notification.object;
     NSParameterAssert(tableView);
 
     const BOOL enableRowDependentBookmarkWindowButtons = tableView.selectedRow >= 0;

@@ -41,8 +41,7 @@
 
 - (instancetype)initWithLibraryWindow:(VLCLibraryWindow *)libraryWindow
 {
-    return [super initWithLibraryWindow:libraryWindow
-                                nibName:@"VLCLibraryWindowChaptersView"];
+    return [super initWithLibraryWindow:libraryWindow nibName:@"VLCLibraryWindowChaptersView"];
 }
 
 - (void)viewDidLoad
@@ -54,21 +53,21 @@
     [self.tableView deselectAll:self];
     [self.tableView bind:NSContentBinding
                 toObject:self.chaptersArrayController
-             withKeyPath:@"arrangedObjects" 
+             withKeyPath:@"arrangedObjects"
                  options:nil];
-    [self.tableView bind:NSSelectionIndexesBinding 
+    [self.tableView bind:NSSelectionIndexesBinding
                 toObject:self.chaptersArrayController
              withKeyPath:@"selectionIndexes"
                  options:nil];
-    [self.tableView bind:NSSortDescriptorsBinding 
+    [self.tableView bind:NSSortDescriptorsBinding
                 toObject:self.chaptersArrayController
              withKeyPath:@"sortDescriptors"
                  options:nil];
 
     [self updateChapterList];
     [self updateSelectedChapter];
-    
-    NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+
+    NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
     [notificationCenter addObserver:self
                            selector:@selector(titleListChanged:)
                                name:VLCPlayerTitleListChanged
@@ -102,27 +101,26 @@
 
 - (void)updateChapterList
 {
-    VLCPlayerController * const playerController =
+    VLCPlayerController *const playerController =
         VLCMain.sharedInstance.playQueueController.playerController;
 
-    const struct vlc_player_title * const title = playerController.selectedTitle;
+    const struct vlc_player_title *const title = playerController.selectedTitle;
     if (title == NULL) {
         self.chaptersArrayController.content = @[];
         return;
     }
-    const struct vlc_player_chapter * const pp_chapters = title->chapters;
+    const struct vlc_player_chapter *const pp_chapters = title->chapters;
     const size_t chapterCount = title->chapter_count;
 
     self.internalItemCount = chapterCount;
-    NSMutableArray * const chapters = [NSMutableArray arrayWithCapacity:chapterCount];
+    NSMutableArray *const chapters = [NSMutableArray arrayWithCapacity:chapterCount];
     for (size_t i = 0; i < chapterCount; i++) {
         struct vlc_player_chapter p_chapter = pp_chapters[i];
-        const vlc_tick_t nextTime = (i + 1 < chapterCount)
-            ? pp_chapters[i + 1].time
-            : title->length;
+        const vlc_tick_t nextTime =
+            (i + 1 < chapterCount) ? pp_chapters[i + 1].time : title->length;
         const vlc_tick_t duration = nextTime - p_chapter.time;
-        VLCPlayerChapter * const chapter =
-            [[VLCPlayerChapter alloc] initWithChapter:&p_chapter duration:duration];
+        VLCPlayerChapter *const chapter = [[VLCPlayerChapter alloc] initWithChapter:&p_chapter
+                                                                           duration:duration];
         [chapters addObject:chapter];
     }
     self.chaptersArrayController.content = chapters.copy;
@@ -149,33 +147,35 @@
 {
     const NSUInteger selectedChapterIndex =
         VLCMain.sharedInstance.playQueueController.playerController.selectedChapterIndex;
-    NSIndexSet * const indexSet = [NSIndexSet indexSetWithIndex:selectedChapterIndex];
+    NSIndexSet *const indexSet = [NSIndexSet indexSetWithIndex:selectedChapterIndex];
     [self.tableView selectRowIndexes:indexSet byExtendingSelection:NO];
 }
 
-# pragma mark - NSTableView delegation
+#pragma mark - NSTableView delegation
 
 - (NSView *)tableView:(NSTableView *)tableView
-   viewForTableColumn:(NSTableColumn *)tableColumn
-                  row:(NSInteger)row
+    viewForTableColumn:(NSTableColumn *)tableColumn
+                   row:(NSInteger)row
 {
-    if ([tableColumn.identifier isEqualToString:@"VLCLibraryWindowChaptersTableViewNameColumnIdentifier"]) {
-        NSTableCellView * const cellView =
+    if ([tableColumn.identifier
+            isEqualToString:@"VLCLibraryWindowChaptersTableViewNameColumnIdentifier"]) {
+        NSTableCellView *const cellView =
             [tableView makeViewWithIdentifier:@"VLCLibraryWindowChaptersTableViewNameCellIdentifier"
                                         owner:self];
         [cellView.textField bind:NSValueBinding
-                            toObject:cellView
-                         withKeyPath:@"objectValue.name"
-                             options:nil];
+                        toObject:cellView
+                     withKeyPath:@"objectValue.name"
+                         options:nil];
         return cellView;
-    } else if ([tableColumn.identifier isEqualToString:@"VLCLibraryWindowChaptersTableViewTimeColumnIdentifier"]) {
-        NSTableCellView * const cellView =
+    } else if ([tableColumn.identifier
+                   isEqualToString:@"VLCLibraryWindowChaptersTableViewTimeColumnIdentifier"]) {
+        NSTableCellView *const cellView =
             [tableView makeViewWithIdentifier:@"VLCLibraryWindowChaptersTableViewTimeCellIdentifier"
                                         owner:self];
         [cellView.textField bind:NSValueBinding
-                            toObject:cellView
-                         withKeyPath:@"objectValue.durationString"
-                             options:nil];
+                        toObject:cellView
+                     withKeyPath:@"objectValue.durationString"
+                         options:nil];
         return cellView;
     }
 

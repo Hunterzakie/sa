@@ -25,13 +25,14 @@
 
 @class VLCInputItem;
 
-enum ResumeResult {
+enum ResumeResult
+{
     RESUME_RESTART,
     RESUME_NOW,
     RESUME_FAIL
 };
 
-typedef void(^CompletionBlock)(enum ResumeResult);
+typedef void (^CompletionBlock)(enum ResumeResult);
 
 @interface VLCResumeDialogController : NSWindowController
 
@@ -44,7 +45,9 @@ typedef void(^CompletionBlock)(enum ResumeResult);
 - (IBAction)buttonClicked:(id)sender;
 - (IBAction)resumeSettingChanged:(id)sender;
 
-- (void)showWindowWithItem:(VLCInputItem *)inputItem withLastPosition:(NSInteger)pos completionBlock:(CompletionBlock)block;
+- (void)showWindowWithItem:(VLCInputItem *)inputItem
+          withLastPosition:(NSInteger)pos
+           completionBlock:(CompletionBlock)block;
 
 - (void)cancel;
 

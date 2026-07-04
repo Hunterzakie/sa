@@ -60,24 +60,23 @@
 
 enum AppleRemoteEventIdentifier
 {
-    kRemoteButtonVolume_Plus        =1<<1,
-    kRemoteButtonVolume_Minus       =1<<2,
-    kRemoteButtonMenu               =1<<3,
-    kRemoteButtonPlay               =1<<4,
-    kRemoteButtonRight              =1<<5,
-    kRemoteButtonLeft               =1<<6,
-    kRemoteButtonRight_Hold         =1<<7,
-    kRemoteButtonLeft_Hold          =1<<8,
-    kRemoteButtonMenu_Hold          =1<<9,
-    kRemoteButtonPlay_Sleep         =1<<10,
-    kRemoteControl_Switched         =1<<11,
-    kRemoteButtonVolume_Plus_Hold   =1<<12,
-    kRemoteButtonVolume_Minus_Hold  =1<<13,
+    kRemoteButtonVolume_Plus = 1 << 1,
+    kRemoteButtonVolume_Minus = 1 << 2,
+    kRemoteButtonMenu = 1 << 3,
+    kRemoteButtonPlay = 1 << 4,
+    kRemoteButtonRight = 1 << 5,
+    kRemoteButtonLeft = 1 << 6,
+    kRemoteButtonRight_Hold = 1 << 7,
+    kRemoteButtonLeft_Hold = 1 << 8,
+    kRemoteButtonMenu_Hold = 1 << 9,
+    kRemoteButtonPlay_Sleep = 1 << 10,
+    kRemoteControl_Switched = 1 << 11,
+    kRemoteButtonVolume_Plus_Hold = 1 << 12,
+    kRemoteButtonVolume_Minus_Hold = 1 << 13,
     k2009RemoteButtonPlay
 
-   =1<<14,
-    k2009RemoteButtonFullscreen
- =1<<15
+    = 1 << 14,
+    k2009RemoteButtonFullscreen = 1 << 15
 };
 typedef enum AppleRemoteEventIdentifier AppleRemoteEventIdentifier;
 
@@ -85,12 +84,13 @@ typedef enum AppleRemoteEventIdentifier AppleRemoteEventIdentifier;
 This class is implemented as a singleton as there is exactly one remote per machine (until now)
 The class is not thread safe
 */
-@interface AppleRemote : NSObject {
-    IOHIDDeviceInterface** hidDeviceInterface;
-    IOHIDQueueInterface**  queue;
-    NSArray*        _allCookies;
-    NSDictionary*   _cookieToButtonMapping;
-    CFRunLoopSourceRef     eventSource;
+@interface AppleRemote : NSObject
+{
+    IOHIDDeviceInterface **hidDeviceInterface;
+    IOHIDQueueInterface **queue;
+    NSArray *_allCookies;
+    NSDictionary *_cookieToButtonMapping;
+    CFRunLoopSourceRef eventSource;
 
     /* state for simulating plus/minus hold */
     BOOL lastEventSimulatedHold;
@@ -112,10 +112,10 @@ The class is not thread safe
 
 /* click counting makes it possible to recognize if the user has pressed a button repeatedly
  * click counting does delay each event as it has to wait if there is another event (second click)
- * therefore there is a slight time difference (maximumClickCountTimeDifference) between a single click
- * of the user and the call of your delegate method
- * click counting can be enabled individually for specific buttons. Use the property clickCountEnableButtons
- * to set the buttons for which click counting shall be enabled */
+ * therefore there is a slight time difference (maximumClickCountTimeDifference) between a single
+ * click of the user and the call of your delegate method click counting can be enabled individually
+ * for specific buttons. Use the property clickCountEnableButtons to set the buttons for which click
+ * counting shall be enabled */
 @property (readwrite) BOOL clickCountingEnabled;
 
 @property (readwrite) unsigned int clickCountEnabledButtons;
@@ -131,19 +131,21 @@ The class is not thread safe
 
 /* Sets an NSApplication delegate which starts listening when application is becoming active
  * and stops listening when application resigns being active.
- * If an NSApplication delegate has been already set all method calls will be forwarded to this delegate, too. */
+ * If an NSApplication delegate has been already set all method calls will be forwarded to this
+ * delegate, too. */
 @property (readwrite) BOOL listeningOnAppActivate;
 
-/* Simulating plus/minus hold does deactivate sending of individual requests for plus/minus pressed down/released.
- * Instead special hold events are being triggered when the user is pressing and holding plus/minus for a small period.
- * With simulating enabled the plus/minus buttons do behave as the left/right buttons */
+/* Simulating plus/minus hold does deactivate sending of individual requests for plus/minus pressed
+ * down/released. Instead special hold events are being triggered when the user is pressing and
+ * holding plus/minus for a small period. With simulating enabled the plus/minus buttons do behave
+ * as the left/right buttons */
 @property (readwrite) BOOL simulatesPlusMinusHold;
 
 /* Delegates are not retained */
 @property (readwrite, assign) id delegate;
 
-- (IBAction) startListening: (id) sender;
-- (IBAction) stopListening: (id) sender;
+- (IBAction)startListening:(id)sender;
+- (IBAction)stopListening:(id)sender;
 @end
 
 @interface AppleRemote (Singleton)
@@ -153,35 +155,38 @@ The class is not thread safe
 @end
 
 /*  Method definitions for the delegate of the AppleRemote class */
-@interface NSObject(NSAppleRemoteDelegate)
+@interface NSObject (NSAppleRemoteDelegate)
 
-- (void) appleRemoteButton: (AppleRemoteEventIdentifier)buttonIdentifier pressedDown: (BOOL) pressedDown clickCount: (unsigned int) count;
+- (void)appleRemoteButton:(AppleRemoteEventIdentifier)buttonIdentifier
+              pressedDown:(BOOL)pressedDown
+               clickCount:(unsigned int)count;
 
 @end
 
 @interface AppleRemote (PrivateMethods)
-@property (readonly) NSDictionary * cookieToButtonMapping;
+@property (readonly) NSDictionary *cookieToButtonMapping;
 
-- (void) setRemoteId: (int) aValue;
-- (IOHIDQueueInterface**) queue;
-- (IOHIDDeviceInterface**) hidDeviceInterface;
-- (void) handleEventWithCookieString: (NSString*) cookieString sumOfValues: (SInt32) sumOfValues;
+- (void)setRemoteId:(int)aValue;
+- (IOHIDQueueInterface **)queue;
+- (IOHIDDeviceInterface **)hidDeviceInterface;
+- (void)handleEventWithCookieString:(NSString *)cookieString sumOfValues:(SInt32)sumOfValues;
 @end
 
 @interface AppleRemote (IOKitMethods)
-- (io_object_t) findAppleRemoteDevice;
-- (IOHIDDeviceInterface**) createInterfaceForDevice: (io_object_t) hidDevice;
-- (BOOL) initializeCookies;
-- (BOOL) openDevice;
+- (io_object_t)findAppleRemoteDevice;
+- (IOHIDDeviceInterface **)createInterfaceForDevice:(io_object_t)hidDevice;
+- (BOOL)initializeCookies;
+- (BOOL)openDevice;
 @end
 
 /* A NSApplication delegate which is used to activate and deactivate listening to the remote control
  * dependent on the activation state of your application.
  * All events are delegated to the original NSApplication delegate if necessary */
-@interface AppleRemoteApplicationDelegate : NSObject<NSApplicationDelegate> {
+@interface AppleRemoteApplicationDelegate : NSObject<NSApplicationDelegate>
+{
     id applicationDelegate;
 }
 
-- (id) initWithApplicationDelegate: (id) delegate;
-- (id) applicationDelegate;
+- (id)initWithApplicationDelegate:(id)delegate;
+- (id)applicationDelegate;
 @end

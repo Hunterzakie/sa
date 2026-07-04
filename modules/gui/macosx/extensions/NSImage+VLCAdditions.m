@@ -25,7 +25,7 @@
 #import <QuickLook/QuickLook.h>
 #import <QuickLookThumbnailing/QuickLookThumbnailing.h>
 
-@implementation NSImage(VLCAdditions)
+@implementation NSImage (VLCAdditions)
 
 + (NSImage *)VLCAppIconImage
 {
@@ -142,43 +142,42 @@
     return [NSImage imageNamed:@"repeatOff"];
 }
 
-+ (void)quickLookPreviewForLocalPath:(NSString *)path 
-                            withSize:(NSSize)size 
++ (void)quickLookPreviewForLocalPath:(NSString *)path
+                            withSize:(NSSize)size
                    completionHandler:(void (^)(NSImage *))completionHandler
 {
-    NSURL * const pathUrl = [NSURL fileURLWithPath:path];
+    NSURL *const pathUrl = [NSURL fileURLWithPath:path];
     [self quickLookPreviewForLocalURL:pathUrl withSize:size completionHandler:completionHandler];
 }
 
-+ (void)quickLookPreviewForLocalURL:(NSURL *)url 
-                           withSize:(NSSize)size 
++ (void)quickLookPreviewForLocalURL:(NSURL *)url
+                           withSize:(NSSize)size
                   completionHandler:(void (^)(NSImage *))completionHandler
 {
     if (@available(macOS 10.15, *)) {
-        const QLThumbnailGenerationRequestRepresentationTypes type = 
+        const QLThumbnailGenerationRequestRepresentationTypes type =
             QLThumbnailGenerationRequestRepresentationTypeAll;
-        QLThumbnailGenerator * const generator = QLThumbnailGenerator.sharedGenerator;
-        QLThumbnailGenerationRequest * const request = 
-            [[QLThumbnailGenerationRequest alloc] initWithFileAtURL:url 
-                                                               size:size 
-                                                              scale:1. 
+        QLThumbnailGenerator *const generator = QLThumbnailGenerator.sharedGenerator;
+        QLThumbnailGenerationRequest *const request =
+            [[QLThumbnailGenerationRequest alloc] initWithFileAtURL:url
+                                                               size:size
+                                                              scale:1.
                                                 representationTypes:type];
-        [generator generateBestRepresentationForRequest:request 
-                                      completionHandler:^(QLThumbnailRepresentation * const thumbnail, 
-                                                          NSError * const error) {
-            if (error != nil) {
-                NSLog(@"Error generating thumbnail: %@", error);
-                completionHandler(nil);
-                return;
-            }
-            completionHandler(thumbnail.NSImage);
-        }];
+        [generator
+            generateBestRepresentationForRequest:request
+                               completionHandler:^(QLThumbnailRepresentation *const thumbnail,
+                                                   NSError *const error) {
+                                   if (error != nil) {
+                                       NSLog(@"Error generating thumbnail: %@", error);
+                                       completionHandler(nil);
+                                       return;
+                                   }
+                                   completionHandler(thumbnail.NSImage);
+                               }];
     } else {
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
-            NSImage * const image = [self quickLookPreviewForLocalURL:url withSize:size];
-            dispatch_async(dispatch_get_main_queue(), ^{
-                completionHandler(image);
-            });
+            NSImage *const image = [self quickLookPreviewForLocalURL:url withSize:size];
+            dispatch_async(dispatch_get_main_queue(), ^{ completionHandler(image); });
         });
     }
 }
@@ -191,7 +190,8 @@
 
 + (instancetype)quickLookPreviewForLocalURL:(NSURL *)url withSize:(NSSize)size
 {
-    NSDictionary *dict = @{(NSString*)kQLThumbnailOptionIconModeKey : [NSNumber numberWithBool:NO]};
+    NSDictionary *dict =
+        @{ (NSString *)kQLThumbnailOptionIconModeKey : [NSNumber numberWithBool:NO] };
     CFDictionaryRef dictRef = CFBridgingRetain(dict);
     if (dictRef == NULL) {
         NSLog(@"Got null dict for quickLook preview");
@@ -205,10 +205,7 @@
         return nil;
     }
 
-    CGImageRef qlThumbnailRef = QLThumbnailImageCreate(kCFAllocatorDefault,
-                                                       urlRef,
-                                                       size,
-                                                       dictRef);
+    CGImageRef qlThumbnailRef = QLThumbnailImageCreate(kCFAllocatorDefault, urlRef, size, dictRef);
 
     CFRelease(dictRef);
     CFRelease(urlRef);
@@ -229,42 +226,41 @@
     return image;
 }
 
-+ (instancetype)compositeImageWithImages:(NSArray<NSImage *> * const)images
-                                  frames:(NSArray<NSValue *> * const)frames
++ (instancetype)compositeImageWithImages:(NSArray<NSImage *> *const)images
+                                  frames:(NSArray<NSValue *> *const)frames
                                     size:(const NSSize)size
 {
     return [NSImage imageWithSize:size
                           flipped:NO
                    drawingHandler:^BOOL(const NSRect dstRect) {
+                       NSUInteger counter = 0;
+                       for (NSValue *const rectValue in frames) {
+                           if (counter >= images.count) {
+                               break;
+                           }
 
-        NSUInteger counter = 0;
-        for (NSValue * const rectValue in frames) {
-            if (counter >= images.count) {
-                break;
-            }
+                           NSImage *const image = [images objectAtIndex:counter];
+                           const NSRect imageRect = rectValue.rectValue;
+                           [image drawInRect:imageRect
+                                    fromRect:NSZeroRect
+                                   operation:NSCompositingOperationOverlay
+                                    fraction:1.];
 
-            NSImage * const image = [images objectAtIndex:counter];
-            const NSRect imageRect = rectValue.rectValue;
-            [image drawInRect:imageRect
-                     fromRect:NSZeroRect
-                    operation:NSCompositingOperationOverlay
-                     fraction:1.];
+                           counter += 1;
+                       }
 
-            counter += 1;
-        }
-
-        return YES;
-    }];
+                       return YES;
+                   }];
 }
 
 - (instancetype)imageTintedWithColor:(NSColor *)color
 {
-    NSImage * const image = [self copy];
+    NSImage *const image = [self copy];
 
     if (color != nil) {
         [image lockFocus];
         [color set];
-        const NSRect imageRect = {NSZeroPoint, image.size};
+        const NSRect imageRect = { NSZeroPoint, image.size };
         NSRectFillUsingOperation(imageRect, NSCompositeSourceIn);
         [image unlockFocus];
     }
@@ -272,7 +268,8 @@
     return image;
 }
 
-+ (NSArray<NSValue *> *)framesForCompositeImageSquareGridWithImages:(NSArray<NSImage *> * const)images
++ (NSArray<NSValue *> *)framesForCompositeImageSquareGridWithImages:
+                            (NSArray<NSImage *> *const)images
                                                                size:(const NSSize)size
                                                       gridItemCount:(const NSUInteger)gridItemCount
 {
@@ -287,13 +284,13 @@
     const CGFloat itemWidth = size.width / gridDivisor;
     const CGFloat itemHeight = size.height / gridDivisor;
 
-    NSMutableArray<NSValue *> * const rects = NSMutableArray.array;
+    NSMutableArray<NSValue *> *const rects = NSMutableArray.array;
 
     for (NSUInteger i = 0; i < actualGridItemCount; ++i) {
         const CGFloat xPos = (i % gridDivisor) * itemWidth;
         const CGFloat yPos = floor(i / gridDivisor) * itemHeight;
         const NSRect rect = NSMakeRect(xPos, yPos, itemWidth, itemHeight);
-        NSValue * const rectVal = [NSValue valueWithRect:rect];
+        NSValue *const rectVal = [NSValue valueWithRect:rect];
         [rects addObject:rectVal];
     }
 

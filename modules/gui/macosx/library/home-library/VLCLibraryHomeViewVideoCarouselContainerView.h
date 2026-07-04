@@ -28,7 +28,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface VLCLibraryHomeViewVideoCarouselContainerView : VLCLibraryHomeViewBaseCarouselContainerView<VLCLibraryHomeViewVideoContainerView>
+@interface VLCLibraryHomeViewVideoCarouselContainerView
+    : VLCLibraryHomeViewBaseCarouselContainerView<VLCLibraryHomeViewVideoContainerView>
 
 @end
 

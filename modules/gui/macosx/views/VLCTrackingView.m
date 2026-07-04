@@ -69,12 +69,12 @@
 
 - (void)setViewToHide:(nullable NSView *)view
 {
-    self.viewsToHide = view ? @[view] : nil;
+    self.viewsToHide = view ? @[ view ] : nil;
 }
 
 - (void)setViewToShow:(nullable NSView *)view
 {
-    self.viewsToShow = view ? @[view] : nil;
+    self.viewsToShow = view ? @[ view ] : nil;
 }
 
 - (void)performTransition
@@ -86,38 +86,39 @@
 
         __weak typeof(self) weakSelf = self;
 
-        for (NSView * const view in self.viewsToHide) {
+        for (NSView *const view in self.viewsToHide) {
             view.hidden = NO;
         }
-        for (NSView * const view in self.viewsToShow) {
+        for (NSView *const view in self.viewsToShow) {
             view.hidden = NO;
         }
 
         [NSAnimationContext runAnimationRespectingPreferencesWithDuration:0.3
-                                                                  changes:^(NSAnimationContext * const context) {
-            for (NSView * const view in weakSelf.viewsToHide) {
-                view.animator.alphaValue = hideVTH ? 0.0 : 1.0;
+            changes:^(NSAnimationContext *const context) {
+                for (NSView *const view in weakSelf.viewsToHide) {
+                    view.animator.alphaValue = hideVTH ? 0.0 : 1.0;
+                }
+                for (NSView *const view in weakSelf.viewsToShow) {
+                    view.animator.alphaValue = hideVTS ? 0.0 : 1.0;
+                }
             }
-            for (NSView * const view in weakSelf.viewsToShow) {
-                view.animator.alphaValue = hideVTS ? 0.0 : 1.0;
-            }
-        } completionHandler:^{
-            __strong typeof(weakSelf) strongSelf = weakSelf;
-            if (!strongSelf || startMouseIn != strongSelf->_mouseIn) {
-                return;
-            }
-            for (NSView * const view in strongSelf.viewsToHide) {
-                view.hidden = hideVTH;
-            }
-            for (NSView * const view in strongSelf.viewsToShow) {
-                view.hidden = hideVTS;
-            }
-        }];
+            completionHandler:^{
+                __strong typeof(weakSelf) strongSelf = weakSelf;
+                if (!strongSelf || startMouseIn != strongSelf->_mouseIn) {
+                    return;
+                }
+                for (NSView *const view in strongSelf.viewsToHide) {
+                    view.hidden = hideVTH;
+                }
+                for (NSView *const view in strongSelf.viewsToShow) {
+                    view.hidden = hideVTS;
+                }
+            }];
     } else {
-        for (NSView * const view in self.viewsToHide) {
+        for (NSView *const view in self.viewsToHide) {
             view.hidden = !_mouseIn;
         }
-        for (NSView * const view in self.viewsToShow) {
+        for (NSView *const view in self.viewsToShow) {
             view.hidden = _mouseIn;
         }
     }
@@ -162,11 +163,12 @@
 - (void)updateTrackingAreas
 {
     [super updateTrackingAreas];
-    if(_trackingArea != nil) {
+    if (_trackingArea != nil) {
         [self removeTrackingArea:_trackingArea];
     }
 
-    NSTrackingAreaOptions trackingAreaOptions = (NSTrackingMouseEnteredAndExited | NSTrackingActiveAlways);
+    NSTrackingAreaOptions trackingAreaOptions =
+        (NSTrackingMouseEnteredAndExited | NSTrackingActiveAlways);
     _trackingArea = [[NSTrackingArea alloc] initWithRect:[self bounds]
                                                  options:trackingAreaOptions
                                                    owner:self
@@ -177,7 +179,8 @@
     // This prevents situations where the mouseEntered/mouseExited is not called because the view
     // itself has moved but the cursor has not (e.g. when this view is inside a scrollview and the
     // user scrolls)
-    const NSPoint mouseLocation = [self convertPoint:self.window.mouseLocationOutsideOfEventStream fromView:self.window.contentView];
+    const NSPoint mouseLocation = [self convertPoint:self.window.mouseLocationOutsideOfEventStream
+                                            fromView:self.window.contentView];
     const BOOL mouseInsideView = [self mouse:mouseLocation inRect:self.frame];
     if (mouseInsideView && !_mouseIn) {
         [self handleMouseEnter];

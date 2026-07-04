@@ -28,10 +28,10 @@
 
 + (instancetype)tableCellViewWithIdentifier:(NSString *)identifier showingString:(NSString *)string
 {
-    NSTableCellView * const cellView = [[NSTableCellView alloc] initWithFrame:NSZeroRect];
+    NSTableCellView *const cellView = [[NSTableCellView alloc] initWithFrame:NSZeroRect];
     cellView.identifier = identifier;
 
-    NSTextField * const textField = [NSTextField defaultLabelWithString:string];
+    NSTextField *const textField = [NSTextField defaultLabelWithString:string];
     textField.translatesAutoresizingMaskIntoConstraints = NO;
     cellView.textField = textField;
     [cellView addSubview:textField];

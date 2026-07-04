@@ -29,17 +29,18 @@
 @class VLCVideoWindowCommon;
 @class VLCVoutView;
 
-extern NSString * const VLCWindowShouldUpdateLevel;
-extern NSString * const VLCWindowLevelKey;
-extern NSString * const VLCWindowFloatOnTopChangedNotificationName;
-extern NSString * const VLCWindowFloatOnTopEnabledNotificationKey;
+extern NSString *const VLCWindowShouldUpdateLevel;
+extern NSString *const VLCWindowLevelKey;
+extern NSString *const VLCWindowFloatOnTopChangedNotificationName;
+extern NSString *const VLCWindowFloatOnTopEnabledNotificationKey;
 
 @interface VLCVideoOutputProvider : NSObject
 
 @property (readonly, nonatomic) NSInteger currentStatusWindowLevel;
 @property (readonly) NSDictionary *voutWindows;
 
-- (VLCVoutView *)setupVoutForWindow:(vlc_window_t *)p_wnd withProposedVideoViewPosition:(NSRect)videoViewPosition;
+- (VLCVoutView *)setupVoutForWindow:(vlc_window_t *)p_wnd
+      withProposedVideoViewPosition:(NSRect)videoViewPosition;
 - (VLCVideoWindowCommon *)setupVideoWindow;
 
 - (void)removeVoutForDisplay:(NSValue *)o_key;

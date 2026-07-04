@@ -30,9 +30,11 @@
         return nil;
     }
 
-    NSMutableArray * const mutableArray = [[NSMutableArray alloc] initWithCapacity:p_media_list->i_nb_items];
+    NSMutableArray *const mutableArray =
+        [[NSMutableArray alloc] initWithCapacity:p_media_list->i_nb_items];
     for (size_t x = 0; x < p_media_list->i_nb_items; x++) {
-        VLCMediaLibraryMediaItem * const mediaItem = [[VLCMediaLibraryMediaItem alloc] initWithMediaItem:&p_media_list->p_items[x]];
+        VLCMediaLibraryMediaItem *const mediaItem =
+            [[VLCMediaLibraryMediaItem alloc] initWithMediaItem:&p_media_list->p_items[x]];
         if (mediaItem != nil) {
             [mutableArray addObject:mediaItem];
         }
@@ -42,7 +44,9 @@
 
 - (NSInteger)indexOfMediaLibraryItem:(id<VLCMediaLibraryItemProtocol>)mediaLibraryItem
 {
-    return [self indexOfObjectPassingTest:^BOOL(const id<VLCMediaLibraryItemProtocol> item, const NSUInteger idx, BOOL * const stop) {
+    return [self indexOfObjectPassingTest:^BOOL(const id<VLCMediaLibraryItemProtocol> item,
+                                                const NSUInteger idx,
+                                                BOOL *const stop) {
         NSParameterAssert([item conformsToProtocol:@protocol(VLCMediaLibraryItemProtocol)]);
         return item.libraryID == mediaLibraryItem.libraryID;
     }];

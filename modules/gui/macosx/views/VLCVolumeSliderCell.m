@@ -26,7 +26,8 @@
 #import "extensions/NSColor+VLCAdditions.h"
 #import "main/CompatibilityFixes.h"
 
-@interface VLCVolumeSliderCell () {
+@interface VLCVolumeSliderCell ()
+{
     BOOL _isRTL;
     NSColor *_emptySliderBackgroundColor;
 }
@@ -69,14 +70,14 @@
     const CGFloat trackBorderRadius = 1;
 
     // Empty Track Drawing
-    NSBezierPath* emptyTrackPath = [NSBezierPath bezierPathWithRoundedRect:rect
+    NSBezierPath *emptyTrackPath = [NSBezierPath bezierPathWithRoundedRect:rect
                                                                    xRadius:trackBorderRadius
                                                                    yRadius:trackBorderRadius];
 
     // Calculate filled track
     NSRect filledTrackRect = rect;
     NSRect knobRect = [self knobRectFlipped:NO];
-    CGFloat sliderCenter = knobRect.origin.x  + (self.knobThickness / 2);
+    CGFloat sliderCenter = knobRect.origin.x + (self.knobThickness / 2);
 
     if (_isRTL) {
         filledTrackRect.size.width = rect.origin.x + rect.size.width - sliderCenter;
@@ -85,7 +86,7 @@
         filledTrackRect.size.width = sliderCenter;
     }
 
-    NSBezierPath* filledTrackPath = [NSBezierPath bezierPathWithRoundedRect:filledTrackRect
+    NSBezierPath *filledTrackPath = [NSBezierPath bezierPathWithRoundedRect:filledTrackRect
                                                                     xRadius:trackBorderRadius
                                                                     yRadius:trackBorderRadius];
     NSColor *filledColor = NSColor.VLCSliderFillColor;

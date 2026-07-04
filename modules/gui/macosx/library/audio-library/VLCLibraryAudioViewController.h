@@ -37,7 +37,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface VLCLibraryAudioViewController : VLCLibraryAbstractMediaLibrarySegmentViewController<VLCLibraryItemPresentingCapable, VLCLibraryGroupHeaderDelegate>
+@interface VLCLibraryAudioViewController
+    : VLCLibraryAbstractMediaLibrarySegmentViewController<VLCLibraryItemPresentingCapable,
+                                                          VLCLibraryGroupHeaderDelegate>
 
 @property (readonly, weak) NSView *audioLibraryView;
 @property (readonly, weak) NSSplitView *audioLibrarySplitView;
@@ -53,8 +55,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readonly, weak) NSSplitView *audioLibraryGridModeSplitView;
 @property (readonly, weak) NSScrollView *audioLibraryGridModeSplitViewListTableViewScrollView;
 @property (readonly, weak) NSTableView *audioLibraryGridModeSplitViewListTableView;
-@property (readonly, weak) NSScrollView *audioLibraryGridModeSplitViewListSelectionCollectionViewScrollView;
-@property (readonly, weak) VLCLibraryCollectionView *audioLibraryGridModeSplitViewListSelectionCollectionView;
+@property (readonly, weak)
+    NSScrollView *audioLibraryGridModeSplitViewListSelectionCollectionViewScrollView;
+@property (readonly, weak)
+    VLCLibraryCollectionView *audioLibraryGridModeSplitViewListSelectionCollectionView;
 
 @property (readonly) VLCLibraryAudioDataSource *audioDataSource;
 @property (readonly) VLCLibraryAudioGroupDataSource *audioGroupDataSource;

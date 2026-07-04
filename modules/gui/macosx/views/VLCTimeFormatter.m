@@ -29,15 +29,15 @@
 - (NSString *)stringForObjectValue:(id)obj
 {
     NSParameterAssert([obj isKindOfClass:NSNumber.class]);
-    NSNumber * const time = obj;
+    NSNumber *const time = obj;
     return [NSString stringWithTime:time.longLongValue];
 }
 
 - (BOOL)getObjectValue:(out id _Nullable *)obj
              forString:(NSString *)string
-      errorDescription:(out NSString * _Nullable *)error
+      errorDescription:(out NSString *_Nullable *)error
 {
-    NSArray<NSString *> * const components = [string componentsSeparatedByString:@":"];
+    NSArray<NSString *> *const components = [string componentsSeparatedByString:@":"];
     const NSUInteger componentCount = components.count;
     if (componentCount <= 1 || componentCount > 3) {
         *error = @"Cannot get bookmark time as invalid string format for time was received";
@@ -50,11 +50,11 @@
         time = components.firstObject.longLongValue * 1000;
     } else if (componentCount == 2) {
         time = components.firstObject.longLongValue * 60 +
-               [components objectAtIndex:1].longLongValue * 1000;
+            [components objectAtIndex:1].longLongValue * 1000;
     } else if (componentCount == 3) {
         time = components.firstObject.longLongValue * 3600 +
-               [components objectAtIndex:1].longLongValue * 60 +
-               [components objectAtIndex:2].longLongValue * 1000;
+            [components objectAtIndex:1].longLongValue * 60 +
+            [components objectAtIndex:2].longLongValue * 1000;
     }
 
     *obj = [NSNumber numberWithLongLong:time];

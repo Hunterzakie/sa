@@ -26,7 +26,7 @@
 #import "main/VLCMain.h"
 #import "playqueue/VLCPlayQueueController.h"
 
-@interface VLCPlayQueueSortingMenuController () <NSMenuDelegate>
+@interface VLCPlayQueueSortingMenuController ()<NSMenuDelegate>
 {
     VLCPlayQueueController *_playQueueController;
 }
@@ -48,20 +48,24 @@
 {
     _playQueueSortingMenu = [[NSMenu alloc] init];
 
-    NSArray *titles = @[_NS("Title"),
-                        _NS("Duration"),
-                        _NS("Artist"),
-                        _NS("Album"),
-                        _NS("Album Artist"),
-                        _NS("Genre"),
-                        _NS("Date"),
-                        _NS("Track Number"),
-                        _NS("Disc Number"),
-                        _NS("URL"),
-                        _NS("Rating")];
+    NSArray *titles = @[
+        _NS("Title"),
+        _NS("Duration"),
+        _NS("Artist"),
+        _NS("Album"),
+        _NS("Album Artist"),
+        _NS("Genre"),
+        _NS("Date"),
+        _NS("Track Number"),
+        _NS("Disc Number"),
+        _NS("URL"),
+        _NS("Rating")
+    ];
     NSUInteger count = titles.count;
     for (NSUInteger x = 0; x < count; x++) {
-        NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:titles[x] action:@selector(selectSortKey:) keyEquivalent:@""];
+        NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:titles[x]
+                                                          action:@selector(selectSortKey:)
+                                                   keyEquivalent:@""];
         menuItem.target = self;
         menuItem.tag = x;
         [_playQueueSortingMenu addItem:menuItem];
@@ -69,11 +73,12 @@
 
     [_playQueueSortingMenu addItem:[NSMenuItem separatorItem]];
 
-    titles = @[_NS("Ascending"),
-               _NS("Descending")];
+    titles = @[ _NS("Ascending"), _NS("Descending") ];
     count = titles.count;
     for (NSUInteger x = 0; x < count; x++) {
-        NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:titles[x] action:@selector(selectSortOrder:) keyEquivalent:@""];
+        NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:titles[x]
+                                                          action:@selector(selectSortOrder:)
+                                                   keyEquivalent:@""];
         menuItem.target = self;
         menuItem.tag = x + 100;
         [_playQueueSortingMenu addItem:menuItem];
@@ -105,7 +110,8 @@
     enum vlc_playlist_sort_key sortKey = (enum vlc_playlist_sort_key)[sender tag];
     enum vlc_playlist_sort_order sortOrder;
     if (_playQueueController.unsorted) {
-        /* we don't have an order and the user can only do a single selection - pick the most popular */
+        /* we don't have an order and the user can only do a single selection - pick the most
+         * popular */
         sortOrder = VLC_PLAYLIST_SORT_ORDER_ASCENDING;
     } else {
         sortOrder = _playQueueController.lastSortOrder;
@@ -119,7 +125,8 @@
     enum vlc_playlist_sort_key sortKey;
     enum vlc_playlist_sort_order sortOrder = (enum vlc_playlist_sort_order)([sender tag] - 100);
     if (_playQueueController.unsorted) {
-        /* we don't have a key and the user can only do a single selection - pick the most popular */
+        /* we don't have a key and the user can only do a single selection - pick the most popular
+         */
         sortKey = VLC_PLAYLIST_SORT_KEY_TITLE;
     } else {
         sortKey = _playQueueController.lastSortKey;

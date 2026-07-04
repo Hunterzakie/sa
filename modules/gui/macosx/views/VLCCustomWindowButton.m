@@ -1,31 +1,31 @@
 /*****************************************************************************
-* VLCCustomWindowButton.m: MacOS X interface module
-*****************************************************************************
-* Copyright (C) 2011-2019 VLC authors and VideoLAN
-*
-* Authors: Felix Paul Kühne <fkuehne # videolan -dot- org>
-*          David Fuhrmann <dfuhrmann at videolan dot org>
-*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; either version 2 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
-*****************************************************************************/
+ * VLCCustomWindowButton.m: MacOS X interface module
+ *****************************************************************************
+ * Copyright (C) 2011-2019 VLC authors and VideoLAN
+ *
+ * Authors: Felix Paul Kühne <fkuehne # videolan -dot- org>
+ *          David Fuhrmann <dfuhrmann at videolan dot org>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
+ *****************************************************************************/
 
 #import "VLCCustomWindowButton.h"
 
 #import "extensions/NSColor+VLCAdditions.h"
 
-@interface VLCCustomWindowButtonPrototype()
+@interface VLCCustomWindowButtonPrototype ()
 
 @property (readwrite, retain) NSImage *buttonImage;
 @property (readwrite, retain) NSImage *hoverButtonImage;
@@ -44,30 +44,36 @@
 {
     NSArray *theAttributeNames = [super accessibilityAttributeNames];
     id theControlView = [self controlView];
-    return ([theControlView respondsToSelector: @selector(extendedAccessibilityAttributeNames:)] ? [theControlView extendedAccessibilityAttributeNames: theAttributeNames] : theAttributeNames); // ask the cell's control view (i.e., the button) for additional attribute values
+    return ([theControlView respondsToSelector:@selector(extendedAccessibilityAttributeNames:)]
+                ? [theControlView extendedAccessibilityAttributeNames:theAttributeNames]
+                : theAttributeNames); // ask the cell's control view (i.e., the button) for
+                                      // additional attribute values
 }
 
 - (id)accessibilityAttributeValue:(NSString *)theAttributeName
 {
     id theControlView = [self controlView];
-    if ([theControlView respondsToSelector: @selector(extendedAccessibilityAttributeValue:)]) {
-        id theValue = [theControlView extendedAccessibilityAttributeValue: theAttributeName];
+    if ([theControlView respondsToSelector:@selector(extendedAccessibilityAttributeValue:)]) {
+        id theValue = [theControlView extendedAccessibilityAttributeValue:theAttributeName];
         if (theValue) {
-            return theValue; // if this is an extended attribute value we added, return that -- otherwise, fall back to super's implementation
+            return theValue; // if this is an extended attribute value we added, return that --
+                             // otherwise, fall back to super's implementation
         }
     }
-    return [super accessibilityAttributeValue: theAttributeName];
+    return [super accessibilityAttributeValue:theAttributeName];
 }
 
 - (BOOL)accessibilityIsAttributeSettable:(NSString *)theAttributeName
 {
     id theControlView = [self controlView];
-    if ([theControlView respondsToSelector: @selector(extendedAccessibilityIsAttributeSettable:)]) {
-        NSNumber *theValue = [theControlView extendedAccessibilityIsAttributeSettable: theAttributeName];
+    if ([theControlView respondsToSelector:@selector(extendedAccessibilityIsAttributeSettable:)]) {
+        NSNumber *theValue =
+            [theControlView extendedAccessibilityIsAttributeSettable:theAttributeName];
         if (theValue)
-            return [theValue boolValue]; // same basic strategy we use in -accessibilityAttributeValue:
+            return
+                [theValue boolValue]; // same basic strategy we use in -accessibilityAttributeValue:
     }
-    return [super accessibilityIsAttributeSettable: theAttributeName];
+    return [super accessibilityIsAttributeSettable:theAttributeName];
 }
 
 @end
@@ -100,9 +106,9 @@
 - (void)commonInitializer
 {
     [NSNotificationCenter.defaultCenter addObserver:self
-                                             selector:@selector(controlTintChanged:)
-                                                 name:NSControlTintDidChangeNotification
-                                               object:nil];
+                                           selector:@selector(controlTintChanged:)
+                                               name:NSControlTintDidChangeNotification
+                                             object:nil];
     [self loadButtonIcons];
     [self setTarget:self];
     [self setAction:@selector(performDefaultButtonAction:)];
@@ -145,24 +151,37 @@
 {
 }
 
-- (NSArray *)extendedAccessibilityAttributeNames:(NSArray *)theAttributeNames {
-    return ([theAttributeNames containsObject: NSAccessibilitySubroleAttribute] ? theAttributeNames : [theAttributeNames arrayByAddingObject: NSAccessibilitySubroleAttribute]); // run-of-the-mill button cells don't usually have a Subrole attribute, so we add that attribute
+- (NSArray *)extendedAccessibilityAttributeNames:(NSArray *)theAttributeNames
+{
+    return (
+        [theAttributeNames containsObject:NSAccessibilitySubroleAttribute]
+            ? theAttributeNames
+            : [theAttributeNames
+                  arrayByAddingObject:NSAccessibilitySubroleAttribute]); // run-of-the-mill button
+                                                                         // cells don't usually have
+                                                                         // a Subrole attribute, so
+                                                                         // we add that attribute
 }
 
-- (id)extendedAccessibilityAttributeValue:(NSString *)theAttributeName {
+- (id)extendedAccessibilityAttributeValue:(NSString *)theAttributeName
+{
     return nil;
 }
 
-- (NSNumber *)extendedAccessibilityIsAttributeSettable:(NSString *)theAttributeName {
-    return ([theAttributeName isEqualToString: NSAccessibilitySubroleAttribute] ? [NSNumber numberWithBool:NO] : nil); // make the Subrole attribute we added non-settable
+- (NSNumber *)extendedAccessibilityIsAttributeSettable:(NSString *)theAttributeName
+{
+    return ([theAttributeName isEqualToString:NSAccessibilitySubroleAttribute]
+                ? [NSNumber numberWithBool:NO]
+                : nil); // make the Subrole attribute we added non-settable
 }
 
-- (void)accessibilityPerformAction:(NSString *)theActionName {
-    if ([theActionName isEqualToString: NSAccessibilityPressAction]) {
+- (void)accessibilityPerformAction:(NSString *)theActionName
+{
+    if ([theActionName isEqualToString:NSAccessibilityPressAction]) {
         if ([self isEnabled])
-            [self performClick: nil];
+            [self performClick:nil];
     } else
-        [super accessibilityPerformAction: theActionName];
+        [super accessibilityPerformAction:theActionName];
 }
 
 @end
@@ -171,7 +190,9 @@
 
 - (id)extendedAccessibilityAttributeValue:(NSString *)theAttributeName
 {
-    return ([theAttributeName isEqualToString: NSAccessibilitySubroleAttribute] ? NSAccessibilityCloseButtonAttribute : nil);
+    return ([theAttributeName isEqualToString:NSAccessibilitySubroleAttribute]
+                ? NSAccessibilityCloseButtonAttribute
+                : nil);
 }
 
 - (void)loadButtonIcons
@@ -198,7 +219,9 @@
 
 - (id)extendedAccessibilityAttributeValue:(NSString *)theAttributeName
 {
-    return ([theAttributeName isEqualToString: NSAccessibilitySubroleAttribute] ? NSAccessibilityMinimizeButtonAttribute : nil);
+    return ([theAttributeName isEqualToString:NSAccessibilitySubroleAttribute]
+                ? NSAccessibilityMinimizeButtonAttribute
+                : nil);
 }
 
 - (void)loadButtonIcons
@@ -212,7 +235,7 @@
 
 - (void)performDefaultButtonAction:(id)sender
 {
-    [[self window] miniaturize: sender];
+    [[self window] miniaturize:sender];
 }
 
 @end
@@ -221,7 +244,9 @@
 
 - (id)extendedAccessibilityAttributeValue:(NSString *)theAttributeName
 {
-    return ([theAttributeName isEqualToString: NSAccessibilitySubroleAttribute] ? NSAccessibilityZoomButtonAttribute : nil);
+    return ([theAttributeName isEqualToString:NSAccessibilitySubroleAttribute]
+                ? NSAccessibilityZoomButtonAttribute
+                : nil);
 }
 
 - (void)loadButtonIcons
@@ -235,7 +260,7 @@
 
 - (void)performDefaultButtonAction:(id)sender
 {
-    [[self window] performZoom: sender];
+    [[self window] performZoom:sender];
 }
 
 @end
@@ -244,7 +269,9 @@
 
 - (id)extendedAccessibilityAttributeValue:(NSString *)theAttributeName
 {
-    return ([theAttributeName isEqualToString: NSAccessibilitySubroleAttribute] ? NSAccessibilityFullScreenButtonAttribute : nil);
+    return ([theAttributeName isEqualToString:NSAccessibilitySubroleAttribute]
+                ? NSAccessibilityFullScreenButtonAttribute
+                : nil);
 }
 
 - (void)loadButtonIcons
@@ -270,13 +297,13 @@
     self.wantsLayer = YES;
     self.layer.backgroundColor = NSColor.VLCAccentColor.CGColor;
     self.layer.cornerRadius = 6.0f;
-    
+
     self.bezelStyle = NSBezelStyleRecessed;
     self.bordered = NO;
-        
+
     if ([self.cell isKindOfClass:[NSButtonCell class]]) {
         NSButtonCell *cell = (NSButtonCell *)self.cell;
-        
+
         cell.highlightsBy = NSContentsCellMask;
         cell.imagePosition = NSImageLeft;
     }
@@ -287,16 +314,21 @@
         self.imageHugsTitle = YES;
         self.contentTintColor = NSColor.whiteColor;
     } else {
-        NSMutableAttributedString *title = [[NSMutableAttributedString alloc] initWithAttributedString:self.attributedTitle];
+        NSMutableAttributedString *title =
+            [[NSMutableAttributedString alloc] initWithAttributedString:self.attributedTitle];
         NSRange const titleRange = NSMakeRange(0, [title length]);
 
         // Normal
-        [title addAttribute:NSForegroundColorAttributeName value:[NSColor whiteColor] range:titleRange];
+        [title addAttribute:NSForegroundColorAttributeName
+                      value:[NSColor whiteColor]
+                      range:titleRange];
         [self setAttributedTitle:title];
 
         // Highlighted
         [title removeAttribute:NSForegroundColorAttributeName range:titleRange];
-        [title addAttribute:NSForegroundColorAttributeName value:NSColor.VLClibraryLightTitleColor range:titleRange];
+        [title addAttribute:NSForegroundColorAttributeName
+                      value:NSColor.VLClibraryLightTitleColor
+                      range:titleRange];
 
         [self setAttributedAlternateTitle:title];
     }

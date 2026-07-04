@@ -26,8 +26,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface VLCLibraryRatingIndicator : NSLevelIndicator
 
-@property (nonatomic) BOOL            isHovering;
-@property (nonatomic) CGFloat         originalValue;
+@property (nonatomic) BOOL isHovering;
+@property (nonatomic) CGFloat originalValue;
 @property (nonatomic) NSTrackingArea *trackingArea;
 
 @end

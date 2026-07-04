@@ -66,18 +66,19 @@
     [self setupPlayQueueTitle];
     [self setupCounterLabel];
 
-    _topInternalConstraint =
-        [self.viewSelector.topAnchor constraintEqualToAnchor:self.view.topAnchor
-                                                    constant:VLCLibraryUIUnits.libraryWindowContentSafeTopInset + VLCLibraryUIUnits.smallSpacing];
+    _topInternalConstraint = [self.viewSelector.topAnchor
+        constraintEqualToAnchor:self.view.topAnchor
+                       constant:VLCLibraryUIUnits.libraryWindowContentSafeTopInset
+                       + VLCLibraryUIUnits.smallSpacing];
 
     self.mainVideoModeEnabled = NO;
 
-    _playQueueSidebarViewController =
-        [[VLCLibraryWindowPlayQueueSidebarViewController alloc] initWithLibraryWindow:self.libraryWindow];
-    _chaptersSidebarViewController =
-        [[VLCLibraryWindowChaptersSidebarViewController alloc] initWithLibraryWindow:self.libraryWindow];
-    _titlesSidebarViewController =
-        [[VLCLibraryWindowTitlesSidebarViewController alloc] initWithLibraryWindow:self.libraryWindow];
+    _playQueueSidebarViewController = [[VLCLibraryWindowPlayQueueSidebarViewController alloc]
+        initWithLibraryWindow:self.libraryWindow];
+    _chaptersSidebarViewController = [[VLCLibraryWindowChaptersSidebarViewController alloc]
+        initWithLibraryWindow:self.libraryWindow];
+    _titlesSidebarViewController = [[VLCLibraryWindowTitlesSidebarViewController alloc]
+        initWithLibraryWindow:self.libraryWindow];
 
     self.targetView.translatesAutoresizingMaskIntoConstraints = NO;
 
@@ -87,7 +88,7 @@
     [self updateViewSelectorState];
     [self viewSelectorAction:self.viewSelector];
 
-    NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
     [notificationCenter addObserver:self
                            selector:@selector(titleListChanged:)
                                name:VLCPlayerTitleListChanged
@@ -106,29 +107,31 @@
 
     [self.view addSubview:self.playQueueHeaderLabel];
 
-    _playQueueHeaderTopConstraint = 
-        [self.playQueueHeaderLabel.topAnchor constraintEqualToAnchor:self.view.topAnchor
-                                                            constant:VLCLibraryUIUnits.libraryWindowContentSafeTopInset + VLCLibraryUIUnits.smallSpacing];
+    _playQueueHeaderTopConstraint = [self.playQueueHeaderLabel.topAnchor
+        constraintEqualToAnchor:self.view.topAnchor
+                       constant:VLCLibraryUIUnits.libraryWindowContentSafeTopInset
+                       + VLCLibraryUIUnits.smallSpacing];
     [NSLayoutConstraint activateConstraints:@[
         self.playQueueHeaderTopConstraint,
-        [self.playQueueHeaderLabel.bottomAnchor constraintEqualToAnchor:self.targetView.topAnchor
-                                                               constant:-VLCLibraryUIUnits.smallSpacing],
-        [self.playQueueHeaderLabel.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor
-                                                                constant:VLCLibraryUIUnits.largeSpacing] 
+        [self.playQueueHeaderLabel.bottomAnchor
+            constraintEqualToAnchor:self.targetView.topAnchor
+                           constant:-VLCLibraryUIUnits.smallSpacing],
+        [self.playQueueHeaderLabel.leadingAnchor
+            constraintEqualToAnchor:self.view.leadingAnchor
+                           constant:VLCLibraryUIUnits.largeSpacing]
     ]];
 }
 
 - (void)setupViewSelectorSegments
 {
     self.viewSelector.segmentCount = 1;
-    [self.viewSelector setLabel:self.playQueueSidebarViewController.title
-                     forSegment:0];
+    [self.viewSelector setLabel:self.playQueueSidebarViewController.title forSegment:0];
 
-    VLCPlayQueueController * const playQueueController = VLCMain.sharedInstance.playQueueController;
-    VLCPlayerController * const playerController = playQueueController.playerController;
+    VLCPlayQueueController *const playQueueController = VLCMain.sharedInstance.playQueueController;
+    VLCPlayerController *const playerController = playQueueController.playerController;
 
     if (playerController.numberOfTitlesOfCurrentMedia > 0) {
-        self.viewSelector.segmentCount++; 
+        self.viewSelector.segmentCount++;
         [self.viewSelector setLabel:self.titlesSidebarViewController.title
                          forSegment:self.viewSelector.segmentCount - 1];
     }
@@ -144,19 +147,21 @@
     _counterLabel = [[VLCRoundedCornerTextField alloc] init];
     self.counterLabel.useStrongRounding = YES;
     self.counterLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.counterLabel setContentCompressionResistancePriority:NSLayoutPriorityRequired
-                                                 forOrientation:NSLayoutConstraintOrientationHorizontal];
-    [self.counterLabel setContentCompressionResistancePriority:NSLayoutPriorityRequired
-                                                 forOrientation:NSLayoutConstraintOrientationVertical];
+    [self.counterLabel
+        setContentCompressionResistancePriority:NSLayoutPriorityRequired
+                                 forOrientation:NSLayoutConstraintOrientationHorizontal];
+    [self.counterLabel
+        setContentCompressionResistancePriority:NSLayoutPriorityRequired
+                                 forOrientation:NSLayoutConstraintOrientationVertical];
 
     [self.view addSubview:self.counterLabel];
 
-    _counterLabelInHeaderConstraint = 
-        [self.counterLabel.centerYAnchor constraintEqualToAnchor:self.playQueueHeaderLabel.centerYAnchor];
+    _counterLabelInHeaderConstraint = [self.counterLabel.centerYAnchor
+        constraintEqualToAnchor:self.playQueueHeaderLabel.centerYAnchor];
     _counterLabelInChildViewConstraint =
         [self.counterLabel.topAnchor constraintEqualToAnchor:self.targetView.topAnchor
                                                     constant:VLCLibraryUIUnits.smallSpacing];
-    
+
     [NSLayoutConstraint activateConstraints:@[
         self.counterLabelInHeaderConstraint,
         [self.counterLabel.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor
@@ -185,8 +190,9 @@
     self.playQueueHeaderLabel.hidden = showSelector;
     const NSLayoutPriority playQueueCompressionPriority =
         showSelector ? NSLayoutPriorityRequired : NSLayoutPriorityDefaultHigh;
-    [self.playQueueHeaderLabel setContentCompressionResistancePriority:playQueueCompressionPriority
-                                                        forOrientation:NSLayoutConstraintOrientationVertical];
+    [self.playQueueHeaderLabel
+        setContentCompressionResistancePriority:playQueueCompressionPriority
+                                 forOrientation:NSLayoutConstraintOrientationVertical];
     self.playQueueHeaderTopConstraint.active = !showSelector;
 
     if (showSelector) {
@@ -197,7 +203,8 @@
         self.counterLabelInChildViewConstraint.active = NO;
     }
 
-    NSString * const selectedSegmentLabel = [self.viewSelector labelForSegment:self.viewSelector.selectedSegment];
+    NSString *const selectedSegmentLabel =
+        [self.viewSelector labelForSegment:self.viewSelector.selectedSegment];
     BOOL selectedSegmentValid = NO;
     for (NSInteger i = 0; i < self.viewSelector.segmentCount; i++) {
         if ([[self.viewSelector labelForSegment:i] isEqualToString:selectedSegmentLabel]) {
@@ -216,7 +223,7 @@
 {
     NSParameterAssert(sender == self.viewSelector);
     const NSInteger selectedSegment = self.viewSelector.selectedSegment;
-    NSString * const selectedSegmentLabel = [self.viewSelector labelForSegment:selectedSegment];
+    NSString *const selectedSegmentLabel = [self.viewSelector labelForSegment:selectedSegment];
     if ([selectedSegmentLabel isEqualToString:self.playQueueSidebarViewController.title]) {
         [self setChildViewController:self.playQueueSidebarViewController];
     } else if ([selectedSegmentLabel isEqualToString:self.titlesSidebarViewController.title]) {
@@ -228,11 +235,12 @@
     }
 }
 
-- (void)setChildViewController:(NSViewController<VLCLibraryWindowSidebarChildViewController> *)viewController
+- (void)setChildViewController:
+    (NSViewController<VLCLibraryWindowSidebarChildViewController> *)viewController
 {
     self.currentChildVc.counterLabel = nil; // Stop old vc manipulating the counter label
     self.currentChildVc = viewController;
-    
+
     self.counterLabel.hidden = !viewController.supportsItemCount;
     if (viewController.supportsItemCount) {
         viewController.counterLabel = self.counterLabel;
@@ -240,8 +248,8 @@
 
     self.playQueueHeaderLabel.stringValue = viewController.title;
 
-    NSView * const view = viewController.view;
-    self.targetView.subviews = @[view];
+    NSView *const view = viewController.view;
+    self.targetView.subviews = @[ view ];
     view.translatesAutoresizingMaskIntoConstraints = NO;
     [view applyConstraintsToFillSuperview];
 }

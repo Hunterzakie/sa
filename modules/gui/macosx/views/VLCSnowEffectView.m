@@ -78,7 +78,7 @@
     self.wantsLayer = YES;
     self.layer.backgroundColor = NSColor.clearColor.CGColor;
 
-    VLCMain * const main = VLCMain.sharedInstance;
+    VLCMain *const main = VLCMain.sharedInstance;
     const id<MTLDevice> metalDevice = main.metalDevice;
     NSParameterAssert(metalDevice != nil);
     NSParameterAssert(main.metalLibrary != nil);
@@ -99,7 +99,7 @@
     _fragmentFunction = [main.metalLibrary newFunctionWithName:@"snowFragmentShader"];
     NSParameterAssert(self.fragmentFunction != nil);
 
-    MTLRenderPipelineDescriptor * const pipelineDescriptor =
+    MTLRenderPipelineDescriptor *const pipelineDescriptor =
         [[MTLRenderPipelineDescriptor alloc] init];
     pipelineDescriptor.label = @"Snow Pipeline";
     pipelineDescriptor.vertexFunction = self.vertexFunction;
@@ -114,8 +114,8 @@
     pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOne;
 
     NSError *error;
-    _pipelineState =
-        [metalDevice newRenderPipelineStateWithDescriptor:pipelineDescriptor error:&error];
+    _pipelineState = [metalDevice newRenderPipelineStateWithDescriptor:pipelineDescriptor
+                                                                 error:&error];
     NSParameterAssert(error == nil);
     NSParameterAssert(pipelineDescriptor != nil);
 
@@ -125,13 +125,13 @@
     // Format: {x, y, u, v} - position and texture coordinate
     static const VertexIn quadVertices[] = {
         // Triangle 1 (positions from -0.5 to 0.5 for a unit quad centered at origin)
-        { .position = {-0.5f,  0.5f} }, // Top-left
-        { .position = {-0.5f, -0.5f} }, // Bottom-left
-        { .position = { 0.5f, -0.5f} }, // Bottom-right
+        { .position = { -0.5f, 0.5f } }, // Top-left
+        { .position = { -0.5f, -0.5f } }, // Bottom-left
+        { .position = { 0.5f, -0.5f } }, // Bottom-right
         // Triangle 2
-        { .position = { 0.5f, -0.5f} }, // Bottom-right
-        { .position = { 0.5f,  0.5f} }, // Top-right
-        { .position = {-0.5f,  0.5f} }  // Top-left
+        { .position = { 0.5f, -0.5f } }, // Bottom-right
+        { .position = { 0.5f, 0.5f } }, // Top-right
+        { .position = { -0.5f, 0.5f } } // Top-left
     };
     _vertexBuffer = [metalDevice newBufferWithBytes:quadVertices
                                              length:sizeof(quadVertices)
@@ -142,13 +142,13 @@
     // Create a buffer large enough for your Uniforms struct
     // The struct definition would typically be in a shared header (.h)
     // included by both Objective-C and your .metal file.
-    _uniformBuffer = [metalDevice newBufferWithLength:sizeof(Uniforms) // Assumes Uniforms struct exists
-                                              options:MTLResourceStorageModeShared];
+    _uniformBuffer =
+        [metalDevice newBufferWithLength:sizeof(Uniforms) // Assumes Uniforms struct exists
+                                 options:MTLResourceStorageModeShared];
     NSParameterAssert(self.uniformBuffer != nil);
 
     _snowflakeCount = 200; // Or however many you want
-    Snowflake * const snowflakesArray =
-        (Snowflake *)malloc(sizeof(Snowflake) * self.snowflakeCount);
+    Snowflake *const snowflakesArray = (Snowflake *)malloc(sizeof(Snowflake) * self.snowflakeCount);
     for (NSUInteger i = 0; i < self.snowflakeCount; ++i) {
         Snowflake flake;
         flake.initialPosition.x = ((float)arc4random_uniform(2000) / 1000.0f) - 1.0f;
@@ -177,8 +177,8 @@
 
 - (void)mtkView:(MTKView *)view drawableSizeWillChange:(CGSize)size
 {
-    Uniforms * const uniforms = (Uniforms *)self.uniformBuffer.contents;
-    uniforms->resolution = (vector_float2){(float)size.width, (float)size.height};
+    Uniforms *const uniforms = (Uniforms *)self.uniformBuffer.contents;
+    uniforms->resolution = (vector_float2) { (float)size.width, (float)size.height };
 }
 
 - (void)drawInMTKView:(MTKView *)view
@@ -188,7 +188,7 @@
     commandBuffer.label = @"Snow Frame Command Buffer";
 
     // 2. Get Render Pass Descriptor (specifies the drawing target)
-    MTLRenderPassDescriptor * const renderPassDescriptor = view.currentRenderPassDescriptor;
+    MTLRenderPassDescriptor *const renderPassDescriptor = view.currentRenderPassDescriptor;
     if (!renderPassDescriptor) {
         NSLog(@"Failed to get render pass descriptor");
         return; // Skip frame if view isn't ready
@@ -203,9 +203,10 @@
     [encoder setRenderPipelineState:self.pipelineState];
 
     // 5. Update and Set Uniforms
-    Uniforms * const uniforms = (Uniforms *)[self.uniformBuffer contents];
+    Uniforms *const uniforms = (Uniforms *)[self.uniformBuffer contents];
     uniforms->time = (float)(CACurrentMediaTime() - _startTime); // Calculate elapsed time
-    uniforms->resolution = (vector_float2){(float)view.drawableSize.width, (float)view.drawableSize.height};
+    uniforms->resolution =
+        (vector_float2) { (float)view.drawableSize.width, (float)view.drawableSize.height };
 
     // Set buffers in indeces matching those defined in the shader
     [encoder setVertexBuffer:self.uniformBuffer offset:0 atIndex:2];

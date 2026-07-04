@@ -55,11 +55,9 @@
     [super mouseMoved:event];
 
     if (self.isHovering) {
-        NSPoint locationInView = [self convertPoint:event.locationInWindow
-                                           fromView:nil];
+        NSPoint locationInView = [self convertPoint:event.locationInWindow fromView:nil];
 
-        CGFloat hoverValue =
-            (locationInView.x / self.bounds.size.width) * self.maxValue;
+        CGFloat hoverValue = (locationInView.x / self.bounds.size.width) * self.maxValue;
         hoverValue = ceil(hoverValue);
         hoverValue = VLC_CLIP(hoverValue, 0, self.maxValue);
 
@@ -91,12 +89,12 @@
         [self removeTrackingArea:self.trackingArea];
     }
 
-    self.trackingArea = [[NSTrackingArea alloc]
-        initWithRect:self.bounds
-             options:NSTrackingActiveInKeyWindow |
-                     NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved
-               owner:self
-            userInfo:nil];
+    self.trackingArea =
+        [[NSTrackingArea alloc] initWithRect:self.bounds
+                                     options:NSTrackingActiveInKeyWindow
+                                     | NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved
+                                       owner:self
+                                    userInfo:nil];
     [self addTrackingArea:self.trackingArea];
 }
 

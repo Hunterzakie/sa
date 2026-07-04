@@ -65,12 +65,14 @@
     self.detailTextField.stringValue = actualItem.primaryDetailString;
 
     __weak typeof(self) weakSelf = self;
-    [VLCLibraryImageCache thumbnailForLibraryItem:actualItem withCompletion:^(NSImage * const image) {
-        if (!weakSelf || weakSelf.representedItem.item != actualItem) {
-            return;
-        }
-        weakSelf.largeImageView.image = image;
-    }];
+    [VLCLibraryImageCache
+        thumbnailForLibraryItem:actualItem
+                 withCompletion:^(NSImage *const image) {
+                     if (!weakSelf || weakSelf.representedItem.item != actualItem) {
+                         return;
+                     }
+                     weakSelf.largeImageView.image = image;
+                 }];
 }
 
 - (void)setRepresentedItem:(VLCLibraryRepresentedItem *)representedItem
@@ -86,8 +88,8 @@
 
 - (VLCMediaLibraryMediaItem *)randomItem
 {
-    VLCLibraryModel * const libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
-    NSArray * const videos = libraryModel.listOfVideoMedia;
+    VLCLibraryModel *const libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
+    NSArray *const videos = libraryModel.listOfVideoMedia;
     const NSInteger videoCount = videos.count;
     if (videoCount == 0) {
         return nil;
@@ -98,12 +100,15 @@
 
 - (VLCMediaLibraryMediaItem *)latestPartiallyPlayedItem
 {
-    VLCLibraryModel * const libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
-    NSArray<VLCMediaLibraryMediaItem *> * const recentMedia = libraryModel.listOfRecentMedia;
-    const NSUInteger firstPartialPlayItemIdx = [recentMedia indexOfObjectPassingTest:^BOOL(VLCMediaLibraryMediaItem *testedItem, NSUInteger __unused idx, BOOL * const __unused stop) {
-        const float playProgress = testedItem.progress;
-        return playProgress > 0 && playProgress < 100;
-    }];
+    VLCLibraryModel *const libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
+    NSArray<VLCMediaLibraryMediaItem *> *const recentMedia = libraryModel.listOfRecentMedia;
+    const NSUInteger firstPartialPlayItemIdx =
+        [recentMedia indexOfObjectPassingTest:^BOOL(VLCMediaLibraryMediaItem *testedItem,
+                                                    NSUInteger __unused idx,
+                                                    BOOL *const __unused stop) {
+            const float playProgress = testedItem.progress;
+            return playProgress > 0 && playProgress < 100;
+        }];
 
     if (firstPartialPlayItemIdx == NSNotFound) {
         return nil;
@@ -114,11 +119,15 @@
 
 - (void)setOptimalRepresentedItem
 {
-    VLCMediaLibraryMediaItem * const latestPartialPlayItem = self.latestPartiallyPlayedItem;
+    VLCMediaLibraryMediaItem *const latestPartialPlayItem = self.latestPartiallyPlayedItem;
     if (latestPartialPlayItem != nil) {
         const BOOL isVideo = latestPartialPlayItem.mediaType == VLC_ML_MEDIA_TYPE_VIDEO;
-        const VLCMediaLibraryParentGroupType parentType = isVideo ? VLCMediaLibraryParentGroupTypeRecentVideos : VLCMediaLibraryParentGroupTypeAudioLibrary;
-        VLCLibraryRepresentedItem * const representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:latestPartialPlayItem parentType:parentType];
+        const VLCMediaLibraryParentGroupType parentType = isVideo
+            ? VLCMediaLibraryParentGroupTypeRecentVideos
+            : VLCMediaLibraryParentGroupTypeAudioLibrary;
+        VLCLibraryRepresentedItem *const representedItem =
+            [[VLCLibraryRepresentedItem alloc] initWithItem:latestPartialPlayItem
+                                                 parentType:parentType];
 
         self.representedItem = representedItem;
         self.explanationTextField.stringValue = _NS("Last watched");
@@ -126,11 +135,14 @@
         return;
     }
 
-    VLCMediaLibraryMediaItem * const randomItem = self.randomItem;
+    VLCMediaLibraryMediaItem *const randomItem = self.randomItem;
     if (randomItem != nil) {
         const BOOL isVideo = randomItem.mediaType == VLC_ML_MEDIA_TYPE_VIDEO;
-        const VLCMediaLibraryParentGroupType parentType = isVideo ? VLCMediaLibraryParentGroupTypeVideoLibrary : VLCMediaLibraryParentGroupTypeAudioLibrary;
-        VLCLibraryRepresentedItem * const representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:randomItem parentType:parentType];
+        const VLCMediaLibraryParentGroupType parentType = isVideo
+            ? VLCMediaLibraryParentGroupTypeVideoLibrary
+            : VLCMediaLibraryParentGroupTypeAudioLibrary;
+        VLCLibraryRepresentedItem *const representedItem =
+            [[VLCLibraryRepresentedItem alloc] initWithItem:randomItem parentType:parentType];
 
         self.representedItem = representedItem;
         self.explanationTextField.stringValue = _NS("From your library");
@@ -149,7 +161,7 @@
 
 - (void)connectForNewVideo
 {
-    NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
     [notificationCenter addObserver:self
                            selector:@selector(newVideosAvailable:)
                                name:VLCLibraryModelVideoMediaListReset
@@ -166,7 +178,7 @@
 
 - (void)disconnectForNewVideo
 {
-    NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
     [notificationCenter removeObserver:self name:VLCLibraryModelVideoMediaListReset object:nil];
     [notificationCenter removeObserver:self name:VLCLibraryModelRecentsMediaListReset object:nil];
     [notificationCenter removeObserver:self name:VLCLibraryModelAllCachesDropped object:nil];
@@ -180,7 +192,7 @@
 
 - (void)connectItemUpdaters
 {
-    NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
     [notificationCenter addObserver:self
                            selector:@selector(itemUpdated:)
                                name:VLCLibraryModelVideoMediaItemUpdated
@@ -193,7 +205,7 @@
 
 - (void)itemUpdated:(NSNotification *)notification
 {
-    VLCMediaLibraryMediaItem * const mediaItem = notification.object;
+    VLCMediaLibraryMediaItem *const mediaItem = notification.object;
     NSAssert(mediaItem != nil, @"Notification should contain a media item!");
     if (mediaItem.libraryID != self.representedItem.item.libraryID) {
         return;
@@ -203,7 +215,7 @@
         return;
     }
 
-    VLCLibraryRepresentedItem * const item =
+    VLCLibraryRepresentedItem *const item =
         [[VLCLibraryRepresentedItem alloc] initWithItem:mediaItem
                                              parentType:self.representedItem.parentType];
     self.representedItem = item;
@@ -211,7 +223,7 @@
 
 - (void)itemDeleted:(NSNotification *)notification
 {
-    VLCMediaLibraryMediaItem * const mediaItem = notification.object;
+    VLCMediaLibraryMediaItem *const mediaItem = notification.object;
     NSAssert(mediaItem != nil, @"Notification should contain a media item!");
     if (mediaItem.libraryID != self.representedItem.item.libraryID) {
         return;
@@ -226,7 +238,7 @@
         _menuController = [[VLCLibraryMenuController alloc] init];
     }
 
-    self.menuController.representedItems = @[self.representedItem];
+    self.menuController.representedItems = @[ self.representedItem ];
     [self.menuController popupMenuWithEvent:event forView:self];
 }
 

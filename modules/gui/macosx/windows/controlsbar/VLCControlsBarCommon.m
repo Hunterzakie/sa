@@ -145,31 +145,38 @@
 
     if (@available(macOS 11.0, *)) {
         if (@available(macOS 26.0, *)) {
-            _playImage = [NSImage imageWithSystemSymbolName:@"play.fill" accessibilityDescription:_NS("Play")];
-            _pressedPlayImage = [NSImage imageWithSystemSymbolName:@"play.fill" accessibilityDescription:_NS("Play")];
-            _pauseImage = [NSImage imageWithSystemSymbolName:@"pause.fill" accessibilityDescription:_NS("Pause")];
-            _pressedPauseImage = [NSImage imageWithSystemSymbolName:@"pause.fill" accessibilityDescription:_NS("Pause")];
+            _playImage = [NSImage imageWithSystemSymbolName:@"play.fill"
+                                   accessibilityDescription:_NS("Play")];
+            _pressedPlayImage = [NSImage imageWithSystemSymbolName:@"play.fill"
+                                          accessibilityDescription:_NS("Play")];
+            _pauseImage = [NSImage imageWithSystemSymbolName:@"pause.fill"
+                                    accessibilityDescription:_NS("Pause")];
+            _pressedPauseImage = [NSImage imageWithSystemSymbolName:@"pause.fill"
+                                           accessibilityDescription:_NS("Pause")];
         } else {
             _playImage = [NSImage imageWithSystemSymbolName:@"play.circle.fill"
-                                accessibilityDescription:_NS("Play")];
+                                   accessibilityDescription:_NS("Play")];
             _pressedPlayImage = [NSImage imageWithSystemSymbolName:@"play.circle.fill"
-                                        accessibilityDescription:_NS("Play")];
+                                          accessibilityDescription:_NS("Play")];
             _pauseImage = [NSImage imageWithSystemSymbolName:@"pause.circle.fill"
                                     accessibilityDescription:_NS("Pause")];
             _pressedPauseImage = [NSImage imageWithSystemSymbolName:@"pause.circle.fill"
-                                        accessibilityDescription:_NS("Pause")];
+                                           accessibilityDescription:_NS("Pause")];
         }
-        _backwardImage = [NSImage imageWithSystemSymbolName:@"backward.fill" accessibilityDescription:_NS("Previous")];
-        _forwardImage = [NSImage imageWithSystemSymbolName:@"forward.fill" accessibilityDescription:_NS("Next")];
-        _fullscreenImage = [NSImage imageWithSystemSymbolName:@"arrow.up.backward.and.arrow.down.forward"
-                                     accessibilityDescription:_NS("Fullscreen")];
+        _backwardImage = [NSImage imageWithSystemSymbolName:@"backward.fill"
+                                   accessibilityDescription:_NS("Previous")];
+        _forwardImage = [NSImage imageWithSystemSymbolName:@"forward.fill"
+                                  accessibilityDescription:_NS("Next")];
+        _fullscreenImage =
+            [NSImage imageWithSystemSymbolName:@"arrow.up.backward.and.arrow.down.forward"
+                      accessibilityDescription:_NS("Fullscreen")];
         _mutedVolumeImage = [NSImage imageWithSystemSymbolName:@"speaker.slash.fill"
                                       accessibilityDescription:_NS("Muted")];
         _unmutedVolumeImage = [NSImage imageWithSystemSymbolName:@"speaker.wave.3.fill"
                                         accessibilityDescription:_NS("Unmuted")];
 
         const int64_t shortJumpSize = var_InheritInteger(getIntf(), "short-jump-size");
-        NSString * const shortJumpSizeString = [NSString stringWithFormat:@"%lli", shortJumpSize];
+        NSString *const shortJumpSizeString = [NSString stringWithFormat:@"%lli", shortJumpSize];
         switch (shortJumpSize) {
             case 90:
             case 75:
@@ -178,12 +185,12 @@
             case 30:
             case 15:
             case 10:
-            case 5:
-            {
-                NSString * const jumpForwardSymbolName =
-                    [NSString stringWithFormat:@"%@.arrow.trianglehead.clockwise",shortJumpSizeString];
-                NSString * const jumpBackwardSymbolName =
-                    [NSString stringWithFormat:@"%@.arrow.trianglehead.counterclockwise", shortJumpSizeString];
+            case 5: {
+                NSString *const jumpForwardSymbolName = [NSString
+                    stringWithFormat:@"%@.arrow.trianglehead.clockwise", shortJumpSizeString];
+                NSString *const jumpBackwardSymbolName =
+                    [NSString stringWithFormat:@"%@.arrow.trianglehead.counterclockwise",
+                                               shortJumpSizeString];
                 self.jumpForwardButton.image =
                     [NSImage imageWithSystemSymbolName:jumpForwardSymbolName
                               accessibilityDescription:_NS("Jump forward")];
@@ -302,16 +309,12 @@
 {
     if (!just_triggered_previous) {
         just_triggered_previous = YES;
-        [self performSelector:@selector(resetPreviousButton)
-                   withObject: NULL
-                   afterDelay:0.40];
+        [self performSelector:@selector(resetPreviousButton) withObject:NULL afterDelay:0.40];
     } else if (([NSDate timeIntervalSinceReferenceDate] - last_fwd_event) > 0.16) {
         // we just skipped 4 "continuous" events, otherwise we are too fast
         [_playerController jumpBackwardExtraShort];
         last_bwd_event = [NSDate timeIntervalSinceReferenceDate];
-        [self performSelector:@selector(resetBackwardSkip)
-                   withObject: NULL
-                   afterDelay:0.40];
+        [self performSelector:@selector(resetBackwardSkip) withObject:NULL afterDelay:0.40];
     }
 }
 
@@ -335,16 +338,12 @@
 {
     if (!just_triggered_next) {
         just_triggered_next = YES;
-        [self performSelector:@selector(resetNextButton)
-                   withObject: NULL
-                   afterDelay:0.40];
+        [self performSelector:@selector(resetNextButton) withObject:NULL afterDelay:0.40];
     } else if (([NSDate timeIntervalSinceReferenceDate] - last_fwd_event) > 0.16) {
         // we just skipped 4 "continuous" events, otherwise we are too fast
         [_playerController jumpForwardExtraShort];
         last_fwd_event = [NSDate timeIntervalSinceReferenceDate];
-        [self performSelector:@selector(resetForwardSkip)
-                   withObject: NULL
-                   afterDelay:0.40];
+        [self performSelector:@selector(resetForwardSkip) withObject:NULL afterDelay:0.40];
     }
 }
 
@@ -365,16 +364,14 @@
     }
 
     switch (NSApp.currentEvent.type) {
-        case NSEventTypeLeftMouseDown:
-        {
+        case NSEventTypeLeftMouseDown: {
             _isTimeSliderBeingDragged = YES;
             const float newPosition = [sender floatValue];
             [_playerController setPositionFast:newPosition];
             break;
         }
         case NSEventTypeLeftMouseDragged:
-        case NSEventTypeScrollWheel:
-        {
+        case NSEventTypeScrollWheel: {
             const float newPosition = [sender floatValue];
             [_playerController setPositionFast:newPosition];
             self.timeSlider.floatValue = newPosition;
@@ -410,7 +407,7 @@
 #pragma mark -
 #pragma mark Updaters
 
-- (void)update 
+- (void)update
 {
     [self updateTimeSlider:nil];
     [self updateVolumeSlider:nil];
@@ -426,14 +423,16 @@
         return;
     }
 
-    VLCInputItem * const inputItem = _playerController.currentMedia;
+    VLCInputItem *const inputItem = _playerController.currentMedia;
 
     const BOOL validInputItem = inputItem != nil;
     const vlc_tick_t duration = validInputItem ? inputItem.duration : -1;
-    NSString * const timeString =
-        [NSString stringWithDuration:duration currentTime:_playerController.time negative:NO];
-    NSString * const remainingTime =
-        [NSString stringWithDuration:duration currentTime:_playerController.time negative:YES];
+    NSString *const timeString = [NSString stringWithDuration:duration
+                                                  currentTime:_playerController.time
+                                                     negative:NO];
+    NSString *const remainingTime = [NSString stringWithDuration:duration
+                                                     currentTime:_playerController.time
+                                                        negative:YES];
     const BOOL buffering = _playerController.playerState == VLC_PLAYER_STATE_STARTED;
 
     self.timeSlider.hidden = !validInputItem;
@@ -457,7 +456,7 @@
         [NSString stringWithFormat:_NS("Volume: %i %%"), (int)(volume * 100.)];
 }
 
-- (void)updateMuteVolumeButton:(NSNotification*)aNotification
+- (void)updateMuteVolumeButton:(NSNotification *)aNotification
 {
     [self updateMuteVolumeButtonImage];
 }
@@ -483,26 +482,26 @@
 
     self.timeSlider.enabled = seekable;
     self.forwardButton.enabled = seekable || _playQueueController.hasNextPlayQueueItem || chapters;
-    self.backwardButton.enabled = seekable || _playQueueController.hasPreviousPlayQueueItem || chapters;
+    self.backwardButton.enabled =
+        seekable || _playQueueController.hasPreviousPlayQueueItem || chapters;
 
     [self updateCurrentItemDisplayControls:notification];
 }
 
 - (void)updateCurrentItemDisplayControls:(NSNotification *)notification
 {
-    VLCInputItem * const inputItem = _playerController.currentMedia;
-    VLCMediaLibraryMediaItem * const mediaItem =
+    VLCInputItem *const inputItem = _playerController.currentMedia;
+    VLCMediaLibraryMediaItem *const mediaItem =
         [VLCMediaLibraryMediaItem mediaItemForURL:_playerController.URLOfCurrentMediaItem];
 
     self.playingItemDisplayField.stringValue = inputItem.name ?: _NS("No current item");
-    self.detailLabel.hidden =
-        mediaItem == nil ||
+    self.detailLabel.hidden = mediaItem == nil ||
         [mediaItem.primaryDetailString isEqualToString:@""] ||
         [mediaItem.primaryDetailString isEqualToString:mediaItem.durationString];
     self.detailLabel.stringValue = mediaItem.primaryDetailString ?: @"";
 
-    NSURL * const artworkURL = inputItem.artworkURL;
-    NSImage * const placeholderImage = NSImage.VLCNoArtImage;
+    NSURL *const artworkURL = inputItem.artworkURL;
+    NSImage *const placeholderImage = NSImage.VLCNoArtImage;
     if (artworkURL) {
         [self.artworkImageView setImageURL:inputItem.artworkURL placeholderImage:placeholderImage];
     } else {

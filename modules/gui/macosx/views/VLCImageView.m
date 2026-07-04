@@ -28,7 +28,7 @@
 #import "extensions/NSView+VLCAdditions.h"
 #import "library/VLCLibraryUIUnits.h"
 
-@interface VLCImageView()
+@interface VLCImageView ()
 {
     NSURL *_currentArtworkURL;
 }
@@ -65,7 +65,9 @@
 
 - (void)updateLayer
 {
-    self.layer.borderColor = self.shouldShowDarkAppearance ? NSColor.VLCDarkSubtleBorderColor.CGColor : NSColor.VLCLightSubtleBorderColor.CGColor;
+    self.layer.borderColor = self.shouldShowDarkAppearance
+        ? NSColor.VLCDarkSubtleBorderColor.CGColor
+        : NSColor.VLCLightSubtleBorderColor.CGColor;
     [self updateLayerImageCornerCropping];
     [self updateLayerContentGravity];
     [self updateLayerImage];
@@ -165,9 +167,9 @@
     [self updateLayerContentGravity];
 }
 
-- (void)setImageURL:(NSURL * _Nonnull)artworkURL placeholderImage:(NSImage * _Nullable)image
+- (void)setImageURL:(NSURL *_Nonnull)artworkURL placeholderImage:(NSImage *_Nullable)image
 {
-    if([_currentArtworkURL isEqual:artworkURL]) {
+    if ([_currentArtworkURL isEqual:artworkURL]) {
         return;
     }
 
@@ -175,10 +177,8 @@
     self.image = image;
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^{
-        NSImage * const downloadedImage = [[NSImage alloc] initWithContentsOfURL:artworkURL];
-        dispatch_async(dispatch_get_main_queue(), ^{
-            self.image = downloadedImage;
-        });
+        NSImage *const downloadedImage = [[NSImage alloc] initWithContentsOfURL:artworkURL];
+        dispatch_async(dispatch_get_main_queue(), ^{ self.image = downloadedImage; });
     });
 }
 

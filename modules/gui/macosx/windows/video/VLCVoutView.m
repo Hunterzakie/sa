@@ -45,7 +45,7 @@
 /*****************************************************************************
  * VLCVoutView implementation
  *****************************************************************************/
-@interface VLCVoutView()
+@interface VLCVoutView ()
 {
     NSTimer *p_scrollTimer;
     NSInteger i_lastScrollWheelDirection;
@@ -83,7 +83,7 @@
     [self unregisterDraggedTypes];
 }
 
--(id)initWithFrame:(NSRect)frameRect
+- (id)initWithFrame:(NSRect)frameRect
 {
     self = [super initWithFrame:frameRect];
     if (self) {
@@ -112,7 +112,7 @@
 - (void)layout
 {
     NSRect bounds = [self convertRectToBacking:self.bounds];
-    // dispatch the event async to prevent potential deadlock 
+    // dispatch the event async to prevent potential deadlock
     // with video output's RenderPicture's display lock
     dispatch_async(_eventQueue, ^{
         if (self->_wnd == NULL) {
@@ -136,7 +136,7 @@
 - (void)keyDown:(NSEvent *)o_event
 {
     if (![_hotkeysController handleVideoOutputKeyDown:o_event forVideoOutput:p_vout]) {
-        [super keyDown: o_event];
+        [super keyDown:o_event];
     }
 }
 
@@ -145,24 +145,25 @@
     return [_hotkeysController performKeyEquivalent:o_event];
 }
 
-- (void)updateTrackingAreas {
+- (void)updateTrackingAreas
+{
     if (_trackingArea) {
         [self removeTrackingArea:_trackingArea];
     }
 
-    _trackingArea = [[NSTrackingArea alloc]
-        initWithRect:self.bounds
-        options: NSTrackingMouseMoved | NSTrackingActiveAlways
-        owner:self
-        userInfo:nil
-    ];
+    _trackingArea =
+        [[NSTrackingArea alloc] initWithRect:self.bounds
+                                     options:NSTrackingMouseMoved | NSTrackingActiveAlways
+                                       owner:self
+                                    userInfo:nil];
 
     [self addTrackingArea:_trackingArea];
 }
 
 - (void)mouseDown:(NSEvent *)o_event
 {
-    if (([o_event type] == NSEventTypeLeftMouseDown) && (! ([o_event modifierFlags] &  NSEventModifierFlagControl))) {
+    if (([o_event type] == NSEventTypeLeftMouseDown)
+        && (!([o_event modifierFlags] & NSEventModifierFlagControl))) {
         if (o_event.clickCount == 1) {
             vlc_mutex_lock(&_mutex);
             if (_wnd) {
@@ -172,13 +173,15 @@
         } else if (o_event.clickCount == 2) {
             [_playerController toggleFullscreen];
         }
-    } else if (([o_event type] == NSEventTypeRightMouseDown) ||
-               (([o_event type] == NSEventTypeLeftMouseDown) &&
-               ([o_event modifierFlags] &  NSEventModifierFlagControl))) {
-        [NSMenu popUpContextMenu: VLCMain.sharedInstance.mainMenu.voutMenu withEvent: o_event forView: self];
+    } else if (([o_event type] == NSEventTypeRightMouseDown)
+               || (([o_event type] == NSEventTypeLeftMouseDown)
+                   && ([o_event modifierFlags] & NSEventModifierFlagControl))) {
+        [NSMenu popUpContextMenu:VLCMain.sharedInstance.mainMenu.voutMenu
+                       withEvent:o_event
+                         forView:self];
     }
 
-    [super mouseDown: o_event];
+    [super mouseDown:o_event];
 }
 
 - (void)mouseUp:(NSEvent *)event
@@ -194,30 +197,36 @@
     [super mouseUp:event];
 }
 
-
 - (void)rightMouseDown:(NSEvent *)o_event
 {
-	    if ([o_event type] == NSEventTypeRightMouseDown)
-	        [NSMenu popUpContextMenu: VLCMain.sharedInstance.mainMenu.voutMenu withEvent: o_event forView: self];
+    if ([o_event type] == NSEventTypeRightMouseDown)
+        [NSMenu popUpContextMenu:VLCMain.sharedInstance.mainMenu.voutMenu
+                       withEvent:o_event
+                         forView:self];
 
-    [super mouseDown: o_event];
+    [super mouseDown:o_event];
 }
 
 - (void)rightMouseUp:(NSEvent *)o_event
 {
-	    if ([o_event type] == NSEventTypeRightMouseUp)
-	        [NSMenu popUpContextMenu: VLCMain.sharedInstance.mainMenu.voutMenu withEvent: o_event forView: self];
+    if ([o_event type] == NSEventTypeRightMouseUp)
+        [NSMenu popUpContextMenu:VLCMain.sharedInstance.mainMenu.voutMenu
+                       withEvent:o_event
+                         forView:self];
 
-    [super mouseUp: o_event];
+    [super mouseUp:o_event];
 }
 
 - (void)mouseMoved:(NSEvent *)event
 {
     const NSPoint pointInView = [self convertPoint:event.locationInWindow fromView:nil];
     if ([self mouse:pointInView inRect:self.bounds]) {
-        [NSNotificationCenter.defaultCenter postNotificationName:VLCVideoWindowShouldShowFullscreenController object:self];
+        [NSNotificationCenter.defaultCenter
+            postNotificationName:VLCVideoWindowShouldShowFullscreenController
+                          object:self];
         // Invert Y coordinates
-        const CGPoint pointInWindow = CGPointMake(pointInView.x, self.bounds.size.height - pointInView.y);
+        const CGPoint pointInWindow =
+            CGPointMake(pointInView.x, self.bounds.size.height - pointInView.y);
         const NSPoint pointInBacking = [self convertPointToBacking:pointInWindow];
 
         vlc_mutex_lock(&_mutex);
@@ -242,7 +251,7 @@
     const CGFloat f_yThreshold = 1.0;
     const CGFloat f_directionThreshold = 0.05;
 
-    intf_thread_t * p_intf = getIntf();
+    intf_thread_t *p_intf = getIntf();
     CGFloat f_deltaX = [theEvent deltaX];
     CGFloat f_deltaY = [theEvent deltaY];
 
@@ -299,7 +308,11 @@
         [p_scrollTimer invalidate];
         p_scrollTimer = nil;
     }
-    p_scrollTimer = [NSTimer scheduledTimerWithTimeInterval:0.4 target:self selector:@selector(resetScrollWheelDirection) userInfo:nil repeats:NO];
+    p_scrollTimer = [NSTimer scheduledTimerWithTimeInterval:0.4
+                                                     target:self
+                                                   selector:@selector(resetScrollWheelDirection)
+                                                   userInfo:nil
+                                                    repeats:NO];
 }
 
 #pragma mark -
@@ -371,13 +384,14 @@
 
 - (BOOL)resignFirstResponder
 {
-    /* while we need to be the first responder most of the time, we need to give up that status when toggling the playlist */
+    /* while we need to be the first responder most of the time, we need to give up that status when
+     * toggling the playlist */
     return YES;
 }
 
--(void)didAddSubview:(NSView *)subview
+- (void)didAddSubview:(NSView *)subview
 {
-    [[self window] makeFirstResponder: subview];
+    [[self window] makeFirstResponder:subview];
 }
 
 - (void)magnifyWithEvent:(NSEvent *)event
@@ -389,7 +403,8 @@
     CGFloat f_threshold = 0.3;
     BOOL b_fullscreen = [(VLCVideoWindowCommon *)[self window] fullscreen];
 
-    if ((f_cumulated_magnification > f_threshold && !b_fullscreen) || (f_cumulated_magnification < -f_threshold && b_fullscreen)) {
+    if ((f_cumulated_magnification > f_threshold && !b_fullscreen)
+        || (f_cumulated_magnification < -f_threshold && b_fullscreen)) {
         f_cumulated_magnification = 0.0;
         [_playerController toggleFullscreen];
     }

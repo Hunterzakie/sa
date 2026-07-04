@@ -39,8 +39,9 @@
 #import <vlc_common.h>
 #import <vlc_configuration.h>
 
-NSString * const VLCDisplayTrackNumberPlayQueueKey = @"VLCDisplayTrackNumberPlayQueueKey";
-NSString * const VLCDisplayTrackNumberPlayQueueSettingChanged = @"VLCDisplayTrackNumberPlayQueueSettingChanged";
+NSString *const VLCDisplayTrackNumberPlayQueueKey = @"VLCDisplayTrackNumberPlayQueueKey";
+NSString *const VLCDisplayTrackNumberPlayQueueSettingChanged =
+    @"VLCDisplayTrackNumberPlayQueueSettingChanged";
 
 @implementation VLCPlayQueueTableCellView
 
@@ -75,13 +76,13 @@ NSString * const VLCDisplayTrackNumberPlayQueueSettingChanged = @"VLCDisplayTrac
 
 - (void)updateFonts
 {
-    NSFont * const displayedFont = _representsCurrentPlayQueueItem ?
-        [NSFont boldSystemFontOfSize:NSFont.systemFontSize] :
-        [NSFont systemFontOfSize:NSFont.systemFontSize];
+    NSFont *const displayedFont = _representsCurrentPlayQueueItem
+        ? [NSFont boldSystemFontOfSize:NSFont.systemFontSize]
+        : [NSFont systemFontOfSize:NSFont.systemFontSize];
 
-    NSFont * const sublineDisplayedFont = _representsCurrentPlayQueueItem ?
-        [NSFont boldSystemFontOfSize:NSFont.smallSystemFontSize] :
-        [NSFont systemFontOfSize:NSFont.smallSystemFontSize];
+    NSFont *const sublineDisplayedFont = _representsCurrentPlayQueueItem
+        ? [NSFont boldSystemFontOfSize:NSFont.smallSystemFontSize]
+        : [NSFont systemFontOfSize:NSFont.smallSystemFontSize];
 
     self.mediaTitleTextField.font = displayedFont;
     self.secondaryMediaTitleTextField.font = displayedFont;
@@ -91,9 +92,8 @@ NSString * const VLCDisplayTrackNumberPlayQueueSettingChanged = @"VLCDisplayTrac
 
 - (void)updateColouredElements
 {
-    self.audioMediaTypeIndicator.textColor = _representsCurrentPlayQueueItem ?
-        NSColor.labelColor :
-        NSColor.secondaryLabelColor;
+    self.audioMediaTypeIndicator.textColor =
+        _representsCurrentPlayQueueItem ? NSColor.labelColor : NSColor.secondaryLabelColor;
 }
 
 - (void)setRepresentedPlayQueueItem:(VLCPlayQueueItem *)item
@@ -104,29 +104,35 @@ NSString * const VLCDisplayTrackNumberPlayQueueSettingChanged = @"VLCDisplayTrac
 
 - (void)updateRepresentation
 {
-    VLCPlayQueueItem * const item = self.representedPlayQueueItem;
+    VLCPlayQueueItem *const item = self.representedPlayQueueItem;
 
     self.audioArtworkImageView.contentGravity = VLCImageViewContentGravityResizeAspect;
     self.mediaImageView.contentGravity = VLCImageViewContentGravityResizeAspect;
 
     __weak typeof(self) weakSelf = self;
-    [VLCLibraryImageCache thumbnailForPlayQueueItem:item withCompletion:^(NSImage * const thumbnail) {
-        if (!weakSelf || item != weakSelf.representedPlayQueueItem) {
-            return;
-        }
-        weakSelf.audioArtworkImageView.image = thumbnail;
-        weakSelf.mediaImageView.image = thumbnail;
-    }];
+    [VLCLibraryImageCache
+        thumbnailForPlayQueueItem:item
+                   withCompletion:^(NSImage *const thumbnail) {
+                       if (!weakSelf || item != weakSelf.representedPlayQueueItem) {
+                           return;
+                       }
+                       weakSelf.audioArtworkImageView.image = thumbnail;
+                       weakSelf.mediaImageView.image = thumbnail;
+                   }];
 
     const BOOL validArtistString = item.artistName && item.artistName.length > 0;
     const BOOL validAlbumString = item.albumName && item.albumName.length > 0;
-    const BOOL validTitleString = item.inputItem && item.inputItem.title && (item.inputItem.title.length > 0);
+    const BOOL validTitleString =
+        item.inputItem && item.inputItem.title && (item.inputItem.title.length > 0);
 
     NSString *playTitle = item.title;
     if (validTitleString) {
-        NSString * const trackNumberString = item.inputItem.trackNumber;
-        if ([NSUserDefaults.standardUserDefaults boolForKey:VLCDisplayTrackNumberPlayQueueKey] && trackNumberString && trackNumberString.length > 0 && ![trackNumberString isEqualToString:@"0"]) {
-            playTitle = [NSString stringWithFormat:@"%@ · %@", trackNumberString, item.inputItem.title];
+        NSString *const trackNumberString = item.inputItem.trackNumber;
+        if ([NSUserDefaults.standardUserDefaults boolForKey:VLCDisplayTrackNumberPlayQueueKey]
+            && trackNumberString && trackNumberString.length > 0
+            && ![trackNumberString isEqualToString:@"0"]) {
+            playTitle =
+                [NSString stringWithFormat:@"%@ · %@", trackNumberString, item.inputItem.title];
         } else {
             playTitle = item.inputItem.title;
         }

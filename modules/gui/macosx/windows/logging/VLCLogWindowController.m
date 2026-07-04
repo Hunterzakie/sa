@@ -30,7 +30,7 @@
 #import "main/VLCMain.h"
 #import "windows/logging/VLCLogMessage.h"
 
-@interface VLCLogWindowController () <NSWindowDelegate>
+@interface VLCLogWindowController ()<NSWindowDelegate>
 
 /* This array stores messages that are managed by the arrayController */
 @property (retain) NSMutableArray *messagesArray;
@@ -43,7 +43,7 @@
  * from the messageBuffer every now and then, which is much more efficient and still fast
  * enough for a good user experience
  */
-@property (retain) NSTimer        *refreshTimer;
+@property (retain) NSTimer *refreshTimer;
 
 - (void)addMessage:(VLCLogMessage *)message;
 
@@ -58,15 +58,13 @@ static void MsgCallback(void *data, int type, const vlc_log_t *item, const char 
 {
     @autoreleasepool {
         char *msg;
-        VLCLogWindowController *controller = (__bridge VLCLogWindowController*)data;
+        VLCLogWindowController *controller = (__bridge VLCLogWindowController *)data;
 
         if (vasprintf(&msg, format, ap) == -1) {
             return;
         }
-        
-        [controller addMessage:[VLCLogMessage logMessage:msg
-                                                    type:type
-                                                    info:item]];
+
+        [controller addMessage:[VLCLogMessage logMessage:msg type:type info:item]];
         free(msg);
     }
 }
@@ -88,7 +86,7 @@ static const struct vlc_logger_operations log_ops = { MsgCallback, NULL };
 - (void)dealloc
 {
     if (getIntf())
-        vlc_LogSet( vlc_object_instance(getIntf()), NULL, NULL );
+        vlc_LogSet(vlc_object_instance(getIntf()), NULL, NULL);
 }
 
 - (void)windowDidLoad
@@ -97,20 +95,14 @@ static const struct vlc_logger_operations log_ops = { MsgCallback, NULL };
     [self.window setDelegate:self];
     [self.window setTitle:_NS("Messages")];
 
-#define setupButton(target, title, desc)                                              \
-    target.accessibilityTitle = title;                                                \
-    target.accessibilityLabel = desc;                                                 \
+#define setupButton(target, title, desc)                                                           \
+    target.accessibilityTitle = title;                                                             \
+    target.accessibilityLabel = desc;                                                              \
     [target setToolTip:desc];
 
-    setupButton(_saveButton,
-                _NS("Save log"),
-                _NS("Save the debug log to a file"));
-    setupButton(_refreshButton,
-                _NS("Refresh log"),
-                _NS("Refresh the log output"));
-    setupButton(_clearButton,
-                _NS("Clear log"),
-                _NS("Clear the log output"));
+    setupButton(_saveButton, _NS("Save log"), _NS("Save the debug log to a file"));
+    setupButton(_refreshButton, _NS("Refresh log"), _NS("Refresh the log output"));
+    setupButton(_clearButton, _NS("Clear log"), _NS("Clear the log output"));
     setupButton(_toggleDetailsButton,
                 _NS("Toggle details"),
                 _NS("Show/hide details about a log message"));
@@ -126,7 +118,7 @@ static const struct vlc_logger_operations log_ops = { MsgCallback, NULL };
     }
 
     // Subscribe to LibVLCCore's messages
-    vlc_LogSet(vlc_object_instance(getIntf()), &log_ops, (__bridge void*)self);
+    vlc_LogSet(vlc_object_instance(getIntf()), &log_ops, (__bridge void *)self);
     _refreshTimer = [NSTimer scheduledTimerWithTimeInterval:0.3
                                                      target:self
                                                    selector:@selector(appendMessageBuffer)
@@ -138,7 +130,7 @@ static const struct vlc_logger_operations log_ops = { MsgCallback, NULL };
 - (void)windowWillClose:(NSNotification *)notification
 {
     // Unsubscribe from LibVLCCore's messages
-    vlc_LogSet( vlc_object_instance(getIntf()), NULL, NULL );
+    vlc_LogSet(vlc_object_instance(getIntf()), NULL, NULL);
 
     // Remove all messages
     [self clearMessageBuffer];
@@ -157,18 +149,20 @@ static const struct vlc_logger_operations log_ops = { MsgCallback, NULL };
  * We use this to set the correct background color for the row, depending on the
  * message type.
  */
-- (void)tableView:(NSTableView *)tableView didAddRowView:(NSTableRowView *)rowView forRow:(NSInteger)row
+- (void)tableView:(NSTableView *)tableView
+    didAddRowView:(NSTableRowView *)rowView
+           forRow:(NSInteger)row
 {
     // Initialize background colors
     static NSDictionary *colors = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         colors = @{
-                   @(VLC_MSG_INFO): [NSColor colorWithCalibratedRed:0.65 green:0.91 blue:1.0 alpha:0.7],
-                   @(VLC_MSG_ERR) : [NSColor colorWithCalibratedRed:1.0 green:0.49 blue:0.45 alpha:0.5],
-                   @(VLC_MSG_WARN): [NSColor colorWithCalibratedRed:1.0 green:0.88 blue:0.45 alpha:0.7],
-                   @(VLC_MSG_DBG) : [NSColor colorWithCalibratedRed:0.96 green:0.96 blue:0.96 alpha:0.5]
-                   };
+            @(VLC_MSG_INFO) : [NSColor colorWithCalibratedRed:0.65 green:0.91 blue:1.0 alpha:0.7],
+            @(VLC_MSG_ERR) : [NSColor colorWithCalibratedRed:1.0 green:0.49 blue:0.45 alpha:0.5],
+            @(VLC_MSG_WARN) : [NSColor colorWithCalibratedRed:1.0 green:0.88 blue:0.45 alpha:0.7],
+            @(VLC_MSG_DBG) : [NSColor colorWithCalibratedRed:0.96 green:0.96 blue:0.96 alpha:0.5]
+        };
     });
 
     // Lookup color for message type
@@ -192,25 +186,29 @@ static const struct vlc_logger_operations log_ops = { MsgCallback, NULL };
  */
 - (IBAction)saveDebugLog:(id)sender
 {
-    NSSavePanel * saveFolderPanel = [[NSSavePanel alloc] init];
+    NSSavePanel *saveFolderPanel = [[NSSavePanel alloc] init];
 
-    [saveFolderPanel setCanSelectHiddenExtension: NO];
-    [saveFolderPanel setCanCreateDirectories: YES];
-    [saveFolderPanel setAllowedFileTypes: [NSArray arrayWithObject:@"txt"]];
-    [saveFolderPanel setNameFieldStringValue:[NSString stringWithFormat: _NS("VLC Debug Log (%s).txt"), VERSION_MESSAGE]];
-    [saveFolderPanel beginSheetModalForWindow: self.window completionHandler:^(NSInteger returnCode) {
-        if (returnCode != NSModalResponseOK) {
-            return;
-        }
-        NSMutableString *string = [[NSMutableString alloc] init];
+    [saveFolderPanel setCanSelectHiddenExtension:NO];
+    [saveFolderPanel setCanCreateDirectories:YES];
+    [saveFolderPanel setAllowedFileTypes:[NSArray arrayWithObject:@"txt"]];
+    [saveFolderPanel
+        setNameFieldStringValue:[NSString stringWithFormat:_NS("VLC Debug Log (%s).txt"),
+                                                           VERSION_MESSAGE]];
+    [saveFolderPanel
+        beginSheetModalForWindow:self.window
+               completionHandler:^(NSInteger returnCode) {
+                   if (returnCode != NSModalResponseOK) {
+                       return;
+                   }
+                   NSMutableString *string = [[NSMutableString alloc] init];
 
-        for (VLCLogMessage *message in self->_messagesArray) {
-            [string appendFormat:@"%@\r\n", message.fullMessage];
-        }
-        NSData *data = [string dataUsingEncoding:NSUTF8StringEncoding];
-        if ([data writeToFile:[[saveFolderPanel URL] path] atomically:YES] == NO)
-            msg_Warn(getIntf(), "Error while saving the debug log");
-    }];
+                   for (VLCLogMessage *message in self->_messagesArray) {
+                       [string appendFormat:@"%@\r\n", message.fullMessage];
+                   }
+                   NSData *data = [string dataUsingEncoding:NSUTF8StringEncoding];
+                   if ([data writeToFile:[[saveFolderPanel URL] path] atomically:YES] == NO)
+                       msg_Warn(getIntf(), "Error while saving the debug log");
+               }];
 }
 
 /* Clear log action
@@ -225,7 +223,7 @@ static const struct vlc_logger_operations log_ops = { MsgCallback, NULL };
     [self clearMessageTable];
 
     // Reregister handler, to write new header to log
-    vlc_LogSet(vlc_object_instance(getIntf()), &log_ops, (__bridge void*)self);
+    vlc_LogSet(vlc_object_instance(getIntf()), &log_ops, (__bridge void *)self);
 }
 
 /* Refresh log action
@@ -249,11 +247,12 @@ static const struct vlc_logger_operations log_ops = { MsgCallback, NULL };
 
 /* Called when the user hits CMD + C or copy is clicked in the edit menu
  */
-- (void) copy:(id)sender {
+- (void)copy:(id)sender
+{
     NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
     [pasteBoard clearContents];
     for (VLCLogMessage *message in [_arrayController selectedObjects]) {
-        [pasteBoard writeObjects:@[message.fullMessage]];
+        [pasteBoard writeObjects:@[ message.fullMessage ]];
     }
 }
 
@@ -262,7 +261,7 @@ static const struct vlc_logger_operations log_ops = { MsgCallback, NULL };
 
 /* Validate the copy menu item
  */
-- (BOOL)validateUserInterfaceItem:(id <NSValidatedUserInterfaceItem>)anItem
+- (BOOL)validateUserInterfaceItem:(id<NSValidatedUserInterfaceItem>)anItem
 {
     SEL theAction = [anItem action];
 
@@ -281,7 +280,7 @@ static const struct vlc_logger_operations log_ops = { MsgCallback, NULL };
 #pragma mark -
 #pragma mark Data handling
 
-/** 
+/**
  Adds a message to the messageBuffer, it does not has to be called from the main thread, as
  items are only added to the messageArray on refresh.
  */
@@ -290,7 +289,7 @@ static const struct vlc_logger_operations log_ops = { MsgCallback, NULL };
     if (!message)
         return;
 
-    @synchronized (_messageBuffer) {
+    @synchronized(_messageBuffer) {
         [_messageBuffer addObject:message];
     }
 }
@@ -300,7 +299,7 @@ static const struct vlc_logger_operations log_ops = { MsgCallback, NULL };
  */
 - (void)clearMessageBuffer
 {
-    @synchronized (_messageBuffer) {
+    @synchronized(_messageBuffer) {
         [_messageBuffer removeAllObjects];
     }
 }
@@ -312,7 +311,8 @@ static const struct vlc_logger_operations log_ops = { MsgCallback, NULL };
 {
     [self willChangeValueForKey:@"messagesArray"];
     [_messagesArray removeAllObjects];
-    [self didChangeValueForKey:@"messagesArray"];}
+    [self didChangeValueForKey:@"messagesArray"];
+}
 
 /**
  Appends all messages from the buffer to the messagesArray and clears the buffer
@@ -322,7 +322,7 @@ static const struct vlc_logger_operations log_ops = { MsgCallback, NULL };
     static const NSUInteger limit = 1000000;
 
     [self willChangeValueForKey:@"messagesArray"];
-    @synchronized (_messageBuffer) {
+    @synchronized(_messageBuffer) {
         [_messagesArray addObjectsFromArray:_messageBuffer];
         [_messageBuffer removeAllObjects];
     }

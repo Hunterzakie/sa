@@ -33,8 +33,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface VLCLibraryAlbumTableCellView : NSTableCellView<VLCLibraryTableCellViewProtocol>
 
-extern NSString * const VLCAudioLibraryCellIdentifier;
-extern NSString * const VLCLibraryAlbumTableCellTableViewColumnIdentifier;
+extern NSString *const VLCAudioLibraryCellIdentifier;
+extern NSString *const VLCLibraryAlbumTableCellTableViewColumnIdentifier;
 
 @property (class, readonly) CGFloat defaultHeight;
 

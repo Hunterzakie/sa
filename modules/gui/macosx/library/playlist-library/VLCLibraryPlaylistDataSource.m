@@ -69,7 +69,7 @@ typedef NS_ENUM(NSInteger, VLCLibraryDataSourceCacheAction) {
 
 - (void)connect
 {
-    NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
     [notificationCenter addObserver:self
                            selector:@selector(playlistsReset:)
                                name:VLCLibraryModelPlaylistAdded
@@ -98,7 +98,7 @@ typedef NS_ENUM(NSInteger, VLCLibraryDataSourceCacheAction) {
 - (void)playlistUpdated:(NSNotification *)notification
 {
     NSParameterAssert(notification);
-    VLCMediaLibraryPlaylist * const playlist = (VLCMediaLibraryPlaylist *)notification.object;
+    VLCMediaLibraryPlaylist *const playlist = (VLCMediaLibraryPlaylist *)notification.object;
     [self cacheAction:VLCLibraryDataSourceCacheUpdateAction onPlaylist:playlist];
 }
 
@@ -108,13 +108,13 @@ typedef NS_ENUM(NSInteger, VLCLibraryDataSourceCacheAction) {
     NSParameterAssert((NSNumber *)notification.object != nil);
 
     const int64_t playlistId = [(NSNumber *)notification.object longLongValue];
-    const NSInteger playlistIdx =
-        [self.playlists indexOfObjectPassingTest:^BOOL(const VLCMediaLibraryPlaylist * const playlist,
-                                                       const NSUInteger __unused idx,
-                                                       BOOL * const __unused stop) {
+    const NSInteger playlistIdx = [self.playlists
+        indexOfObjectPassingTest:^BOOL(const VLCMediaLibraryPlaylist *const playlist,
+                                       const NSUInteger __unused idx,
+                                       BOOL *const __unused stop) {
             return playlist.libraryID == playlistId;
         }];
-    VLCMediaLibraryPlaylist * const playlist = self.playlists[playlistIdx];
+    VLCMediaLibraryPlaylist *const playlist = self.playlists[playlistIdx];
 
     if (playlist != nil) {
         [self cacheAction:VLCLibraryDataSourceCacheDeleteAction onPlaylist:playlist];
@@ -132,8 +132,8 @@ typedef NS_ENUM(NSInteger, VLCLibraryDataSourceCacheAction) {
 {
     [self.masterTableView reloadData];
     [self.detailTableView reloadData];
-    
-    for (NSCollectionView * const collectionView in self.collectionViews) {
+
+    for (NSCollectionView *const collectionView in self.collectionViews) {
         [(VLCLibraryCollectionViewFlowLayout *)collectionView.collectionViewLayout resetLayout];
         [collectionView reloadData];
     }
@@ -142,17 +142,17 @@ typedef NS_ENUM(NSInteger, VLCLibraryDataSourceCacheAction) {
 - (void)reloadViewsAtIndex:(NSUInteger)index
           dueToCacheAction:(VLCLibraryDataSourceCacheAction)action
 {
-    NSTableView * const masterTableView = self.masterTableView;
-    NSTableView * const detailTableView = self.detailTableView;
-    NSIndexSet * const indexSet = [NSIndexSet indexSetWithIndex:index];
+    NSTableView *const masterTableView = self.masterTableView;
+    NSTableView *const detailTableView = self.detailTableView;
+    NSIndexSet *const indexSet = [NSIndexSet indexSetWithIndex:index];
     const NSInteger selectedMasterRow = masterTableView.selectedRow;
     const BOOL affectsSelectedDetail =
         detailTableView != nil && (NSInteger)index == selectedMasterRow;
 
     switch (action) {
         case VLCLibraryDataSourceCacheUpdateAction: {
-            NSIndexSet * const columnSet =
-                [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(0, masterTableView.numberOfColumns)];
+            NSIndexSet *const columnSet = [NSIndexSet
+                indexSetWithIndexesInRange:NSMakeRange(0, masterTableView.numberOfColumns)];
             [masterTableView reloadDataForRowIndexes:indexSet columnIndexes:columnSet];
             break;
         }
@@ -169,16 +169,17 @@ typedef NS_ENUM(NSInteger, VLCLibraryDataSourceCacheAction) {
         [self updateHeaderInTableView:detailTableView forMasterSelection:masterTableView];
     }
 
-    NSIndexPath * const indexPath = [NSIndexPath indexPathForItem:index inSection:0];
-    NSSet<NSIndexPath *> * const indexPathSet = [NSSet setWithObject:indexPath];
+    NSIndexPath *const indexPath = [NSIndexPath indexPathForItem:index inSection:0];
+    NSSet<NSIndexPath *> *const indexPathSet = [NSSet setWithObject:indexPath];
 
-    for (NSCollectionView * const collectionView in self.collectionViews) {
+    for (NSCollectionView *const collectionView in self.collectionViews) {
         switch (action) {
             case VLCLibraryDataSourceCacheUpdateAction:
                 [collectionView reloadItemsAtIndexPaths:indexPathSet];
                 break;
             case VLCLibraryDataSourceCacheDeleteAction:
-                [(VLCLibraryCollectionViewFlowLayout *)collectionView.collectionViewLayout resetLayout];
+                [(VLCLibraryCollectionViewFlowLayout *)
+                        collectionView.collectionViewLayout resetLayout];
                 [collectionView deleteItemsAtIndexPaths:indexPathSet];
                 break;
             default:
@@ -189,14 +190,16 @@ typedef NS_ENUM(NSInteger, VLCLibraryDataSourceCacheAction) {
 
 - (NSUInteger)indexForPlaylistWithId:(const int64_t)itemId
 {
-    return [self.playlists indexOfObjectPassingTest:^BOOL(const VLCMediaLibraryPlaylist *playlist, const NSUInteger __unused idx, BOOL * const __unused stop) {
+    return [self.playlists indexOfObjectPassingTest:^BOOL(const VLCMediaLibraryPlaylist *playlist,
+                                                          const NSUInteger __unused idx,
+                                                          BOOL *const __unused stop) {
         NSAssert(playlist != nil, @"Cache list should not contain nil playlists");
         return playlist.libraryID == itemId;
     }];
 }
 
 - (void)cacheAction:(VLCLibraryDataSourceCacheAction)action
-         onPlaylist:(VLCMediaLibraryPlaylist * const)playlist
+         onPlaylist:(VLCMediaLibraryPlaylist *const)playlist
 {
     NSParameterAssert(playlist != nil);
 
@@ -217,9 +220,8 @@ typedef NS_ENUM(NSInteger, VLCLibraryDataSourceCacheAction) {
                 NSAssert(false, @"Invalid playlist cache action");
         }
 
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self reloadViewsAtIndex:idx dueToCacheAction:action];
-        });
+        dispatch_async(dispatch_get_main_queue(),
+                       ^{ [self reloadViewsAtIndex:idx dueToCacheAction:action]; });
     });
 }
 
@@ -261,7 +263,9 @@ typedef NS_ENUM(NSInteger, VLCLibraryDataSourceCacheAction) {
     if (libraryItem == nil) {
         return NSNotFound;
     }
-    return [self.playlists indexOfObjectPassingTest:^BOOL(const VLCMediaLibraryPlaylist *playlist, const NSUInteger __unused idx, BOOL * const __unused stop) {
+    return [self.playlists indexOfObjectPassingTest:^BOOL(const VLCMediaLibraryPlaylist *playlist,
+                                                          const NSUInteger __unused idx,
+                                                          BOOL *const __unused stop) {
         return playlist.libraryID == libraryItem.libraryID;
     }];
 }
@@ -271,7 +275,7 @@ typedef NS_ENUM(NSInteger, VLCLibraryDataSourceCacheAction) {
 - (void)setCollectionViews:(NSArray<NSCollectionView *> *)collectionViews
 {
     _collectionViews = collectionViews;
-    for (NSCollectionView * const collectionView in self.collectionViews) {
+    for (NSCollectionView *const collectionView in self.collectionViews) {
         [self setupCollectionView:collectionView];
     }
 }
@@ -281,16 +285,18 @@ typedef NS_ENUM(NSInteger, VLCLibraryDataSourceCacheAction) {
     [collectionView registerClass:VLCLibraryCollectionViewItem.class
             forItemWithIdentifier:VLCLibraryCellIdentifier];
     [collectionView registerClass:VLCLibraryCollectionViewSupplementaryElementView.class
-       forSupplementaryViewOfKind:NSCollectionElementKindSectionHeader
-                   withIdentifier:VLCLibrarySupplementaryElementViewIdentifier];
+        forSupplementaryViewOfKind:NSCollectionElementKindSectionHeader
+                    withIdentifier:VLCLibrarySupplementaryElementViewIdentifier];
 
-    NSNib * const supplementaryDetailView =
-        [[NSNib alloc] initWithNibNamed:@"VLCLibraryCollectionViewMediaItemListSupplementaryDetailView" bundle:nil];
+    NSNib *const supplementaryDetailView = [[NSNib alloc]
+        initWithNibNamed:@"VLCLibraryCollectionViewMediaItemListSupplementaryDetailView"
+                  bundle:nil];
     [collectionView registerNib:supplementaryDetailView
-      forSupplementaryViewOfKind:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind
-                  withIdentifier:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewIdentifier];
+        forSupplementaryViewOfKind:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind
+                    withIdentifier:
+                        VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewIdentifier];
 
-    NSCollectionViewFlowLayout * const layout = collectionView.collectionViewLayout;
+    NSCollectionViewFlowLayout *const layout = collectionView.collectionViewLayout;
     layout.headerReferenceSize = VLCLibraryCollectionViewSupplementaryElementView.defaultHeaderSize;
 
     collectionView.dataSource = self;
@@ -311,37 +317,43 @@ typedef NS_ENUM(NSInteger, VLCLibraryDataSourceCacheAction) {
 - (NSCollectionViewItem *)collectionView:(NSCollectionView *)collectionView
      itemForRepresentedObjectAtIndexPath:(NSIndexPath *)indexPath
 {
-    VLCLibraryCollectionViewItem * const viewItem = [collectionView makeItemWithIdentifier:VLCLibraryCellIdentifier
-                                                                              forIndexPath:indexPath];
+    VLCLibraryCollectionViewItem *const viewItem =
+        [collectionView makeItemWithIdentifier:VLCLibraryCellIdentifier forIndexPath:indexPath];
     const id<VLCMediaLibraryItemProtocol> libraryItem = self.playlists[indexPath.item];
     // NOTE: Unknown parent type represented items default to playing the represented item only.
     // We want this behaviour as it feels unnatural to handle any parent types for playlists
-    VLCLibraryRepresentedItem * const representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:libraryItem
-                                                                                             parentType:VLCMediaLibraryParentGroupTypeUnknown];
+    VLCLibraryRepresentedItem *const representedItem =
+        [[VLCLibraryRepresentedItem alloc] initWithItem:libraryItem
+                                             parentType:VLCMediaLibraryParentGroupTypeUnknown];
     viewItem.representedItem = representedItem;
     return viewItem;
 }
 
 - (NSView *)collectionView:(NSCollectionView *)collectionView
-viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
-               atIndexPath:(NSIndexPath *)indexPath
+    viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
+                          atIndexPath:(NSIndexPath *)indexPath
 {
-    if([kind isEqualToString:NSCollectionElementKindSectionHeader]) {
-        VLCLibraryCollectionViewSupplementaryElementView * const sectionHeadingView = [collectionView makeSupplementaryViewOfKind:kind withIdentifier:VLCLibrarySupplementaryElementViewIdentifier forIndexPath:indexPath];
+    if ([kind isEqualToString:NSCollectionElementKindSectionHeader]) {
+        VLCLibraryCollectionViewSupplementaryElementView *const sectionHeadingView =
+            [collectionView makeSupplementaryViewOfKind:kind
+                                         withIdentifier:VLCLibrarySupplementaryElementViewIdentifier
+                                           forIndexPath:indexPath];
 
         sectionHeadingView.stringValue = _NS("Playlists");
         return sectionHeadingView;
 
-    } else if ([kind isEqualToString:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind]) {
-        NSString * const supplementaryDetailViewIdentifier =
+    } else if ([kind isEqualToString:
+                         VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind]) {
+        NSString *const supplementaryDetailViewIdentifier =
             VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewIdentifier;
-        VLCLibraryCollectionViewMediaItemListSupplementaryDetailView * const supplementaryDetailView =
-            [collectionView makeSupplementaryViewOfKind:kind
-                                         withIdentifier:supplementaryDetailViewIdentifier
-                                           forIndexPath:indexPath];
-        const id<VLCMediaLibraryItemProtocol> item =
-            [self libraryItemAtIndexPath:indexPath forCollectionView:collectionView];
-        VLCLibraryRepresentedItem * const representedItem =
+        VLCLibraryCollectionViewMediaItemListSupplementaryDetailView *const
+            supplementaryDetailView =
+                [collectionView makeSupplementaryViewOfKind:kind
+                                             withIdentifier:supplementaryDetailViewIdentifier
+                                               forIndexPath:indexPath];
+        const id<VLCMediaLibraryItemProtocol> item = [self libraryItemAtIndexPath:indexPath
+                                                                forCollectionView:collectionView];
+        VLCLibraryRepresentedItem *const representedItem =
             [[VLCLibraryRepresentedItem alloc] initWithItem:item parentType:self.currentParentType];
         supplementaryDetailView.representedItem = representedItem;
         supplementaryDetailView.selectedItem = [collectionView itemAtIndexPath:indexPath];
@@ -373,16 +385,17 @@ viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
     return [NSIndexPath indexPathForItem:idx inSection:0];
 }
 
-- (NSArray<VLCLibraryRepresentedItem *> *)representedItemsAtIndexPaths:(NSSet<NSIndexPath *> *const)indexPaths
-                                                     forCollectionView:(NSCollectionView *)collectionView
+- (NSArray<VLCLibraryRepresentedItem *> *)
+    representedItemsAtIndexPaths:(NSSet<NSIndexPath *> *const)indexPaths
+               forCollectionView:(NSCollectionView *)collectionView
 {
-    NSMutableArray<VLCLibraryRepresentedItem *> * const representedItems =
+    NSMutableArray<VLCLibraryRepresentedItem *> *const representedItems =
         [NSMutableArray arrayWithCapacity:indexPaths.count];
 
-    for (NSIndexPath * const indexPath in indexPaths) {
+    for (NSIndexPath *const indexPath in indexPaths) {
         const id<VLCMediaLibraryItemProtocol> libraryItem =
             [self libraryItemAtIndexPath:indexPath forCollectionView:collectionView];
-        VLCLibraryRepresentedItem * const representedItem =
+        VLCLibraryRepresentedItem *const representedItem =
             [[VLCLibraryRepresentedItem alloc] initWithItem:libraryItem
                                                  parentType:self.currentParentType];
         [representedItems addObject:representedItem];
@@ -425,7 +438,8 @@ viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
     [self reloadData];
 }
 
-- (void)updateHeaderInTableView:(NSTableView *)detailTableView forMasterSelection:(NSTableView *)masterTableView
+- (void)updateHeaderInTableView:(NSTableView *)detailTableView
+             forMasterSelection:(NSTableView *)masterTableView
 {
     if (self.headerDelegate == nil) {
         return;
@@ -440,10 +454,9 @@ viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
         return;
     }
 
-    const VLCMediaLibraryPlaylist * const playlist = self.playlists[selectedRow];
-    VLCLibraryRepresentedItem * const representedItem =
-        [[VLCLibraryRepresentedItem alloc] initWithItem:playlist
-                                             parentType:self.currentParentType];
+    const VLCMediaLibraryPlaylist *const playlist = self.playlists[selectedRow];
+    VLCLibraryRepresentedItem *const representedItem =
+        [[VLCLibraryRepresentedItem alloc] initWithItem:playlist parentType:self.currentParentType];
 
     [self.headerDelegate updateHeaderForTableView:detailTableView
                               withRepresentedItem:representedItem

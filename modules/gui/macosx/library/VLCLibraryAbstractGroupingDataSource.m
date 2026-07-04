@@ -58,7 +58,7 @@
 {
     return [array indexOfObjectPassingTest:^BOOL(const id<VLCMediaLibraryItemProtocol> findItem,
                                                  const NSUInteger __unused idx,
-                                                 BOOL * const __unused stop) {
+                                                 BOOL *const __unused stop) {
         NSAssert(findItem != nil, @"Collection should not contain nil items");
         return findItem.libraryID == libraryId;
     }];
@@ -106,7 +106,8 @@
     return nil;
 }
 
-- (void)updateHeaderInTableView:(NSTableView *)detailTableView forMasterSelection:(NSTableView *)masterTableView
+- (void)updateHeaderInTableView:(NSTableView *)detailTableView
+             forMasterSelection:(NSTableView *)masterTableView
 {
     if (self.headerDelegate == nil) {
         return;
@@ -118,8 +119,10 @@
 
     const NSInteger selectedRow = masterTableView.selectedRow;
     if (selectedRow != -1) {
-        const id<VLCMediaLibraryItemProtocol> selectedItem = [self libraryItemAtRow:selectedRow forTableView:masterTableView];
-        representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:selectedItem parentType:self.currentParentType];
+        const id<VLCMediaLibraryItemProtocol> selectedItem =
+            [self libraryItemAtRow:selectedRow forTableView:masterTableView];
+        representedItem = [[VLCLibraryRepresentedItem alloc] initWithItem:selectedItem
+                                                               parentType:self.currentParentType];
         fallbackTitle = selectedItem.displayString;
         fallbackDetail = selectedItem.primaryDetailString;
     }
@@ -138,7 +141,7 @@
     return [self indexOfMediaItem:libraryItem.libraryID inArray:self.backingArray];
 }
 
-# pragma mark - collection view data source and delegation
+#pragma mark - collection view data source and delegation
 
 - (NSInteger)numberOfSectionsInCollectionView:(NSCollectionView *)collectionView
 {
@@ -154,22 +157,22 @@
 - (NSCollectionViewItem *)collectionView:(NSCollectionView *)collectionView
      itemForRepresentedObjectAtIndexPath:(NSIndexPath *)indexPath
 {
-    VLCLibraryCollectionViewItem * const viewItem =
+    VLCLibraryCollectionViewItem *const viewItem =
         [collectionView makeItemWithIdentifier:VLCLibraryCellIdentifier forIndexPath:indexPath];
-    const id<VLCMediaLibraryItemProtocol> item =
-        [self libraryItemAtIndexPath:indexPath forCollectionView:collectionView];
-    VLCLibraryRepresentedItem * const representedItem =
+    const id<VLCMediaLibraryItemProtocol> item = [self libraryItemAtIndexPath:indexPath
+                                                            forCollectionView:collectionView];
+    VLCLibraryRepresentedItem *const representedItem =
         [[VLCLibraryRepresentedItem alloc] initWithItem:item parentType:self.currentParentType];
     viewItem.representedItem = representedItem;
     return viewItem;
 }
 
 - (NSView *)collectionView:(NSCollectionView *)collectionView
-viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
-               atIndexPath:(NSIndexPath *)indexPath
+    viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
+                          atIndexPath:(NSIndexPath *)indexPath
 {
-    if([kind isEqualToString:NSCollectionElementKindSectionHeader]) {
-        VLCLibraryCollectionViewSupplementaryElementView * const sectionHeadingView =
+    if ([kind isEqualToString:NSCollectionElementKindSectionHeader]) {
+        VLCLibraryCollectionViewSupplementaryElementView *const sectionHeadingView =
             [collectionView makeSupplementaryViewOfKind:kind
                                          withIdentifier:VLCLibrarySupplementaryElementViewIdentifier
                                            forIndexPath:indexPath];
@@ -177,16 +180,17 @@ viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
         sectionHeadingView.stringValue = item.displayString;
         return sectionHeadingView;
 
-    } else if ([kind isEqualToString:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind]) {
-        NSString * const viewIdentifier =
+    } else if ([kind
+                   isEqualToString:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind]) {
+        NSString *const viewIdentifier =
             VLCLibraryCollectionViewMediaItemSupplementaryDetailViewIdentifier;
-        VLCLibraryCollectionViewMediaItemSupplementaryDetailView * const mediaItemDetailView =
+        VLCLibraryCollectionViewMediaItemSupplementaryDetailView *const mediaItemDetailView =
             [collectionView makeSupplementaryViewOfKind:kind
                                          withIdentifier:viewIdentifier
                                            forIndexPath:indexPath];
         const id<VLCMediaLibraryItemProtocol> item = [self libraryItemAtIndexPath:indexPath
                                                                 forCollectionView:collectionView];
-        VLCLibraryRepresentedItem * const representedItem =
+        VLCLibraryRepresentedItem *const representedItem =
             [[VLCLibraryRepresentedItem alloc] initWithItem:item parentType:self.currentParentType];
 
         mediaItemDetailView.representedItem = representedItem;
@@ -213,12 +217,12 @@ viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
     }
 
     __block NSInteger itemInternalMediaItemIndex = NSNotFound;
-    const NSInteger itemIndex =
-        [self.backingArray indexOfObjectPassingTest:^BOOL(const id<VLCMediaLibraryItemProtocol> item,
-                                                          const NSUInteger __unused idx,
-                                                          BOOL * const __unused stop) {
-            itemInternalMediaItemIndex =
-                [self indexOfMediaItem:libraryItem.libraryID inArray:item.mediaItems];
+    const NSInteger itemIndex = [self.backingArray
+        indexOfObjectPassingTest:^BOOL(const id<VLCMediaLibraryItemProtocol> item,
+                                       const NSUInteger __unused idx,
+                                       BOOL *const __unused stop) {
+            itemInternalMediaItemIndex = [self indexOfMediaItem:libraryItem.libraryID
+                                                        inArray:item.mediaItems];
             return itemInternalMediaItemIndex != NSNotFound;
         }];
 
@@ -227,16 +231,17 @@ viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
         : nil;
 }
 
-- (NSArray<VLCLibraryRepresentedItem *> *)representedItemsAtIndexPaths:(NSSet<NSIndexPath *> *)indexPaths
-                                                     forCollectionView:(NSCollectionView *)collectionView
+- (NSArray<VLCLibraryRepresentedItem *> *)
+    representedItemsAtIndexPaths:(NSSet<NSIndexPath *> *)indexPaths
+               forCollectionView:(NSCollectionView *)collectionView
 {
-    NSMutableArray<VLCLibraryRepresentedItem *> * const representedItems =
+    NSMutableArray<VLCLibraryRepresentedItem *> *const representedItems =
         [NSMutableArray arrayWithCapacity:indexPaths.count];
 
-    for (NSIndexPath * const indexPath in indexPaths) {
+    for (NSIndexPath *const indexPath in indexPaths) {
         const id<VLCMediaLibraryItemProtocol> libraryItem =
             [self libraryItemAtIndexPath:indexPath forCollectionView:collectionView];
-        VLCLibraryRepresentedItem * const representedItem =
+        VLCLibraryRepresentedItem *const representedItem =
             [[VLCLibraryRepresentedItem alloc] initWithItem:libraryItem
                                                  parentType:self.currentParentType];
         [representedItems addObject:representedItem];

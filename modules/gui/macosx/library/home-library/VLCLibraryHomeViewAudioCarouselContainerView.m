@@ -43,7 +43,7 @@
 
 - (void)setupDataSource
 {
-    VLCLibraryAudioDataSource * const audioDataSource = [[VLCLibraryAudioDataSource alloc] init];
+    VLCLibraryAudioDataSource *const audioDataSource = [[VLCLibraryAudioDataSource alloc] init];
     self.carouselView.dataSource = audioDataSource;
     audioDataSource.libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
     audioDataSource.carouselView = self.carouselView;

@@ -33,7 +33,7 @@ typedef NS_OPTIONS(NSUInteger, VLCLibraryWindowToolbarDisplayFlags) {
     VLCLibraryWindowToolbarDisplayFlagLibrarySearchBar = 1 << 3
 };
 
-extern NSString * const VLCLibraryWindowTrackingSeparatorToolbarItemIdentifier;
+extern NSString *const VLCLibraryWindowTrackingSeparatorToolbarItemIdentifier;
 
 @class VLCLibraryWindow;
 

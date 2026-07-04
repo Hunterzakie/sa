@@ -52,7 +52,7 @@
 @property (readwrite, weak) IBOutlet NSTextField *progressDescriptionLabel;
 @property (readwrite, weak) IBOutlet NSTextField *progressTitleLabel;
 
-@property (readonly) VLCErrorWindowController* errorPanel;
+@property (readonly) VLCErrorWindowController *errorPanel;
 
 - (IBAction)authenticationDialogAction:(id)sender;
 

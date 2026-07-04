@@ -26,7 +26,7 @@
 
 - (CGFloat)titlebarHeight
 {
-    const NSView * const titlebarView = [self standardWindowButton:NSWindowCloseButton].superview;
+    const NSView *const titlebarView = [self standardWindowButton:NSWindowCloseButton].superview;
     return titlebarView.frame.size.height;
 }
 

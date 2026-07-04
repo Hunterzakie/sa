@@ -33,11 +33,11 @@
 #import "extensions/NSString+Helpers.h"
 #import "windows/extensions/VLCExtensionsDialogProvider.h"
 
-#define MENU_MAP(a,e) ((uint32_t)((((uint16_t)a) << 16) | ((uint16_t)e)))
+#define MENU_MAP(a, e) ((uint32_t)((((uint16_t)a) << 16) | ((uint16_t)e)))
 #define MENU_GET_ACTION(a) ((uint16_t)(((uint32_t)a) >> 16))
 #define MENU_GET_EXTENSION(a) ((uint16_t)(((uint32_t)a) & 0xFFFF))
 
-@interface VLCExtensionsManager()
+@interface VLCExtensionsManager ()
 {
     extensions_manager_t *p_extensions_manager;
     VLCExtensionsDialogProvider *_extensionDialogProvider;
@@ -85,7 +85,8 @@
     extension_t *p_ext = NULL;
     int i_ext = 0;
 
-    ARRAY_FOREACH(p_ext, p_extensions_manager->extensions) {
+    ARRAY_FOREACH(p_ext, p_extensions_manager->extensions)
+    {
         bool b_Active = extension_IsActivated(p_extensions_manager, p_ext);
 
         NSString *titleString = toNSStr(p_ext->psz_title);
@@ -102,7 +103,8 @@
             uint16_t *pi_ids = NULL;
             size_t i_num = 0;
 
-            if (extension_GetMenu(p_extensions_manager, p_ext, &ppsz_titles, &pi_ids) == VLC_SUCCESS) {
+            if (extension_GetMenu(p_extensions_manager, p_ext, &ppsz_titles, &pi_ids)
+                == VLC_SUCCESS) {
                 for (int i = 0; ppsz_titles[i] != NULL; ++i) {
                     ++i_num;
                     titleString = toNSStr(ppsz_titles[i]);
@@ -123,8 +125,7 @@
                 free(ppsz_titles);
                 free(pi_ids);
             } else {
-                msg_Warn(p_intf, "Could not get menu for extension '%s'",
-                          p_ext->psz_title);
+                msg_Warn(p_intf, "Could not get menu for extension '%s'", p_ext->psz_title);
                 NSMenuItem *menuItem = [submenu addItemWithTitle:@"Empty"
                                                           action:@selector(triggerMenu:)
                                                    keyEquivalent:@""];
@@ -138,12 +139,10 @@
                                                      keyEquivalent:@""];
             [deactivateItem setTarget:self];
             deactivateItem.tag = MENU_MAP(0, i_ext);
-        }
-        else
-        {
+        } else {
             NSMenuItem *menuItem = [extMenu addItemWithTitle:titleString
-                                                     action:@selector(triggerMenu:)
-                                              keyEquivalent:@""];
+                                                      action:@selector(triggerMenu:)
+                                               keyEquivalent:@""];
             [menuItem setTarget:self];
 
             if (!extension_TriggerOnly(p_extensions_manager, p_ext)) {
@@ -162,7 +161,8 @@
 {
     intf_thread_t *p_intf = getIntf();
     if (!p_extensions_manager) {
-        p_extensions_manager = (extensions_manager_t*)vlc_object_create(p_intf, sizeof(extensions_manager_t));
+        p_extensions_manager =
+            (extensions_manager_t *)vlc_object_create(p_intf, sizeof(extensions_manager_t));
         if (!p_extensions_manager) {
             b_failed = true;
             return false;
@@ -170,7 +170,8 @@
 
         vlc_playlist_t *playlist = vlc_intf_GetMainPlaylist(p_intf);
         p_extensions_manager->player = vlc_playlist_GetPlayer(playlist);
-        p_extensions_manager->p_module = module_need(p_extensions_manager, "extension", NULL, false);
+        p_extensions_manager->p_module =
+            module_need(p_extensions_manager, "extension", NULL, false);
 
         if (!p_extensions_manager->p_module) {
             msg_Err(p_intf, "Unable to load extensions module");
@@ -213,9 +214,8 @@
 
     vlc_mutex_lock(&p_extensions_manager->lock);
 
-    if ((int) i_ext > p_extensions_manager->extensions.i_size) {
-        msg_Dbg(p_intf, "can't trigger extension with wrong id %d",
-                 (int) i_ext);
+    if ((int)i_ext > p_extensions_manager->extensions.i_size) {
+        msg_Dbg(p_intf, "can't trigger extension with wrong id %d", (int)i_ext);
         vlc_mutex_unlock(&p_extensions_manager->lock);
         return;
     }
@@ -226,8 +226,7 @@
     vlc_mutex_unlock(&p_extensions_manager->lock);
 
     if (i_action == 0) {
-        msg_Dbg(p_intf, "activating or triggering extension '%s', id %d",
-                 p_ext->psz_title, i_ext);
+        msg_Dbg(p_intf, "activating or triggering extension '%s', id %d", p_ext->psz_title, i_ext);
 
         if (extension_TriggerOnly(p_extensions_manager, p_ext)) {
             extension_Trigger(p_extensions_manager, p_ext);
@@ -237,11 +236,11 @@
             else
                 extension_Deactivate(p_extensions_manager, p_ext);
         }
-    }
-    else
-    {
-        msg_Dbg(p_intf, "triggering extension '%s', on menu with id = 0x%x",
-                 p_ext->psz_title, i_action);
+    } else {
+        msg_Dbg(p_intf,
+                "triggering extension '%s', on menu with id = 0x%x",
+                p_ext->psz_title,
+                i_action);
 
         extension_TriggerMenu(p_extensions_manager, p_ext, i_action);
     }
@@ -249,13 +248,14 @@
 
 - (void)playingChanged:(int)state
 {
-    //This is unlikely, but can happen if no extension modules can be loaded.
+    // This is unlikely, but can happen if no extension modules can be loaded.
     if (p_extensions_manager == NULL)
         return;
     vlc_mutex_lock(&p_extensions_manager->lock);
 
     extension_t *p_ext;
-    ARRAY_FOREACH(p_ext, p_extensions_manager->extensions) {
+    ARRAY_FOREACH(p_ext, p_extensions_manager->extensions)
+    {
         if (extension_IsActivated(p_extensions_manager, p_ext))
             extension_PlayingChanged(p_extensions_manager, p_ext, state);
     }
@@ -265,12 +265,13 @@
 
 - (void)metaChanged:(input_item_t *)p_input
 {
-    //This is unlikely, but can happen if no extension modules can be loaded.
+    // This is unlikely, but can happen if no extension modules can be loaded.
     if (p_extensions_manager == NULL)
         return;
     vlc_mutex_lock(&p_extensions_manager->lock);
     extension_t *p_ext;
-    ARRAY_FOREACH(p_ext, p_extensions_manager->extensions) {
+    ARRAY_FOREACH(p_ext, p_extensions_manager->extensions)
+    {
         if (extension_IsActivated(p_extensions_manager, p_ext))
             extension_MetaChanged(p_extensions_manager, p_ext);
     }

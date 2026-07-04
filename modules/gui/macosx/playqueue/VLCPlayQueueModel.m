@@ -64,7 +64,7 @@
     if (index < 0 || index > _playQueueArray.count) {
         return nil;
     }
-    
+
     return _playQueueArray[index];
 }
 
@@ -75,12 +75,14 @@
 
 - (void)addItems:(NSArray<VLCPlayQueueItem *> *)array atIndex:(size_t)index count:(size_t)count
 {
-    [_playQueueArray insertObjects:array atIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(index, count)]];
+    [_playQueueArray
+        insertObjects:array
+            atIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(index, count)]];
 }
 
 - (void)moveItemAtIndex:(size_t)index toTarget:(size_t)target
 {
-    VLCPlayQueueItem * const item = [_playQueueArray objectAtIndex:index];
+    VLCPlayQueueItem *const item = [_playQueueArray objectAtIndex:index];
     [_playQueueArray removeObjectAtIndex:index];
     [_playQueueArray insertObject:item atIndex:target];
 }
@@ -92,7 +94,7 @@
 
 - (void)updateItemAtIndex:(size_t)index
 {
-    VLCPlayQueueItem * const item = _playQueueArray[index];
+    VLCPlayQueueItem *const item = _playQueueArray[index];
     [item updateRepresentation];
 }
 - (void)replaceItemAtIndex:(size_t)index withItem:(VLCPlayQueueItem *)newItem

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Filter staged files under modules/gui/macosx ending in .h, .m, .mm, excluding the imported/ folder
+files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '^modules/gui/macosx/.*\.(h|m|mm)$' | grep -v '/imported/')
+
+if [ -n "$files" ]; then
+    echo "Checking Objective-C formatting for macosx GUI module…"
+    
+    # Run clang-format in dry-run mode
+    # -Werror makes it return a non-zero status if there are any formatting violations
+    echo "$files" | xargs clang-format --dry-run -Werror -style=file
+    
+    if [ $? -ne 0 ]; then
+        echo "----------------------------------------------------------------------"
+        echo "❌ Commit aborted: Some staged files do not match the style guidelines."
+        echo "💡 To fix this, run the following command to format your files in-place:"
+        echo "   find modules/gui/macosx -type f \( -name \"*.h\" -o -name \"*.m\" -o -name \"*.mm\" \) -not -path \"*/imported/*\" -exec clang-format -i -style=file {} +"
+        echo "----------------------------------------------------------------------"
+        exit 1
+    fi
+    echo "✅ Objective-C formatting check passed."
+fi

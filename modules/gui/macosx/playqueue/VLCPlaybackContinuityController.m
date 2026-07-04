@@ -43,7 +43,7 @@ static const int64_t MinimumStoreRemainingTime = MinInMillisecs;
 static NSString *VLCRecentlyPlayedMediaKey = @"recentlyPlayedMedia";
 static NSString *VLCRecentlyPlayedMediaListKey = @"recentlyPlayedMediaList";
 
-@interface VLCPlaybackContinuityController()
+@interface VLCPlaybackContinuityController ()
 {
     VLCInputItem *_currentInput;
     VLCResumeDialogController *_resumeDialogController;
@@ -55,9 +55,12 @@ static NSString *VLCRecentlyPlayedMediaListKey = @"recentlyPlayedMediaList";
 + (void)initialize
 {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    NSDictionary *appDefaults = [NSDictionary dictionaryWithObjectsAndKeys:
-                                 [NSArray array], VLCRecentlyPlayedMediaListKey,
-                                 [NSDictionary dictionary], VLCRecentlyPlayedMediaKey, nil];
+    NSDictionary *appDefaults =
+        [NSDictionary dictionaryWithObjectsAndKeys:[NSArray array],
+                                                   VLCRecentlyPlayedMediaListKey,
+                                                   [NSDictionary dictionary],
+                                                   VLCRecentlyPlayedMediaKey,
+                                                   nil];
 
     [defaults registerDefaults:appDefaults];
 }
@@ -87,13 +90,16 @@ static NSString *VLCRecentlyPlayedMediaListKey = @"recentlyPlayedMediaList";
 
     if (_currentInput) {
         /* continue playback where you left off */
-        [self storePlaybackPositionForItem:_currentInput player:VLCMain.sharedInstance.playQueueController.playerController];
+        [self storePlaybackPositionForItem:_currentInput
+                                    player:VLCMain.sharedInstance.playQueueController
+                                               .playerController];
     }
 }
 
 - (void)inputItemChanged:(NSNotification *)aNotification
 {
-    VLCPlayerController * const playerController = VLCMain.sharedInstance.playQueueController.playerController;
+    VLCPlayerController *const playerController =
+        VLCMain.sharedInstance.playQueueController.playerController;
 
     // Cancel pending resume dialogs
     [_resumeDialogController cancel];
@@ -101,8 +107,7 @@ static NSString *VLCRecentlyPlayedMediaListKey = @"recentlyPlayedMediaList";
     // object is hold here and released then it is dead
     _currentInput = playerController.currentMedia;
     if (_currentInput) {
-        [self continuePlaybackWhereYouLeftOff:_currentInput
-                                       player:playerController];
+        [self continuePlaybackWhereYouLeftOff:_currentInput player:playerController];
     }
 }
 
@@ -146,7 +151,8 @@ static NSString *VLCRecentlyPlayedMediaListKey = @"recentlyPlayedMediaList";
     return YES;
 }
 
-- (void)continuePlaybackWhereYouLeftOff:(VLCInputItem *)inputItem player:(VLCPlayerController *)playerController
+- (void)continuePlaybackWhereYouLeftOff:(VLCInputItem *)inputItem
+                                 player:(VLCPlayerController *)playerController
 {
     int settingValue = (int)config_GetInt("macosx-continue-playback");
     if (settingValue == 2) // never resume
@@ -156,14 +162,17 @@ static NSString *VLCRecentlyPlayedMediaListKey = @"recentlyPlayedMediaList";
         return;
 
     /* allow the user to over-write the start/stop/run-time */
-    NSArray<NSString *> * const options = inputItem.options;
+    NSArray<NSString *> *const options = inputItem.options;
     if (options == nil) {
         return;
     }
 
-    const NSUInteger runtimeOption = [options indexOfObjectPassingTest:^BOOL(NSString * const obj, const NSUInteger __unused idx, BOOL * const __unused stop){
-        return [obj hasPrefix:@"start-time"] || [obj hasPrefix:@"stop-time"];
-    }];
+    const NSUInteger runtimeOption =
+        [options indexOfObjectPassingTest:^BOOL(NSString *const obj,
+                                                const NSUInteger __unused idx,
+                                                BOOL *const __unused stop) {
+            return [obj hasPrefix:@"start-time"] || [obj hasPrefix:@"stop-time"];
+        }];
 
     if (runtimeOption != NSNotFound) {
         return;
@@ -177,7 +186,8 @@ static NSString *VLCRecentlyPlayedMediaListKey = @"recentlyPlayedMediaList";
     if (!url)
         return;
 
-    VLCMediaLibraryMediaItem * const libraryMediaItem = [VLCMediaLibraryMediaItem mediaItemForURL:url];
+    VLCMediaLibraryMediaItem *const libraryMediaItem =
+        [VLCMediaLibraryMediaItem mediaItemForURL:url];
     if (!libraryMediaItem) {
         // input item isn't part of the library
         [self resumeLegacyPlaybackPositionForInputItem:inputItem
@@ -231,7 +241,8 @@ static NSString *VLCRecentlyPlayedMediaListKey = @"recentlyPlayedMediaList";
                                              ask:(BOOL)ask
                                           player:(VLCPlayerController *)playerController
 {
-    NSDictionary *recentlyPlayedFiles = [[NSUserDefaults standardUserDefaults] objectForKey:VLCRecentlyPlayedMediaKey];
+    NSDictionary *recentlyPlayedFiles =
+        [[NSUserDefaults standardUserDefaults] objectForKey:VLCRecentlyPlayedMediaKey];
     if (!recentlyPlayedFiles)
         return;
 
@@ -243,10 +254,10 @@ static NSString *VLCRecentlyPlayedMediaListKey = @"recentlyPlayedMediaList";
         if (result == RESUME_RESTART)
             return;
 
-        vlc_tick_t lastPos = vlc_tick_from_sec( lastPosition.intValue );
+        vlc_tick_t lastPos = vlc_tick_from_sec(lastPosition.intValue);
         msg_Dbg(getIntf(), "continuing playback at %lld", lastPos);
 
-        [playerController setTimePrecise: lastPos];
+        [playerController setTimePrecise:lastPos];
     };
 
     if (!ask) { // always
@@ -310,7 +321,8 @@ BOOL ShouldStorePlaybackPosition(float position, int64_t duration)
                                      withPlayer:(VLCPlayerController *)playerController
 {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    NSMutableDictionary *mutDict = [[NSMutableDictionary alloc] initWithDictionary:[defaults objectForKey:VLCRecentlyPlayedMediaKey]];
+    NSMutableDictionary *mutDict = [[NSMutableDictionary alloc]
+        initWithDictionary:[defaults objectForKey:VLCRecentlyPlayedMediaKey]];
 
     float relativePos = playerController.position;
     long long pos = SEC_FROM_VLC_TICK(playerController.time);
@@ -319,7 +331,7 @@ BOOL ShouldStorePlaybackPosition(float position, int64_t duration)
     NSMutableArray *mediaList = [[defaults objectForKey:VLCRecentlyPlayedMediaListKey] mutableCopy];
     NSString *mrl = inputItem.MRL;
 
-    if (ShouldStorePlaybackPosition(relativePos, dur*1000)) {
+    if (ShouldStorePlaybackPosition(relativePos, dur * 1000)) {
         msg_Dbg(getIntf(), "Store current playback position of %f", relativePos);
         [mutDict setObject:[NSNumber numberWithInteger:pos] forKey:inputItem.MRL];
 

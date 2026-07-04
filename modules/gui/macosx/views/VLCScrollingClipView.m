@@ -22,12 +22,14 @@
 
 #import "VLCScrollingClipView.h"
 
-@implementation VLCScrollingClipView {
+@implementation VLCScrollingClipView
+{
     NSTimer *scrollTimer;
     NSTimeInterval startInterval;
 }
 
-- (void)startScrolling {
+- (void)startScrolling
+{
     // Start our timer unless running
     if (!scrollTimer) {
         scrollTimer = [NSTimer scheduledTimerWithTimeInterval:0.025
@@ -38,7 +40,8 @@
     }
 }
 
-- (void)stopScrolling {
+- (void)stopScrolling
+{
     // Stop timer unless stopped
     if (scrollTimer) {
         [scrollTimer invalidate];
@@ -46,7 +49,8 @@
     }
 }
 
-- (void)resetScrolling {
+- (void)resetScrolling
+{
     startInterval = 0;
     [self scrollToPoint:NSMakePoint(0.0, 0.0)];
     if (_parentScrollView) {
@@ -54,13 +58,15 @@
     }
 }
 
-- (void)scrollWheel:(NSEvent *)theEvent {
+- (void)scrollWheel:(NSEvent *)theEvent
+{
     // Stop auto-scrolling if the user scrolls
     [self stopScrolling];
     [super scrollWheel:theEvent];
 }
 
-- (void)scrollTick:(NSTimer *)timer {
+- (void)scrollTick:(NSTimer *)timer
+{
     CGFloat maxHeight = self.documentRect.size.height;
     CGFloat scrollPosition = self.documentVisibleRect.origin.y;
 

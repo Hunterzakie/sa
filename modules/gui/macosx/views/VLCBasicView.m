@@ -29,12 +29,14 @@
     self.wantsLayer = YES;
 }
 
-- (BOOL)wantsUpdateLayer {
-   return YES;
+- (BOOL)wantsUpdateLayer
+{
+    return YES;
 }
 
-- (void)updateLayer {
-   self.layer.backgroundColor = [NSColor controlBackgroundColor].CGColor;
+- (void)updateLayer
+{
+    self.layer.backgroundColor = [NSColor controlBackgroundColor].CGColor;
 }
 
 @end

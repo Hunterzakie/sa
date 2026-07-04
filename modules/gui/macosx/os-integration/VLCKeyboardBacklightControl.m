@@ -24,11 +24,12 @@
 #import <IOKit/IOKitLib.h>
 #import "main/VLCMain.h"
 
-enum {
+enum
+{
     kGetSensorReadingID = 0, // getSensorReading(int *, int *)
     kGetLEDBrightnessID = 1, // getLEDBrightness(int, int *)
     kSetLEDBrightnessID = 2, // setLEDBrightness(int, int, int *)
-    kSetLEDFadeID = 3        // setLEDFade(int, int, int, int *)
+    kSetLEDFadeID = 3 // setLEDFade(int, int, int, int *)
 };
 
 @interface VLCKeyboardBacklightControl ()
@@ -56,14 +57,17 @@ enum {
         IOServiceClose(_dataPort);
 }
 
-- (io_connect_t)getDataPort {
+- (io_connect_t)getDataPort
+{
     if (_dataPort)
         return _dataPort;
 
-    io_service_t serviceObject = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("AppleLMUController"));
+    io_service_t serviceObject =
+        IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("AppleLMUController"));
 
     if (!serviceObject) {
-        msg_Warn(getIntf(), "Failed to get an AppleLMUController service, keyboard dimming will not work");
+        msg_Warn(getIntf(),
+                 "Failed to get an AppleLMUController service, keyboard dimming will not work");
         return 0;
     }
 
@@ -71,7 +75,8 @@ enum {
     IOObjectRelease(serviceObject);
 
     if (kr != KERN_SUCCESS) {
-        msg_Warn(getIntf(), "Failed to open an AppleLMUController service, keyboard dimming will not work");
+        msg_Warn(getIntf(),
+                 "Failed to open an AppleLMUController service, keyboard dimming will not work");
         return 0;
     }
 
@@ -89,12 +94,8 @@ enum {
     UInt32 outputCount = 1;
     UInt64 outputValues[1];
 
-    kern_return_t kr = IOConnectCallScalarMethod(_dataPort,
-                                                 kSetLEDBrightnessID,
-                                                 inputValues,
-                                                 inputCount,
-                                                 outputValues,
-                                                 &outputCount);
+    kern_return_t kr = IOConnectCallScalarMethod(
+        _dataPort, kSetLEDBrightnessID, inputValues, inputCount, outputValues, &outputCount);
 
     if (kr != KERN_SUCCESS)
         return;
@@ -111,12 +112,8 @@ enum {
     uint32_t outputCount = 1;
     uint64_t outputValues[1];
 
-    kern_return_t kr = IOConnectCallScalarMethod(_dataPort,
-                                                 kGetLEDBrightnessID,
-                                                 inputValues,
-                                                 inputCount,
-                                                 outputValues,
-                                                 &outputCount);
+    kern_return_t kr = IOConnectCallScalarMethod(
+        _dataPort, kGetLEDBrightnessID, inputValues, inputCount, outputValues, &outputCount);
 
     float brightness = -1.0;
     if (kr == KERN_SUCCESS) {

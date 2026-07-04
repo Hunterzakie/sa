@@ -30,7 +30,7 @@ const CGFloat VLCLibraryInternalMediaItemRowHeight = 40.;
 @interface VLCLibraryItemInternalMediaItemsDataSource ()
 
 @property (readwrite, atomic) id<VLCMediaLibraryItemProtocol> internalItem;
-@property (readwrite, atomic) NSArray<VLCMediaLibraryMediaItem*> *internalMediaItems;
+@property (readwrite, atomic) NSArray<VLCMediaLibraryMediaItem *> *internalMediaItems;
 
 @end
 
@@ -71,8 +71,8 @@ const CGFloat VLCLibraryInternalMediaItemRowHeight = 40.;
 
 - (id<NSPasteboardWriting>)tableView:(NSTableView *)tableView pasteboardWriterForRow:(NSInteger)row
 {
-    const id<VLCMediaLibraryItemProtocol> libraryItem =
-        [self libraryItemAtRow:row forTableView:tableView];
+    const id<VLCMediaLibraryItemProtocol> libraryItem = [self libraryItemAtRow:row
+                                                                  forTableView:tableView];
     return [NSPasteboardItem pasteboardItemWithLibraryItem:libraryItem];
 }
 
@@ -92,9 +92,12 @@ const CGFloat VLCLibraryInternalMediaItemRowHeight = 40.;
         return NSNotFound;
     }
 
-    return [self.internalMediaItems indexOfObjectPassingTest:^BOOL(VLCMediaLibraryMediaItem * const item, const NSUInteger __unused index, BOOL * const __unused stop) {
-        return item.libraryID == libraryItem.libraryID;
-    }];
+    return [self.internalMediaItems
+        indexOfObjectPassingTest:^BOOL(VLCMediaLibraryMediaItem *const item,
+                                       const NSUInteger __unused index,
+                                       BOOL *const __unused stop) {
+            return item.libraryID == libraryItem.libraryID;
+        }];
 }
 
 - (VLCMediaLibraryParentGroupType)currentParentType

@@ -25,7 +25,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-@interface VLCOpenWindowController : NSWindowController <NSTabViewDelegate>
+@interface VLCOpenWindowController : NSWindowController<NSTabViewDelegate>
 
 @property (readwrite, weak) IBOutlet NSTextField *mrlTextField;
 @property (readwrite, weak) IBOutlet NSBox *mrlBox;
@@ -116,7 +116,7 @@
 @property (readwrite, weak) IBOutlet NSButton *netOpenUDPButton;
 @property (readwrite, weak) IBOutlet NSButton *netUDPCancelButton;
 @property (readwrite, weak) IBOutlet NSButton *netUDPOKButton;
-@property (readwrite)       IBOutlet NSWindow *netUDPPanel;
+@property (readwrite) IBOutlet NSWindow *netUDPPanel;
 @property (readwrite, weak) IBOutlet NSTextField *netUDPPortTextField;
 @property (readwrite, weak) IBOutlet NSTextField *netUDPPortLabel;
 @property (readwrite, weak) IBOutlet NSStepper *netUDPPortStepper;

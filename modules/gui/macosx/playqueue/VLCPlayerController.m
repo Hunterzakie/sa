@@ -67,7 +67,8 @@ NSString *VLCPlayerTeletextPageChanged = @"VLCPlayerTeletextPageChanged";
 NSString *VLCPlayerTeletextTransparencyChanged = @"VLCPlayerTeletextTransparencyChanged";
 NSString *VLCPlayerAudioDelayChanged = @"VLCPlayerAudioDelayChanged";
 NSString *VLCPlayerSubtitlesDelayChanged = @"VLCPlayerSubtitlesDelayChanged";
-NSString *VLCPlayerDelayChangedForSpecificElementaryStream = @"VLCPlayerDelayChangedForSpecificElementaryStream";
+NSString *VLCPlayerDelayChangedForSpecificElementaryStream =
+    @"VLCPlayerDelayChangedForSpecificElementaryStream";
 NSString *VLCPlayerSubtitlesFPSChanged = @"VLCPlayerSubtitlesFPSChanged";
 NSString *VLCPlayerSubtitleTextScalingFactorChanged = @"VLCPlayerSubtitleTextScalingFactorChanged";
 NSString *VLCPlayerRecordingChanged = @"VLCPlayerRecordingChanged";
@@ -82,10 +83,10 @@ NSString *VLCPlayerWallpaperModeChanged = @"VLCPlayerWallpaperModeChanged";
 NSString *VLCPlayerListOfVideoOutputThreadsChanged = @"VLCPlayerListOfVideoOutputThreadsChanged";
 NSString *VLCPlayerVolumeChanged = @"VLCPlayerVolumeChanged";
 NSString *VLCPlayerMuteChanged = @"VLCPlayerMuteChanged";
-NSString * const VLCPlayerLyricsAvailableChanged = @"VLCPlayerLyricsAvailableChanged";
-NSString * const VLCPlayerShowLyricsChanged = @"VLCPlayerShowLyricsChanged";
+NSString *const VLCPlayerLyricsAvailableChanged = @"VLCPlayerLyricsAvailableChanged";
+NSString *const VLCPlayerShowLyricsChanged = @"VLCPlayerShowLyricsChanged";
 
-NSString * const VLCPlayerShowLyricsKey = @"VLCPlayerShowLyricsKey";
+NSString *const VLCPlayerShowLyricsKey = @"VLCPlayerShowLyricsKey";
 
 const CGFloat VLCVolumeMaximum = 2.;
 const CGFloat VLCVolumeDefault = 1.;
@@ -166,7 +167,8 @@ const CGFloat VLCVolumeDefault = 1.;
 
 #pragma mark - player callback implementations
 
-static void cb_player_current_media_changed(vlc_player_t *p_player, input_item_t *p_newMediaItem, void *p_data)
+static void
+cb_player_current_media_changed(vlc_player_t *p_player, input_item_t *p_newMediaItem, void *p_data)
 {
     VLC_UNUSED(p_player);
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -175,7 +177,8 @@ static void cb_player_current_media_changed(vlc_player_t *p_player, input_item_t
     });
 }
 
-static void cb_player_state_changed(vlc_player_t *p_player, enum vlc_player_state state, void *p_data)
+static void
+cb_player_state_changed(vlc_player_t *p_player, enum vlc_player_state state, void *p_data)
 {
     VLC_UNUSED(p_player);
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -184,7 +187,8 @@ static void cb_player_state_changed(vlc_player_t *p_player, enum vlc_player_stat
     });
 }
 
-static void cb_player_error_changed(vlc_player_t *p_player, enum vlc_player_error error, void *p_data)
+static void
+cb_player_error_changed(vlc_player_t *p_player, enum vlc_player_error error, void *p_data)
 {
     VLC_UNUSED(p_player);
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -202,18 +206,21 @@ static void cb_player_buffering(vlc_player_t *p_player, float newBufferValue, vo
     });
 }
 
-static void cb_player_capabilities_changed(vlc_player_t *p_player, int oldCapabilities, int newCapabilities, void *p_data)
+static void cb_player_capabilities_changed(vlc_player_t *p_player,
+                                           int oldCapabilities,
+                                           int newCapabilities,
+                                           void *p_data)
 {
-    VLC_UNUSED(p_player); VLC_UNUSED(oldCapabilities);
+    VLC_UNUSED(p_player);
+    VLC_UNUSED(oldCapabilities);
     dispatch_async(dispatch_get_main_queue(), ^{
         VLCPlayerController *playerController = (__bridge VLCPlayerController *)p_data;
         [playerController capabilitiesChanged:newCapabilities];
     });
 }
 
-static void cb_player_titles_changed(vlc_player_t *p_player,
-                                     vlc_player_title_list *p_titles,
-                                     void *p_data)
+static void
+cb_player_titles_changed(vlc_player_t *p_player, vlc_player_title_list *p_titles, void *p_data)
 {
     VLC_UNUSED(p_player);
     if (p_titles)
@@ -239,8 +246,10 @@ static void cb_player_title_selection_changed(vlc_player_t *p_player,
 }
 
 static void cb_player_chapter_selection_changed(vlc_player_t *p_player,
-                                                const struct vlc_player_title *p_title, size_t title_idx,
-                                                const struct vlc_player_chapter *p_new_chapter, size_t new_chapter_idx,
+                                                const struct vlc_player_title *p_title,
+                                                size_t title_idx,
+                                                const struct vlc_player_chapter *p_new_chapter,
+                                                size_t new_chapter_idx,
                                                 void *p_data)
 {
     VLC_UNUSED(p_player);
@@ -253,7 +262,9 @@ static void cb_player_chapter_selection_changed(vlc_player_t *p_player,
     });
 }
 
-static void cb_player_teletext_menu_availability_changed(vlc_player_t *p_player, bool hasTeletextMenu, void *p_data)
+static void cb_player_teletext_menu_availability_changed(vlc_player_t *p_player,
+                                                         bool hasTeletextMenu,
+                                                         void *p_data)
 {
     VLC_UNUSED(p_player);
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -262,7 +273,8 @@ static void cb_player_teletext_menu_availability_changed(vlc_player_t *p_player,
     });
 }
 
-static void cb_player_teletext_enabled_changed(vlc_player_t *p_player, bool teletextEnabled, void *p_data)
+static void
+cb_player_teletext_enabled_changed(vlc_player_t *p_player, bool teletextEnabled, void *p_data)
 {
     VLC_UNUSED(p_player);
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -280,7 +292,8 @@ static void cb_player_teletext_page_changed(vlc_player_t *p_player, unsigned pag
     });
 }
 
-static void cb_player_teletext_transparency_changed(vlc_player_t *p_player, bool isTransparent, void *p_data)
+static void
+cb_player_teletext_transparency_changed(vlc_player_t *p_player, bool isTransparent, void *p_data)
 {
     VLC_UNUSED(p_player);
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -289,14 +302,15 @@ static void cb_player_teletext_transparency_changed(vlc_player_t *p_player, bool
     });
 }
 
-static void cb_player_category_delay_changed(vlc_player_t *p_player, enum es_format_category_e cat,
-                                             vlc_tick_t newDelay, void *p_data)
+static void cb_player_category_delay_changed(vlc_player_t *p_player,
+                                             enum es_format_category_e cat,
+                                             vlc_tick_t newDelay,
+                                             void *p_data)
 {
     VLC_UNUSED(p_player);
     dispatch_async(dispatch_get_main_queue(), ^{
         VLCPlayerController *playerController = (__bridge VLCPlayerController *)p_data;
-        switch (cat)
-        {
+        switch (cat) {
             case AUDIO_ES:
                 [playerController audioDelayChanged:newDelay];
                 break;
@@ -309,7 +323,8 @@ static void cb_player_category_delay_changed(vlc_player_t *p_player, enum es_for
     });
 }
 
-static void cb_player_associated_subs_fps_changed(vlc_player_t *p_player, float subs_fps, void *p_data)
+static void
+cb_player_associated_subs_fps_changed(vlc_player_t *p_player, float subs_fps, void *p_data)
 {
     VLC_UNUSED(p_player);
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -338,9 +353,8 @@ static void cb_player_record_changed(vlc_player_t *p_player, bool recording, voi
     });
 }
 
-static void cb_player_stats_changed(vlc_player_t *p_player,
-                                    const struct input_stats_t *p_stats,
-                                    void *p_data)
+static void
+cb_player_stats_changed(vlc_player_t *p_player, const struct input_stats_t *p_stats, void *p_data)
 {
     VLC_UNUSED(p_player);
 
@@ -358,7 +372,9 @@ static void cb_player_track_list_changed(vlc_player_t *p_player,
                                          const struct vlc_player_track *track,
                                          void *p_data)
 {
-    VLC_UNUSED(p_player); VLC_UNUSED(action); VLC_UNUSED(track);
+    VLC_UNUSED(p_player);
+    VLC_UNUSED(action);
+    VLC_UNUSED(track);
     dispatch_async(dispatch_get_main_queue(), ^{
         VLCPlayerController *playerController = (__bridge VLCPlayerController *)p_data;
         [playerController trackListChanged];
@@ -370,7 +386,9 @@ static void cb_player_track_selection_changed(vlc_player_t *p_player,
                                               vlc_es_id_t *selected_id,
                                               void *p_data)
 {
-    VLC_UNUSED(p_player); VLC_UNUSED(unselected_id); VLC_UNUSED(selected_id);
+    VLC_UNUSED(p_player);
+    VLC_UNUSED(unselected_id);
+    VLC_UNUSED(selected_id);
     dispatch_async(dispatch_get_main_queue(), ^{
         VLCPlayerController *playerController = (__bridge VLCPlayerController *)p_data;
         [playerController trackSelectionChanged];
@@ -394,7 +412,9 @@ static void cb_player_program_list_changed(vlc_player_t *p_player,
                                            const struct vlc_player_program *prgm,
                                            void *p_data)
 {
-    VLC_UNUSED(p_player); VLC_UNUSED(action); VLC_UNUSED(prgm);
+    VLC_UNUSED(p_player);
+    VLC_UNUSED(action);
+    VLC_UNUSED(prgm);
     dispatch_async(dispatch_get_main_queue(), ^{
         VLCPlayerController *playerController = (__bridge VLCPlayerController *)p_data;
         [playerController programListChanged];
@@ -406,14 +426,15 @@ static void cb_player_program_selection_changed(vlc_player_t *p_player,
                                                 int selected_id,
                                                 void *p_data)
 {
-    VLC_UNUSED(p_player); VLC_UNUSED(unselected_id);
+    VLC_UNUSED(p_player);
+    VLC_UNUSED(unselected_id);
     dispatch_async(dispatch_get_main_queue(), ^{
         VLCPlayerController *playerController = (__bridge VLCPlayerController *)p_data;
         [playerController programSelectionChanged:selected_id];
     });
 }
 
-static void cb_player_atobloop_changed(vlc_player_t * __unused p_player,
+static void cb_player_atobloop_changed(vlc_player_t *__unused p_player,
                                        enum vlc_player_abloop new_state,
                                        vlc_tick_t __unused time,
                                        double __unused pos,
@@ -425,7 +446,7 @@ static void cb_player_atobloop_changed(vlc_player_t * __unused p_player,
     });
 }
 
-static void cb_player_item_meta_changed(vlc_player_t * __unused p_player,
+static void cb_player_item_meta_changed(vlc_player_t *__unused p_player,
                                         input_item_t *p_mediaItem,
                                         void *p_data)
 {
@@ -436,9 +457,9 @@ static void cb_player_item_meta_changed(vlc_player_t * __unused p_player,
     });
 }
 
-static void cb_player_vout_changed(vlc_player_t * __unused p_player,
+static void cb_player_vout_changed(vlc_player_t *__unused p_player,
                                    enum vlc_player_vout_action __unused action,
-                                   vout_thread_t * __unused p_vout,
+                                   vout_thread_t *__unused p_vout,
                                    enum vlc_vout_order __unused order,
                                    vlc_es_id_t *es_id,
                                    void *p_data)
@@ -452,9 +473,10 @@ static void cb_player_vout_changed(vlc_player_t * __unused p_player,
     });
 }
 
-static void cb_player_timer_updated(const struct vlc_player_timer_point * const p_value, void * const p_data)
+static void cb_player_timer_updated(const struct vlc_player_timer_point *const p_value,
+                                    void *const p_data)
 {
-    VLCPlayerController * const playerController = (__bridge VLCPlayerController *)p_data;
+    VLCPlayerController *const playerController = (__bridge VLCPlayerController *)p_data;
     const struct vlc_player_timer_point value_copy = *p_value;
 
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -476,17 +498,19 @@ static void cb_player_timer_updated(const struct vlc_player_timer_point * const 
 
                 if (value_copy.system_date != INT64_MAX) {
                     static const vlc_tick_t POSITION_MIN_UPDATE_INTERVAL = VLC_TICK_FROM_MS(15);
-                    vlc_tick_t interval = MAX(value_copy.length / value_copy.rate / VLC_TICK_FROM_MS(1), POSITION_MIN_UPDATE_INTERVAL);
+                    vlc_tick_t interval =
+                        MAX(value_copy.length / value_copy.rate / VLC_TICK_FROM_MS(1),
+                            POSITION_MIN_UPDATE_INTERVAL);
                     if (interval < POSITION_MIN_UPDATE_INTERVAL)
                         interval = POSITION_MIN_UPDATE_INTERVAL;
 
                     [playerController.positionTimer invalidate];
                     playerController.positionTimer =
-                    [NSTimer scheduledTimerWithTimeInterval:SEC_FROM_VLC_TICK(interval)
-                                                     target:playerController
-                                                   selector:@selector(updatePositionWithTimer:)
-                                                   userInfo:nil
-                                                    repeats:YES];
+                        [NSTimer scheduledTimerWithTimeInterval:SEC_FROM_VLC_TICK(interval)
+                                                         target:playerController
+                                                       selector:@selector(updatePositionWithTimer:)
+                                                       userInfo:nil
+                                                        repeats:YES];
                 }
             }
             [playerController updateTime:system_now forceUpdate:lengthOrRateChanged];
@@ -494,11 +518,12 @@ static void cb_player_timer_updated(const struct vlc_player_timer_point * const 
     });
 }
 
-static void cb_player_timer_paused(const vlc_tick_t system_date, void * const p_data)
+static void cb_player_timer_paused(const vlc_tick_t system_date, void *const p_data)
 {
-    VLCPlayerController * const playerController = (__bridge VLCPlayerController *)p_data;
+    VLCPlayerController *const playerController = (__bridge VLCPlayerController *)p_data;
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (system_date != VLC_TICK_INVALID && [playerController interpolateTime:system_date] == VLC_SUCCESS) {
+        if (system_date != VLC_TICK_INVALID &&
+            [playerController interpolateTime:system_date] == VLC_SUCCESS) {
             // The discontinuity event got a valid system date, update the time properties.
             [playerController updatePosition];
             [playerController updateTime:system_date forceUpdate:NO];
@@ -510,12 +535,13 @@ static void cb_player_timer_paused(const vlc_tick_t system_date, void * const p_
     });
 }
 
-static void cb_player_timer_seeked(const struct vlc_player_timer_point * const p_value, void * const p_data)
+static void cb_player_timer_seeked(const struct vlc_player_timer_point *const p_value,
+                                   void *const p_data)
 {
     if (p_value == NULL) {
         return; // NULL means seeking just finished; nothing to update here
     }
-    VLCPlayerController * const playerController = (__bridge VLCPlayerController *)p_data;
+    VLCPlayerController *const playerController = (__bridge VLCPlayerController *)p_data;
     const struct vlc_player_timer_point value_copy = *p_value;
     dispatch_async(dispatch_get_main_queue(), ^{
         playerController.playerTime = value_copy;
@@ -570,7 +596,8 @@ static const struct vlc_player_timer_cbs player_timer_callbacks = {
 
 #pragma mark - video specific callback implementations
 
-static void cb_player_vout_fullscreen_changed(vout_thread_t *p_vout, bool isFullscreen, void *p_data)
+static void
+cb_player_vout_fullscreen_changed(vout_thread_t *p_vout, bool isFullscreen, void *p_data)
 {
     VLC_UNUSED(p_vout);
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -579,7 +606,9 @@ static void cb_player_vout_fullscreen_changed(vout_thread_t *p_vout, bool isFull
     });
 }
 
-static void cb_player_vout_wallpaper_mode_changed(vout_thread_t *p_vout,  bool wallpaperModeEnabled, void *p_data)
+static void cb_player_vout_wallpaper_mode_changed(vout_thread_t *p_vout,
+                                                  bool wallpaperModeEnabled,
+                                                  void *p_data)
 {
     VLC_UNUSED(p_vout);
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -625,7 +654,10 @@ static int BossCallback(vlc_object_t *p_this,
                         vlc_value_t new_val,
                         void *p_data)
 {
-    VLC_UNUSED(p_this); VLC_UNUSED(psz_var); VLC_UNUSED(oldval); VLC_UNUSED(new_val);
+    VLC_UNUSED(p_this);
+    VLC_UNUSED(psz_var);
+    VLC_UNUSED(oldval);
+    VLC_UNUSED(new_val);
     @autoreleasepool {
         dispatch_async(dispatch_get_main_queue(), ^{
             VLCPlayerController *playerController = (__bridge VLCPlayerController *)p_data;
@@ -658,20 +690,17 @@ static int BossCallback(vlc_object_t *p_this,
         _p_player = player;
         vlc_player_Lock(_p_player);
         // FIXME: initialize state machine here
-        _playerListenerID = vlc_player_AddListener(_p_player,
-                               &player_callbacks,
-                               (__bridge void *)self);
+        _playerListenerID =
+            vlc_player_AddListener(_p_player, &player_callbacks, (__bridge void *)self);
         _playerTimerID = vlc_player_AddTimer(_p_player,
                                              VLC_TICK_FROM_MS(500),
                                              &player_timer_callbacks,
                                              (__bridge void *)self);
         vlc_player_Unlock(_p_player);
-        _playerAoutListenerID = vlc_player_aout_AddListener(_p_player,
-                                                            &player_aout_callbacks,
-                                                            (__bridge void *)self);
-        _playerVoutListenerID = vlc_player_vout_AddListener(_p_player,
-                                                            &player_vout_callbacks,
-                                                            (__bridge void *)self);
+        _playerAoutListenerID =
+            vlc_player_aout_AddListener(_p_player, &player_aout_callbacks, (__bridge void *)self);
+        _playerVoutListenerID =
+            vlc_player_vout_AddListener(_p_player, &player_vout_callbacks, (__bridge void *)self);
 
         const float aoutVolume = vlc_player_aout_GetVolume(_p_player);
         _volume = aoutVolume >= 0.f ? aoutVolume : VLCVolumeDefault;
@@ -702,15 +731,19 @@ static int BossCallback(vlc_object_t *p_this,
 
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_BACKGROUND, 0), ^{
         if (@available(macOS 10.15, *)) {
-            self.appleMusicApp = (iTunesApplication *) [SBApplication applicationWithBundleIdentifier:@"com.apple.Music"];
+            self.appleMusicApp = (iTunesApplication *)[SBApplication
+                applicationWithBundleIdentifier:@"com.apple.Music"];
         } else {
-            self.iTunesApp = (iTunesApplication *) [SBApplication applicationWithBundleIdentifier:@"com.apple.iTunes"];
+            self.iTunesApp = (iTunesApplication *)[SBApplication
+                applicationWithBundleIdentifier:@"com.apple.iTunes"];
         }
 
-        self.spotifyApp = (SpotifyApplication *) [SBApplication applicationWithBundleIdentifier:@"com.spotify.client"];
+        self.spotifyApp = (SpotifyApplication *)[SBApplication
+            applicationWithBundleIdentifier:@"com.spotify.client"];
 
         dispatch_async(dispatch_get_main_queue(), ^{
-            if (self->_playerState == VLC_PLAYER_STATE_PLAYING || self->_playerState == VLC_PLAYER_STATE_STARTED) {
+            if (self->_playerState == VLC_PLAYER_STATE_PLAYING
+                || self->_playerState == VLC_PLAYER_STATE_STARTED) {
                 [self stopOtherAudioPlaybackApps];
             }
         });
@@ -757,8 +790,7 @@ static int BossCallback(vlc_object_t *p_this,
     _showLyrics = showLyrics;
     [NSUserDefaults.standardUserDefaults setBool:showLyrics forKey:VLCPlayerShowLyricsKey];
 
-    [_defaultNotificationCenter postNotificationName:VLCPlayerShowLyricsChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerShowLyricsChanged object:self];
 }
 
 - (VLCInputItem *)currentMedia
@@ -776,14 +808,15 @@ static int BossCallback(vlc_object_t *p_this,
 
 - (nullable VLCMediaLibraryMediaItem *)currentMediaLibraryItem
 {
-    NSURL * const url = [NSURL URLWithString:self.currentMedia.MRL];
+    NSURL *const url = [NSURL URLWithString:self.currentMedia.MRL];
     return [VLCMediaLibraryMediaItem mediaItemForURL:url];
 }
 
 - (int)interpolateTime:(vlc_tick_t)system_now
 {
     vlc_tick_t new_time;
-    if (vlc_player_timer_point_Interpolate(&_playerTime, system_now, &new_time, &_position) == VLC_SUCCESS) {
+    if (vlc_player_timer_point_Interpolate(&_playerTime, system_now, &new_time, &_position)
+        == VLC_SUCCESS) {
         _time = new_time != VLC_TICK_INVALID ? new_time - VLC_TICK_0 : 0;
         return VLC_SUCCESS;
     }
@@ -904,7 +937,7 @@ static int BossCallback(vlc_object_t *p_this,
     return [NSURL URLWithString:self.currentMedia.MRL];
 }
 
-- (NSString*)nameOfCurrentMediaItem
+- (NSString *)nameOfCurrentMediaItem
 {
     if (!self.currentMedia) {
         return nil;
@@ -924,7 +957,7 @@ static int BossCallback(vlc_object_t *p_this,
 
 - (BOOL)currentMediaIsAudioOnly
 {
-    NSURL * const currentItemUrl = self.URLOfCurrentMediaItem;
+    NSURL *const currentItemUrl = self.URLOfCurrentMediaItem;
     if (currentItemUrl == nil) {
         return NO;
     }
@@ -933,7 +966,7 @@ static int BossCallback(vlc_object_t *p_this,
         return NO;
     }
 
-    VLCMediaLibraryMediaItem * const mediaItem =
+    VLCMediaLibraryMediaItem *const mediaItem =
         [VLCMediaLibraryMediaItem mediaItemForURL:currentItemUrl];
     if (mediaItem != nil) {
         return mediaItem.mediaType == VLC_ML_MEDIA_TYPE_AUDIO;
@@ -944,8 +977,9 @@ static int BossCallback(vlc_object_t *p_this,
 
 - (void)stateChanged:(enum vlc_player_state)state
 {
-    /* instead of using vlc_player_GetState, we cache the state and provide it through a synthesized getter
-     * as the direct call might not reflect the actual state due the asynchronous API nature */
+    /* instead of using vlc_player_GetState, we cache the state and provide it through a synthesized
+     * getter as the direct call might not reflect the actual state due the asynchronous API nature
+     */
     _playerState = state;
 
     /* we seem to start (over), don't start other players */
@@ -956,8 +990,7 @@ static int BossCallback(vlc_object_t *p_this,
         }
     }
 
-    [_defaultNotificationCenter postNotificationName:VLCPlayerStateChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerStateChanged object:self];
 
     /* notify third party apps through an informal protocol that our state changed */
     [[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"VLCPlayerStateDidChange"
@@ -970,11 +1003,12 @@ static int BossCallback(vlc_object_t *p_this,
         if (_playbackHasTruelyEndedTimer) {
             [_playbackHasTruelyEndedTimer invalidate];
         }
-        _playbackHasTruelyEndedTimer = [NSTimer scheduledTimerWithTimeInterval:0.5
-                                                                        target:self
-                                                                      selector:@selector(onPlaybackHasTruelyEnded:)
-                                                                      userInfo:nil
-                                                                       repeats:NO];
+        _playbackHasTruelyEndedTimer =
+            [NSTimer scheduledTimerWithTimeInterval:0.5
+                                             target:self
+                                           selector:@selector(onPlaybackHasTruelyEnded:)
+                                           userInfo:nil
+                                            repeats:NO];
     }
 
     /* pause external players */
@@ -1005,20 +1039,15 @@ static int BossCallback(vlc_object_t *p_this,
     if (@available(macOS 10.15, *)) {
         // Pause Apple Music playback
         iTunesApplication *appleMusic = self.appleMusicApp;
-        if (appleMusic != nil &&
-            !_appleMusicPlaybackWasPaused &&
-            [appleMusic isRunning] &&
+        if (appleMusic != nil && !_appleMusicPlaybackWasPaused && [appleMusic isRunning] &&
             [appleMusic playerState] == iTunesEPlSPlaying) {
-
             msg_Dbg(p_intf, "pausing Apple Music");
             [appleMusic pause];
             _appleMusicPlaybackWasPaused = YES;
         }
     } else {
         iTunesApplication *iTunes = self.iTunesApp;
-        if (iTunes != nil &&
-            !_iTunesPlaybackWasPaused &&
-            [iTunes isRunning] &&
+        if (iTunes != nil && !_iTunesPlaybackWasPaused && [iTunes isRunning] &&
             [iTunes playerState] == iTunesEPlSPlaying) {
             // Pause iTunes playback
             msg_Dbg(p_intf, "pausing iTunes");
@@ -1029,13 +1058,10 @@ static int BossCallback(vlc_object_t *p_this,
 
     // Pause Spotify
     SpotifyApplication *spotify = self.spotifyApp;
-    if (spotify != nil &&
-        !_spotifyPlaybackWasPaused &&
+    if (spotify != nil && !_spotifyPlaybackWasPaused &&
         [spotify respondsToSelector:@selector(isRunning)] &&
-        [spotify respondsToSelector:@selector(playerState)] &&
-        [spotify isRunning] &&
+        [spotify respondsToSelector:@selector(playerState)] && [spotify isRunning] &&
         [spotify playerState] == kSpotifyPlayerStatePlaying) {
-
         msg_Dbg(p_intf, "pausing Spotify");
         [spotify pause];
         _spotifyPlaybackWasPaused = YES;
@@ -1048,34 +1074,25 @@ static int BossCallback(vlc_object_t *p_this,
     if (var_InheritInteger(p_intf, "macosx-control-itunes") > 1) {
         if (@available(macOS 10.15, *)) {
             iTunesApplication *appleMusic = self.appleMusicApp;
-            if (appleMusic != nil &&
-                _appleMusicPlaybackWasPaused &&
-                [appleMusic isRunning] &&
+            if (appleMusic != nil && _appleMusicPlaybackWasPaused && [appleMusic isRunning] &&
                 [appleMusic playerState] == iTunesEPlSPaused) {
-
                 msg_Dbg(p_intf, "unpausing Apple Music");
                 [appleMusic playpause];
             }
         } else {
             iTunesApplication *iTunes = self.iTunesApp;
-            if (iTunes != nil &&
-                _iTunesPlaybackWasPaused &&
-                [iTunes isRunning] &&
+            if (iTunes != nil && _iTunesPlaybackWasPaused && [iTunes isRunning] &&
                 [iTunes playerState] == iTunesEPlSPaused) {
-
                 msg_Dbg(p_intf, "unpausing iTunes");
                 [iTunes playpause];
             }
         }
 
         SpotifyApplication *spotify = self.spotifyApp;
-        if (spotify != nil &&
-            _spotifyPlaybackWasPaused &&
+        if (spotify != nil && _spotifyPlaybackWasPaused &&
             [spotify respondsToSelector:@selector(isRunning)] &&
-            [spotify respondsToSelector:@selector(playerState)] &&
-            [spotify isRunning] &&
+            [spotify respondsToSelector:@selector(playerState)] && [spotify isRunning] &&
             [spotify playerState] == kSpotifyPlayerStatePaused) {
-
             msg_Dbg(p_intf, "unpausing Spotify");
             [spotify play];
         }
@@ -1088,11 +1105,11 @@ static int BossCallback(vlc_object_t *p_this,
 
 - (void)errorChanged:(enum vlc_player_error)error
 {
-    /* instead of using vlc_player_GetError, we cache the error and provide it through a synthesized getter
-     * as the direct call might not reflect the actual error due the asynchronous API nature */
+    /* instead of using vlc_player_GetError, we cache the error and provide it through a synthesized
+     * getter as the direct call might not reflect the actual error due the asynchronous API nature
+     */
     _error = error;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerErrorChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerErrorChanged object:self];
 }
 
 - (void)newBufferingValue:(float)bufferValue
@@ -1100,14 +1117,13 @@ static int BossCallback(vlc_object_t *p_this,
     _bufferFill = bufferValue;
     [_defaultNotificationCenter postNotificationName:VLCPlayerBufferChanged
                                               object:self
-                                            userInfo:@{VLCPlayerBufferFill : @(bufferValue)}];
+                                            userInfo:@{ VLCPlayerBufferFill : @(bufferValue) }];
 }
 
 - (void)newRateValue:(float)rateValue
 {
     _playbackRate = rateValue;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerRateChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerRateChanged object:self];
 }
 
 - (void)setPlaybackRate:(float)playbackRate
@@ -1141,8 +1157,7 @@ static int BossCallback(vlc_object_t *p_this,
     _pausable = newCapabilities & VLC_PLAYER_CAP_PAUSE ? YES : NO;
     _recordable = YES;
     _rateChangable = newCapabilities & VLC_PLAYER_CAP_CHANGE_RATE ? YES : NO;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerCapabilitiesChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerCapabilitiesChanged object:self];
 }
 
 - (void)updatePositionWithTimer:(NSTimer *)timer
@@ -1155,8 +1170,7 @@ static int BossCallback(vlc_object_t *p_this,
 
 - (void)updatePosition
 {
-    [_defaultNotificationCenter postNotificationName:VLCPlayerTimeAndPositionChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerTimeAndPositionChanged object:self];
 }
 
 - (void)updateTimeWithTimer:(NSTimer *)timer
@@ -1169,12 +1183,11 @@ static int BossCallback(vlc_object_t *p_this,
 
 - (void)updateTime:(vlc_tick_t)systemNow forceUpdate:(BOOL)forceUpdate
 {
-    [_defaultNotificationCenter postNotificationName:VLCPlayerTimeAndPositionChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerTimeAndPositionChanged object:self];
 
     if (self.playerTime.system_date != INT64_MAX && (forceUpdate || !self.timeTimer.isValid)) {
-        const vlc_tick_t nextUpdateDate =
-            vlc_player_timer_point_GetNextIntervalDate(&_playerTime, systemNow, _time, VLC_TICK_FROM_SEC(1));
+        const vlc_tick_t nextUpdateDate = vlc_player_timer_point_GetNextIntervalDate(
+            &_playerTime, systemNow, _time, VLC_TICK_FROM_SEC(1));
         const vlc_tick_t nextUpdateInterval = nextUpdateDate - systemNow;
 
         if (nextUpdateInterval > 0) {
@@ -1185,11 +1198,12 @@ static int BossCallback(vlc_object_t *p_this,
             static const double imprecisionDelaySec = 0.03;
 
             [self.timeTimer invalidate];
-            self.timeTimer = [NSTimer timerWithTimeInterval:SEC_FROM_VLC_TICK(nextUpdateInterval) + imprecisionDelaySec
-                                                     target:self
-                                                   selector:@selector(updateTimeWithTimer:)
-                                                   userInfo:nil
-                                                    repeats:NO];
+            self.timeTimer = [NSTimer
+                timerWithTimeInterval:SEC_FROM_VLC_TICK(nextUpdateInterval) + imprecisionDelaySec
+                               target:self
+                             selector:@selector(updateTimeWithTimer:)
+                             userInfo:nil
+                              repeats:NO];
         }
     }
 }
@@ -1242,10 +1256,7 @@ static int BossCallback(vlc_object_t *p_this,
     vlc_player_Lock(_p_player);
     /* No fask seek for jumps. Indeed, jumps can seek to the current position
      * if not precise enough or if the jump value is too small. */
-    vlc_player_SeekByTime(_p_player,
-                          jumptime,
-                          VLC_PLAYER_SEEK_PRECISE,
-                          VLC_PLAYER_WHENCE_RELATIVE);
+    vlc_player_SeekByTime(_p_player, jumptime, VLC_PLAYER_SEEK_PRECISE, VLC_PLAYER_WHENCE_RELATIVE);
     vlc_player_Unlock(_p_player);
 }
 
@@ -1292,8 +1303,7 @@ static int BossCallback(vlc_object_t *p_this,
 - (void)lengthChanged:(vlc_tick_t)length
 {
     _length = length;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerLengthChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerLengthChanged object:self];
 }
 
 - (void)titleListChanged:(vlc_player_title_list *)p_titles
@@ -1303,15 +1313,13 @@ static int BossCallback(vlc_object_t *p_this,
     }
     /* the new list was already hold earlier */
     _currentTitleList = p_titles;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerTitleListChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerTitleListChanged object:self];
 }
 
 - (void)selectedTitleChanged:(size_t)selectedTitle
 {
     _selectedTitleIndex = selectedTitle;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerTitleSelectionChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerTitleSelectionChanged object:self];
 }
 
 - (const struct vlc_player_title *)selectedTitle
@@ -1324,7 +1332,8 @@ static int BossCallback(vlc_object_t *p_this,
 
 - (void)setSelectedTitleIndex:(size_t)selectedTitleIndex
 {
-    // Set the ivar first and then we will receive whatever has been selected via selectedTitleChanged
+    // Set the ivar first and then we will receive whatever has been selected via
+    // selectedTitleChanged
     [self selectedTitleChanged:selectedTitleIndex];
 
     vlc_player_Lock(_p_player);
@@ -1348,10 +1357,10 @@ static int BossCallback(vlc_object_t *p_this,
 - (NSArray<VLCPlayerTitle *> *)titlesOfCurrentMedia
 {
     const size_t count = [self numberOfTitlesOfCurrentMedia];
-    NSMutableArray<VLCPlayerTitle *> * const titles = NSMutableArray.array;
+    NSMutableArray<VLCPlayerTitle *> *const titles = NSMutableArray.array;
     for (size_t i = 0; i < count; i++) {
-        const struct vlc_player_title * const p_title = [self titleAtIndexForCurrentMedia:i];
-        VLCPlayerTitle * const title = [[VLCPlayerTitle alloc] initWithTitle:p_title atIndex:i];
+        const struct vlc_player_title *const p_title = [self titleAtIndexForCurrentMedia:i];
+        VLCPlayerTitle *const title = [[VLCPlayerTitle alloc] initWithTitle:p_title atIndex:i];
         [titles addObject:title];
     }
     return titles.copy;
@@ -1360,13 +1369,13 @@ static int BossCallback(vlc_object_t *p_this,
 - (void)selectedChapterChanged:(size_t)chapterIndex
 {
     _selectedChapterIndex = chapterIndex;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerChapterSelectionChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerChapterSelectionChanged object:self];
 }
 
 - (void)setSelectedChapterIndex:(size_t)selectedChapterIndex
 {
-    // Set the ivar first and then we will receive whatever has been selected via selectedChapterChanged
+    // Set the ivar first and then we will receive whatever has been selected via
+    // selectedChapterChanged
     [self selectedChapterChanged:selectedChapterIndex];
 
     vlc_player_Lock(_p_player);
@@ -1418,13 +1427,13 @@ static int BossCallback(vlc_object_t *p_this,
 - (void)teletextEnabledChanged:(BOOL)teletextOn
 {
     _teletextEnabled = teletextOn;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerTeletextEnabled
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerTeletextEnabled object:self];
 }
 
 - (void)setTeletextEnabled:(BOOL)teletextEnabled
 {
-    // Set the ivar first and then we will receive whatever has been enabled via teletextEnabledChanged
+    // Set the ivar first and then we will receive whatever has been enabled via
+    // teletextEnabledChanged
     [self teletextEnabledChanged:teletextEnabled];
 
     vlc_player_Lock(_p_player);
@@ -1435,13 +1444,13 @@ static int BossCallback(vlc_object_t *p_this,
 - (void)teletextPageChanged:(unsigned int)page
 {
     _teletextPage = page;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerTeletextPageChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerTeletextPageChanged object:self];
 }
 
 - (void)setTeletextPage:(unsigned int)teletextPage
 {
-    // Set the ivar first and then we will receive whatever has been selected via teletextPageChanged
+    // Set the ivar first and then we will receive whatever has been selected via
+    // teletextPageChanged
     [self teletextPageChanged:teletextPage];
 
     vlc_player_Lock(_p_player);
@@ -1458,7 +1467,8 @@ static int BossCallback(vlc_object_t *p_this,
 
 - (void)setTeletextTransparent:(BOOL)teletextTransparent
 {
-    // Set the ivar first and then we will receive whatever has been enabled via teletextTransparencyChanged
+    // Set the ivar first and then we will receive whatever has been enabled via
+    // teletextTransparencyChanged
     [self teletextTransparencyChanged:teletextTransparent];
 
     vlc_player_Lock(_p_player);
@@ -1469,8 +1479,7 @@ static int BossCallback(vlc_object_t *p_this,
 - (void)audioDelayChanged:(vlc_tick_t)audioDelay
 {
     _audioDelay = audioDelay;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerAudioDelayChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerAudioDelayChanged object:self];
 }
 
 - (void)setAudioDelay:(vlc_tick_t)audioDelay
@@ -1486,13 +1495,13 @@ static int BossCallback(vlc_object_t *p_this,
 - (void)subtitlesDelayChanged:(vlc_tick_t)subtitlesDelay
 {
     _subtitlesDelay = subtitlesDelay;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerSubtitlesDelayChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerSubtitlesDelayChanged object:self];
 }
 
 - (void)setSubtitlesDelay:(vlc_tick_t)subtitlesDelay
 {
-    // Set the ivar first and then we will receive whatever has been enabled via subtitlesDelayChanged
+    // Set the ivar first and then we will receive whatever has been enabled via
+    // subtitlesDelayChanged
     [self subtitlesDelayChanged:subtitlesDelay];
 
     vlc_player_Lock(_p_player);
@@ -1502,11 +1511,13 @@ static int BossCallback(vlc_object_t *p_this,
 
 - (void)delayChanged:(vlc_tick_t)trackDelay forTrack:(vlc_es_id_t *)esID
 {
-    [_defaultNotificationCenter postNotificationName:VLCPlayerDelayChangedForSpecificElementaryStream
-                                              object:self
-                                            userInfo:@{ VLCPlayerElementaryStreamID : [NSValue valueWithPointer:esID],
-                                                        VLCTick : [NSNumber numberWithLongLong:trackDelay] }];
-
+    [_defaultNotificationCenter
+        postNotificationName:VLCPlayerDelayChangedForSpecificElementaryStream
+                      object:self
+                    userInfo:@{
+                        VLCPlayerElementaryStreamID : [NSValue valueWithPointer:esID],
+                        VLCTick : [NSNumber numberWithLongLong:trackDelay]
+                    }];
 }
 
 - (vlc_tick_t)delayForElementaryStreamID:(vlc_es_id_t *)esID
@@ -1517,10 +1528,13 @@ static int BossCallback(vlc_object_t *p_this,
     return delay;
 }
 
-- (int)setDelay:(vlc_tick_t)delay forElementaryStreamID:(vlc_es_id_t *)esID relativeWhence:(BOOL)relative
+- (int)setDelay:(vlc_tick_t)delay
+    forElementaryStreamID:(vlc_es_id_t *)esID
+           relativeWhence:(BOOL)relative
 {
     vlc_player_Lock(_p_player);
-    int returnValue = vlc_player_SetEsIdDelay(_p_player, esID, delay, relative ? VLC_PLAYER_WHENCE_RELATIVE : VLC_PLAYER_WHENCE_ABSOLUTE);
+    int returnValue = vlc_player_SetEsIdDelay(
+        _p_player, esID, delay, relative ? VLC_PLAYER_WHENCE_RELATIVE : VLC_PLAYER_WHENCE_ABSOLUTE);
     vlc_player_Unlock(_p_player);
     return returnValue;
 }
@@ -1528,8 +1542,7 @@ static int BossCallback(vlc_object_t *p_this,
 - (void)subtitlesFPSChanged:(float)subtitlesFPS
 {
     _subtitlesFPS = subtitlesFPS;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerSubtitlesFPSChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerSubtitlesFPSChanged object:self];
 }
 
 - (void)setSubtitlesFPS:(float)subtitlesFPS
@@ -1571,7 +1584,12 @@ static int BossCallback(vlc_object_t *p_this,
 {
     int ret;
     vlc_player_Lock(_p_player);
-    ret = vlc_player_AddAssociatedMedia(_p_player, category, [[URL absoluteString] UTF8String], selectTrack, showOSD, verifyExtension);
+    ret = vlc_player_AddAssociatedMedia(_p_player,
+                                        category,
+                                        [[URL absoluteString] UTF8String],
+                                        selectTrack,
+                                        showOSD,
+                                        verifyExtension);
     vlc_player_Unlock(_p_player);
     return ret;
 }
@@ -1579,8 +1597,7 @@ static int BossCallback(vlc_object_t *p_this,
 - (void)rendererChanged:(vlc_renderer_item_t *)newRenderer
 {
     _rendererItem = newRenderer;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerRendererChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerRendererChanged object:self];
 }
 
 - (void)setRendererItem:(vlc_renderer_item_t *)rendererItem
@@ -1603,8 +1620,7 @@ static int BossCallback(vlc_object_t *p_this,
 - (void)recordingChanged:(BOOL)recording
 {
     _enableRecording = recording;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerRecordingChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerRecordingChanged object:self];
 }
 
 - (void)inputStatsUpdated:(VLCInputStats *)inputStats
@@ -1612,7 +1628,7 @@ static int BossCallback(vlc_object_t *p_this,
     _statistics = inputStats;
     [_defaultNotificationCenter postNotificationName:VLCPlayerStatisticsUpdated
                                               object:self
-                                            userInfo:@{VLCPlayerInputStats : inputStats}];
+                                            userInfo:@{ VLCPlayerInputStats : inputStats }];
 }
 
 #pragma mark - track selection
@@ -1630,7 +1646,11 @@ static int BossCallback(vlc_object_t *p_this,
 {
     vlc_player_Lock(_p_player);
     const enum es_format_category_e formatCategory = vlc_es_id_GetCat(track.esID);
-    vlc_player_SelectEsId(_p_player, track.esID, (formatCategory == AUDIO_ES || exclusiveSelection) ? VLC_PLAYER_SELECT_EXCLUSIVE : VLC_PLAYER_SELECT_SIMULTANEOUS);
+    vlc_player_SelectEsId(_p_player,
+                          track.esID,
+                          (formatCategory == AUDIO_ES || exclusiveSelection)
+                              ? VLC_PLAYER_SELECT_EXCLUSIVE
+                              : VLC_PLAYER_SELECT_SIMULTANEOUS);
     vlc_player_Unlock(_p_player);
 }
 
@@ -1703,8 +1723,7 @@ static int BossCallback(vlc_object_t *p_this,
 - (VLCTrackMetaData *)selectedTrackMetadataOfCategory:(enum es_format_category_e)category
 {
     vlc_player_Lock(_p_player);
-    const struct vlc_player_track * const p_track =
-        vlc_player_GetSelectedTrack(_p_player, category);
+    const struct vlc_player_track *const p_track = vlc_player_GetSelectedTrack(_p_player, category);
     vlc_player_Unlock(_p_player);
     return [[VLCTrackMetaData alloc] initWithTrackStructure:p_track];
 }
@@ -1737,15 +1756,13 @@ static int BossCallback(vlc_object_t *p_this,
 
 - (void)programListChanged
 {
-    [_defaultNotificationCenter postNotificationName:VLCPlayerProgramListChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerProgramListChanged object:self];
 }
 
 - (void)programSelectionChanged:(int)selectedID
 {
     _selectedProgramID = selectedID;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerProgramSelectionChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerProgramSelectionChanged object:self];
 }
 
 - (void)selectProgram:(VLCProgramMetaData *)program
@@ -1796,7 +1813,7 @@ static int BossCallback(vlc_object_t *p_this,
     vlc_tick_t b_time = -1;
     double a_pos = -1;
     double b_pos = -1;
-    
+
     vlc_player_Lock(_p_player);
     vlc_player_GetAtoBLoop(_p_player, &a_time, &a_pos, &b_time, &b_pos);
     vlc_player_Unlock(_p_player);
@@ -1806,8 +1823,7 @@ static int BossCallback(vlc_object_t *p_this,
     _aLoopPosition = a_pos;
     _bLoopPosition = b_pos;
 
-    [_defaultNotificationCenter postNotificationName:VLCPlayerABLoopStateChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerABLoopStateChanged object:self];
 }
 
 - (int)setABLoop
@@ -1863,8 +1879,7 @@ static int BossCallback(vlc_object_t *p_this,
 - (void)fullscreenChanged:(BOOL)isFullscreen
 {
     _fullscreen = isFullscreen;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerFullscreenChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerFullscreenChanged object:self];
 }
 
 - (void)setFullscreen:(BOOL)fullscreen
@@ -1881,20 +1896,19 @@ static int BossCallback(vlc_object_t *p_this,
 
 - (void)togglePictureInPicture
 {
-    [_defaultNotificationCenter postNotificationName:VLCPlayerPictureInPictureChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerPictureInPictureChanged object:self];
 }
 
 - (void)wallpaperModeChanged:(BOOL)wallpaperModeValue
 {
     _wallpaperMode = wallpaperModeValue;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerWallpaperModeChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerWallpaperModeChanged object:self];
 }
 
 - (void)setWallpaperMode:(BOOL)wallpaperMode
 {
-    // Set the ivar first and then we will receive whatever has been enabled via wallpaperModeChanged
+    // Set the ivar first and then we will receive whatever has been enabled via
+    // wallpaperModeChanged
     [self wallpaperModeChanged:wallpaperMode];
     vlc_player_vout_SetWallpaperModeEnabled(_p_player, wallpaperMode);
 }
@@ -1944,8 +1958,7 @@ static int BossCallback(vlc_object_t *p_this,
 
     NSMutableArray<NSValue *> *vouts = [NSMutableArray arrayWithCapacity:numberOfVoutThreads];
 
-    for (size_t i = 0; i < numberOfVoutThreads; ++i)
-    {
+    for (size_t i = 0; i < numberOfVoutThreads; ++i) {
         assert(pp_vouts[i]);
         [vouts addObject:[NSValue valueWithPointer:pp_vouts[i]]];
     }
@@ -1974,8 +1987,7 @@ static int BossCallback(vlc_object_t *p_this,
 - (void)volumeChanged:(float)volume
 {
     _volume = volume;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerVolumeChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerVolumeChanged object:self];
 }
 
 - (void)setVolume:(float)volume
@@ -1998,8 +2010,7 @@ static int BossCallback(vlc_object_t *p_this,
 - (void)muteChanged:(BOOL)mute
 {
     _mute = mute;
-    [_defaultNotificationCenter postNotificationName:VLCPlayerMuteChanged
-                                              object:self];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerMuteChanged object:self];
 }
 
 - (void)setMute:(BOOL)mute
@@ -2034,13 +2045,13 @@ static int BossCallback(vlc_object_t *p_this,
         return VLC_EINVAL;
     }
 
-    vout_thread_t * const vout = [self mainVideoOutputThread];
+    vout_thread_t *const vout = [self mainVideoOutputThread];
     if (vout == NULL) {
         return VLC_EGENERIC;
     }
 
-    const char * const nameUTF8String = name.UTF8String;
-    module_t * const module_obj = module_find(nameUTF8String);
+    const char *const nameUTF8String = name.UTF8String;
+    module_t *const module_obj = module_find(nameUTF8String);
     if (module_obj == NULL) {
         vout_Release(vout);
         return VLC_EGENERIC;
@@ -2085,16 +2096,17 @@ static int BossCallback(vlc_object_t *p_this,
             return VLC_SUCCESS;
         }
 
-        char * const parser = strstr(modules_string, nameUTF8String);
+        char *const parser = strstr(modules_string, nameUTF8String);
         if (parser != NULL) { // Enabled filter found
             const size_t name_len = strlen(nameUTF8String);
             // Check the next character to see if it is a colon, if it is...
             if (parser[name_len] == ':') { // ...filter is not the last one in the list
-                // Remove the filter from the list by moving the rest of the string after the filter left
-                memmove(parser, parser + name_len + 1,
-                        strlen(parser + name_len + 1) + 1);
+                // Remove the filter from the list by moving the rest of the string after the filter
+                // left
+                memmove(parser, parser + name_len + 1, strlen(parser + name_len + 1) + 1);
             } else { // Filter is the last one in the list
-                // Remove the filter from the list by setting the null terminator to the end of the string
+                // Remove the filter from the list by setting the null terminator to the end of the
+                // string
                 *parser = '\0';
             }
 
@@ -2115,18 +2127,20 @@ static int BossCallback(vlc_object_t *p_this,
     return VLC_SUCCESS;
 }
 
-- (int)setVideoFilterProperty:(NSString *)property forFilter:(NSString *)filterName withValue:(vlc_value_t)value
+- (int)setVideoFilterProperty:(NSString *)property
+                    forFilter:(NSString *)filterName
+                    withValue:(vlc_value_t)value
 {
     if (property == nil || property.length == 0 || filterName == nil || filterName.length == 0) {
         return VLC_EINVAL;
     }
 
-    vout_thread_t * const vout = [self mainVideoOutputThread];
+    vout_thread_t *const vout = [self mainVideoOutputThread];
     if (vout == NULL) {
         return VLC_EGENERIC;
     }
 
-    const char * const propertyUTF8String = property.UTF8String;
+    const char *const propertyUTF8String = property.UTF8String;
     int i_type = var_Type(vout, propertyUTF8String);
     if (i_type == 0) {
         i_type = config_GetType(propertyUTF8String);
@@ -2186,7 +2200,10 @@ static int BossCallback(vlc_object_t *p_this,
 
 - (NSString *)description
 {
-    return [NSString stringWithFormat:@"%@: name: %@, selected: %i", [VLCTrackMetaData className], self.name, self.selected];
+    return [NSString stringWithFormat:@"%@: name: %@, selected: %i",
+                                      [VLCTrackMetaData className],
+                                      self.name,
+                                      self.selected];
 }
 
 @end

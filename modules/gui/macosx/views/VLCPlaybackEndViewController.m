@@ -37,9 +37,10 @@
 static const NSTimeInterval kVLCPlaybackEndTimeout = 10;
 static const NSTimeInterval kVLCPlaybackEndUpdateInterval = 0.1;
 
-NSString * const VLCPlaybackEndViewEnabledKey = @"VLCPlaybackEndViewEnabledKey";
-NSString * const VLCPlaybackEndViewHideNotificationName = @"VLCPlaybackEndViewRequestHide";
-NSString * const VLCPlaybackEndViewReturnToLibraryNotificationName = @"VLCPlaybackEndViewReturnToLibrary";
+NSString *const VLCPlaybackEndViewEnabledKey = @"VLCPlaybackEndViewEnabledKey";
+NSString *const VLCPlaybackEndViewHideNotificationName = @"VLCPlaybackEndViewRequestHide";
+NSString *const VLCPlaybackEndViewReturnToLibraryNotificationName =
+    @"VLCPlaybackEndViewReturnToLibrary";
 
 @interface VLCPlaybackEndViewController ()
 
@@ -78,10 +79,10 @@ NSString * const VLCPlaybackEndViewReturnToLibraryNotificationName = @"VLCPlayba
 {
     [self.countdownTimer invalidate];
 
-    VLCInputItem * const currentInputItem =
+    VLCInputItem *const currentInputItem =
         VLCMain.sharedInstance.playQueueController.currentlyPlayingInputItem;
-    NSURL * const inputItemUrl = [NSURL URLWithString:currentInputItem.MRL];
-    VLCMediaLibraryMediaItem * const mediaLibraryItem =
+    NSURL *const inputItemUrl = [NSURL URLWithString:currentInputItem.MRL];
+    VLCMediaLibraryMediaItem *const mediaLibraryItem =
         [VLCMediaLibraryMediaItem mediaItemForURL:inputItemUrl];
 
     if (mediaLibraryItem) {
@@ -108,21 +109,22 @@ NSString * const VLCPlaybackEndViewReturnToLibraryNotificationName = @"VLCPlayba
         parentMediaItemCollection = [VLCMediaLibraryAlbum albumWithID:item.albumID].mediaItems;
         itemIndex = [parentMediaItemCollection indexOfMediaLibraryItem:item];
     } else if (item.mediaSubType == VLC_ML_MEDIA_SUBTYPE_SHOW_EPISODE) {
-        NSArray<VLCMediaLibraryShow *> * const shows =
+        NSArray<VLCMediaLibraryShow *> *const shows =
             VLCMain.sharedInstance.libraryController.libraryModel.listOfShows;
-        const NSInteger showContainingEpisodeIdx = [shows indexOfObjectPassingTest:^BOOL(VLCMediaLibraryShow * const show, const NSUInteger __unused idx, BOOL * const __unused stop) {
-            itemIndex = [show.mediaItems indexOfMediaLibraryItem:item];
-            return itemIndex != NSNotFound;
-        }];
+        const NSInteger showContainingEpisodeIdx =
+            [shows indexOfObjectPassingTest:^BOOL(VLCMediaLibraryShow *const show,
+                                                  const NSUInteger __unused idx,
+                                                  BOOL *const __unused stop) {
+                itemIndex = [show.mediaItems indexOfMediaLibraryItem:item];
+                return itemIndex != NSNotFound;
+            }];
         if (showContainingEpisodeIdx != NSNotFound) {
             parentMediaItemCollection = shows[showContainingEpisodeIdx].mediaItems;
         }
     }
 
-    if (parentMediaItemCollection == nil ||
-        itemIndex == NSNotFound ||
-        (NSUInteger)(itemIndex + 1) >= parentMediaItemCollection.count
-    ) {
+    if (parentMediaItemCollection == nil || itemIndex == NSNotFound
+        || (NSUInteger)(itemIndex + 1) >= parentMediaItemCollection.count) {
         return [self nextItemForInputItem:item.inputItem];
     }
     return parentMediaItemCollection[itemIndex + 1].inputItem;
@@ -134,41 +136,49 @@ NSString * const VLCPlaybackEndViewReturnToLibraryNotificationName = @"VLCPlayba
         return nil;
     }
 
-    NSURL * const itemUrl = [NSURL URLWithString:item.MRL];
+    NSURL *const itemUrl = [NSURL URLWithString:item.MRL];
     NSParameterAssert(itemUrl != nil);
-    NSString * const parentFolderPath = itemUrl.URLByDeletingLastPathComponent.path;
-    NSFileManager * const fm = NSFileManager.defaultManager;
+    NSString *const parentFolderPath = itemUrl.URLByDeletingLastPathComponent.path;
+    NSFileManager *const fm = NSFileManager.defaultManager;
     NSError *error = nil;
-    NSArray<NSString *> * const itemSiblingItemPaths =
-        [fm contentsOfDirectoryAtPath:parentFolderPath error:&error];
+    NSArray<NSString *> *const itemSiblingItemPaths = [fm contentsOfDirectoryAtPath:parentFolderPath
+                                                                              error:&error];
 
     if (error != nil) {
-        NSLog(@"Could not find siblings for item: %@\n\tReceived error:%@", item.decodedMRL, error.localizedDescription);
+        NSLog(@"Could not find siblings for item: %@\n\tReceived error:%@",
+              item.decodedMRL,
+              error.localizedDescription);
         return nil;
     }
 
-    NSArray<NSString *> * const playableExtensions = [NSString extensionsArrayFromVLCStyleString:EXTENSIONS_MEDIA];
-    NSArray<NSString *> * const itemPlayableSiblingItemPaths = [[itemSiblingItemPaths
-        sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)]
-        filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(NSString * const _Nonnull siblingItemPath, NSDictionary<NSString *, id> * const _Nullable __unused bindings) {
-            return [playableExtensions containsObject:siblingItemPath.pathExtension.lowercaseString];
-        }]];
-    const NSInteger itemIdx = [itemPlayableSiblingItemPaths indexOfObject:itemUrl.lastPathComponent];
+    NSArray<NSString *> *const playableExtensions =
+        [NSString extensionsArrayFromVLCStyleString:EXTENSIONS_MEDIA];
+    NSArray<NSString *> *const itemPlayableSiblingItemPaths =
+        [[itemSiblingItemPaths sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)]
+            filteredArrayUsingPredicate:
+                [NSPredicate predicateWithBlock:^BOOL(
+                                 NSString *const _Nonnull siblingItemPath,
+                                 NSDictionary<NSString *, id> *const _Nullable __unused bindings) {
+                    return [playableExtensions
+                        containsObject:siblingItemPath.pathExtension.lowercaseString];
+                }]];
+    const NSInteger itemIdx =
+        [itemPlayableSiblingItemPaths indexOfObject:itemUrl.lastPathComponent];
     NSParameterAssert(itemIdx != NSNotFound);
     if ((NSUInteger)(itemIdx + 1) >= itemPlayableSiblingItemPaths.count) {
         NSLog(@"Played item was last in parent folder.");
         return nil;
     }
-    NSString * const nextItemFileName = itemPlayableSiblingItemPaths[itemIdx + 1];
-    NSURL * const nextItemURL =
+    NSString *const nextItemFileName = itemPlayableSiblingItemPaths[itemIdx + 1];
+    NSURL *const nextItemURL =
         [[NSURL fileURLWithPath:parentFolderPath] URLByAppendingPathComponent:nextItemFileName];
     return [VLCInputItem inputItemFromURL:nextItemURL];
 }
 
 - (void)handleUpdateInterval:(nullable NSTimer *)timer
 {
-    NSDate * const now = NSDate.date;
-    NSDate * const timeout = self.timeoutDate;
+    NSDate *const now = NSDate.date;
+    NSDate *const timeout = self.timeoutDate;
     const NSTimeInterval timeRemaining = [timeout timeIntervalSinceDate:now];
     if (timeRemaining <= 0) {
         if (self.nextItem) {
@@ -181,18 +191,18 @@ NSString * const VLCPlaybackEndViewReturnToLibraryNotificationName = @"VLCPlayba
 
     NSString *remainingTimeString = @"";
     if (@available(macOS 10.15, *)) {
-        NSRelativeDateTimeFormatter * const formatter = [[NSRelativeDateTimeFormatter alloc] init];
+        NSRelativeDateTimeFormatter *const formatter = [[NSRelativeDateTimeFormatter alloc] init];
         remainingTimeString = [formatter localizedStringForDate:timeout relativeToDate:now];
     } else {
-        NSDateComponentsFormatter * const formatter = [[NSDateComponentsFormatter alloc] init];
-        NSString * const timeString = [formatter stringFromTimeInterval:timeRemaining];
+        NSDateComponentsFormatter *const formatter = [[NSDateComponentsFormatter alloc] init];
+        NSString *const timeString = [formatter stringFromTimeInterval:timeRemaining];
         remainingTimeString = [NSString stringWithFormat:_NS("in %@"), timeString];
     }
 
     NSString *countdownLabelString = nil;
     if (self.nextItem) {
-        countdownLabelString =
-            [NSString stringWithFormat:_NS("Playing %@ %@"), self.nextItem.title, remainingTimeString];
+        countdownLabelString = [NSString
+            stringWithFormat:_NS("Playing %@ %@"), self.nextItem.title, remainingTimeString];
     } else {
         countdownLabelString =
             [NSString stringWithFormat:_NS("Returning to library %@"), remainingTimeString];
@@ -213,8 +223,9 @@ NSString * const VLCPlaybackEndViewReturnToLibraryNotificationName = @"VLCPlayba
 - (void)returnToLibrary:(id)sender
 {
     [self.countdownTimer invalidate];
-    [NSNotificationCenter.defaultCenter postNotificationName:VLCPlaybackEndViewReturnToLibraryNotificationName
-                                                      object:self];
+    [NSNotificationCenter.defaultCenter
+        postNotificationName:VLCPlaybackEndViewReturnToLibraryNotificationName
+                      object:self];
     [NSNotificationCenter.defaultCenter postNotificationName:VLCPlaybackEndViewHideNotificationName
                                                       object:self];
 }

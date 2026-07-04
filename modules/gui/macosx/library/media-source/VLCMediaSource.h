@@ -39,14 +39,13 @@ extern NSString *VLCMediaSourcePreparsingEnded;
 
 - (instancetype)initForLocalDevices:(vlc_preparser_t *)p_preparser;
 - (instancetype)initWithMediaSource:(vlc_media_source_t *)p_mediaSource
-                  andPreparser:(vlc_preparser_t *)p_preparser
+                       andPreparser:(vlc_preparser_t *)p_preparser
                         forCategory:(enum services_discovery_category_e)category;
 - (instancetype)initMyFoldersMediaSourceWithPreparser:(vlc_preparser_t *)p_preparser;
-- (instancetype)initWithFolderMrl:(NSString *)mrl
-                     andPreparser:(vlc_preparser_t *)p_preparser;
+- (instancetype)initWithFolderMrl:(NSString *)mrl andPreparser:(vlc_preparser_t *)p_preparser;
 
 - (nullable NSError *)preparseInputNodeWithinTree:(VLCInputNode *)inputNode;
-- (void)clearChildNodesForNode:(input_item_node_t*)inputNode;
+- (void)clearChildNodesForNode:(input_item_node_t *)inputNode;
 - (nullable NSError *)generateChildNodesForDirectoryNode:(VLCInputNode *)directoryInputNode
                                                  withUrl:(NSURL *)directoryUrl;
 

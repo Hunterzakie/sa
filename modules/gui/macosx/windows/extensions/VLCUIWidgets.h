@@ -50,15 +50,18 @@
 @property (readwrite) BOOL has_lock;
 @end
 
-
-@interface VLCDialogList : NSTableView <NSTableViewDataSource>
+@interface VLCDialogList : NSTableView<NSTableViewDataSource>
 @property (readwrite) extension_widget_t *widget;
 @property (readwrite, retain) NSMutableArray *contentArray;
 @end
 
 @interface VLCDialogGridView : NSView
 
-- (void)addSubview:(NSView *)view atRow:(NSUInteger)row column:(NSUInteger)column rowSpan:(NSUInteger)rowSpan colSpan:(NSUInteger)colSpan;
+- (void)addSubview:(NSView *)view
+             atRow:(NSUInteger)row
+            column:(NSUInteger)column
+           rowSpan:(NSUInteger)rowSpan
+           colSpan:(NSUInteger)colSpan;
 - (NSSize)flexSize:(NSSize)size;
 - (void)updateSubview:(NSView *)view
                 atRow:(NSUInteger)row

@@ -51,10 +51,10 @@
 #include <vlc_configuration.h>
 #include <vlc_vout_display.h>
 
-NSString * const VLCWindowShouldUpdateLevel = @"VLCWindowShouldUpdateLevel";
-NSString * const VLCWindowLevelKey = @"VLCWindowLevelKey";
-NSString * const VLCWindowFloatOnTopChangedNotificationName = @"VLCWindowFloatOnTopChanged";
-NSString * const VLCWindowFloatOnTopEnabledNotificationKey = @"VLCWindowFloatOnTopEnabled";
+NSString *const VLCWindowShouldUpdateLevel = @"VLCWindowShouldUpdateLevel";
+NSString *const VLCWindowLevelKey = @"VLCWindowLevelKey";
+NSString *const VLCWindowFloatOnTopChangedNotificationName = @"VLCWindowFloatOnTopChanged";
+NSString *const VLCWindowFloatOnTopEnabledNotificationKey = @"VLCWindowFloatOnTopEnabled";
 
 static int WindowEnable(vlc_window_t *p_wnd, const vlc_window_cfg_t *cfg)
 {
@@ -72,13 +72,18 @@ static int WindowEnable(vlc_window_t *p_wnd, const vlc_window_cfg_t *cfg)
 
         dispatch_sync(dispatch_get_main_queue(), ^{
             videoView = [voutProvider setupVoutForWindow:p_wnd
-                             withProposedVideoViewPosition:proposedVideoViewPosition];
+                           withProposedVideoViewPosition:proposedVideoViewPosition];
         });
 
         // this method is not supposed to fail
         assert(videoView != nil);
 
-        msg_Dbg(getIntf(), "returning videoview with proposed position x=%i, y=%i, width=%i, height=%i", cfg->x, cfg->y, cfg->width, cfg->height);
+        msg_Dbg(getIntf(),
+                "returning videoview with proposed position x=%i, y=%i, width=%i, height=%i",
+                cfg->x,
+                cfg->y,
+                cfg->width,
+                cfg->height);
         p_wnd->handle.nsobject = (void *)CFBridgingRetain(videoView);
     }
     if (cfg->is_fullscreen)
@@ -91,21 +96,18 @@ static void WindowDisable(vlc_window_t *p_wnd)
     @autoreleasepool {
         VLCVideoOutputProvider *voutProvider = VLCMain.sharedInstance.voutProvider;
 
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [voutProvider removeVoutForDisplay:[NSValue valueWithPointer:p_wnd]];
-        });
+        dispatch_async(dispatch_get_main_queue(),
+                       ^{ [voutProvider removeVoutForDisplay:[NSValue valueWithPointer:p_wnd]]; });
     }
 }
 
-static void WindowResize(vlc_window_t *p_wnd,
-                         unsigned i_width, unsigned i_height)
+static void WindowResize(vlc_window_t *p_wnd, unsigned i_width, unsigned i_height)
 {
     @autoreleasepool {
         VLCVideoOutputProvider *voutProvider = VLCMain.sharedInstance.voutProvider;
 
         dispatch_async(dispatch_get_main_queue(), ^{
-            [voutProvider setNativeVideoSize:NSMakeSize(i_width, i_height)
-                          forWindow:p_wnd];
+            [voutProvider setNativeVideoSize:NSMakeSize(i_width, i_height) forWindow:p_wnd];
         });
     }
 }
@@ -116,16 +118,14 @@ static void WindowSetState(vlc_window_t *p_wnd, unsigned i_state)
         msg_Dbg(p_wnd, "Ignore change to VLC_WINDOW_STATE_BELOW");
 
     @autoreleasepool {
-        VLCVideoOutputProvider * const voutProvider = VLCMain.sharedInstance.voutProvider;
+        VLCVideoOutputProvider *const voutProvider = VLCMain.sharedInstance.voutProvider;
 
         NSInteger i_cocoa_level = NSNormalWindowLevel;
         if (i_state & VLC_WINDOW_STATE_ABOVE)
             i_cocoa_level = NSStatusWindowLevel;
 
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [voutProvider setWindowLevel:i_cocoa_level forWindow:p_wnd];
-        });
-
+        dispatch_async(dispatch_get_main_queue(),
+                       ^{ [voutProvider setWindowLevel:i_cocoa_level forWindow:p_wnd]; });
     }
 }
 
@@ -145,9 +145,7 @@ static void WindowSetFullscreen(vlc_window_t *p_wnd, const char *psz_id)
         VLCVideoOutputProvider *voutProvider = VLCMain.sharedInstance.voutProvider;
 
         dispatch_async(dispatch_get_main_queue(), ^{
-            [voutProvider setFullscreen:i_full
-                          forWindow:p_wnd
-                          withAnimation:b_animation];
+            [voutProvider setFullscreen:i_full forWindow:p_wnd withAnimation:b_animation];
         });
     }
 }
@@ -180,20 +178,18 @@ int WindowOpen(vlc_window_t *p_wnd)
     return VLC_SUCCESS;
 }
 
-static int WindowFloatOnTop(vlc_object_t *obj,
-                     char const *psz_var,
-                     vlc_value_t oldval,
-                     vlc_value_t newval,
-                     void *p_data)
+static int WindowFloatOnTop(
+    vlc_object_t *obj, char const *psz_var, vlc_value_t oldval, vlc_value_t newval, void *p_data)
 {
-    VLC_UNUSED(obj); VLC_UNUSED(psz_var); VLC_UNUSED(oldval);
+    VLC_UNUSED(obj);
+    VLC_UNUSED(psz_var);
+    VLC_UNUSED(oldval);
     @autoreleasepool {
         dispatch_async(dispatch_get_main_queue(), ^{
-            VLCVideoWindowCommon * const videoWindow = (__bridge VLCVideoWindowCommon *)p_data;
-            NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
-            NSDictionary<NSString *, NSNumber *> * const userInfo = @{
-                VLCWindowFloatOnTopEnabledNotificationKey: @(newval.b_bool)
-            };
+            VLCVideoWindowCommon *const videoWindow = (__bridge VLCVideoWindowCommon *)p_data;
+            NSNotificationCenter *const notificationCenter = NSNotificationCenter.defaultCenter;
+            NSDictionary<NSString *, NSNumber *> *const userInfo =
+                @{VLCWindowFloatOnTopEnabledNotificationKey : @(newval.b_bool)};
             [notificationCenter postNotificationName:VLCWindowFloatOnTopChangedNotificationName
                                               object:videoWindow
                                             userInfo:userInfo];
@@ -248,21 +244,29 @@ static int WindowFloatOnTop(vlc_object_t *obj,
 #pragma mark -
 #pragma mark Methods for vout provider
 
-- (VLCVideoWindowCommon *)borderlessVideoWindowAsVideoWallpaper:(BOOL)asVideoWallpaper withWindowDecorations:(BOOL)withWindowDecorations
+- (VLCVideoWindowCommon *)borderlessVideoWindowAsVideoWallpaper:(BOOL)asVideoWallpaper
+                                          withWindowDecorations:(BOOL)withWindowDecorations
 {
     VLCMain *mainInstance = VLCMain.sharedInstance;
 
     // videoWallpaper is priorized over !windowDecorations
     msg_Dbg(getIntf(), "Creating background / blank window");
-    NSScreen *screen = [NSScreen screenWithDisplayID:(CGDirectDisplayID)var_InheritInteger(getIntf(), "macosx-vdev")];
+    NSScreen *screen = [NSScreen
+        screenWithDisplayID:(CGDirectDisplayID)var_InheritInteger(getIntf(), "macosx-vdev")];
     if (!screen) {
         screen = mainInstance.libraryWindow.screen;
     }
 
     NSRect window_rect = asVideoWallpaper ? screen.frame : mainInstance.libraryWindow.frame;
-    NSUInteger mask = withWindowDecorations ? NSWindowStyleMaskBorderless | NSWindowStyleMaskResizable : NSWindowStyleMaskBorderless;
+    NSUInteger mask = withWindowDecorations
+        ? NSWindowStyleMaskBorderless | NSWindowStyleMaskResizable
+        : NSWindowStyleMaskBorderless;
 
-    VLCVideoWindowCommon *newVideoWindow = [[VLCVideoWindowCommon alloc] initWithContentRect:window_rect styleMask:mask backing:NSBackingStoreBuffered defer:YES];
+    VLCVideoWindowCommon *newVideoWindow =
+        [[VLCVideoWindowCommon alloc] initWithContentRect:window_rect
+                                                styleMask:mask
+                                                  backing:NSBackingStoreBuffered
+                                                    defer:YES];
     newVideoWindow.delegate = newVideoWindow;
     newVideoWindow.releasedWhenClosed = NO;
 
@@ -273,10 +277,13 @@ static int WindowFloatOnTop(vlc_object_t *obj,
     newVideoWindow.movableByWindowBackground = !asVideoWallpaper;
 
     newVideoWindow.videoViewController.displayLibraryControls = NO;
-    newVideoWindow.videoViewController.view.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    newVideoWindow.videoViewController.view.autoresizingMask =
+        NSViewWidthSizable | NSViewHeightSizable;
     newVideoWindow.videoViewController.view.frame = newVideoWindow.contentView.frame;
 
-    [newVideoWindow.contentView addSubview:newVideoWindow.videoViewController.view positioned:NSWindowAbove relativeTo:nil];
+    [newVideoWindow.contentView addSubview:newVideoWindow.videoViewController.view
+                                positioned:NSWindowAbove
+                                relativeTo:nil];
 
     if (asVideoWallpaper) {
         [newVideoWindow setLevel:CGWindowLevelForKey(kCGDesktopWindowLevelKey) + 1];
@@ -290,7 +297,8 @@ static int WindowFloatOnTop(vlc_object_t *obj,
             newVideoWindow.frameAutosaveName = @"extra-videowindow";
         }
 
-        newVideoWindow.contentMinSize = NSMakeSize(VLCVideoWindowCommonMinimalHeight, VLCVideoWindowCommonMinimalHeight);
+        newVideoWindow.contentMinSize =
+            NSMakeSize(VLCVideoWindowCommonMinimalHeight, VLCVideoWindowCommonMinimalHeight);
     }
 
     return newVideoWindow;
@@ -307,31 +315,34 @@ static int WindowFloatOnTop(vlc_object_t *obj,
 {
     BOOL multipleVoutWindows = _voutWindows.count > 0;
     // setup detached window with controls
-    NSWindowStyleMask mask = NSWindowStyleMaskClosable |
-        NSWindowStyleMaskMiniaturizable |
-        NSWindowStyleMaskResizable |
-        NSWindowStyleMaskTitled |
-        NSWindowStyleMaskFullSizeContentView;
+    NSWindowStyleMask mask = NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable
+        | NSWindowStyleMaskResizable | NSWindowStyleMaskTitled
+        | NSWindowStyleMaskFullSizeContentView;
 
-    VLCAspectRatioRetainingVideoWindow *newVideoWindow = [[VLCAspectRatioRetainingVideoWindow alloc] initWithContentRect:NSMakeRect(0,0,300,300)
-                                                                                                               styleMask:mask
-                                                                                                                 backing:NSBackingStoreBuffered
-                                                                                                                   defer:YES];
+    VLCAspectRatioRetainingVideoWindow *newVideoWindow =
+        [[VLCAspectRatioRetainingVideoWindow alloc] initWithContentRect:NSMakeRect(0, 0, 300, 300)
+                                                              styleMask:mask
+                                                                backing:NSBackingStoreBuffered
+                                                                  defer:YES];
 
     newVideoWindow.backgroundColor = [NSColor blackColor];
     newVideoWindow.canBecomeKeyWindow = YES;
     newVideoWindow.canBecomeMainWindow = YES;
     newVideoWindow.acceptsMouseMovedEvents = YES;
     newVideoWindow.movableByWindowBackground = YES;
-    newVideoWindow.minSize = NSMakeSize(VLCVideoWindowCommonMinimalHeight, VLCVideoWindowCommonMinimalHeight);
+    newVideoWindow.minSize =
+        NSMakeSize(VLCVideoWindowCommonMinimalHeight, VLCVideoWindowCommonMinimalHeight);
     newVideoWindow.titlebarAppearsTransparent = YES;
 
     newVideoWindow.videoViewController.displayLibraryControls = NO;
-    newVideoWindow.videoViewController.view.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    newVideoWindow.videoViewController.view.autoresizingMask =
+        NSViewWidthSizable | NSViewHeightSizable;
     newVideoWindow.videoViewController.view.frame = newVideoWindow.contentView.frame;
     [newVideoWindow enableVideoTitleBarMode];
 
-    [newVideoWindow.contentView addSubview:newVideoWindow.videoViewController.view positioned:NSWindowAbove relativeTo:nil];
+    [newVideoWindow.contentView addSubview:newVideoWindow.videoViewController.view
+                                positioned:NSWindowAbove
+                                relativeTo:nil];
 
     // no frame autosave for additional vout windows
     if (multipleVoutWindows) {
@@ -353,7 +364,8 @@ static int WindowFloatOnTop(vlc_object_t *obj,
 
     // TODO: make lion fullscreen compatible with video-wallpaper
     if ((videoWallpaper || !windowDecorations) && !isNativeFullscreen) {
-        return [self borderlessVideoWindowAsVideoWallpaper:videoWallpaper withWindowDecorations:windowDecorations];
+        return [self borderlessVideoWindowAsVideoWallpaper:videoWallpaper
+                                     withWindowDecorations:windowDecorations];
     }
 
     BOOL isEmbedded = var_InheritBool(getIntf(), "embedded-video") && !b_mainWindowHasVideo;
@@ -379,7 +391,7 @@ static int WindowFloatOnTop(vlc_object_t *obj,
 - (void)cascadeVoutWindowsForVideoWindow:(VLCVideoWindowCommon *)videoWindow
 {
     if (_voutWindows.count == 1) {
-        NSWindow * firstWindow = [_voutWindows objectForKey:_voutWindows.allKeys.firstObject];
+        NSWindow *firstWindow = [_voutWindows objectForKey:_voutWindows.allKeys.firstObject];
 
         NSRect topleftBaseRect = NSMakeRect(0, firstWindow.frame.size.height, 0, 0);
         _topLeftPoint = [firstWindow convertRectToScreen:topleftBaseRect].origin;
@@ -399,11 +411,10 @@ static int WindowFloatOnTop(vlc_object_t *obj,
     // set (only!) window origin if specified
     if (!isEmbedded) {
         if ([videoWindow isKindOfClass:[VLCAspectRatioRetainingVideoWindow class]]) {
-            [(VLCAspectRatioRetainingVideoWindow*)videoWindow setNativeVideoSize:videoViewSize];
+            [(VLCAspectRatioRetainingVideoWindow *)videoWindow setNativeVideoSize:videoViewSize];
         }
 
-        [self setupWindowOriginForVideoWindow:videoWindow
-                                   atPosition:videoViewPosition];
+        [self setupWindowOriginForVideoWindow:videoWindow atPosition:videoViewPosition];
     }
 
     // cascade windows if we have more than one vout
@@ -411,17 +422,17 @@ static int WindowFloatOnTop(vlc_object_t *obj,
         [self cascadeVoutWindowsForVideoWindow:videoWindow];
     }
 
-    [videoWindow makeKeyAndOrderFront: self];
+    [videoWindow makeKeyAndOrderFront:self];
 }
 
 - (void)setupVideoOutputForVideoWindow:(VLCVideoWindowCommon *)videoWindow
                          withVlcWindow:(vlc_window_t *)p_wnd
 {
-    VLCVoutView * const voutView = videoWindow.videoViewController.voutView;
+    VLCVoutView *const voutView = videoWindow.videoViewController.voutView;
 
     videoWindow.alphaValue = config_GetFloat("macosx-opaqueness");
     [_voutWindows setObject:videoWindow forKey:[NSValue valueWithPointer:p_wnd]];
-    vout_thread_t * const p_vout = (vout_thread_t *)vlc_object_parent(p_wnd);
+    vout_thread_t *const p_vout = (vout_thread_t *)vlc_object_parent(p_wnd);
     var_AddCallback(p_vout, "video-on-top", WindowFloatOnTop, (__bridge void *)videoWindow);
     voutView.voutThread = p_vout;
     voutView.voutWindow = p_wnd;
@@ -445,7 +456,8 @@ static int WindowFloatOnTop(vlc_object_t *obj,
     BOOL multipleVoutWindows = _voutWindows.count > 0;
     BOOL videoWallpaper = var_InheritBool(getIntf(), "video-wallpaper") && !multipleVoutWindows;
 
-    if (!videoWallpaper && !b_have_splitter && (var_InheritBool(getIntf(), "fullscreen") || _playerController.fullscreen)) {
+    if (!videoWallpaper && !b_have_splitter
+        && (var_InheritBool(getIntf(), "fullscreen") || _playerController.fullscreen)) {
         // this is not set when we start in fullscreen because of
         // fullscreen settings in video prefs the second time
         [self setFullscreen:1 forWindow:p_wnd withAnimation:NO];
@@ -463,28 +475,31 @@ static int WindowFloatOnTop(vlc_object_t *obj,
     BOOL videoWallpaper = var_InheritBool(getIntf(), "video-wallpaper") && !multipleVoutWindows;
 
     // Avoid flashes if video will directly start in fullscreen
-    [NSAnimationContext runAnimationRespectingPreferencesWithChanges:^(NSAnimationContext * const __unused context) {
-        if (!videoWallpaper) {
-            [self setupPositionAndSizeForVideoWindow:newVideoWindow atPosition:videoViewPosition];
+    [NSAnimationContext
+        runAnimationRespectingPreferencesWithChanges:^(NSAnimationContext *const __unused context) {
+            if (!videoWallpaper) {
+                [self setupPositionAndSizeForVideoWindow:newVideoWindow
+                                              atPosition:videoViewPosition];
+            }
+            [self setupVideoOutputForVideoWindow:newVideoWindow withVlcWindow:p_wnd];
+            [self setupFullscreenStartIfNeededForVout:voutView withVlcWindow:p_wnd];
         }
-        [self setupVideoOutputForVideoWindow:newVideoWindow withVlcWindow:p_wnd];
-        [self setupFullscreenStartIfNeededForVout:voutView withVlcWindow:p_wnd];
-    } completionHandler:nil];
+                                   completionHandler:nil];
 
     return voutView;
 }
 
 - (void)removeVoutForDisplay:(NSValue *)key
 {
-    VLCVideoWindowCommon * const videoWindow = [_voutWindows objectForKey:key];
+    VLCVideoWindowCommon *const videoWindow = [_voutWindows objectForKey:key];
     if (!videoWindow) {
         msg_Err(getIntf(), "Cannot close nonexisting window");
         return;
     }
 
-    vlc_window_t * const p_wnd = (vlc_window_t *)key.pointerValue;
+    vlc_window_t *const p_wnd = (vlc_window_t *)key.pointerValue;
     if (p_wnd) {
-        vout_thread_t * const p_vout = (vout_thread_t *)vlc_object_parent(p_wnd);
+        vout_thread_t *const p_vout = (vout_thread_t *)vlc_object_parent(p_wnd);
         if (p_vout) {
             var_DelCallback(p_vout, "video-on-top", WindowFloatOnTop, (__bridge void *)videoWindow);
         } else {
@@ -504,8 +519,8 @@ static int WindowFloatOnTop(vlc_object_t *obj,
 
     // do not close the window if we have the decorative view for audio visible
     // or if we have enabled end-of-playback screens.
-    NSURL * const currentMediaUrl = _playerController.URLOfCurrentMediaItem;
-    VLCMediaLibraryMediaItem * const mediaItem =
+    NSURL *const currentMediaUrl = _playerController.URLOfCurrentMediaItem;
+    VLCMediaLibraryMediaItem *const mediaItem =
         [VLCMediaLibraryMediaItem mediaItemForURL:currentMediaUrl];
     const BOOL decorativeViewVisible =
         mediaItem != nil && mediaItem.mediaType == VLC_ML_MEDIA_TYPE_AUDIO;
@@ -514,13 +529,11 @@ static int WindowFloatOnTop(vlc_object_t *obj,
 
     // we need to check that the player itself is in a stopped state. Removal of the active video
     // can be triggered by more than just end of playback (e.g. disabling the video track).
-    if (!decorativeViewVisible
-        && endOfPlaybackScreenEnabled
+    if (!decorativeViewVisible && endOfPlaybackScreenEnabled
         && _playerController.playerState == VLC_PLAYER_STATE_STOPPED) {
         [videoWindow.videoViewController displayPlaybackEndView];
-        videoWindow.videoViewController.endViewDismissHandler = ^{
-            [self handleVideoCloseForDisplay:key];
-        };
+        videoWindow.videoViewController.endViewDismissHandler =
+            ^{ [self handleVideoCloseForDisplay:key]; };
         if (videoWindow.class == VLCLibraryWindow.class) {
             b_mainWindowHasVideo = NO;
         }
@@ -531,41 +544,41 @@ static int WindowFloatOnTop(vlc_object_t *obj,
 
 - (void)handleVideoCloseForDisplay:(NSValue *)key
 {
-    VLCVideoWindowCommon * const videoWindow = [_voutWindows objectForKey:key];
+    VLCVideoWindowCommon *const videoWindow = [_voutWindows objectForKey:key];
     if (!videoWindow) {
         msg_Err(getIntf(), "Cannot handle close for nonexistent window");
         return;
     }
 
     // prevent visible extra window if in fullscreen
-    [NSAnimationContext runAnimationRespectingPreferencesWithChanges:^(NSAnimationContext * const __unused context) {
-        const BOOL b_native = var_InheritBool(getIntf(), "macosx-nativefullscreenmode");
+    [NSAnimationContext
+        runAnimationRespectingPreferencesWithChanges:^(NSAnimationContext *const __unused context) {
+            const BOOL b_native = var_InheritBool(getIntf(), "macosx-nativefullscreenmode");
 
-        // close fullscreen, without changing fullscreen vars
-        if (!b_native && (videoWindow.fullscreen || videoWindow.inFullscreenTransition))
-            [videoWindow leaveFullscreenWithAnimation:NO];
+            // close fullscreen, without changing fullscreen vars
+            if (!b_native && (videoWindow.fullscreen || videoWindow.inFullscreenTransition))
+                [videoWindow leaveFullscreenWithAnimation:NO];
 
-        // native fullscreen window will not be closed if
-        // fullscreen was triggered without video
-        if (b_native
-            && videoWindow.class == VLCLibraryWindow.class
-            && videoWindow.fullscreen
-            && videoWindow.windowShouldExitFullscreenWhenFinished) {
-            [videoWindow toggleFullScreen:self];
-        }
-
-        if (videoWindow.class == VLCLibraryWindow.class) {
-            // If `embeddedVideoPlaybackActive` is already `NO`, the user navigated back
-            // while playback was ongoing - `disableVideoPlaybackAppearance` was already
-            // called at that point, so nothing more to do here.
-        
-            if (((VLCLibraryWindow *)videoWindow).embeddedVideoPlaybackActive) {
-                [(VLCLibraryWindow *)videoWindow disableVideoPlaybackAppearance];
+            // native fullscreen window will not be closed if
+            // fullscreen was triggered without video
+            if (b_native && videoWindow.class == VLCLibraryWindow.class && videoWindow.fullscreen
+                && videoWindow.windowShouldExitFullscreenWhenFinished) {
+                [videoWindow toggleFullScreen:self];
             }
-        } else {
-            [videoWindow close];
+
+            if (videoWindow.class == VLCLibraryWindow.class) {
+                // If `embeddedVideoPlaybackActive` is already `NO`, the user navigated back
+                // while playback was ongoing - `disableVideoPlaybackAppearance` was already
+                // called at that point, so nothing more to do here.
+
+                if (((VLCLibraryWindow *)videoWindow).embeddedVideoPlaybackActive) {
+                    [(VLCLibraryWindow *)videoWindow disableVideoPlaybackAppearance];
+                }
+            } else {
+                [videoWindow close];
+            }
         }
-    } completionHandler:nil];
+                                   completionHandler:nil];
 
     [_voutWindows removeObjectForKey:key];
     if (_voutWindows.count == 0) {
@@ -592,31 +605,29 @@ static int WindowFloatOnTop(vlc_object_t *obj,
         return;
     }
 
-    [(VLCAspectRatioRetainingVideoWindow*)o_window setNativeVideoSize:size];
+    [(VLCAspectRatioRetainingVideoWindow *)o_window setNativeVideoSize:size];
 }
 
 - (void)setWindowLevel:(NSInteger)i_level forWindow:(vlc_window_t *)p_wnd
 {
-    NSValue * const windowKey = [NSValue valueWithPointer:p_wnd];
-    VLCVideoWindowCommon * const o_window = [_voutWindows objectForKey:windowKey];
+    NSValue *const windowKey = [NSValue valueWithPointer:p_wnd];
+    VLCVideoWindowCommon *const o_window = [_voutWindows objectForKey:windowKey];
     if (!o_window) {
         msg_Err(getIntf(), "Cannot set level for nonexisting window");
         return;
     }
 
     // only set level for helper windows to normal if no status vout window exist anymore
-    if(i_level == NSStatusWindowLevel) {
+    if (i_level == NSStatusWindowLevel) {
         _statusLevelWindowCounter++;
         // window level need to stay on normal in fullscreen mode
         if (!o_window.fullscreen && !o_window.inFullscreenTransition) {
             [self updateWindowLevelForHelperWindows:i_level];
 
             // make sure float on top can join all spaces, including full-screen ones
-            NSWindowCollectionBehavior behavior =
-                NSWindowCollectionBehaviorCanJoinAllSpaces |
-                NSWindowCollectionBehaviorIgnoresCycle |
-                NSWindowCollectionBehaviorTransient |
-                NSWindowCollectionBehaviorFullScreenAuxiliary;
+            NSWindowCollectionBehavior behavior = NSWindowCollectionBehaviorCanJoinAllSpaces
+                | NSWindowCollectionBehaviorIgnoresCycle | NSWindowCollectionBehaviorTransient
+                | NSWindowCollectionBehaviorFullScreenAuxiliary;
 
             if (@available(macOS 13.0, *)) {
                 behavior |= NSWindowCollectionBehaviorCanJoinAllApplications;
@@ -669,35 +680,34 @@ static int WindowFloatOnTop(vlc_object_t *obj,
     }
 
     if (b_nativeFullscreenMode) {
-        if(!o_current_window)
-            o_current_window = VLCMain.sharedInstance.libraryWindow ;
+        if (!o_current_window)
+            o_current_window = VLCMain.sharedInstance.libraryWindow;
         assert(o_current_window);
 
         // fullscreen might be triggered twice (vout event)
         // so ignore duplicate events here
-        if((b_fullscreen && !([o_current_window fullscreen] || [o_current_window inFullscreenTransition])) ||
-           (!b_fullscreen && [o_current_window fullscreen])) {
-
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [o_current_window toggleFullScreen:self];
-            });
+        if ((b_fullscreen
+             && !([o_current_window fullscreen] || [o_current_window inFullscreenTransition]))
+            || (!b_fullscreen && [o_current_window fullscreen])) {
+            dispatch_async(dispatch_get_main_queue(),
+                           ^{ [o_current_window toggleFullScreen:self]; });
         }
     } else {
         assert(o_current_window);
 
         if (b_fullscreen) {
-            if (_playerController.playerState != VLC_PLAYER_STATE_STOPPED && [_playerController activeVideoPlayback]) {
-                // activate app, as method can also be triggered from outside the app (prevents nasty window layout)
+            if (_playerController.playerState != VLC_PLAYER_STATE_STOPPED &&
+                [_playerController activeVideoPlayback]) {
+                // activate app, as method can also be triggered from outside the app (prevents
+                // nasty window layout)
                 [NSApp activateIgnoringOtherApps:YES];
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [o_current_window enterFullscreenWithAnimation:b_animation];
-                });
+                dispatch_async(dispatch_get_main_queue(),
+                               ^{ [o_current_window enterFullscreenWithAnimation:b_animation]; });
             }
         } else {
             // leaving fullscreen is always allowed
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [o_current_window leaveFullscreenWithAnimation:YES];
-            });
+            dispatch_async(dispatch_get_main_queue(),
+                           ^{ [o_current_window leaveFullscreenWithAnimation:YES]; });
         }
     }
 }
@@ -720,7 +730,10 @@ static int WindowFloatOnTop(vlc_object_t *obj,
     VLCMain *main = VLCMain.sharedInstance;
     [[main libraryWindow] setWindowLevel:i_level];
 
-    [NSNotificationCenter.defaultCenter postNotificationName:VLCWindowShouldUpdateLevel object:self userInfo:@{VLCWindowLevelKey : @(_currentWindowLevel)}];
+    [NSNotificationCenter.defaultCenter
+        postNotificationName:VLCWindowShouldUpdateLevel
+                      object:self
+                    userInfo:@{ VLCWindowLevelKey : @(_currentWindowLevel) }];
 }
 
 - (VLCVideoWindowCommon *)videoWindowForVoutView:(VLCVoutView *)voutView

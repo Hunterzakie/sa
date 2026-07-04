@@ -79,7 +79,9 @@
     self = [super init];
     if (self) {
         _intf = intf;
-        [[NSBundle mainBundle] loadNibNamed:@"VLCStatusBarIconMainMenu" owner:self topLevelObjects:nil];
+        [[NSBundle mainBundle] loadNibNamed:@"VLCStatusBarIconMainMenu"
+                                      owner:self
+                            topLevelObjects:nil];
     }
     return self;
 }
@@ -139,7 +141,10 @@
 
     [self inputItemChanged:nil];
 
-    [self setMetadataTitle:_NS("VLC media player") artist:_NS("Nothing playing") album:nil andCover:NSImage.VLCNoArtImage];
+    [self setMetadataTitle:_NS("VLC media player")
+                    artist:_NS("Nothing playing")
+                     album:nil
+                  andCover:NSImage.VLCNoArtImage];
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath
@@ -147,7 +152,7 @@
                         change:(NSDictionary *)change
                        context:(void *)context
 {
-    if ([keyPath isEqualToString: NSStringFromSelector(@selector(isVisible))]) {
+    if ([keyPath isEqualToString:NSStringFromSelector(@selector(isVisible))]) {
         bool isVisible = [[change objectForKey:NSKeyValueChangeNewKey] boolValue];
 
         // Sync status bar visibility with VLC setting
@@ -173,7 +178,8 @@
 {
     if (!self.statusItem) {
         // Init the status item
-        self.statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
+        self.statusItem =
+            [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
         [self.statusItem setHighlightMode:YES];
         [self.statusItem setEnabled:YES];
 
@@ -187,8 +193,10 @@
 
         [self.statusItem setBehavior:NSStatusItemBehaviorRemovalAllowed];
         [self.statusItem setAutosaveName:@"statusBarItem"];
-        [self.statusItem addObserver:self forKeyPath:NSStringFromSelector(@selector(isVisible))
-                             options:NSKeyValueObservingOptionNew context:NULL];
+        [self.statusItem addObserver:self
+                          forKeyPath:NSStringFromSelector(@selector(isVisible))
+                             options:NSKeyValueObservingOptionNew
+                             context:NULL];
     }
 
     // Sync VLC setting with status bar visibility setting
@@ -206,7 +214,9 @@
 - (void)dealloc
 {
     if (self.statusItem && [self.statusItem respondsToSelector:@selector(isVisible)]) {
-        [self.statusItem removeObserver:self forKeyPath:NSStringFromSelector(@selector(isVisible)) context:NULL];
+        [self.statusItem removeObserver:self
+                             forKeyPath:NSStringFromSelector(@selector(isVisible))
+                                context:NULL];
     }
 
     // Cleanup
@@ -240,14 +250,20 @@
 
         if (duration == 0) {
             /* Infinite duration */
-            [progressField setStringValue:[NSString stringWithDuration:duration currentTime:time negative:NO]];
+            [progressField setStringValue:[NSString stringWithDuration:duration
+                                                           currentTime:time
+                                                              negative:NO]];
             [totalField setStringValue:@"∞"];
         } else {
             /* Not unknown, update displayed duration */
             if (_showTimeElapsed) {
-                [progressField setStringValue:[NSString stringWithDuration:duration currentTime:time negative:NO]];
+                [progressField setStringValue:[NSString stringWithDuration:duration
+                                                               currentTime:time
+                                                                  negative:NO]];
             } else {
-                [progressField setStringValue:[NSString stringWithDuration:duration currentTime:time negative:YES]];
+                [progressField setStringValue:[NSString stringWithDuration:duration
+                                                               currentTime:time
+                                                                  negative:YES]];
             }
 
             [totalField setStringValue:[NSString stringWithTimeFromTicks:duration]];
@@ -317,11 +333,11 @@
  */
 - (void)inputItemChanged:(NSNotification *)aNotification
 {
-    NSImage         *coverArtImage;
-    NSString        *title;
-    NSString        *nowPlaying;
-    NSString        *artist;
-    NSString        *album;
+    NSImage *coverArtImage;
+    NSString *title;
+    NSString *nowPlaying;
+    NSString *artist;
+    NSString *album;
 
     VLCPlayerController *playerController = aNotification.object;
     VLCInputItem *inputItem = playerController.currentMedia;
@@ -376,7 +392,10 @@
 - (void)updateMenuItemRandom
 {
     // Get current random status
-    [randomButton setState:VLCMain.sharedInstance.playQueueController.playbackOrder == VLC_PLAYLIST_PLAYBACK_ORDER_RANDOM ? NSOnState : NSOffState];
+    [randomButton setState:VLCMain.sharedInstance.playQueueController.playbackOrder
+                          == VLC_PLAYLIST_PLAYBACK_ORDER_RANDOM
+                      ? NSOnState
+                      : NSOffState];
 }
 
 #pragma mark -
@@ -432,8 +451,7 @@
 
     if ([itemURI.scheme isEqualToString:@"file"]) {
         // Local file, open in Finder
-        [NSWorkspace.sharedWorkspace selectFile:itemURI.path
-                         inFileViewerRootedAtPath:itemURI.path];
+        [NSWorkspace.sharedWorkspace selectFile:itemURI.path inFileViewerRootedAtPath:itemURI.path];
     } else {
         // URL, copy to pasteboard
         NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
@@ -452,8 +470,8 @@
 // Action: Toggle Play / Pause
 - (IBAction)statusBarIconTogglePlayPause:(id)sender
 {
-    VLCPlayQueueController * const playQueueController = VLCMain.sharedInstance.playQueueController;
-    VLCPlayerController * const playerController = playQueueController.playerController;
+    VLCPlayQueueController *const playQueueController = VLCMain.sharedInstance.playQueueController;
+    VLCPlayerController *const playerController = playQueueController.playerController;
     enum vlc_player_state playerState = playerController.playerState;
     if (playerState != VLC_PLAYER_STATE_PAUSED) {
         [playerController pause];
@@ -479,8 +497,11 @@
 // Action: Toggle random playback (shuffle)
 - (IBAction)statusBarIconToggleRandom:(id)sender
 {
-    VLCPlayQueueController * const playQueueController = VLCMain.sharedInstance.playQueueController;
-    playQueueController.playbackOrder = (playQueueController.playbackOrder == VLC_PLAYLIST_PLAYBACK_ORDER_RANDOM) ? VLC_PLAYLIST_PLAYBACK_ORDER_NORMAL : VLC_PLAYLIST_PLAYBACK_ORDER_RANDOM;
+    VLCPlayQueueController *const playQueueController = VLCMain.sharedInstance.playQueueController;
+    playQueueController.playbackOrder =
+        (playQueueController.playbackOrder == VLC_PLAYLIST_PLAYBACK_ORDER_RANDOM)
+        ? VLC_PLAYLIST_PLAYBACK_ORDER_NORMAL
+        : VLC_PLAYLIST_PLAYBACK_ORDER_RANDOM;
 }
 
 // Action: Toggle between elapsed and remaining time

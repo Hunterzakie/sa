@@ -30,7 +30,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol VLCMediaLibraryItemProtocol;
 
-@interface VLCLibraryAbstractGroupingDataSource : NSObject<VLCLibraryMasterDetailViewTableViewDataSource, VLCLibraryCollectionViewDataSource>
+@interface VLCLibraryAbstractGroupingDataSource
+    : NSObject<VLCLibraryMasterDetailViewTableViewDataSource, VLCLibraryCollectionViewDataSource>
 
 @property (readonly) NSArray<id<VLCMediaLibraryItemProtocol>> *backingArray;
 

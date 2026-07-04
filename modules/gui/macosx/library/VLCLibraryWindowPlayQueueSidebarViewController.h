@@ -33,7 +33,8 @@ NS_ASSUME_NONNULL_BEGIN
 @class VLCPlayQueueSortingMenuController;
 @class VLCRoundedCornerTextField;
 
-@interface VLCLibraryWindowPlayQueueSidebarViewController : VLCLibraryWindowAbstractSidebarViewController
+@interface VLCLibraryWindowPlayQueueSidebarViewController
+    : VLCLibraryWindowAbstractSidebarViewController
 
 @property (readwrite, weak) IBOutlet NSTableView *tableView;
 @property (readwrite, weak) IBOutlet NSView *footerContainerView;

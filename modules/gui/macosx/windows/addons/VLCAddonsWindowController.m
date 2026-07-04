@@ -28,7 +28,7 @@
 #import "main/VLCMain.h"
 #import "windows/addons/VLCAddonListItem.h"
 
-@interface VLCAddonsWindowController() <NSTableViewDataSource, NSTableViewDelegate>
+@interface VLCAddonsWindowController ()<NSTableViewDataSource, NSTableViewDelegate>
 {
     addons_manager_t *_manager;
     NSMutableArray *_addons;
@@ -42,32 +42,39 @@
 
 @end
 
-static void addonFoundCallback( addons_manager_t *manager,
-                                addon_entry_t *entry )
+static void addonFoundCallback(addons_manager_t *manager, addon_entry_t *entry)
 {
-    VLCAddonsWindowController *controller = (__bridge VLCAddonsWindowController *) manager->owner.sys;
+    VLCAddonsWindowController *controller =
+        (__bridge VLCAddonsWindowController *)manager->owner.sys;
 
     @autoreleasepool {
-        [controller performSelectorOnMainThread:@selector(addAddon:) withObject:[[VLCAddonListItem alloc] initWithAddon:entry] waitUntilDone:NO];
+        [controller performSelectorOnMainThread:@selector(addAddon:)
+                                     withObject:[[VLCAddonListItem alloc] initWithAddon:entry]
+                                  waitUntilDone:NO];
     }
 }
 
-static void addonsDiscoveryEndedCallback( addons_manager_t *manager )
+static void addonsDiscoveryEndedCallback(addons_manager_t *manager)
 {
-    VLCAddonsWindowController *controller = (__bridge VLCAddonsWindowController *) manager->owner.sys;
+    VLCAddonsWindowController *controller =
+        (__bridge VLCAddonsWindowController *)manager->owner.sys;
 
     @autoreleasepool {
-        [controller performSelectorOnMainThread:@selector(discoveryEnded) withObject:nil waitUntilDone:NO];
+        [controller performSelectorOnMainThread:@selector(discoveryEnded)
+                                     withObject:nil
+                                  waitUntilDone:NO];
     }
 }
 
-static void addonChangedCallback( addons_manager_t *manager,
-                                  addon_entry_t *entry )
+static void addonChangedCallback(addons_manager_t *manager, addon_entry_t *entry)
 {
-    VLCAddonsWindowController *controller = (__bridge VLCAddonsWindowController *) manager->owner.sys;
+    VLCAddonsWindowController *controller =
+        (__bridge VLCAddonsWindowController *)manager->owner.sys;
 
     @autoreleasepool {
-        [controller performSelectorOnMainThread:@selector(addonChanged:) withObject:[[VLCAddonListItem alloc] initWithAddon:entry] waitUntilDone:NO];
+        [controller performSelectorOnMainThread:@selector(addonChanged:)
+                                     withObject:[[VLCAddonListItem alloc] initWithAddon:entry]
+                                  waitUntilDone:NO];
     }
 }
 
@@ -98,7 +105,7 @@ static void addonChangedCallback( addons_manager_t *manager,
 {
     [_typeSwitcher removeAllItems];
     [_typeSwitcher addItemWithTitle:_NS("All")];
-    [[_typeSwitcher lastItem] setTag: -1];
+    [[_typeSwitcher lastItem] setTag:-1];
     /* no skins on OS X so far
     [_typeSwitcher addItemWithTitle:_NS("Skins")];
     [[_typeSwitcher lastItem] setTag:ADDON_SKIN2]; */
@@ -127,13 +134,13 @@ static void addonChangedCallback( addons_manager_t *manager,
     [_description setString:@""];
     [[self window] setTitle:_NS("Addons Manager")];
 
-    [[[_addonsTable tableColumnWithIdentifier:@"installed"] headerCell] setStringValue:_NS("Installed")];
+    [[[_addonsTable tableColumnWithIdentifier:@"installed"] headerCell]
+        setStringValue:_NS("Installed")];
     [[[_addonsTable tableColumnWithIdentifier:@"name"] headerCell] setStringValue:_NS("Name")];
     [[[_addonsTable tableColumnWithIdentifier:@"author"] headerCell] setStringValue:_NS("Author")];
     [[[_addonsTable tableColumnWithIdentifier:@"type"] headerCell] setStringValue:_NS("Type")];
 
-    struct addons_manager_owner owner =
-    {
+    struct addons_manager_owner owner = {
         (__bridge void *)self,
         addonFoundCallback,
         addonsDiscoveryEndedCallback,
@@ -225,22 +232,35 @@ static void addonChangedCallback( addons_manager_t *manager,
     [_version setStringValue:[currentItem version]];
 
     // Parse HTML description properly
-    NSMutableString *htmlDescription = [NSMutableString stringWithFormat:@"<style>body{ font-family: -apple-system-body, -apple-system, HelveticaNeue, Arial, sans-serif; }</style>%@", [currentItem description]];
-    [htmlDescription replaceOccurrencesOfString:@"\n" withString:@"<br />" options:NSLiteralSearch range:NSMakeRange(0, [htmlDescription length])];
-    NSMutableAttributedString *attributedDescription = [[NSMutableAttributedString alloc] initWithHTML:[htmlDescription dataUsingEncoding:NSUTF8StringEncoding]
-                                                                      documentAttributes:NULL];
-    [attributedDescription setAttributes:@{NSForegroundColorAttributeName : [NSColor secondaryLabelColor], NSFontAttributeName : [NSFont systemFontOfSize:11.]} range:NSMakeRange(0, attributedDescription.length)];
+    NSMutableString *htmlDescription = [NSMutableString
+        stringWithFormat:@"<style>body{ font-family: -apple-system-body, -apple-system, "
+                         @"HelveticaNeue, Arial, sans-serif; }</style>%@",
+                         [currentItem description]];
+    [htmlDescription replaceOccurrencesOfString:@"\n"
+                                     withString:@"<br />"
+                                        options:NSLiteralSearch
+                                          range:NSMakeRange(0, [htmlDescription length])];
+    NSMutableAttributedString *attributedDescription = [[NSMutableAttributedString alloc]
+              initWithHTML:[htmlDescription dataUsingEncoding:NSUTF8StringEncoding]
+        documentAttributes:NULL];
+    [attributedDescription setAttributes:@{
+        NSForegroundColorAttributeName : [NSColor secondaryLabelColor],
+        NSFontAttributeName : [NSFont systemFontOfSize:11.]
+    }
+                                   range:NSMakeRange(0, attributedDescription.length)];
     [[_description textStorage] setAttributedString:attributedDescription];
 
     [self updateInstallButton:[currentItem isInstalled]];
 }
 
-- (id)tableView:(NSTableView *)aTableView objectValueForTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
+- (id)tableView:(NSTableView *)aTableView
+    objectValueForTableColumn:(NSTableColumn *)aTableColumn
+                          row:(NSInteger)rowIndex
 {
     NSString *identifier = [aTableColumn identifier];
     if ([identifier isEqualToString:@"installed"]) {
         return [[_displayedAddons objectAtIndex:rowIndex] isInstalled] ? @"✔" : @"✘";
-    } else if([identifier isEqualToString:@"name"])
+    } else if ([identifier isEqualToString:@"name"])
         return [[_displayedAddons objectAtIndex:rowIndex] name];
 
     return @"";
@@ -296,7 +316,9 @@ static void addonChangedCallback( addons_manager_t *manager,
 
     // update ui
     [_addonsTable reloadData];
-    [NSNotificationCenter.defaultCenter postNotificationName:NSTableViewSelectionDidChangeNotification object:_addonsTable];
+    [NSNotificationCenter.defaultCenter
+        postNotificationName:NSTableViewSelectionDidChangeNotification
+                      object:_addonsTable];
 }
 
 - (void)_findNewAddons
@@ -316,7 +338,9 @@ static void addonChangedCallback( addons_manager_t *manager,
     addons_manager_LoadCatalog(_manager);
 
     // enqueue, to process the addons first
-    [self performSelectorOnMainThread:@selector(_refactorDataModel) withObject:nil waitUntilDone:NO];
+    [self performSelectorOnMainThread:@selector(_refactorDataModel)
+                           withObject:nil
+                        waitUntilDone:NO];
 }
 
 - (void)_installAddonWithID:(NSData *)o_data type:(addon_type_t)type
@@ -343,8 +367,7 @@ static void addonChangedCallback( addons_manager_t *manager,
 
 - (NSString *)_getAddonType:(int)i_type
 {
-    switch (i_type)
-    {
+    switch (i_type) {
         case ADDON_SKIN2:
             return _NS("Skins");
         case ADDON_PLAYLIST_PARSER:

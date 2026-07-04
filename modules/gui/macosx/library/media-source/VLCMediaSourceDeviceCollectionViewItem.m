@@ -42,7 +42,7 @@ NSString *VLCMediaSourceDeviceCellIdentifier = @"VLCMediaSourceDeviceCellIdentif
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    
+
     _mediaImageView.cropsImagesToRoundedCorners = YES;
     _mediaImageView.contentGravity = VLCImageViewContentGravityCenter;
 }

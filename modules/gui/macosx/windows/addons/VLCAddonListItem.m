@@ -36,14 +36,14 @@
 - (id)initWithAddon:(addon_entry_t *)p_entry
 {
     self = [super init];
-    if(self) {
+    if (self) {
         p_addon_entry = addon_entry_Hold(p_entry);
     }
 
     return self;
 }
 
--(void)dealloc
+- (void)dealloc
 {
     addon_entry_Release(p_addon_entry);
 }

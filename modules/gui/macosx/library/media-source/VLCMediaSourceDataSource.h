@@ -31,15 +31,15 @@ NS_ASSUME_NONNULL_BEGIN
 @class VLCMediaSource;
 @class VLCMediaSourceBaseDataSource;
 
-extern NSString * const VLCMediaSourceDataSourceNodeChanged;
-extern NSString * const VLCMediaSourceDataSourceLoadingStarted;
-extern NSString * const VLCMediaSourceDataSourceLoadingEnded;
+extern NSString *const VLCMediaSourceDataSourceNodeChanged;
+extern NSString *const VLCMediaSourceDataSourceLoadingStarted;
+extern NSString *const VLCMediaSourceDataSourceLoadingEnded;
 
-@interface VLCMediaSourceDataSource : NSObject <NSCollectionViewDataSource,
-                                                NSCollectionViewDelegate,
-                                                NSCollectionViewDelegateFlowLayout,
-                                                NSTableViewDelegate,
-                                                NSTableViewDataSource>
+@interface VLCMediaSourceDataSource : NSObject<NSCollectionViewDataSource,
+                                               NSCollectionViewDelegate,
+                                               NSCollectionViewDelegateFlowLayout,
+                                               NSTableViewDelegate,
+                                               NSTableViewDataSource>
 
 @property (readwrite, retain) VLCMediaSource *displayedMediaSource;
 @property (readwrite, retain, nonatomic) VLCInputNode *nodeToDisplay;
@@ -53,7 +53,8 @@ extern NSString * const VLCMediaSourceDataSourceLoadingEnded;
 - (instancetype)initWithParentBaseDataSource:(VLCMediaSourceBaseDataSource *)parentBaseDataSource;
 - (void)setupViews;
 - (VLCInputItem *)mediaSourceInputItemAtRow:(NSInteger)tableViewRow;
-- (NSArray<VLCInputItem *> *)mediaSourceInputItemsAtIndexPaths:(NSSet<NSIndexPath *> *const)indexPaths;
+- (NSArray<VLCInputItem *> *)mediaSourceInputItemsAtIndexPaths:
+    (NSSet<NSIndexPath *> *const)indexPaths;
 
 @end
 

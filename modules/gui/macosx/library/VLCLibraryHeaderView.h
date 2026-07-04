@@ -27,7 +27,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 extern const CGFloat VLCLibraryHeaderViewHeight;
-extern NSString * const VLCLibraryHeaderViewIdentifier;
+extern NSString *const VLCLibraryHeaderViewIdentifier;
 
 @interface VLCLibraryHeaderView : NSTableHeaderView
 
@@ -35,7 +35,8 @@ extern NSString * const VLCLibraryHeaderViewIdentifier;
 @property (readwrite, nonatomic) BOOL internalPaddingAddedForContentView;
 
 + (instancetype)paddedHeaderView;
-- (instancetype)initWithFrame:(NSRect)frameRect withInternalPaddingAddedForContentView:(BOOL)internalPaddingAddedForContentView;
+- (instancetype)initWithFrame:(NSRect)frameRect
+    withInternalPaddingAddedForContentView:(BOOL)internalPaddingAddedForContentView;
 - (void)updateWithRepresentedItem:(nullable VLCLibraryRepresentedItem *)representedItem
                     fallbackTitle:(nullable NSString *)fallbackTitle
                    fallbackDetail:(nullable NSString *)fallbackDetail;

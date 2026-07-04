@@ -40,7 +40,7 @@
 @end
 
 @interface NSObject (SPMediaKeyTapDelegate)
-- (void)mediaKeyTap:(SPMediaKeyTap*)keyTap receivedMediaKeyEvent:(NSEvent*)event;
+- (void)mediaKeyTap:(SPMediaKeyTap *)keyTap receivedMediaKeyEvent:(NSEvent *)event;
 @end
 
 #ifdef __cplusplus

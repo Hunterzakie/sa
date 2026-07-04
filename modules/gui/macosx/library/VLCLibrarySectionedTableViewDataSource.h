@@ -28,7 +28,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol VLCLibrarySectionedTableViewDataSource <VLCLibraryTableViewDataSource>
+@protocol VLCLibrarySectionedTableViewDataSource<VLCLibraryTableViewDataSource>
 
 - (BOOL)isHeaderRow:(NSInteger)row;
 - (NSString *)titleForRow:(NSInteger)row;

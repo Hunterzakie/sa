@@ -29,7 +29,7 @@
 {
     self = [super init];
 
-    if(self) {
+    if (self) {
         [self setup];
     }
 
@@ -63,16 +63,23 @@
     const NSRect documentVisibleRect = self.documentVisibleRect;
     const NSRect documentFrame = self.documentView.frame;
 
-    const BOOL isViewAtYStartAndScrollUp = NSMinY(documentVisibleRect) <= NSMinY(documentFrame) + 1.0 && event.deltaY > 0;
-    const BOOL isViewAtYEndAndScrollDown = NSMaxY(documentVisibleRect) >= NSMaxY(documentFrame) - 1.0 && event.deltaY < 0;
-    const BOOL isViewAtXStartAndScrollLeft = NSMinX(documentVisibleRect) <= NSMinX(documentFrame) + 1.0 && event.deltaX > 0;
-    const BOOL isViewAtXEndAndScrollRight = NSMaxX(documentVisibleRect) >= NSMaxX(documentFrame) - 1.0 && event.deltaX < 0;
+    const BOOL isViewAtYStartAndScrollUp =
+        NSMinY(documentVisibleRect) <= NSMinY(documentFrame) + 1.0 && event.deltaY > 0;
+    const BOOL isViewAtYEndAndScrollDown =
+        NSMaxY(documentVisibleRect) >= NSMaxY(documentFrame) - 1.0 && event.deltaY < 0;
+    const BOOL isViewAtXStartAndScrollLeft =
+        NSMinX(documentVisibleRect) <= NSMinX(documentFrame) + 1.0 && event.deltaX > 0;
+    const BOOL isViewAtXEndAndScrollRight =
+        NSMaxX(documentVisibleRect) >= NSMaxX(documentFrame) - 1.0 && event.deltaX < 0;
 
     const BOOL isSubScrollViewScrollableY = NSHeight(documentFrame) > NSHeight(documentVisibleRect);
     const BOOL isSubScrollViewScrollableX = NSWidth(documentFrame) > NSWidth(documentVisibleRect);
 
-    const BOOL shouldScrollParentY = _scrollParentY && (!isSubScrollViewScrollableY || isViewAtYStartAndScrollUp || isViewAtYEndAndScrollDown);
-    const BOOL shouldScrollParentX = _scrollParentX && (!isSubScrollViewScrollableX || isViewAtXStartAndScrollLeft || isViewAtXEndAndScrollRight);
+    const BOOL shouldScrollParentY = _scrollParentY
+        && (!isSubScrollViewScrollableY || isViewAtYStartAndScrollUp || isViewAtYEndAndScrollDown);
+    const BOOL shouldScrollParentX = _scrollParentX
+        && (!isSubScrollViewScrollableX || isViewAtXStartAndScrollLeft
+            || isViewAtXEndAndScrollRight);
 
     if (shouldScrollParentY || shouldScrollParentX) {
         [self.nextResponder scrollWheel:event];

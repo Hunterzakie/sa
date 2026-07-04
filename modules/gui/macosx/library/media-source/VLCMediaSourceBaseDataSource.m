@@ -48,7 +48,8 @@
 
 #import "views/VLCImageView.h"
 
-NSString * const VLCMediaSourceBaseDataSourceNodeChanged = @"VLCMediaSourceBaseDataSourceNodeChanged";
+NSString *const VLCMediaSourceBaseDataSourceNodeChanged =
+    @"VLCMediaSourceBaseDataSourceNodeChanged";
 
 @interface VLCLANDeviceRecord : NSObject
 @property (readonly) VLCMediaSource *mediaSource;
@@ -73,7 +74,10 @@ NSString * const VLCMediaSourceBaseDataSourceNodeChanged = @"VLCMediaSourceBaseD
 
 @end
 
-@interface VLCMediaSourceBaseDataSource () <NSCollectionViewDataSource, NSCollectionViewDelegate, NSTableViewDelegate, NSTableViewDataSource>
+@interface VLCMediaSourceBaseDataSource ()<NSCollectionViewDataSource,
+                                           NSCollectionViewDelegate,
+                                           NSTableViewDelegate,
+                                           NSTableViewDataSource>
 {
     NSArray<VLCMediaSource *> *_mediaSources;
     NSArray<NSString *> *_mediaSourceNotificationNames;
@@ -96,10 +100,10 @@ NSString * const VLCMediaSourceBaseDataSourceNodeChanged = @"VLCMediaSourceBaseD
             VLCMediaSourceChildrenRemoved,
             VLCMediaSourcePreparsingEnded
         ];
-        _sourceRecords = [NSMapTable mapTableWithKeyOptions:NSPointerFunctionsWeakMemory |
-                                                           NSPointerFunctionsObjectPointerPersonality
-                                              valueOptions:NSPointerFunctionsStrongMemory |
-                                                          NSPointerFunctionsObjectPersonality];
+        _sourceRecords = [NSMapTable mapTableWithKeyOptions:NSPointerFunctionsWeakMemory
+                                     | NSPointerFunctionsObjectPointerPersonality
+                                               valueOptions:NSPointerFunctionsStrongMemory |
+                                               NSPointerFunctionsObjectPersonality];
         _mediaSourceMode = VLCMediaSourceModeLAN;
         [self loadMediaSources];
         [self returnHome];
@@ -116,7 +120,7 @@ NSString * const VLCMediaSourceBaseDataSourceNodeChanged = @"VLCMediaSourceBaseD
 
 - (VLCLibraryViewModeSegment)viewMode
 {
-    VLCLibraryWindowPersistentPreferences * const libraryWindowPrefs =
+    VLCLibraryWindowPersistentPreferences *const libraryWindowPrefs =
         VLCLibraryWindowPersistentPreferences.sharedInstance;
 
     switch (_mediaSourceMode) {
@@ -133,11 +137,13 @@ NSString * const VLCMediaSourceBaseDataSourceNodeChanged = @"VLCMediaSourceBaseD
 {
     self.collectionView.dataSource = self;
     self.collectionView.delegate = self;
-    [self.collectionView registerClass:[VLCMediaSourceDeviceCollectionViewItem class] forItemWithIdentifier:VLCMediaSourceDeviceCellIdentifier];
-    [self.collectionView registerClass:[VLCMediaSourceCollectionViewItem class] forItemWithIdentifier:VLCMediaSourceCellIdentifier];
+    [self.collectionView registerClass:[VLCMediaSourceDeviceCollectionViewItem class]
+                 forItemWithIdentifier:VLCMediaSourceDeviceCellIdentifier];
+    [self.collectionView registerClass:[VLCMediaSourceCollectionViewItem class]
+                 forItemWithIdentifier:VLCMediaSourceCellIdentifier];
     [self.collectionView registerClass:[VLCLibraryCollectionViewSupplementaryElementView class]
-               forSupplementaryViewOfKind:NSCollectionElementKindSectionHeader
-                           withIdentifier:VLCLibrarySupplementaryElementViewIdentifier];
+            forSupplementaryViewOfKind:NSCollectionElementKindSectionHeader
+                        withIdentifier:VLCLibrarySupplementaryElementViewIdentifier];
 
     self.homeButton.action = @selector(homeButtonAction:);
     self.homeButton.target = self;
@@ -150,7 +156,9 @@ NSString * const VLCMediaSourceBaseDataSourceNodeChanged = @"VLCMediaSourceBaseD
     self.tableView.dataSource = self;
     self.tableView.delegate = self;
 
-    NSNib * const tableCellViewNib = [[NSNib alloc] initWithNibNamed:NSStringFromClass(VLCLibraryTableCellView.class) bundle:nil];
+    NSNib *const tableCellViewNib =
+        [[NSNib alloc] initWithNibNamed:NSStringFromClass(VLCLibraryTableCellView.class)
+                                 bundle:nil];
     [self.tableView registerNib:tableCellViewNib forIdentifier:VLCLibraryTableCellViewIdentifier];
 
     [self reloadViews];
@@ -185,33 +193,34 @@ NSString * const VLCMediaSourceBaseDataSourceNodeChanged = @"VLCMediaSourceBaseD
     }
     NSAssert(mediaSources != nil, @"Media sources array should not be nil");
 
-    for (VLCMediaSource * const mediaSource in mediaSources) {
-        VLCInputNode * const rootNode = [mediaSource rootNode];
+    for (VLCMediaSource *const mediaSource in mediaSources) {
+        VLCInputNode *const rootNode = [mediaSource rootNode];
         if (rootNode == nil)
             continue;
-        NSError * const error = [mediaSource preparseInputNodeWithinTree:rootNode];
+        NSError *const error = [mediaSource preparseInputNodeWithinTree:rootNode];
         if (error == nil)
             [self.navigationStack installHandlersOnMediaSource:mediaSource];
     }
 
     [self setMediaSources:mediaSources];
-    _lanDeviceSnapshot = self.mediaSourceMode == VLCMediaSourceModeLAN ? [self buildMediaSourceSnapshot] : @[];
+    _lanDeviceSnapshot =
+        self.mediaSourceMode == VLCMediaSourceModeLAN ? [self buildMediaSourceSnapshot] : @[];
     [self reloadData];
 }
 
 - (void)setMediaSources:(NSArray<VLCMediaSource *> *)mediaSources
 {
-    NSNotificationCenter * const nc = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const nc = NSNotificationCenter.defaultCenter;
 
-    for (VLCMediaSource * const source in _mediaSources) {
-        for (NSString * const name in _mediaSourceNotificationNames) {
+    for (VLCMediaSource *const source in _mediaSources) {
+        for (NSString *const name in _mediaSourceNotificationNames) {
             [nc removeObserver:self name:name object:source];
         }
     }
 
     _mediaSources = mediaSources;
 
-    for (VLCMediaSource * const source in _mediaSources) {
+    for (VLCMediaSource *const source in _mediaSources) {
         [nc addObserver:self
                selector:@selector(mediaSourceChildrenReset:)
                    name:VLCMediaSourceChildrenReset
@@ -269,8 +278,8 @@ NSString * const VLCMediaSourceBaseDataSourceNodeChanged = @"VLCMediaSourceBaseD
      numberOfItemsInSection:(NSInteger)section
 {
     if (_mediaSourceMode == VLCMediaSourceModeLAN) {
-        VLCMediaSource * const mediaSource = _mediaSources[section];
-        VLCInputNode * const rootNode = mediaSource.rootNode;
+        VLCMediaSource *const mediaSource = _mediaSources[section];
+        VLCInputNode *const rootNode = mediaSource.rootNode;
         return rootNode.numberOfChildren;
     }
 
@@ -280,24 +289,28 @@ NSString * const VLCMediaSourceBaseDataSourceNodeChanged = @"VLCMediaSourceBaseD
 - (NSCollectionViewItem *)collectionView:(NSCollectionView *)collectionView
      itemForRepresentedObjectAtIndexPath:(NSIndexPath *)indexPath
 {
-    VLCMediaSourceDeviceCollectionViewItem * const viewItem = [collectionView makeItemWithIdentifier:VLCMediaSourceDeviceCellIdentifier forIndexPath:indexPath];
-    VLCMediaSource * const mediaSource = _mediaSources[indexPath.section];
-    
+    VLCMediaSourceDeviceCollectionViewItem *const viewItem =
+        [collectionView makeItemWithIdentifier:VLCMediaSourceDeviceCellIdentifier
+                                  forIndexPath:indexPath];
+    VLCMediaSource *const mediaSource = _mediaSources[indexPath.section];
+
     if (_mediaSourceMode == VLCMediaSourceModeLAN) {
-        VLCInputNode * const rootNode = mediaSource.rootNode;
-        NSArray * const nodeChildren = rootNode.children;
+        VLCInputNode *const rootNode = mediaSource.rootNode;
+        NSArray *const nodeChildren = rootNode.children;
         if (nodeChildren == nil) {
-            NSLog(@"No children found for media source root node: %@ cannot provide viewItem correctly", rootNode);
+            NSLog(@"No children found for media source root node: %@ cannot provide viewItem "
+                  @"correctly",
+                  rootNode);
             return viewItem;
         }
-        VLCInputNode * const childNode = nodeChildren[indexPath.item];
-        VLCInputItem * const childRootInput = childNode.inputItem;
+        VLCInputNode *const childNode = nodeChildren[indexPath.item];
+        VLCInputItem *const childRootInput = childNode.inputItem;
         viewItem.titleTextField.stringValue = childRootInput.name;
 
         const enum input_item_type_e inputType = childRootInput.inputType;
         const BOOL isStream = childRootInput.isStream;
-        
-        NSURL * const artworkURL = childRootInput.artworkURL;
+
+        NSURL *const artworkURL = childRootInput.artworkURL;
 
         NSImage *placeholder;
         if (mediaSource.category == SD_CAT_LAN) {
@@ -308,14 +321,18 @@ NSString * const VLCMediaSourceBaseDataSourceNodeChanged = @"VLCMediaSourceBaseD
                     if ([childRootInput.name containsString:@"home"]) {
                         placeholder = NSImage.VLCBWHomeImage;
                     } else {
-                        placeholder = indexPath.item % 2 ? NSImage.VLCBWServer1Image : NSImage.VLCBWServer2Image;
+                        placeholder = indexPath.item % 2 ? NSImage.VLCBWServer1Image
+                                                         : NSImage.VLCBWServer2Image;
                     }
                     break;
                 case ITEM_TYPE_DISC:
                     if (isStream) {
-                        placeholder = indexPath.item % 2 ? NSImage.VLCBWServer1Image : NSImage.VLCBWServer2Image;
+                        placeholder = indexPath.item % 2 ? NSImage.VLCBWServer1Image
+                                                         : NSImage.VLCBWServer2Image;
                     } else {
-                        placeholder = indexPath.item % 2 ? NSImage.VLCBWUsb1Image : NSImage.VLCBWUsb2Image;;
+                        placeholder =
+                            indexPath.item % 2 ? NSImage.VLCBWUsb1Image : NSImage.VLCBWUsb2Image;
+                        ;
                     }
                     break;
                 default:
@@ -324,14 +341,14 @@ NSString * const VLCMediaSourceBaseDataSourceNodeChanged = @"VLCMediaSourceBaseD
             }
         }
         NSAssert(placeholder != nil, @"Placeholder image should not be nil");
-        
+
         if (artworkURL) {
             [viewItem.mediaImageView setImageURL:artworkURL placeholderImage:placeholder];
         } else {
             viewItem.mediaImageView.image = placeholder;
         }
     } else {
-        VLCMediaSource * const mediaSource = _mediaSources[indexPath.item];
+        VLCMediaSource *const mediaSource = _mediaSources[indexPath.item];
         viewItem.titleTextField.stringValue = mediaSource.mediaSourceDescription;
         viewItem.mediaImageView.image = NSImage.VLCBWMusicImage;
     }
@@ -339,9 +356,10 @@ NSString * const VLCMediaSourceBaseDataSourceNodeChanged = @"VLCMediaSourceBaseD
     return viewItem;
 }
 
-- (void)collectionView:(NSCollectionView *)collectionView didSelectItemsAtIndexPaths:(NSSet<NSIndexPath *> *)indexPaths
+- (void)collectionView:(NSCollectionView *)collectionView
+    didSelectItemsAtIndexPaths:(NSSet<NSIndexPath *> *)indexPaths
 {
-    NSIndexPath * const indexPath = indexPaths.anyObject;
+    NSIndexPath *const indexPath = indexPaths.anyObject;
     if (!indexPath) {
         return;
     }
@@ -351,10 +369,11 @@ NSString * const VLCMediaSourceBaseDataSourceNodeChanged = @"VLCMediaSourceBaseD
 
     if (_mediaSourceMode == VLCMediaSourceModeLAN) {
         mediaSource = _mediaSources[indexPath.section];
-        VLCInputNode * const rootNode = mediaSource.rootNode;
-        NSArray * const nodeChildren = rootNode.children;
+        VLCInputNode *const rootNode = mediaSource.rootNode;
+        NSArray *const nodeChildren = rootNode.children;
         if (nodeChildren == nil) {
-            NSLog(@"No children found for media source root node: %@ cannot access item correctly", rootNode);
+            NSLog(@"No children found for media source root node: %@ cannot access item correctly",
+                  rootNode);
             return;
         }
         childNode = nodeChildren[indexPath.item];
@@ -371,43 +390,50 @@ NSString * const VLCMediaSourceBaseDataSourceNodeChanged = @"VLCMediaSourceBaseD
 }
 
 - (NSView *)collectionView:(NSCollectionView *)collectionView
-viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
-               atIndexPath:(NSIndexPath *)indexPath
+    viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
+                          atIndexPath:(NSIndexPath *)indexPath
 {
-    NSAssert([kind compare:NSCollectionElementKindSectionHeader] == NSOrderedSame, @"View request for non-existing footer.");
+    NSAssert([kind compare:NSCollectionElementKindSectionHeader] == NSOrderedSame,
+             @"View request for non-existing footer.");
 
-    VLCLibraryCollectionViewSupplementaryElementView *labelView = [collectionView makeSupplementaryViewOfKind:kind
-                                                                                               withIdentifier:VLCLibrarySupplementaryElementViewIdentifier
-                                                                                                 forIndexPath:indexPath];
-    
+    VLCLibraryCollectionViewSupplementaryElementView *labelView =
+        [collectionView makeSupplementaryViewOfKind:kind
+                                     withIdentifier:VLCLibrarySupplementaryElementViewIdentifier
+                                       forIndexPath:indexPath];
+
     labelView.stringValue = _mediaSources[indexPath.section].mediaSourceDescription;
 
     return labelView;
 }
 
 - (CGSize)collectionView:(NSCollectionView *)collectionView
-                  layout:(NSCollectionViewLayout *)collectionViewLayout
-referenceSizeForHeaderInSection:(NSInteger)section
+                             layout:(NSCollectionViewLayout *)collectionViewLayout
+    referenceSizeForHeaderInSection:(NSInteger)section
 {
     if (_mediaSourceMode == VLCMediaSourceModeLAN) {
-        VLCMediaSource * const mediaSource = _mediaSources[section];
-        VLCInputNode * const rootNode = mediaSource.rootNode;
+        VLCMediaSource *const mediaSource = _mediaSources[section];
+        VLCInputNode *const rootNode = mediaSource.rootNode;
         // Hide Section if no children under the root node are found.
-        return rootNode.numberOfChildren == 0 ? CGSizeZero : VLCLibraryCollectionViewSupplementaryElementView.defaultHeaderSize;
+        return rootNode.numberOfChildren == 0
+            ? CGSizeZero
+            : VLCLibraryCollectionViewSupplementaryElementView.defaultHeaderSize;
     }
-    
+
     return VLCLibraryCollectionViewSupplementaryElementView.defaultHeaderSize;
 }
 
 - (NSSize)collectionView:(NSCollectionView *)collectionView
-                  layout:(NSCollectionViewLayout *)collectionViewLayout
-  sizeForItemAtIndexPath:(NSIndexPath *)indexPath
+                    layout:(NSCollectionViewLayout *)collectionViewLayout
+    sizeForItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    VLCLibraryCollectionViewFlowLayout * const collectionViewFlowLayout = (VLCLibraryCollectionViewFlowLayout*)collectionViewLayout;
+    VLCLibraryCollectionViewFlowLayout *const collectionViewFlowLayout =
+        (VLCLibraryCollectionViewFlowLayout *)collectionViewLayout;
     NSAssert(collectionViewLayout, @"This should be a flow layout and thus a valid pointer");
-    return [VLCLibraryUIUnits adjustedCollectionViewItemSizeForCollectionView:collectionView
-                                                                   withLayout:collectionViewFlowLayout
-                                                         withItemsAspectRatio:VLCLibraryCollectionViewItemAspectRatioDefaultItem];
+    return [VLCLibraryUIUnits
+        adjustedCollectionViewItemSizeForCollectionView:collectionView
+                                             withLayout:collectionViewFlowLayout
+                                   withItemsAspectRatio:
+                                       VLCLibraryCollectionViewItemAspectRatioDefaultItem];
 }
 
 #pragma mark - table view data source and delegation
@@ -422,17 +448,17 @@ referenceSizeForHeaderInSection:(NSInteger)section
 }
 
 - (NSView *)tableView:(NSTableView *)tableView
-   viewForTableColumn:(NSTableColumn *)tableColumn
-                  row:(NSInteger)row
+    viewForTableColumn:(NSTableColumn *)tableColumn
+                   row:(NSInteger)row
 {
     if ([tableColumn.identifier isEqualToString:@"VLCMediaSourceTableNameColumn"]) {
-        VLCLibraryTableCellView * const cellView =
+        VLCLibraryTableCellView *const cellView =
             [tableView makeViewWithIdentifier:VLCLibraryTableCellViewIdentifier owner:self];
 
         if (_mediaSourceMode == VLCMediaSourceModeLAN) {
-            VLCInputItem * const currentNodeInput = _lanDeviceSnapshot[row].inputNode.inputItem;
-            NSURL * const artworkURL = currentNodeInput.artworkURL;
-            NSImage * const placeholder = NSImage.VLCDefaultAppIconImage;
+            VLCInputItem *const currentNodeInput = _lanDeviceSnapshot[row].inputNode.inputItem;
+            NSURL *const artworkURL = currentNodeInput.artworkURL;
+            NSImage *const placeholder = NSImage.VLCDefaultAppIconImage;
             if (artworkURL) {
                 [cellView.representedImageView setImageURL:artworkURL placeholderImage:placeholder];
             } else {
@@ -442,7 +468,7 @@ referenceSizeForHeaderInSection:(NSInteger)section
             cellView.representedImageView.image = NSImage.VLCFollowImage;
         }
 
-        NSString * const name = _mediaSourceMode == VLCMediaSourceModeLAN
+        NSString *const name = _mediaSourceMode == VLCMediaSourceModeLAN
             ? _lanDeviceSnapshot[row].inputNode.inputItem.name
             : _mediaSources[row].mediaSourceDescription;
 
@@ -452,9 +478,9 @@ referenceSizeForHeaderInSection:(NSInteger)section
         cellView.singlePrimaryTitleTextField.stringValue = name;
         return cellView;
     } else if ([tableColumn.identifier isEqualToString:@"VLCMediaSourceTableKindColumn"]) {
-        static NSString * const basicCellViewIdentifier = @"BasicTableCellViewIdentifier";
-        NSTableCellView *cellView =
-            [tableView makeViewWithIdentifier:basicCellViewIdentifier owner:self];
+        static NSString *const basicCellViewIdentifier = @"BasicTableCellViewIdentifier";
+        NSTableCellView *cellView = [tableView makeViewWithIdentifier:basicCellViewIdentifier
+                                                                owner:self];
         if (cellView == nil) {
             cellView = [NSTableCellView tableCellViewWithIdentifier:basicCellViewIdentifier
                                                       showingString:@""];
@@ -462,13 +488,13 @@ referenceSizeForHeaderInSection:(NSInteger)section
         NSAssert(cellView, @"Cell view should not be nil");
 
         if (_mediaSourceMode == VLCMediaSourceModeLAN) {
-            VLCInputItem * const currentNodeInput = _lanDeviceSnapshot[row].inputNode.inputItem;
+            VLCInputItem *const currentNodeInput = _lanDeviceSnapshot[row].inputNode.inputItem;
             if (currentNodeInput.inputType == ITEM_TYPE_DIRECTORY) {
                 cellView.textField.stringValue = _NS("Directory");
             }
         } else {
-            VLCMediaSource * const mediaSource = _mediaSources[row];
-            switch(mediaSource.category) {
+            VLCMediaSource *const mediaSource = _mediaSources[row];
+            switch (mediaSource.category) {
                 case SD_CAT_DEVICES:
                     cellView.textField.stringValue = _NS("Devices");
                     break;
@@ -498,7 +524,7 @@ referenceSizeForHeaderInSection:(NSInteger)section
     VLCMediaSource *mediaSource = nil;
     VLCInputNode *childNode = nil;
     if (_mediaSourceMode == VLCMediaSourceModeLAN) {
-        VLCLANDeviceRecord * const record = _lanDeviceSnapshot[selectedRow];
+        VLCLANDeviceRecord *const record = _lanDeviceSnapshot[selectedRow];
         mediaSource = record.mediaSource;
         childNode = record.inputNode;
     } else {
@@ -517,15 +543,15 @@ referenceSizeForHeaderInSection:(NSInteger)section
 - (NSArray<VLCLANDeviceRecord *> *)buildMediaSourceSnapshot
 {
     [_sourceRecords removeAllObjects];
-    NSMutableArray<VLCLANDeviceRecord *> * const flat = [NSMutableArray array];
-    for (VLCMediaSource * const mediaSource in _mediaSources) {
-        NSMutableArray<VLCLANDeviceRecord *> * const sourceRecs = [NSMutableArray array];
-        for (VLCInputNode * const child in mediaSource.rootNode.children) {
-            VLCLANDeviceRecord * const record = [[VLCLANDeviceRecord alloc] initWithMediaSource:mediaSource
-                                                                                          inputNode:child];
+    NSMutableArray<VLCLANDeviceRecord *> *const flat = [NSMutableArray array];
+    for (VLCMediaSource *const mediaSource in _mediaSources) {
+        NSMutableArray<VLCLANDeviceRecord *> *const sourceRecs = [NSMutableArray array];
+        for (VLCInputNode *const child in mediaSource.rootNode.children) {
+            VLCLANDeviceRecord *const record =
+                [[VLCLANDeviceRecord alloc] initWithMediaSource:mediaSource inputNode:child];
             [sourceRecs addObject:record];
         }
-        NSArray<VLCLANDeviceRecord *> * const frozen = [sourceRecs copy];
+        NSArray<VLCLANDeviceRecord *> *const frozen = [sourceRecs copy];
         [_sourceRecords setObject:frozen forKey:mediaSource];
         [flat addObjectsFromArray:frozen];
     }
@@ -534,17 +560,17 @@ referenceSizeForHeaderInSection:(NSInteger)section
 
 - (NSArray<VLCLANDeviceRecord *> *)snapshotByUpdatingSource:(VLCMediaSource *)mediaSource
 {
-    NSMutableArray<VLCLANDeviceRecord *> * const sourceRecs = [NSMutableArray array];
-    for (VLCInputNode * const child in mediaSource.rootNode.children) {
-        VLCLANDeviceRecord * const record = [[VLCLANDeviceRecord alloc] initWithMediaSource:mediaSource
-                                                                                      inputNode:child];
+    NSMutableArray<VLCLANDeviceRecord *> *const sourceRecs = [NSMutableArray array];
+    for (VLCInputNode *const child in mediaSource.rootNode.children) {
+        VLCLANDeviceRecord *const record =
+            [[VLCLANDeviceRecord alloc] initWithMediaSource:mediaSource inputNode:child];
         [sourceRecs addObject:record];
     }
     [_sourceRecords setObject:[sourceRecs copy] forKey:mediaSource];
 
-    NSMutableArray<VLCLANDeviceRecord *> * const flat = [NSMutableArray array];
-    for (VLCMediaSource * const source in _mediaSources) {
-        NSArray<VLCLANDeviceRecord *> * const recs = [_sourceRecords objectForKey:source];
+    NSMutableArray<VLCLANDeviceRecord *> *const flat = [NSMutableArray array];
+    for (VLCMediaSource *const source in _mediaSources) {
+        NSArray<VLCLANDeviceRecord *> *const recs = [_sourceRecords objectForKey:source];
         if (recs) {
             [flat addObjectsFromArray:recs];
         }
@@ -554,24 +580,25 @@ referenceSizeForHeaderInSection:(NSInteger)section
 
 #pragma mark - glue code
 
-- (void)configureChildDataSourceWithNode:(VLCInputNode *)node andMediaSource:(VLCMediaSource *)mediaSource
+- (void)configureChildDataSourceWithNode:(VLCInputNode *)node
+                          andMediaSource:(VLCMediaSource *)mediaSource
 {
     if (!node || !mediaSource) {
         NSLog(@"Received bad node or media source, could not configure child data media source");
         return;
     }
 
-    NSError * const error = [mediaSource preparseInputNodeWithinTree:node];
+    NSError *const error = [mediaSource preparseInputNodeWithinTree:node];
     if (error) {
-        NSAlert * const alert = [NSAlert alertWithError:error];
+        NSAlert *const alert = [NSAlert alertWithError:error];
         alert.alertStyle = NSAlertStyleCritical;
         [alert runModal];
         return;
     }
-    
-    VLCMediaSourceDataSource * const newChildDataSource =
+
+    VLCMediaSourceDataSource *const newChildDataSource =
         [[VLCMediaSourceDataSource alloc] initWithParentBaseDataSource:self];
-    
+
     newChildDataSource.displayedMediaSource = mediaSource;
     newChildDataSource.nodeToDisplay = node;
     newChildDataSource.collectionView = self.collectionView;
@@ -595,18 +622,18 @@ referenceSizeForHeaderInSection:(NSInteger)section
         NSLog(@"Received same childDataSource");
         return;
     }
-    
+
     _childDataSource = childDataSource;
 
     if (_mediaSourceMode == VLCMediaSourceModeLAN) {
-        VLCInputNode * const node = childDataSource.nodeToDisplay;
-        VLCInputNodePathControlItem * const nodePathItem = 
+        VLCInputNode *const node = childDataSource.nodeToDisplay;
+        VLCInputNodePathControlItem *const nodePathItem =
             [[VLCInputNodePathControlItem alloc] initWithInputNode:node];
 
         [self.pathControl appendInputNodePathControlItem:nodePathItem];
     }
     self.pathControl.hidden = NO;
-    
+
     [_childDataSource setupViews];
 
     self.collectionView.dataSource = _childDataSource;
@@ -634,7 +661,11 @@ referenceSizeForHeaderInSection:(NSInteger)section
     _collectionViewScrollView.scrollerInsets = scrollerInsets;
 
     _tableViewScrollView.automaticallyAdjustsContentInsets = NO;
-    _tableViewScrollView.contentInsets = NSEdgeInsetsMake(scrollViewsTopSpace + VLCLibraryUIUnits.libraryWindowContentSafeTopInset, 0, scrollViewInsets.bottom, 0);
+    _tableViewScrollView.contentInsets =
+        NSEdgeInsetsMake(scrollViewsTopSpace + VLCLibraryUIUnits.libraryWindowContentSafeTopInset,
+                         0,
+                         scrollViewInsets.bottom,
+                         0);
     _tableViewScrollView.scrollerInsets = NSEdgeInsetsMake(0, 0, -scrollViewInsets.bottom, 0);
 }
 
@@ -665,12 +696,13 @@ referenceSizeForHeaderInSection:(NSInteger)section
         return;
     }
 
-    NSPathControlItem * const selectedItem = self.pathControl.clickedPathItem;
-    NSString * const itemNodeMrl = selectedItem.image.accessibilityDescription;
+    NSPathControlItem *const selectedItem = self.pathControl.clickedPathItem;
+    NSString *const itemNodeMrl = selectedItem.image.accessibilityDescription;
 
-    VLCInputNodePathControlItem * const matchingItem = [self.pathControl.inputNodePathControlItems objectForKey:itemNodeMrl];
+    VLCInputNodePathControlItem *const matchingItem =
+        [self.pathControl.inputNodePathControlItems objectForKey:itemNodeMrl];
     if (matchingItem != nil) {
-        VLCInputNode * const currentNode = self.childDataSource.nodeToDisplay;
+        VLCInputNode *const currentNode = self.childDataSource.nodeToDisplay;
         if (currentNode != nil &&
             [matchingItem.inputNode.inputItem.MRL isEqualToString:currentNode.inputItem.MRL]) {
             return;
@@ -718,7 +750,7 @@ referenceSizeForHeaderInSection:(NSInteger)section
 - (void)reloadDataForNotification:(NSNotification *)aNotification
 {
     if (self.mediaSourceMode == VLCMediaSourceModeLAN) {
-        VLCMediaSource * const source = aNotification.object;
+        VLCMediaSource *const source = aNotification.object;
         if ([aNotification.name isEqualToString:VLCMediaSourceChildrenReset]) {
             _lanDeviceSnapshot = [self buildMediaSourceSnapshot];
         } else {
@@ -743,13 +775,13 @@ referenceSizeForHeaderInSection:(NSInteger)section
 - (void)browseFolderByMrl:(NSString *)mrl
 {
     vlc_preparser_t *p_preparser = getNetworkPreparser();
-    VLCMediaSource * const mediaSource =
-        [[VLCMediaSource alloc] initWithFolderMrl:mrl andPreparser:p_preparser];
+    VLCMediaSource *const mediaSource = [[VLCMediaSource alloc] initWithFolderMrl:mrl
+                                                                     andPreparser:p_preparser];
     if (mediaSource == nil) {
         NSLog(@"Could not create valid media source for mrl: %@", mrl);
         return;
     }
-    VLCInputNode * const entryNode = mediaSource.category == SD_CAT_LAN
+    VLCInputNode *const entryNode = mediaSource.category == SD_CAT_LAN
         ? mediaSource.rootNode.children.firstObject
         : mediaSource.rootNode;
     if (entryNode == nil) {

@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class VLCInputItem;
 @class VLCLibraryRepresentedItem;
 
-extern NSString * const VLCLibraryTableCellViewIdentifier;
+extern NSString *const VLCLibraryTableCellViewIdentifier;
 
 @interface VLCLibraryTableCellView : NSTableCellView<VLCLibraryTableCellViewProtocol>
 

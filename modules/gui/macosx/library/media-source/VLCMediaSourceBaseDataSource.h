@@ -35,13 +35,13 @@ typedef NS_ENUM(NSInteger, VLCMediaSourceMode) {
 @class VLCLibraryMediaSourceViewNavigationStack;
 @class VLCMediaSourceDataSource;
 
-extern NSString * const VLCMediaSourceBaseDataSourceNodeChanged;
+extern NSString *const VLCMediaSourceBaseDataSourceNodeChanged;
 
-@interface VLCMediaSourceBaseDataSource : NSObject <NSCollectionViewDataSource,
-                                                    NSCollectionViewDelegate,
-                                                    NSCollectionViewDelegateFlowLayout,
-                                                    NSTableViewDelegate,
-                                                    NSTableViewDataSource>
+@interface VLCMediaSourceBaseDataSource : NSObject<NSCollectionViewDataSource,
+                                                   NSCollectionViewDelegate,
+                                                   NSCollectionViewDelegateFlowLayout,
+                                                   NSTableViewDelegate,
+                                                   NSTableViewDataSource>
 
 @property (readwrite, weak) NSCollectionView *collectionView;
 @property (readwrite, weak) NSScrollView *collectionViewScrollView;

@@ -31,15 +31,18 @@
     NSParameterAssert(inputNodePathControlItem != nil);
     NSParameterAssert(inputNodePathControlItem.image != nil);
     NSParameterAssert(inputNodePathControlItem.image.accessibilityDescription != nil);
-    NSParameterAssert(![inputNodePathControlItem.image.accessibilityDescription isEqualToString:@""]);
+    NSParameterAssert(
+        ![inputNodePathControlItem.image.accessibilityDescription isEqualToString:@""]);
 
     if (self.inputNodePathControlItems == nil) {
         _inputNodePathControlItems = [NSMutableDictionary dictionary];
     }
 
-    [self.inputNodePathControlItems setObject:inputNodePathControlItem forKey:inputNodePathControlItem.image.accessibilityDescription];
+    [self.inputNodePathControlItems
+        setObject:inputNodePathControlItem
+           forKey:inputNodePathControlItem.image.accessibilityDescription];
 
-    NSMutableArray * const pathItems = self.pathItems.mutableCopy;
+    NSMutableArray *const pathItems = self.pathItems.mutableCopy;
     [pathItems addObject:inputNodePathControlItem];
     self.pathItems = pathItems;
 }
@@ -56,20 +59,26 @@
         return;
     }
 
-    const NSUInteger indexOfItem = [self.pathItems indexOfObjectPassingTest:^BOOL(NSPathControlItem * const searchItem, const NSUInteger __unused idx, BOOL * const __unused stop) {
-        return [searchItem.image.accessibilityDescription isEqualToString:item.image.accessibilityDescription];
-    }];
+    const NSUInteger indexOfItem =
+        [self.pathItems indexOfObjectPassingTest:^BOOL(NSPathControlItem *const searchItem,
+                                                       const NSUInteger __unused idx,
+                                                       BOOL *const __unused stop) {
+            return [searchItem.image.accessibilityDescription
+                isEqualToString:item.image.accessibilityDescription];
+        }];
 
     if (indexOfItem == NSNotFound) {
         return;
     }
 
-    NSMutableArray<NSPathControlItem *> * const pathItems = self.pathItems.mutableCopy;
-    NSArray<NSPathControlItem *> * const itemsToRemove = [pathItems subarrayWithRange:NSMakeRange(indexOfItem + 1, pathItems.count - indexOfItem - 1)];
-    NSMutableArray<NSString *> * const itemIdsToRemove = [NSMutableArray arrayWithCapacity:itemsToRemove.count];
+    NSMutableArray<NSPathControlItem *> *const pathItems = self.pathItems.mutableCopy;
+    NSArray<NSPathControlItem *> *const itemsToRemove = [pathItems
+        subarrayWithRange:NSMakeRange(indexOfItem + 1, pathItems.count - indexOfItem - 1)];
+    NSMutableArray<NSString *> *const itemIdsToRemove =
+        [NSMutableArray arrayWithCapacity:itemsToRemove.count];
 
-    for (NSPathControlItem * const searchItem in itemsToRemove) {
-        NSString * const searchItemId = searchItem.image.accessibilityDescription;
+    for (NSPathControlItem *const searchItem in itemsToRemove) {
+        NSString *const searchItemId = searchItem.image.accessibilityDescription;
         [itemIdsToRemove addObject:searchItemId];
     };
 
@@ -79,10 +88,10 @@
 
 - (NSArray<VLCInputNodePathControlItem *> *)orderedInputNodePathControlItems
 {
-    NSMutableArray<VLCInputNodePathControlItem *> * const ordered =
+    NSMutableArray<VLCInputNodePathControlItem *> *const ordered =
         [NSMutableArray arrayWithCapacity:self.pathItems.count];
-    for (NSPathControlItem * const item in self.pathItems) {
-        VLCInputNodePathControlItem * const inputNodeItem =
+    for (NSPathControlItem *const item in self.pathItems) {
+        VLCInputNodePathControlItem *const inputNodeItem =
             [self.inputNodePathControlItems objectForKey:item.image.accessibilityDescription];
         if (inputNodeItem != nil) {
             [ordered addObject:inputNodeItem];
@@ -94,7 +103,7 @@
 - (void)setPathWithInputNodePathControlItems:(NSArray<VLCInputNodePathControlItem *> *)items
 {
     [self clearInputNodePathControlItems];
-    for (VLCInputNodePathControlItem * const item in items) {
+    for (VLCInputNodePathControlItem *const item in items) {
         [self appendInputNodePathControlItem:item];
     }
 }

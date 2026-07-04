@@ -179,7 +179,8 @@ NSImage *imageFromRes(NSString *name);
 
  \warning Compatibility function, do not use in new code!
  */
-static inline NSString *B64DecNSStr(NSString *s) {
+static inline NSString *B64DecNSStr(NSString *s)
+{
     NSString *res = [s base64DecodedString];
 
     return (res == nil) ? @"" : res;
@@ -194,28 +195,29 @@ static inline NSString *B64DecNSStr(NSString *s) {
 
  \warning Compatibility function, do not use in new code!
  */
-static inline NSString *B64EncAndFree(char *cs) {
+static inline NSString *B64EncAndFree(char *cs)
+{
     NSString *res = [NSString base64StringWithCString:cs];
     free(cs);
 
     return (res == nil) ? @"" : res;
 }
 
-NSString * getVolumeTypeFromMountPath(NSString *mountPath);
+NSString *getVolumeTypeFromMountPath(NSString *mountPath);
 
-NSString * getBSDNodeFromMountPath(NSString *mountPath);
+NSString *getBSDNodeFromMountPath(NSString *mountPath);
 
 /**
  * Converts VLC key string to a prettified version, for hotkey settings.
  * The returned string adapts similar how its done within the cocoa framework when setting this
  * key to menu items.
  */
-NSString * OSXStringKeyToString(NSString *theString);
+NSString *OSXStringKeyToString(NSString *theString);
 
 /**
  * Converts VLC key string to cocoa modifiers which can be used as setKeyEquivalent for menu items
  */
-NSString * VLCKeyToString(char *theChar);
+NSString *VLCKeyToString(char *theChar);
 
 /**
  * Converts VLC key to cocoa string which can be used as setKeyEquivalentModifierMask for menu items

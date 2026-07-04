@@ -29,9 +29,11 @@ NS_ASSUME_NONNULL_BEGIN
 @class VLCImageView;
 
 extern NSString *const VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewIdentifier;
-extern NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewKind;
+extern NSCollectionViewSupplementaryElementKind const
+    VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewKind;
 
-@interface VLCLibraryCollectionViewAudioGroupSupplementaryDetailView : VLCLibraryCollectionViewSupplementaryDetailView
+@interface VLCLibraryCollectionViewAudioGroupSupplementaryDetailView
+    : VLCLibraryCollectionViewSupplementaryDetailView
 
 @property (readwrite, weak) IBOutlet NSTextField *audioGroupNameTextField;
 @property (readwrite, weak) IBOutlet NSTableView *audioGroupAlbumsTableView;

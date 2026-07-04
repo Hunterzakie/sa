@@ -26,7 +26,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol VLCLibraryGroupHeaderDelegate <NSObject>
+@protocol VLCLibraryGroupHeaderDelegate<NSObject>
 
 - (void)updateHeaderForTableView:(NSTableView *)tableView
              withRepresentedItem:(nullable VLCLibraryRepresentedItem *)representedItem

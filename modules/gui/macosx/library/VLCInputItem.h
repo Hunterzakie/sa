@@ -37,7 +37,7 @@ extern NSString *VLCInputItemPreparsingSkipped;
 extern NSString *VLCInputItemPreparsingFailed;
 extern NSString *VLCInputItemPreparsingTimeOut;
 extern NSString *VLCInputItemPreparsingSucceeded;
-extern NSString * const VLCInputItemCommonDataDifferingFlagString;
+extern NSString *const VLCInputItemCommonDataDifferingFlagString;
 
 @interface VLCInputItem : NSObject<VLCLocallyManipulableItemProtocol>
 
@@ -86,12 +86,12 @@ extern NSString * const VLCInputItemCommonDataDifferingFlagString;
 
 - (int)writeMetadataToFile;
 
-- (void)thumbnailWithSize:(NSSize)size 
-        completionHandler:(void (^)(NSImage * _Nullable))completionHandler;
+- (void)thumbnailWithSize:(NSSize)size
+        completionHandler:(void (^)(NSImage *_Nullable))completionHandler;
 
 @end
 
-NSDictionary<NSString *, id> *commonInputItemData(NSArray<VLCInputItem*> * const inputItems);
+NSDictionary<NSString *, id> *commonInputItemData(NSArray<VLCInputItem *> *const inputItems);
 
 @interface VLCInputNode : NSObject
 
@@ -100,7 +100,7 @@ NSDictionary<NSString *, id> *commonInputItemData(NSArray<VLCInputItem*> * const
 @property (readonly) struct input_item_node_t *vlcInputItemNode;
 @property (readonly, nullable) VLCInputItem *inputItem;
 @property (readonly) int numberOfChildren;
-@property (readonly, nullable) NSArray <VLCInputNode *> *children;
+@property (readonly, nullable) NSArray<VLCInputNode *> *children;
 
 - (void)clearChildrenCache;
 

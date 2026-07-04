@@ -1,24 +1,24 @@
 /*****************************************************************************
-* VLCDetachedAudioWindow.m: macOS user interface
-*****************************************************************************
-* Copyright (C) 2019 VLC authors and VideoLAN
-*
-* Author: Felix Paul Kühne <fkuehne at videolan dot org>
-*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; either version 2 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
-*****************************************************************************/
+ * VLCDetachedAudioWindow.m: macOS user interface
+ *****************************************************************************
+ * Copyright (C) 2019 VLC authors and VideoLAN
+ *
+ * Author: Felix Paul Kühne <fkuehne at videolan dot org>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
+ *****************************************************************************/
 
 #import "VLCDetachedAudioWindow.h"
 
@@ -40,7 +40,7 @@
 #import "windows/video/VLCMainVideoViewAudioMediaDecorativeView.h"
 #import "windows/video/VLCMainVideoViewOverlayView.h"
 
-@interface VLCDetachedAudioWindow()
+@interface VLCDetachedAudioWindow ()
 {
     VLCPlayerController *_playerController;
 }
@@ -52,7 +52,7 @@
 {
     _decorativeView = [VLCMainVideoViewAudioMediaDecorativeView fromNibWithOwner:self.contentView];
     self.decorativeView.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.contentView addSubview:self.decorativeView 
+    [self.contentView addSubview:self.decorativeView
                       positioned:NSWindowBelow
                       relativeTo:self.overlayView];
     [self.decorativeView applyConstraintsToFillSuperview];
@@ -64,15 +64,11 @@
 
     _playerController = VLCMain.sharedInstance.playQueueController.playerController;
 
-    VLCTrackingView * const trackingView = self.contentView;
+    VLCTrackingView *const trackingView = self.contentView;
     trackingView.viewToHide = self.overlayView;
     trackingView.animatesTransition = YES;
-    trackingView.mouseEnteredBlock = ^{
-        self.styleMask |= NSWindowStyleMaskTitled;
-    };
-    trackingView.mouseExitedBlock = ^{
-        self.styleMask &= ~NSWindowStyleMaskTitled;
-    };
+    trackingView.mouseEnteredBlock = ^{ self.styleMask |= NSWindowStyleMaskTitled; };
+    trackingView.mouseExitedBlock = ^{ self.styleMask &= ~NSWindowStyleMaskTitled; };
 
     self.overlayView.drawGradientForTopControls = YES;
     self.overlayView.darkestGradientColor = [NSColor colorWithCalibratedWhite:0.0 alpha:0.8];

@@ -40,7 +40,7 @@
 
 /**
  The default value of the slider
- 
+
  \note It may not be equal to \c DBL_MAX, as this is the value
        that it should be set to, if no defaultValue is desired.
  */
@@ -49,15 +49,16 @@
 /**
  Color of the default tick mark
  */
-@property (getter=defaultTickMarkColor, setter=setDefaultTickMarkColor:) NSColor *defaultTickMarkColor;
+@property (getter=defaultTickMarkColor, setter=setDefaultTickMarkColor:)
+    NSColor *defaultTickMarkColor;
 
 /**
  Draws the tick mark for the \c defaultValue in the
  given rect.
- 
+
  \note Override this in a subclass if you need to customize the
  tickmark that is drawn for the \c defaultValue
- 
+
  \param rect The rect in which the tickMark should be drawn
  */
 - (void)drawDefaultTickMarkWithFrame:(NSRect)rect;

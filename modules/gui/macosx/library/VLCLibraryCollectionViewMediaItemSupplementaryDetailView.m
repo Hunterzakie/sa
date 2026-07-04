@@ -40,8 +40,11 @@
 
 #import "views/VLCImageView.h"
 
-NSString *const VLCLibraryCollectionViewMediaItemSupplementaryDetailViewIdentifier = @"VLCLibraryCollectionViewMediaItemSupplementaryDetailViewIdentifier";
-NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind = @"VLCLibraryCollectionViewMediaItemSupplementaryDetailViewIdentifier";
+NSString *const VLCLibraryCollectionViewMediaItemSupplementaryDetailViewIdentifier =
+    @"VLCLibraryCollectionViewMediaItemSupplementaryDetailViewIdentifier";
+NSCollectionViewSupplementaryElementKind const
+    VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind =
+        @"VLCLibraryCollectionViewMediaItemSupplementaryDetailViewIdentifier";
 
 @implementation VLCLibraryCollectionViewMediaItemSupplementaryDetailView
 
@@ -77,20 +80,22 @@ NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewMediaItem
         return @"";
     }
 
-    VLCMediaLibraryMediaItem * const actualItem = self.representedItem.item.firstMediaItem;
-    NSMutableArray<NSString *> * const strings = NSMutableArray.array;
+    VLCMediaLibraryMediaItem *const actualItem = self.representedItem.item.firstMediaItem;
+    NSMutableArray<NSString *> *const strings = NSMutableArray.array;
 
     if (actualItem.year > 0) {
         NSDate *yearDate = [NSDate dateWithTimeIntervalSince1970:actualItem.year];
         NSCalendar *calendar = [NSCalendar currentCalendar];
-        [strings addObject:[NSString stringWithFormat:@"%ld", [calendar component:NSCalendarUnitYear fromDate:yearDate]]];
+        [strings addObject:[NSString stringWithFormat:@"%ld",
+                                                      [calendar component:NSCalendarUnitYear
+                                                                 fromDate:yearDate]]];
     } else if (actualItem.files.count > 0) {
-        VLCMediaLibraryFile * const firstFile = actualItem.files.firstObject;
+        VLCMediaLibraryFile *const firstFile = actualItem.files.firstObject;
         const time_t fileLastModTime = firstFile.lastModificationDate;
 
         if (fileLastModTime > 0) {
-            NSDate * const lastModDate = [NSDate dateWithTimeIntervalSince1970:fileLastModTime];
-            NSDateComponents * const components =
+            NSDate *const lastModDate = [NSDate dateWithTimeIntervalSince1970:fileLastModTime];
+            NSDateComponents *const components =
                 [[NSCalendar currentCalendar] components:NSCalendarUnitYear fromDate:lastModDate];
             [strings addObject:[NSString stringWithFormat:@"%ld", components.year]];
         }
@@ -100,10 +105,11 @@ NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewMediaItem
         [strings addObject:actualItem.durationString];
     }
 
-    [strings addObjectsFromArray:@[actualItem.readableMediaType, actualItem.readableMediaSubType]];
+    [strings
+        addObjectsFromArray:@[ actualItem.readableMediaType, actualItem.readableMediaSubType ]];
 
-    VLCInputItem * const inputItem = actualItem.inputItem;
-    NSString * const discNumber = inputItem.discNumber;
+    VLCInputItem *const inputItem = actualItem.inputItem;
+    NSString *const discNumber = inputItem.discNumber;
     if (![discNumber isEqualToString:@""] && ![discNumber isEqualToString:@"0"]) {
         [strings addObject:[NSString stringWithFormat:@"%@ %@", _NS("Disc"), discNumber]];
     }
@@ -114,13 +120,14 @@ NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewMediaItem
 - (void)updateRepresentation
 {
     NSAssert(self.representedItem, @"no represented item assigned for collection view item", nil);
-    VLCMediaLibraryMediaItem * const actualItem = self.representedItem.item.firstMediaItem;
+    VLCMediaLibraryMediaItem *const actualItem = self.representedItem.item.firstMediaItem;
     NSAssert(actualItem != nil, @"represented item is not a media item", nil);
 
     _mediaItemTitleTextField.stringValue = actualItem.displayString;
     _mediaItemPrimaryDetailButton.title = actualItem.primaryDetailString;
     _mediaItemSecondaryDetailButton.title = actualItem.secondaryDetailString;
-    _mediaItemYearAndDurationAndTypeTextField.stringValue = [self formattedYearAndDurationAndTypeString];
+    _mediaItemYearAndDurationAndTypeTextField.stringValue =
+        [self formattedYearAndDurationAndTypeString];
     _mediaItemFileNameTextField.stringValue = actualItem.inputItem.name;
     _mediaItemPathTextField.stringValue = actualItem.inputItem.decodedMRL;
 
@@ -129,9 +136,9 @@ NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewMediaItem
     self.mediaItemPrimaryDetailButton.enabled = primaryActionableDetail;
     self.mediaItemSecondaryDetailButton.enabled = secondaryActionableDetail;
     if (@available(macOS 10.14, *)) {
-        NSColor * const primaryDetailButtonColor = 
+        NSColor *const primaryDetailButtonColor =
             primaryActionableDetail ? NSColor.VLCAccentColor : NSColor.labelColor;
-        NSColor * const secondaryDetailButtonColor = 
+        NSColor *const secondaryDetailButtonColor =
             secondaryActionableDetail ? NSColor.VLCAccentColor : NSColor.labelColor;
         self.mediaItemPrimaryDetailButton.contentTintColor = primaryDetailButtonColor;
         self.mediaItemSecondaryDetailButton.contentTintColor = secondaryDetailButtonColor;
@@ -150,60 +157,65 @@ NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewMediaItem
     const double proportionOfMaxRating = 100 / ratingControlMax;
     self.mediaItemRatingIndicator.doubleValue = (double)actualItem.rating / proportionOfMaxRating;
 
-    NSArray<NSString *> * const mediaItemLabels = actualItem.labels;
+    NSArray<NSString *> *const mediaItemLabels = actualItem.labels;
     self.mediaItemLabelsTextField.hidden = mediaItemLabels.count == 0;
     self.mediaItemLabelsTitleTextField.hidden = self.mediaItemLabelsTextField.hidden;
     if (!self.mediaItemLabelsTextField.hidden) {
-        self.mediaItemLabelsTextField.stringValue = [mediaItemLabels componentsJoinedByString:@", "];
+        self.mediaItemLabelsTextField.stringValue =
+            [mediaItemLabels componentsJoinedByString:@", "];
     }
 
     self.mediaItemLastPlayedTextField.hidden = actualItem.lastPlayedDate == 0;
     self.mediaItemLastPlayedTitleTextField.hidden = self.mediaItemLastPlayedTextField.hidden;
     if (actualItem.lastPlayedDate > 0) {
-        NSDate * const lastPlayedDate =
+        NSDate *const lastPlayedDate =
             [NSDate dateWithTimeIntervalSince1970:actualItem.lastPlayedDate];
-        NSString * const lastPlayedString =
+        NSString *const lastPlayedString =
             [self.class.lastPlayedDateFormatter stringFromDate:lastPlayedDate];
         self.mediaItemLastPlayedTextField.stringValue = lastPlayedString;
     }
 
-    NSString * const summary = actualItem.movie != nil
-        ? actualItem.movie.summary : actualItem.showEpisode != nil
-            ? actualItem.showEpisode.summary : @"";
+    NSString *const summary = actualItem.movie != nil ? actualItem.movie.summary
+        : actualItem.showEpisode != nil               ? actualItem.showEpisode.summary
+                                                      : @"";
     self.mediaItemSummaryStackView.hidden = summary == nil || [summary isEqualToString:@""];
     self.mediaItemSummarySeparator.hidden = self.mediaItemSummaryStackView.hidden;
     self.mediaItemSummaryTextField.stringValue = summary;
 
-    VLCInputItem * const inputItem = actualItem.inputItem;
+    VLCInputItem *const inputItem = actualItem.inputItem;
 
-    NSString * const copyright = inputItem.copyright;
+    NSString *const copyright = inputItem.copyright;
     self.mediaItemCopyrightTextField.hidden = [copyright isEqualToString:@""];
     self.mediaItemCopyrightTitleTextField.hidden = self.mediaItemCopyrightTextField.hidden;
     self.mediaItemCopyrightTextField.stringValue = copyright;
 
-    NSString * const contentDescription = inputItem.contentDescription;
+    NSString *const contentDescription = inputItem.contentDescription;
     self.mediaItemContentDescriptionTextField.hidden = [contentDescription isEqualToString:@""];
-    self.mediaItemContentDescriptionTitleTextField.hidden = self.mediaItemContentDescriptionTextField.hidden;
+    self.mediaItemContentDescriptionTitleTextField.hidden =
+        self.mediaItemContentDescriptionTextField.hidden;
     self.mediaItemContentDescriptionTextField.stringValue = contentDescription;
 
-    NSString * const director = inputItem.director;
+    NSString *const director = inputItem.director;
     self.mediaItemDirectorTextField.hidden = [inputItem.director isEqualToString:@""];
     self.mediaItemDirectorTitleTextField.hidden = self.mediaItemDirectorTextField.hidden;
     self.mediaItemDirectorTextField.stringValue = director;
 
-    NSString * const actors = inputItem.actors;
+    NSString *const actors = inputItem.actors;
     self.mediaItemActorsTextField.hidden = [inputItem.actors isEqualToString:@""];
     self.mediaItemActorsTitleTextField.hidden = self.mediaItemActorsTextField.hidden;
     self.mediaItemActorsTextField.stringValue = actors;
 
     __weak typeof(self) weakSelf = self;
-    [VLCLibraryImageCache thumbnailForLibraryItem:actualItem withCompletion:^(NSImage * const thumbnail) {
-        if (!weakSelf || weakSelf.representedItem.item != actualItem) {
-            return;
-        }
-        VLCLibraryCollectionViewMediaItemSupplementaryDetailView * const strongSelf = weakSelf;
-        strongSelf->_mediaItemArtworkImageView.image = thumbnail;
-    }];
+    [VLCLibraryImageCache
+        thumbnailForLibraryItem:actualItem
+                 withCompletion:^(NSImage *const thumbnail) {
+                     if (!weakSelf || weakSelf.representedItem.item != actualItem) {
+                         return;
+                     }
+                     VLCLibraryCollectionViewMediaItemSupplementaryDetailView *const strongSelf =
+                         weakSelf;
+                     strongSelf->_mediaItemArtworkImageView.image = thumbnail;
+                 }];
 }
 
 - (IBAction)playAction:(id)sender
@@ -223,8 +235,9 @@ NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewMediaItem
         return;
     }
 
-    VLCLibraryWindow * const libraryWindow = VLCMain.sharedInstance.libraryWindow;
-    const id<VLCMediaLibraryItemProtocol> libraryItem = actualItem.primaryActionableDetailLibraryItem;
+    VLCLibraryWindow *const libraryWindow = VLCMain.sharedInstance.libraryWindow;
+    const id<VLCMediaLibraryItemProtocol> libraryItem =
+        actualItem.primaryActionableDetailLibraryItem;
     [libraryWindow presentLibraryItem:libraryItem];
 }
 
@@ -235,8 +248,9 @@ NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewMediaItem
         return;
     }
 
-    VLCLibraryWindow * const libraryWindow = VLCMain.sharedInstance.libraryWindow;
-    const id<VLCMediaLibraryItemProtocol> libraryItem = actualItem.secondaryActionableDetailLibraryItem;
+    VLCLibraryWindow *const libraryWindow = VLCMain.sharedInstance.libraryWindow;
+    const id<VLCMediaLibraryItemProtocol> libraryItem =
+        actualItem.secondaryActionableDetailLibraryItem;
     [libraryWindow presentLibraryItem:libraryItem];
 }
 
@@ -244,7 +258,7 @@ NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewMediaItem
 {
     const id<VLCMediaLibraryItemProtocol> mediaItem = self.representedItem.item;
     if ([mediaItem toggleFavorite] == VLC_SUCCESS) {
-        VLCMediaLibraryMediaItem * const updatedItem =
+        VLCMediaLibraryMediaItem *const updatedItem =
             [VLCMediaLibraryMediaItem mediaItemForLibraryID:mediaItem.libraryID];
         self.representedItem =
             [[VLCLibraryRepresentedItem alloc] initWithItem:updatedItem
@@ -254,7 +268,7 @@ NSCollectionViewSupplementaryElementKind const VLCLibraryCollectionViewMediaItem
 
 - (IBAction)ratingAction:(id)sender
 {
-    NSLevelIndicator * const control = (NSLevelIndicator *)sender;
+    NSLevelIndicator *const control = (NSLevelIndicator *)sender;
     if (control == nil) {
         return;
     }

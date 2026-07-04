@@ -42,5 +42,4 @@
     return [VLCLibrarySongTableCellView fromNibWithOwner:self];
 }
 
-
 @end

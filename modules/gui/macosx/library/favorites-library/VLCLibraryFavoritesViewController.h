@@ -33,7 +33,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface VLCLibraryFavoritesViewController : VLCLibraryAbstractMediaLibrarySegmentViewController<VLCLibraryItemPresentingCapable>
+@interface VLCLibraryFavoritesViewController
+    : VLCLibraryAbstractMediaLibrarySegmentViewController<VLCLibraryItemPresentingCapable>
 
 @property (readonly, strong) NSView *favoritesLibraryView;
 @property (readonly, strong) NSSplitView *favoritesLibrarySplitView;

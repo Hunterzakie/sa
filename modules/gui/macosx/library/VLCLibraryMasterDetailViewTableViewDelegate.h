@@ -29,7 +29,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface VLCLibraryMasterDetailViewTableViewDelegate : VLCLibraryTableViewDelegate<VLCLibraryGroupHeaderDelegate>
+@interface VLCLibraryMasterDetailViewTableViewDelegate
+    : VLCLibraryTableViewDelegate<VLCLibraryGroupHeaderDelegate>
 
 @property (readwrite, weak) VLCLibraryHeaderView *detailTableHeaderView;
 

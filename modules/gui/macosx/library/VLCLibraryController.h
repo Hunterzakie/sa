@@ -38,7 +38,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (int)appendItemToPlayQueue:(VLCMediaLibraryMediaItem *)mediaItem
              playImmediately:(BOOL)playImmediately;
-- (int)appendItemsToPlayQueue:(NSArray <VLCMediaLibraryMediaItem *> *)mediaItemArray playFirstItemImmediately:(BOOL)playFirstItemImmediately;
+- (int)appendItemsToPlayQueue:(NSArray<VLCMediaLibraryMediaItem *> *)mediaItemArray
+     playFirstItemImmediately:(BOOL)playFirstItemImmediately;
 
 - (void)reloadMediaLibraryFoldersForInputItems:(NSArray<VLCInputItem *> *)inputItems;
 
@@ -65,7 +66,7 @@ NS_ASSUME_NONNULL_BEGIN
  * @brief Filter the entire library representation based on:
  * @param filterString the string that will be used to filter items
  */
-- (void)filterByString:(NSString*)filterString;
+- (void)filterByString:(NSString *)filterString;
 
 /**
  * Initially, the library is unsorted until the user decides to do so

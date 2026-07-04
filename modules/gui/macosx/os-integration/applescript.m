@@ -50,7 +50,7 @@
             VLCOpenInputMetadata *inputMetadata = [[VLCOpenInputMetadata alloc] init];
             inputMetadata.MRLString = parameterString;
 
-            [VLCMain.sharedInstance.playQueueController addPlayQueueItems:@[inputMetadata]];
+            [VLCMain.sharedInstance.playQueueController addPlayQueueItems:@[ inputMetadata ]];
         }
     }
     return nil;
@@ -70,11 +70,11 @@
 
 - (id)performDefaultImplementation
 {
-    VLCPlayQueueController * const playQueueController = VLCMain.sharedInstance.playQueueController;
-    VLCPlayerController * const playerController = [playQueueController playerController];
+    VLCPlayQueueController *const playQueueController = VLCMain.sharedInstance.playQueueController;
+    VLCPlayerController *const playerController = [playQueueController playerController];
 
-    NSString * const commandString = [[self commandDescription] commandName];
-    NSString * const parameterString = [self directParameter];
+    NSString *const commandString = [[self commandDescription] commandName];
+    NSString *const parameterString = [self directParameter];
 
     if (commandString == nil || commandString.length == 0) {
         return nil;
@@ -131,7 +131,7 @@
         } else
             [playerController jumpForwardShort];
     } else if ([commandString isEqualToString:@"stepBackward"]) {
-        //default: backwardShort
+        // default: backwardShort
         if (parameterString) {
             int parameterInt = [parameterString intValue];
             switch (parameterInt) {
@@ -167,7 +167,7 @@
 /*****************************************************************************
  * Category that adds AppleScript support to NSApplication
  *****************************************************************************/
-@implementation NSApplication(ScriptSupport)
+@implementation NSApplication (ScriptSupport)
 
 - (BOOL)scriptFullscreenMode
 {
@@ -186,7 +186,8 @@
 
 - (BOOL)playing
 {
-    enum vlc_player_state playerState = [VLCMain.sharedInstance.playQueueController.playerController playerState];
+    enum vlc_player_state playerState =
+        [VLCMain.sharedInstance.playQueueController.playerController playerState];
 
     if (playerState == VLC_PLAYER_STATE_STARTED || playerState == VLC_PLAYER_STATE_PLAYING) {
         return YES;
@@ -207,22 +208,26 @@
 
 - (long long)audioDesync
 {
-    return MS_FROM_VLC_TICK([VLCMain.sharedInstance.playQueueController.playerController audioDelay]);
+    return MS_FROM_VLC_TICK(
+        [VLCMain.sharedInstance.playQueueController.playerController audioDelay]);
 }
 
 - (void)setAudioDesync:(long long)audioDelay
 {
-    [VLCMain.sharedInstance.playQueueController.playerController setAudioDelay: VLC_TICK_FROM_MS(audioDelay)];
+    [VLCMain.sharedInstance.playQueueController.playerController
+        setAudioDelay:VLC_TICK_FROM_MS(audioDelay)];
 }
 
 - (int)currentTime
 {
-    return (int)SEC_FROM_VLC_TICK([VLCMain.sharedInstance.playQueueController.playerController time]);
+    return (int)SEC_FROM_VLC_TICK(
+        [VLCMain.sharedInstance.playQueueController.playerController time]);
 }
 
 - (void)setCurrentTime:(int)currentTime
 {
-    [VLCMain.sharedInstance.playQueueController.playerController setTimeFast: VLC_TICK_FROM_SEC(currentTime)];
+    [VLCMain.sharedInstance.playQueueController.playerController
+        setTimeFast:VLC_TICK_FROM_SEC(currentTime)];
 }
 
 - (float)playbackRate
@@ -237,7 +242,8 @@
 
 - (NSInteger)durationOfCurrentItem
 {
-    return SEC_FROM_VLC_TICK(VLCMain.sharedInstance.playQueueController.playerController.durationOfCurrentMediaItem);
+    return SEC_FROM_VLC_TICK(
+        VLCMain.sharedInstance.playQueueController.playerController.durationOfCurrentMediaItem);
 }
 
 - (NSString *)pathOfCurrentItem
@@ -252,7 +258,8 @@
 
 - (BOOL)playbackShowsMenu
 {
-    const struct vlc_player_title * const currentTitle = VLCMain.sharedInstance.playQueueController.playerController.selectedTitle;
+    const struct vlc_player_title *const currentTitle =
+        VLCMain.sharedInstance.playQueueController.playerController.selectedTitle;
     if (currentTitle == NULL) {
         return NO;
     }
@@ -276,40 +283,50 @@
 
 - (void)setRecordingEnabled:(BOOL)recordingEnabled
 {
-    [VLCMain.sharedInstance.playQueueController.playerController setEnableRecording:recordingEnabled];
+    [VLCMain.sharedInstance.playQueueController.playerController
+        setEnableRecording:recordingEnabled];
 }
 
 - (BOOL)shuffledPlayback
 {
-    const enum vlc_playlist_playback_order playbackOrder = VLCMain.sharedInstance.playQueueController.playbackOrder;
+    const enum vlc_playlist_playback_order playbackOrder =
+        VLCMain.sharedInstance.playQueueController.playbackOrder;
     return playbackOrder == VLC_PLAYLIST_PLAYBACK_ORDER_RANDOM ? YES : NO;
 }
 
 - (void)setShuffledPlayback:(BOOL)shuffledPlayback
 {
-    [VLCMain.sharedInstance.playQueueController setPlaybackOrder: shuffledPlayback ? VLC_PLAYLIST_PLAYBACK_ORDER_RANDOM : VLC_PLAYLIST_PLAYBACK_ORDER_NORMAL];
+    [VLCMain.sharedInstance.playQueueController setPlaybackOrder:shuffledPlayback
+                                                    ? VLC_PLAYLIST_PLAYBACK_ORDER_RANDOM
+                                                    : VLC_PLAYLIST_PLAYBACK_ORDER_NORMAL];
 }
 
 - (BOOL)repeatOne
 {
-    const enum vlc_playlist_playback_repeat repeatMode = VLCMain.sharedInstance.playQueueController.playbackRepeat;
+    const enum vlc_playlist_playback_repeat repeatMode =
+        VLCMain.sharedInstance.playQueueController.playbackRepeat;
     return repeatMode == VLC_PLAYLIST_PLAYBACK_REPEAT_CURRENT ? YES : NO;
 }
 
 - (void)setRepeatOne:(BOOL)repeatOne
 {
-    [VLCMain.sharedInstance.playQueueController setPlaybackRepeat: repeatOne == YES ? VLC_PLAYLIST_PLAYBACK_REPEAT_CURRENT : VLC_PLAYLIST_PLAYBACK_REPEAT_NONE];
+    [VLCMain.sharedInstance.playQueueController setPlaybackRepeat:repeatOne == YES
+                                                    ? VLC_PLAYLIST_PLAYBACK_REPEAT_CURRENT
+                                                    : VLC_PLAYLIST_PLAYBACK_REPEAT_NONE];
 }
 
 - (BOOL)repeatAll
 {
-    const enum vlc_playlist_playback_repeat repeatMode = VLCMain.sharedInstance.playQueueController.playbackRepeat;
+    const enum vlc_playlist_playback_repeat repeatMode =
+        VLCMain.sharedInstance.playQueueController.playbackRepeat;
     return repeatMode == VLC_PLAYLIST_PLAYBACK_REPEAT_ALL ? YES : NO;
 }
 
 - (void)setRepeatAll:(BOOL)repeatAll
 {
-    [VLCMain.sharedInstance.playQueueController setPlaybackRepeat: repeatAll == YES ? VLC_PLAYLIST_PLAYBACK_REPEAT_ALL : VLC_PLAYLIST_PLAYBACK_REPEAT_NONE];
+    [VLCMain.sharedInstance.playQueueController setPlaybackRepeat:repeatAll == YES
+                                                    ? VLC_PLAYLIST_PLAYBACK_REPEAT_ALL
+                                                    : VLC_PLAYLIST_PLAYBACK_REPEAT_NONE];
 }
 
 @end

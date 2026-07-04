@@ -54,9 +54,9 @@
     self = [super init];
     if (self) {
         [NSNotificationCenter.defaultCenter addObserver:self
-                                                 selector:@selector(appBecameActive:)
-                                                     name:NSApplicationDidBecomeActiveNotification
-                                                   object:nil];
+                                               selector:@selector(appBecameActive:)
+                                                   name:NSApplicationDidBecomeActiveNotification
+                                                 object:nil];
         /* we need to keep a file reference to the app's current location so we can find out where
          * it ends-up after being relocated or rename */
         _appLocationURL = [[[NSBundle mainBundle] bundleURL] fileReferenceURL];
@@ -72,12 +72,11 @@
                 _winterHolidaysTheming = YES;
             }
         }
-
     }
     return self;
 }
 
-- (void)setIntf:(intf_thread_t*)intf
+- (void)setIntf:(intf_thread_t *)intf
 {
     _intf = intf;
 }
@@ -118,7 +117,9 @@
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setAlertStyle:NSAlertStyleCritical];
     [alert setMessageText:_NS("VLC has been moved or renamed")];
-    [alert setInformativeText:_NS("To prevent errors, VLC must be relaunched.\n\nIf you cannot quit immediately, click Continue, then quit and relaunch as soon as possible to avoid problems.")];
+    [alert setInformativeText:_NS("To prevent errors, VLC must be relaunched.\n\nIf you cannot "
+                                  "quit immediately, click Continue, then quit and relaunch as "
+                                  "soon as possible to avoid problems.")];
     [alert addButtonWithTitle:_NS("Restart")];
     [alert addButtonWithTitle:_NS("Quit")];
     [alert addButtonWithTitle:_NS("Continue (Not Recommended)")];
@@ -131,11 +132,12 @@
 
     if (alertButton == NSAlertFirstButtonReturn) {
         /* terminate and restart
-         * NOTE you may not use [VLCMain relaunchApplication] here as it depends on the app not having moved and WILL crash */
+         * NOTE you may not use [VLCMain relaunchApplication] here as it depends on the app not
+         * having moved and WILL crash */
         [NSWorkspace.sharedWorkspace launchApplicationAtURL:_appLocationURL.absoluteURL
-                                                      options:NSWorkspaceLaunchNewInstance
-                                                configuration:@{}
-                                                        error:nil];
+                                                    options:NSWorkspaceLaunchNewInstance
+                                              configuration:@{ }
+                                                      error:nil];
     }
 
     [self terminate:self];

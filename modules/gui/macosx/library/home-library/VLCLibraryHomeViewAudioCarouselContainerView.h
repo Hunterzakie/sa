@@ -27,7 +27,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface VLCLibraryHomeViewAudioCarouselContainerView : VLCLibraryHomeViewBaseCarouselContainerView
+@interface VLCLibraryHomeViewAudioCarouselContainerView
+    : VLCLibraryHomeViewBaseCarouselContainerView
 
 @property (readwrite) VLCAudioLibrarySegment audioLibrarySegment;
 

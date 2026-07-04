@@ -30,12 +30,14 @@
 {
     const BOOL reduceMotion = NSWorkspace.sharedWorkspace.accessibilityDisplayShouldReduceMotion;
 
-    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *const context){
-        if (duration != nil) {
-            context.duration = reduceMotion ? 0 : duration.doubleValue;
+    [NSAnimationContext
+        runAnimationGroup:^(NSAnimationContext *const context) {
+            if (duration != nil) {
+                context.duration = reduceMotion ? 0 : duration.doubleValue;
+            }
+            changes(context);
         }
-        changes(context);
-    } completionHandler:completionHandler];
+        completionHandler:completionHandler];
 }
 
 + (void)runAnimationRespectingPreferencesWithDuration:(NSTimeInterval)duration

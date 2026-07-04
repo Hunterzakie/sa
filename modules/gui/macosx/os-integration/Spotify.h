@@ -23,10 +23,10 @@
 
 OSType const kSpotifyPlayerStateStopped = 'kPSS';
 OSType const kSpotifyPlayerStatePlaying = 'kPSP';
-OSType const kSpotifyPlayerStatePaused  = 'kPSp';
+OSType const kSpotifyPlayerStatePaused = 'kPSp';
 
 @interface SpotifyApplication : SBApplication
-@property (readonly) OSType playerState;  // is Spotify stopped, paused, or playing?
+@property (readonly) OSType playerState; // is Spotify stopped, paused, or playing?
 - (void)play;
 - (void)pause;
 @end

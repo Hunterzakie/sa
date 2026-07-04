@@ -80,10 +80,11 @@
         [self setupTableView];
         [self setupPlaceholderView];
 
-        [NSNotificationCenter.defaultCenter addObserver:self
-                                               selector:@selector(dataSourceDidReload:)
-                                                   name:VLCLibrarySearchDataSourceDidReloadNotification
-                                                 object:self.dataSource];
+        [NSNotificationCenter.defaultCenter
+            addObserver:self
+               selector:@selector(dataSourceDidReload:)
+                   name:VLCLibrarySearchDataSourceDidReloadNotification
+                 object:self.dataSource];
     }
     return self;
 }
@@ -121,7 +122,8 @@
     _collectionViewLayout = [[VLCLibraryCollectionViewFlowLayout alloc] init];
     const CGFloat collectionItemSpacing = VLCLibraryUIUnits.collectionViewItemSpacing;
     const NSEdgeInsets collectionViewSectionInset = VLCLibraryUIUnits.collectionViewSectionInsets;
-    self.collectionViewLayout.headerReferenceSize = VLCLibraryCollectionViewSupplementaryElementView.defaultHeaderSize;
+    self.collectionViewLayout.headerReferenceSize =
+        VLCLibraryCollectionViewSupplementaryElementView.defaultHeaderSize;
     self.collectionViewLayout.minimumLineSpacing = collectionItemSpacing;
     self.collectionViewLayout.minimumInteritemSpacing = collectionItemSpacing;
     self.collectionViewLayout.sectionInset = collectionViewSectionInset;
@@ -133,7 +135,8 @@
     self.collectionView.allowsMultipleSelection = YES;
 
     _collectionViewDelegate = [[VLCLibraryCollectionViewDelegate alloc] init];
-    self.collectionViewDelegate.itemsAspectRatio = VLCLibraryCollectionViewItemAspectRatioDefaultItem;
+    self.collectionViewDelegate.itemsAspectRatio =
+        VLCLibraryCollectionViewItemAspectRatioDefaultItem;
     self.collectionViewDelegate.staticItemSize = VLCLibraryCollectionViewItem.defaultSize;
     self.collectionView.delegate = self.collectionViewDelegate;
 
@@ -144,33 +147,37 @@
             forSupplementaryViewOfKind:NSCollectionElementKindSectionHeader
                         withIdentifier:VLCLibrarySupplementaryElementViewIdentifier];
 
-    NSString * const mediaItemDetailViewString =
+    NSString *const mediaItemDetailViewString =
         NSStringFromClass(VLCLibraryCollectionViewMediaItemSupplementaryDetailView.class);
-    NSNib * const mediaItemDetailViewNib =
-        [[NSNib alloc] initWithNibNamed:mediaItemDetailViewString bundle:nil];
+    NSNib *const mediaItemDetailViewNib = [[NSNib alloc] initWithNibNamed:mediaItemDetailViewString
+                                                                   bundle:nil];
     [self.collectionView registerNib:mediaItemDetailViewNib
-         forSupplementaryViewOfKind:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind
-                     withIdentifier:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewIdentifier];
+          forSupplementaryViewOfKind:VLCLibraryCollectionViewMediaItemSupplementaryDetailViewKind
+                      withIdentifier:
+                          VLCLibraryCollectionViewMediaItemSupplementaryDetailViewIdentifier];
 
-    NSString * const albumDetailViewString =
+    NSString *const albumDetailViewString =
         NSStringFromClass(VLCLibraryCollectionViewMediaItemListSupplementaryDetailView.class);
-    NSNib * const albumDetailViewNib =
-        [[NSNib alloc] initWithNibNamed:albumDetailViewString bundle:nil];
-    [self.collectionView registerNib:albumDetailViewNib
-         forSupplementaryViewOfKind:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind
-                     withIdentifier:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind];
+    NSNib *const albumDetailViewNib = [[NSNib alloc] initWithNibNamed:albumDetailViewString
+                                                               bundle:nil];
+    [self.collectionView
+                       registerNib:albumDetailViewNib
+        forSupplementaryViewOfKind:VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind
+                    withIdentifier:
+                        VLCLibraryCollectionViewMediaItemListSupplementaryDetailViewKind];
 
-    NSString * const audioGroupDetailViewString =
+    NSString *const audioGroupDetailViewString =
         NSStringFromClass(VLCLibraryCollectionViewAudioGroupSupplementaryDetailView.class);
-    NSNib * const audioGroupDetailViewNib =
+    NSNib *const audioGroupDetailViewNib =
         [[NSNib alloc] initWithNibNamed:audioGroupDetailViewString bundle:nil];
     [self.collectionView registerNib:audioGroupDetailViewNib
-         forSupplementaryViewOfKind:VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewKind
-                     withIdentifier:VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewKind];
+          forSupplementaryViewOfKind:VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewKind
+                      withIdentifier:VLCLibraryCollectionViewAudioGroupSupplementaryDetailViewKind];
 
-    _collectionViewScrollView = [NSScrollView libraryScrollViewWithDocumentView:self.collectionView
-                                                                  contentInsets:VLCLibraryUIUnits.libraryViewScrollViewContentInsets];
-    
+    _collectionViewScrollView = [NSScrollView
+        libraryScrollViewWithDocumentView:self.collectionView
+                            contentInsets:VLCLibraryUIUnits.libraryViewScrollViewContentInsets];
+
     self.dataSource.collectionView = self.collectionView;
     self.collectionView.dataSource = self.dataSource;
 }
@@ -183,21 +190,22 @@
     self.tableView.allowsMultipleSelection = YES;
     self.tableView.floatsGroupRows = NO;
 
-    NSTableColumn * const column =
+    NSTableColumn *const column =
         [[NSTableColumn alloc] initWithIdentifier:@"VLCSearchLibraryTableViewColumnIdentifier"];
     column.resizingMask = NSTableColumnAutoresizingMask;
     [self.tableView addTableColumn:column];
 
-    NSNib * const tableCellViewNib =
-        [[NSNib alloc] initWithNibNamed:NSStringFromClass(VLCLibraryTableCellView.class) bundle:nil];
-    [self.tableView registerNib:tableCellViewNib
-                  forIdentifier:VLCLibraryTableCellViewIdentifier];
+    NSNib *const tableCellViewNib =
+        [[NSNib alloc] initWithNibNamed:NSStringFromClass(VLCLibraryTableCellView.class)
+                                 bundle:nil];
+    [self.tableView registerNib:tableCellViewNib forIdentifier:VLCLibraryTableCellViewIdentifier];
 
     _tableViewDelegate = [[VLCLibrarySectionedTableViewDelegate alloc] init];
     self.tableView.delegate = self.tableViewDelegate;
 
-    _tableViewScrollView = [NSScrollView libraryScrollViewWithDocumentView:self.tableView
-                                                             contentInsets:VLCLibraryUIUnits.libraryViewScrollViewContentInsets];
+    _tableViewScrollView = [NSScrollView
+        libraryScrollViewWithDocumentView:self.tableView
+                            contentInsets:VLCLibraryUIUnits.libraryViewScrollViewContentInsets];
 
     self.tableView.dataSource = self.dataSource;
     self.tableView.delegate = self.tableViewDelegate;
@@ -267,11 +275,15 @@
     if (self.dataSource.viewMode != viewMode || self.presentationContainer != container) {
         if (viewMode == VLCLibraryGridViewModeSegment) {
             [self.tableViewScrollView removeFromSuperview];
-            [container addSubview:self.collectionViewScrollView positioned:NSWindowBelow relativeTo:self.statusLabel];
+            [container addSubview:self.collectionViewScrollView
+                       positioned:NSWindowBelow
+                       relativeTo:self.statusLabel];
             [self.collectionViewScrollView applyConstraintsToFillSuperview];
         } else if (viewMode == VLCLibraryListViewModeSegment) {
             [self.collectionViewScrollView removeFromSuperview];
-            [container addSubview:self.tableViewScrollView positioned:NSWindowBelow relativeTo:self.statusLabel];
+            [container addSubview:self.tableViewScrollView
+                       positioned:NSWindowBelow
+                       relativeTo:self.statusLabel];
             [self.tableViewScrollView applyConstraintsToFillSuperview];
         }
         self.dataSource.viewMode = viewMode;
@@ -308,9 +320,8 @@
 
     self.statusLabel.hidden = hasResults;
     if (!self.statusLabel.hidden) {
-        self.statusLabel.stringValue = hasSearchText
-            ? _NS("No results")
-            : _NS("Search your library");
+        self.statusLabel.stringValue =
+            hasSearchText ? _NS("No results") : _NS("Search your library");
     }
 }
 
@@ -340,11 +351,12 @@
     [self updatePresentationForQuery:searchString];
 
     [self.searchDebounceTimer invalidate];
-    self.searchDebounceTimer = [NSTimer scheduledTimerWithTimeInterval:0.15
-                                                               target:self
-                                                             selector:@selector(performPendingSearch)
-                                                             userInfo:nil
-                                                              repeats:NO];
+    self.searchDebounceTimer =
+        [NSTimer scheduledTimerWithTimeInterval:0.15
+                                         target:self
+                                       selector:@selector(performPendingSearch)
+                                       userInfo:nil
+                                        repeats:NO];
 }
 
 - (void)performPendingSearch

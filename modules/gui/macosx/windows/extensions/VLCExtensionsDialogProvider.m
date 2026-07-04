@@ -36,23 +36,20 @@
  * VLCExtensionsDialogProvider implementation
  *****************************************************************************/
 
-static void extensionDialogCallback(extension_dialog_t *p_ext_dialog,
-                                    void *p_data);
+static void extensionDialogCallback(extension_dialog_t *p_ext_dialog, void *p_data);
 
 static NSView *createControlFromWidget(extension_widget_t *widget, id self)
 {
     @autoreleasepool {
         assert(!widget->p_sys_intf);
         switch (widget->type) {
-            case EXTENSION_WIDGET_HTML:
-            {
-                WebView *webView = [[WebView alloc] initWithFrame:NSMakeRect (0,0,1,1)];
+            case EXTENSION_WIDGET_HTML: {
+                WebView *webView = [[WebView alloc] initWithFrame:NSMakeRect(0, 0, 1, 1)];
                 [webView setAutoresizingMask:NSViewHeightSizable | NSViewWidthSizable];
                 [webView setDrawsBackground:NO];
                 return webView;
             }
-            case EXTENSION_WIDGET_LABEL:
-            {
+            case EXTENSION_WIDGET_LABEL: {
                 VLCDialogLabel *field = [[VLCDialogLabel alloc] init];
                 [field setEditable:NO];
                 [field setBordered:NO];
@@ -64,29 +61,32 @@ static NSView *createControlFromWidget(extension_widget_t *widget, id self)
                 [field setAutoresizingMask:NSViewNotSizable];
                 return field;
             }
-            case EXTENSION_WIDGET_TEXT_FIELD:
-            {
+            case EXTENSION_WIDGET_TEXT_FIELD: {
                 VLCDialogTextField *field = [[VLCDialogTextField alloc] init];
                 [field setWidget:widget];
                 [field setAutoresizingMask:NSViewWidthSizable];
                 [field setFont:[NSFont systemFontOfSize:0]];
                 [[field cell] setControlSize:NSControlSizeRegular];
-                [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(syncTextField:)  name:NSControlTextDidChangeNotification object:field];
+                [NSNotificationCenter.defaultCenter addObserver:self
+                                                       selector:@selector(syncTextField:)
+                                                           name:NSControlTextDidChangeNotification
+                                                         object:field];
                 return field;
             }
-            case EXTENSION_WIDGET_PASSWORD:
-            {
+            case EXTENSION_WIDGET_PASSWORD: {
                 VLCDialogSecureTextField *field = [[VLCDialogSecureTextField alloc] init];
                 [field setWidget:widget];
                 [field setAutoresizingMask:NSViewWidthSizable];
                 [field setFont:[NSFont systemFontOfSize:0]];
                 [[field cell] setControlSize:NSControlSizeRegular];
-                [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(syncTextField:)  name:NSControlTextDidChangeNotification object:field];
+                [NSNotificationCenter.defaultCenter addObserver:self
+                                                       selector:@selector(syncTextField:)
+                                                           name:NSControlTextDidChangeNotification
+                                                         object:field];
                 return field;
             }
 
-            case EXTENSION_WIDGET_CHECK_BOX:
-            {
+            case EXTENSION_WIDGET_CHECK_BOX: {
                 VLCDialogButton *button = [[VLCDialogButton alloc] init];
                 [button setButtonType:NSSwitchButton];
                 [button setWidget:widget];
@@ -97,8 +97,7 @@ static NSView *createControlFromWidget(extension_widget_t *widget, id self)
                 [button setAutoresizingMask:NSViewWidthSizable];
                 return button;
             }
-            case EXTENSION_WIDGET_BUTTON:
-            {
+            case EXTENSION_WIDGET_BUTTON: {
                 VLCDialogButton *button = [[VLCDialogButton alloc] init];
                 [button setBezelStyle:NSRoundedBezelStyle];
                 [button setWidget:widget];
@@ -109,16 +108,14 @@ static NSView *createControlFromWidget(extension_widget_t *widget, id self)
                 [button setAutoresizingMask:NSViewNotSizable];
                 return button;
             }
-            case EXTENSION_WIDGET_DROPDOWN:
-            {
+            case EXTENSION_WIDGET_DROPDOWN: {
                 VLCDialogPopUpButton *popup = [[VLCDialogPopUpButton alloc] init];
                 [popup setAction:@selector(popUpSelectionChanged:)];
                 [popup setTarget:self];
                 [popup setWidget:widget];
                 return popup;
             }
-            case EXTENSION_WIDGET_LIST:
-            {
+            case EXTENSION_WIDGET_LIST: {
                 NSScrollView *scrollView = [[NSScrollView alloc] init];
                 [scrollView setHasVerticalScroller:YES];
                 VLCDialogList *list = [[VLCDialogList alloc] init];
@@ -135,16 +132,14 @@ static NSView *createControlFromWidget(extension_widget_t *widget, id self)
                 [list setWidget:widget];
                 return scrollView;
             }
-            case EXTENSION_WIDGET_IMAGE:
-            {
+            case EXTENSION_WIDGET_IMAGE: {
                 NSImageView *imageView = [[NSImageView alloc] init];
                 [imageView setAutoresizingMask:NSViewHeightSizable | NSViewWidthSizable];
                 [imageView setImageFrameStyle:NSImageFramePhoto];
                 [imageView setImageScaling:NSImageScaleProportionallyUpOrDown];
                 return imageView;
             }
-            case EXTENSION_WIDGET_SPIN_ICON:
-            {
+            case EXTENSION_WIDGET_SPIN_ICON: {
                 NSProgressIndicator *spinner = [[NSProgressIndicator alloc] init];
                 [spinner setUsesThreadedAnimation:YES];
                 [spinner setStyle:NSProgressIndicatorSpinningStyle];
@@ -162,36 +157,39 @@ static NSView *createControlFromWidget(extension_widget_t *widget, id self)
 static void updateControlFromWidget(NSView *control, extension_widget_t *widget, id self)
 {
     @autoreleasepool {
-        NSString * const defaultStyleCSS = @"<style>*{ font-family: \
-            -apple-system-body, -apple-system, \
-            HelveticaNeue, Arial, sans-serif; }</style>";
+        NSString *const defaultStyleCSS = @"<style>*{ font-family: \
+            "
+                                          @"-apple-system-body, -apple-system, \
+            "
+                                          @"HelveticaNeue, Arial, sans-serif; }</style>";
         switch (widget->type) {
-            case EXTENSION_WIDGET_HTML:
-            {
+            case EXTENSION_WIDGET_HTML: {
                 // Get the web view
                 assert([control isKindOfClass:[WebView class]]);
                 WebView *webView = (WebView *)control;
-                NSString *string = [defaultStyleCSS stringByAppendingString:toNSStr(widget->psz_text)];
+                NSString *string =
+                    [defaultStyleCSS stringByAppendingString:toNSStr(widget->psz_text)];
                 [[webView mainFrame] loadHTMLString:string baseURL:[NSURL URLWithString:@""]];
                 [webView setNeedsDisplay:YES];
                 break;
             }
             case EXTENSION_WIDGET_LABEL:
             case EXTENSION_WIDGET_PASSWORD:
-            case EXTENSION_WIDGET_TEXT_FIELD:
-            {
+            case EXTENSION_WIDGET_TEXT_FIELD: {
                 if (!widget->psz_text)
                     break;
                 assert([control isKindOfClass:[NSControl class]]);
                 NSControl *field = (NSControl *)control;
-                NSString *string = [defaultStyleCSS stringByAppendingString:toNSStr(widget->psz_text)];
-                NSAttributedString *attrString = [[NSAttributedString alloc] initWithHTML:[string dataUsingEncoding: NSISOLatin1StringEncoding] documentAttributes:NULL];
+                NSString *string =
+                    [defaultStyleCSS stringByAppendingString:toNSStr(widget->psz_text)];
+                NSAttributedString *attrString = [[NSAttributedString alloc]
+                          initWithHTML:[string dataUsingEncoding:NSISOLatin1StringEncoding]
+                    documentAttributes:NULL];
                 [field setAttributedStringValue:attrString];
                 break;
             }
             case EXTENSION_WIDGET_CHECK_BOX:
-            case EXTENSION_WIDGET_BUTTON:
-            {
+            case EXTENSION_WIDGET_BUTTON: {
                 assert([control isKindOfClass:[NSButton class]]);
                 NSButton *button = (NSButton *)control;
                 [button setTitle:toNSStr(widget->psz_text)];
@@ -199,21 +197,21 @@ static void updateControlFromWidget(NSView *control, extension_widget_t *widget,
                     [button setState:widget->b_checked ? NSOnState : NSOffState];
                 break;
             }
-            case EXTENSION_WIDGET_DROPDOWN:
-            {
+            case EXTENSION_WIDGET_DROPDOWN: {
                 assert([control isKindOfClass:[NSPopUpButton class]]);
                 NSPopUpButton *popup = (NSPopUpButton *)control;
                 [popup removeAllItems];
                 struct extension_widget_value_t *value;
                 for (value = widget->p_values; value != NULL; value = value->p_next)
-                    [[popup menu] addItemWithTitle:toNSStr(value->psz_text) action:nil keyEquivalent:@""];
+                    [[popup menu] addItemWithTitle:toNSStr(value->psz_text)
+                                            action:nil
+                                     keyEquivalent:@""];
 
                 [popup synchronizeTitleAndSelectedItem];
                 [self popUpSelectionChanged:popup];
                 break;
             }
-            case EXTENSION_WIDGET_LIST:
-            {
+            case EXTENSION_WIDGET_LIST: {
                 assert([control isKindOfClass:[NSScrollView class]]);
                 NSScrollView *scrollView = (NSScrollView *)control;
                 assert([[scrollView documentView] isKindOfClass:[VLCDialogList class]]);
@@ -221,20 +219,20 @@ static void updateControlFromWidget(NSView *control, extension_widget_t *widget,
 
                 NSMutableArray *contentArray = [NSMutableArray array];
                 struct extension_widget_value_t *value;
-                for (value = widget->p_values; value != NULL; value = value->p_next)
-                {
-                    NSDictionary *entry = [NSDictionary dictionaryWithObjectsAndKeys:
-                                           [NSNumber numberWithInt:value->i_id], @"id",
-                                           toNSStr(value->psz_text), @"text",
-                                           nil];
+                for (value = widget->p_values; value != NULL; value = value->p_next) {
+                    NSDictionary *entry = [NSDictionary
+                        dictionaryWithObjectsAndKeys:[NSNumber numberWithInt:value->i_id],
+                                                     @"id",
+                                                     toNSStr(value->psz_text),
+                                                     @"text",
+                                                     nil];
                     [contentArray addObject:entry];
                 }
                 list.contentArray = contentArray;
                 [list reloadData];
                 break;
             }
-            case EXTENSION_WIDGET_IMAGE:
-            {
+            case EXTENSION_WIDGET_IMAGE: {
                 assert([control isKindOfClass:[NSImageView class]]);
                 NSImageView *imageView = (NSImageView *)control;
                 NSString *string = widget->psz_text ? toNSStr(widget->psz_text) : nil;
@@ -244,8 +242,7 @@ static void updateControlFromWidget(NSView *control, extension_widget_t *widget,
                 [imageView setImage:image];
                 break;
             }
-            case EXTENSION_WIDGET_SPIN_ICON:
-            {
+            case EXTENSION_WIDGET_SPIN_ICON: {
                 assert([control isKindOfClass:[NSProgressIndicator class]]);
                 NSProgressIndicator *progressIndicator = (NSProgressIndicator *)control;
                 if (widget->i_spin_loops != 0)
@@ -262,8 +259,7 @@ static void updateControlFromWidget(NSView *control, extension_widget_t *widget,
  * Ask the dialogs provider to create a new dialog
  **/
 
-static void extensionDialogCallback(extension_dialog_t *p_ext_dialog,
-                                    void *p_data)
+static void extensionDialogCallback(extension_dialog_t *p_ext_dialog, void *p_data)
 
 {
     @autoreleasepool {
@@ -283,7 +279,9 @@ static void extensionDialogCallback(extension_dialog_t *p_ext_dialog,
     self = [super init];
     if (self) {
         intf_thread_t *p_intf = getIntf();
-        vlc_dialog_provider_set_ext_callback(p_intf, extensionDialogCallback, (__bridge void *)self);
+        vlc_dialog_provider_set_ext_callback(p_intf,
+                                             extensionDialogCallback,
+                                             (__bridge void *)self);
     }
     return self;
 }
@@ -293,17 +291,16 @@ static void extensionDialogCallback(extension_dialog_t *p_ext_dialog,
     vlc_dialog_provider_set_ext_callback(getIntf(), NULL, NULL);
 }
 
-- (void)performEventWithObject:(NSValue *)objectValue ofType:(const char*)type
+- (void)performEventWithObject:(NSValue *)objectValue ofType:(const char *)type
 {
     NSString *typeString = toNSStr(type);
 
-    if ([typeString isEqualToString: @"dialog-extension"]) {
+    if ([typeString isEqualToString:@"dialog-extension"]) {
         [self performSelectorOnMainThread:@selector(updateExtensionDialog:)
                                withObject:objectValue
                             waitUntilDone:YES];
 
-    }
-    else
+    } else
         msg_Err(getIntf(), "unhandled dialog type: '%s'", type);
 }
 
@@ -325,14 +322,14 @@ static void extensionDialogCallback(extension_dialog_t *p_ext_dialog,
 {
     id sender = [notification object];
     assert([sender isKindOfClass:[VLCDialogTextField class]] ||
-        [sender isKindOfClass:[VLCDialogSecureTextField class]]);
+           [sender isKindOfClass:[VLCDialogSecureTextField class]]);
     NSTextField *field = sender;
     extension_widget_t *widget;
 
     if ([sender isKindOfClass:[VLCDialogTextField class]])
-        widget = [(VLCDialogTextField*)field widget];
+        widget = [(VLCDialogTextField *)field widget];
     else if ([sender isKindOfClass:[VLCDialogSecureTextField class]])
-        widget = [(VLCDialogSecureTextField*)field widget];
+        widget = [(VLCDialogSecureTextField *)field widget];
     else
         return;
 
@@ -363,7 +360,6 @@ static void extensionDialogCallback(extension_dialog_t *p_ext_dialog,
     unsigned i = 0;
     for (value = [popup widget]->p_values; value != NULL; value = value->p_next, i++)
         value->b_selected = (i == [popup indexOfSelectedItem]);
-
 }
 
 - (NSSize)windowWillResize:(NSWindow *)sender toSize:(NSSize)frameSize
@@ -386,14 +382,14 @@ static void extensionDialogCallback(extension_dialog_t *p_ext_dialog,
     VLCDialogWindow *window = sender;
     extension_dialog_t *dialog = [window dialog];
     extension_DialogClosed(dialog);
-    
+
     vlc_mutex_lock(&dialog->lock);
     if (dialog->p_sys_intf) {
         CFRelease(dialog->p_sys_intf);
         dialog->p_sys_intf = NULL;
     }
     vlc_mutex_unlock(&dialog->lock);
-    
+
     return YES;
 }
 
@@ -402,7 +398,8 @@ static void extensionDialogCallback(extension_dialog_t *p_ext_dialog,
     extension_widget_t *widget;
     VLCDialogWindow *dialogWindow = (__bridge VLCDialogWindow *)(dialog->p_sys_intf);
 
-    ARRAY_FOREACH(widget, dialog->widgets) {
+    ARRAY_FOREACH(widget, dialog->widgets)
+    {
         if (!widget)
             continue; /* Some widgets may be NULL@this point */
 
@@ -470,10 +467,12 @@ static void extensionDialogCallback(extension_dialog_t *p_ext_dialog,
     BOOL shouldDestroy = p_dialog->b_kill;
     if (!shouldDestroy) {
         NSRect content = NSMakeRect(0, 0, 1, 1);
-        dialogWindow = [[VLCDialogWindow alloc] initWithContentRect:content
-                                                          styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable
-                                                            backing:NSBackingStoreBuffered
-                                                              defer:NO];
+        dialogWindow = [[VLCDialogWindow alloc]
+            initWithContentRect:content
+                      styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable
+                      | NSWindowStyleMaskResizable
+                        backing:NSBackingStoreBuffered
+                          defer:NO];
         [dialogWindow setReleasedWhenClosed:NO];
         [dialogWindow setDelegate:self];
         [dialogWindow setDialog:p_dialog];
@@ -504,7 +503,7 @@ static void extensionDialogCallback(extension_dialog_t *p_ext_dialog,
 {
     assert(p_dialog);
 
-    VLCDialogWindow *dialogWindow = (__bridge VLCDialogWindow*)p_dialog->p_sys_intf;
+    VLCDialogWindow *dialogWindow = (__bridge VLCDialogWindow *)p_dialog->p_sys_intf;
     if (!dialogWindow) {
         msg_Warn(getIntf(), "dialog window not found");
         return VLC_EGENERIC;
@@ -533,7 +532,7 @@ static void extensionDialogCallback(extension_dialog_t *p_ext_dialog,
 {
     extension_dialog_t *p_dialog = [o_value pointerValue];
 
-    VLCDialogWindow *dialogWindow = (__bridge VLCDialogWindow*) p_dialog->p_sys_intf;
+    VLCDialogWindow *dialogWindow = (__bridge VLCDialogWindow *)p_dialog->p_sys_intf;
     if (p_dialog->b_kill && !dialogWindow) {
         /* This extension could not be activated properly but tried
            to create a dialog. We must ignore it. */
@@ -552,12 +551,10 @@ static void extensionDialogCallback(extension_dialog_t *p_ext_dialog,
             [dialogWindow orderOut:nil];
 
         [dialogWindow setHas_lock:NO];
-    }
-    else if (!p_dialog->b_kill && dialogWindow) {
+    } else if (!p_dialog->b_kill && dialogWindow) {
         [dialogWindow setHas_lock:YES];
         [self updateWidgets:p_dialog];
-        if (strcmp([[dialogWindow title] UTF8String],
-                    p_dialog->psz_title) != 0) {
+        if (strcmp([[dialogWindow title] UTF8String], p_dialog->psz_title) != 0) {
             NSString *titleString = toNSStr(p_dialog->psz_title);
 
             [dialogWindow setTitle:titleString];
@@ -570,8 +567,7 @@ static void extensionDialogCallback(extension_dialog_t *p_ext_dialog,
             [dialogWindow makeKeyAndOrderFront:self];
         else
             [dialogWindow orderOut:nil];
-    }
-    else if (p_dialog->b_kill) {
+    } else if (p_dialog->b_kill) {
         [self destroyExtensionDialog:p_dialog];
     }
     vlc_cond_signal(&p_dialog->cond);

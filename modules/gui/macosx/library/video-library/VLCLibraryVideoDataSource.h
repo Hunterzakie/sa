@@ -29,9 +29,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class VLCLibraryModel;
 
-@interface VLCLibraryVideoDataSource : NSObject <VLCLibrarySectionedTableViewDataSource, VLCLibraryCollectionViewDataSource>
+@interface VLCLibraryVideoDataSource
+    : NSObject<VLCLibrarySectionedTableViewDataSource, VLCLibraryCollectionViewDataSource>
 
-extern NSString * const VLCLibraryVideoDataSourceDisplayedCollectionChangedNotification;
+extern NSString *const VLCLibraryVideoDataSourceDisplayedCollectionChangedNotification;
 
 @property (readwrite, weak) VLCLibraryModel *libraryModel;
 @property (readwrite, weak) NSCollectionView *collectionView;

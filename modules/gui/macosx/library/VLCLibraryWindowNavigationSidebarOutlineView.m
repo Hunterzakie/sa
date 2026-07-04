@@ -43,29 +43,33 @@
     if (![self isExpandable:item]) {
         return NO;
     }
-    
-    NSTreeNode * const treeNode = (NSTreeNode *)item;
-    VLCLibrarySegment * const segment = (VLCLibrarySegment *)treeNode.representedObject;
-    
+
+    NSTreeNode *const treeNode = (NSTreeNode *)item;
+    VLCLibrarySegment *const segment = (VLCLibrarySegment *)treeNode.representedObject;
+
     if (self.selectedRow < 0 || self.selectedRow >= self.numberOfRows) {
         return NO; // No valid selection
     }
-    
-    NSTreeNode * const selectedSegmentItem = (NSTreeNode *)[self itemAtRow:self.selectedRow];
+
+    NSTreeNode *const selectedSegmentItem = (NSTreeNode *)[self itemAtRow:self.selectedRow];
     if (selectedSegmentItem == nil) {
         return NO;
     }
-    
-    VLCLibrarySegment * const selectedSegment = (VLCLibrarySegment *)selectedSegmentItem.representedObject;
+
+    VLCLibrarySegment *const selectedSegment =
+        (VLCLibrarySegment *)selectedSegmentItem.representedObject;
     if (selectedSegment == nil) {
         return NO;
     }
-    
-    const NSInteger childNodeIndex = [segment.childNodes indexOfObjectPassingTest:^BOOL(NSTreeNode * _Nonnull obj, const NSUInteger __unused idx, BOOL * const __unused stop) {
-        VLCLibrarySegment * const childSegment = (VLCLibrarySegment *)obj;
-        return childSegment.segmentType == selectedSegment.segmentType;
-    }];
-    
+
+    const NSInteger childNodeIndex =
+        [segment.childNodes indexOfObjectPassingTest:^BOOL(NSTreeNode *_Nonnull obj,
+                                                           const NSUInteger __unused idx,
+                                                           BOOL *const __unused stop) {
+            VLCLibrarySegment *const childSegment = (VLCLibrarySegment *)obj;
+            return childSegment.segmentType == selectedSegment.segmentType;
+        }];
+
     // Hide triangle when collapsing would be disabled
     return childNodeIndex != NSNotFound;
 }
@@ -85,7 +89,7 @@
             [self reloadItem:item reloadChildren:NO];
         }
     }
-    
+
     [self setNeedsDisplay:YES];
     [self displayIfNeeded];
 }
@@ -94,17 +98,17 @@
 {
     const NSPoint location = [self convertPoint:event.locationInWindow fromView:nil];
     const NSInteger row = [self rowAtPoint:location];
-    NSTreeNode * const node = [self itemAtRow:row];
-    VLCLibrarySegment * const segment = node.representedObject;
-    
+    NSTreeNode *const node = [self itemAtRow:row];
+    VLCLibrarySegment *const segment = node.representedObject;
+
     if ([segment.representedObject isKindOfClass:NSNumber.class]) {
         return nil;
     }
 
     if ([segment.representedObject isKindOfClass:VLCLibrarySegmentBookmarkedLocation.class]) {
-        VLCLibrarySegmentBookmarkedLocation * const descriptor = segment.representedObject;
-        NSMenu * const bookmarkMenu = [[NSMenu alloc] initWithTitle:descriptor.name];
-        NSMenuItem * const removeBookmarkItem = 
+        VLCLibrarySegmentBookmarkedLocation *const descriptor = segment.representedObject;
+        NSMenu *const bookmarkMenu = [[NSMenu alloc] initWithTitle:descriptor.name];
+        NSMenuItem *const removeBookmarkItem =
             [[NSMenuItem alloc] initWithTitle:_NS("Remove Bookmark")
                                        action:@selector(removeBookmark:)
                                 keyEquivalent:@""];
@@ -118,22 +122,22 @@
 
 - (void)removeBookmark:(id)sender
 {
-    NSMenuItem * const menuItem = sender;
+    NSMenuItem *const menuItem = sender;
     NSParameterAssert(menuItem != nil);
 
-    VLCLibrarySegmentBookmarkedLocation * const descriptor = menuItem.representedObject;
+    VLCLibrarySegmentBookmarkedLocation *const descriptor = menuItem.representedObject;
     NSParameterAssert(descriptor != nil);
 
-    NSString * const descriptorMrl = descriptor.mrl;
+    NSString *const descriptorMrl = descriptor.mrl;
     NSParameterAssert(descriptorMrl != nil);
 
-    NSUserDefaults * const defaults = NSUserDefaults.standardUserDefaults;
-    NSMutableArray<NSString *> * const bookmarkedLocations =
+    NSUserDefaults *const defaults = NSUserDefaults.standardUserDefaults;
+    NSMutableArray<NSString *> *const bookmarkedLocations =
         [defaults stringArrayForKey:VLCLibraryBookmarkedLocationsKey].mutableCopy;
     [bookmarkedLocations removeObject:descriptorMrl];
     [defaults setObject:bookmarkedLocations forKey:VLCLibraryBookmarkedLocationsKey];
 
-    NSNotificationCenter * const defaultCenter = NSNotificationCenter.defaultCenter;
+    NSNotificationCenter *const defaultCenter = NSNotificationCenter.defaultCenter;
     [defaultCenter postNotificationName:VLCLibraryBookmarkedLocationsChanged object:descriptor];
 }
 

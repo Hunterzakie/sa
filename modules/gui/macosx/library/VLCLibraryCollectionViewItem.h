@@ -52,8 +52,10 @@ extern NSString *VLCLibraryCellIdentifier;
 @property (readwrite, weak) IBOutlet VLCLinearProgressIndicator *progressIndicator;
 @property (readwrite, weak) IBOutlet NSBox *highlightBox;
 @property (readwrite, weak) IBOutlet NSLayoutConstraint *imageViewAspectRatioConstraint;
-@property (readwrite, weak) IBOutlet NSLayoutConstraint *trailingSecondaryTextToLeadingUnplayedIndicatorConstraint;
-@property (readwrite, weak) IBOutlet NSLayoutConstraint *trailingSecondaryTextToTrailingSuperviewConstraint;
+@property (readwrite, weak)
+    IBOutlet NSLayoutConstraint *trailingSecondaryTextToLeadingUnplayedIndicatorConstraint;
+@property (readwrite, weak)
+    IBOutlet NSLayoutConstraint *trailingSecondaryTextToTrailingSuperviewConstraint;
 
 @property (readwrite, retain, nonatomic) VLCLibraryRepresentedItem *representedItem;
 

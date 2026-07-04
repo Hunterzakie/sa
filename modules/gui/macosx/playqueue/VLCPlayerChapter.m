@@ -35,9 +35,7 @@
         _time = p_chapter->time;
         _timeString = [NSString stringWithTimeFromTicks:_time];
         _duration = duration;
-        _durationString = duration > 0
-            ? [NSString stringWithTimeFromTicks:duration]
-            : @"--:--";
+        _durationString = duration > 0 ? [NSString stringWithTimeFromTicks:duration] : @"--:--";
     }
     return self;
 }

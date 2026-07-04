@@ -51,7 +51,8 @@ NSString *VLCPlaylistItemPasteboardType = @"org.videolan.vlc.playlistitemtype";
 
 - (NSString *)description
 {
-    return [NSString stringWithFormat:@"item %p, title: %@ duration %lli", &_playlistItem, _title, _duration];
+    return [NSString
+        stringWithFormat:@"item %p, title: %@ duration %lli", &_playlistItem, _title, _duration];
 }
 
 - (uint64_t)uniqueID

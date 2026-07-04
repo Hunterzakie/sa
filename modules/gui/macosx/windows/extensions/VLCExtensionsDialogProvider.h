@@ -33,9 +33,9 @@
 /*****************************************************************************
  * ExtensionsDialogProvider interface
  *****************************************************************************/
-@interface VLCExtensionsDialogProvider : NSObject <NSWindowDelegate>
+@interface VLCExtensionsDialogProvider : NSObject<NSWindowDelegate>
 
-- (void)performEventWithObject: (NSValue *)o_value ofType:(const char*)type;
+- (void)performEventWithObject:(NSValue *)o_value ofType:(const char *)type;
 
 - (void)triggerClick:(id)sender;
 - (void)syncTextField:(NSNotification *)notification;

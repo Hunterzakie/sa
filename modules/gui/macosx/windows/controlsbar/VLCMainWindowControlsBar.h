@@ -50,4 +50,3 @@
 - (IBAction)toggleFavorite:(id)sender;
 
 @end
-

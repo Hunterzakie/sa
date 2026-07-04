@@ -56,7 +56,7 @@
 {
     self = [super init];
 
-    if (self ) {
+    if (self) {
         [self commonInit];
     }
 
@@ -81,10 +81,10 @@
 
     const NSRect barFrame = self.frame;
     const CGFloat cornerRadius = VLCLibraryUIUnits.cornerRadius;
-    NSBezierPath * const borderPath = [NSBezierPath bezierPathWithRoundedRect:barFrame 
-                                                                      xRadius:cornerRadius 
-                                                                      yRadius:cornerRadius];
-    
+    NSBezierPath *const borderPath = [NSBezierPath bezierPathWithRoundedRect:barFrame
+                                                                     xRadius:cornerRadius
+                                                                     yRadius:cornerRadius];
+
     [NSColor.VLCSubtleBorderColor setStroke];
     borderPath.lineWidth = VLCLibraryUIUnits.borderThickness;
     [borderPath stroke];
