@@ -731,8 +731,17 @@ static void EsOutDecodersStopBuffering( es_out_t *out, bool b_forced )
     const vlc_tick_t i_wakeup_delay = 10*1000; /* FIXME CLEANUP thread wake up time*/
     const vlc_tick_t i_current_date = p_sys->b_paused ? p_sys->i_pause_date : mdate();
 
+    /* The buffered data will be consumed at the current playback rate:
+     * scale the origin compensation for the preroll part accordingly,
+     * otherwise a precise seek at rate != 1.0 replays the preroll
+     * (keyframe -> seek target) stretched by 1/rate in wall time, stalling
+     * playback for i_preroll_duration * (1/rate - 1) (see issue #21890).
+     * i_pts_delay must NOT be scaled here: the clock already compensates
+     * it on timestamp conversion (ClockGetTsOffset). */
     input_clock_ChangeSystemOrigin( p_sys->p_pgrm->p_clock, true,
-                                    i_current_date + i_wakeup_delay - i_buffering_duration );
+                                    i_current_date + i_wakeup_delay - i_buffering_duration
+                                    - i_preroll_duration * (p_sys->i_rate - INPUT_RATE_DEFAULT)
+                                      / INPUT_RATE_DEFAULT );
 
     for( int i = 0; i < p_sys->i_es; i++ )
     {
