@@ -471,6 +471,7 @@ enum vlc_ml_get_queries
     VLC_ML_GET_PLAYLIST,          /**< arg1: Playlist ID; ret: vlc_ml_playlist_t* */
     VLC_ML_GET_GROUP,             /**< arg1: Group    ID; ret: vlc_ml_group_t*    */
     VLC_ML_GET_FOLDER,            /**< arg1: folder ID; ret: vlc_ml_folder_t*     */
+    VLC_ML_GET_FOLDER_BY_MRL      /**< arg1: folder MRL; ret: vlc_ml_folder_t*    */
 };
 
 enum vlc_ml_list_queries
@@ -1346,6 +1347,11 @@ static inline vlc_ml_group_t* vlc_ml_get_group( vlc_medialibrary_t* p_ml, int64_
 static inline vlc_ml_folder_t* vlc_ml_get_folder( vlc_medialibrary_t* p_ml, int64_t i_folder_id )
 {
     return (vlc_ml_folder_t*)vlc_ml_get( p_ml, VLC_ML_GET_FOLDER, i_folder_id);
+}
+
+static inline vlc_ml_folder_t* vlc_ml_get_folder_by_mrl( vlc_medialibrary_t* p_ml, const char* psz_mrl )
+{
+    return (vlc_ml_folder_t*)vlc_ml_get( p_ml, VLC_ML_GET_FOLDER_BY_MRL, psz_mrl );
 }
 
 static inline vlc_ml_playlist_t* vlc_ml_get_playlist( vlc_medialibrary_t* p_ml, int64_t i_playlist_id )

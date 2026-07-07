@@ -115,6 +115,7 @@ vlcSetSymbolEnvironment() {
     # - Added symbols in macOS 10.13 / iOS 11 / watchOS 4 / tvOS 11
     # - Added symbol in macOS 10.14 / iOS 12 / tvOS 9
     # - Added symbols in macOS 10.15 / iOS 13 / tvOS 13
+    # - Added symbol in macOS 15.4
     "${cmd}" "$@" \
     \
     ac_cv_func_basename_r=no \
@@ -136,7 +137,9 @@ vlcSetSymbolEnvironment() {
     ac_cv_func_thread_get_register_pointer_values=no \
     \
     ac_cv_func_aligned_alloc=no \
-    ac_cv_func_timespec_get=no
+    ac_cv_func_timespec_get=no \
+    \
+    ac_cv_func_strchrnul=no
 }
 
 vlcSetContribEnvironment() {
