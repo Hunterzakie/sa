@@ -262,6 +262,16 @@ void vlc_http_msg_attach(struct vlc_http_msg *m, struct vlc_http_stream *s)
     m->payload = s;
 }
 
+struct vlc_http_stream *vlc_http_msg_get_payload(struct vlc_http_msg *m)
+{
+    return m->payload;
+}
+
+void vlc_http_msg_set_payload(struct vlc_http_msg *m, struct vlc_http_stream *s)
+{
+    m->payload = s;
+}
+
 struct vlc_http_msg *vlc_http_msg_iterate(struct vlc_http_msg *m)
 {
     struct vlc_http_msg *next = vlc_http_stream_read_headers(m->payload);
