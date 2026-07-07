@@ -516,6 +516,9 @@ static void UpdateTimedMeta( input_thread_t *p_input, demux_t *p_demux )
                             &i_pts ) != VLC_SUCCESS )
         return;
 
+    /* An empty StreamTitle is reported as-is (it clears the now-playing) so the
+     * shown value keeps matching the stream. */
+
     if( i_pts != VLC_TICK_INVALID )
     {
         vlc_tick_t i_time;

@@ -129,6 +129,58 @@ test_live_now_playing_untimed(struct ctx *ctx)
     wait_state(ctx, VLC_PLAYER_STATE_STOPPED);
 }
 
+/* An empty in-band title (StreamTitle='') is reported as-is: it clears the
+ * now-playing so the shown value keeps matching the stream. */
+static void
+test_live_now_playing_empty(struct ctx *ctx)
+{
+    test_log("live_now_playing_empty\n");
+
+    char *url;
+    int ret = asprintf(&url,
+        "mockstream://audio_track_count=1;video_track_count=0;"
+        "sub_track_count=0;length=%"PRId64";audio_sample_length=%"PRId64";"
+        "now_playing=%s;now_playing_updated=%s;now_playing_update_after=1024;"
+        "now_playing_update_empty=1;now_playing_pts=2000",
+        VLC_TICK_FROM_MS(4000), VLC_TICK_FROM_MS(100),
+        INITIAL_NOW_PLAYING, INITIAL_NOW_PLAYING);
+    assert(ret != -1);
+
+    input_item_t *media = input_item_New(url, "live");
+    assert(media != NULL);
+    free(url);
+
+    ret = input_item_AddOption(media, ":demux=mock", VLC_INPUT_OPTION_TRUSTED);
+    assert(ret == VLC_SUCCESS);
+
+    ret = vlc_player_SetCurrentMedia(ctx->player, media);
+    assert(ret == VLC_SUCCESS);
+    input_item_Release(media);
+
+    player_start(ctx);
+
+    /* The empty StreamTitle is reported (not dropped): timed to 2s, it surfaces
+     * as an empty now-playing. Under the previous "ignore empty" behaviour it
+     * would never surface and this would time out. */
+    vec_on_media_meta_changed *vec = &ctx->report.on_media_meta_changed;
+    bool got_empty = false;
+    while (!got_empty)
+    {
+        for (size_t i = 0; i < vec->size; ++i)
+        {
+            char *np = input_item_GetNowPlaying(vec->data[i]);
+            if (np != NULL && np[0] == '\0')
+                got_empty = true;
+            free(np);
+        }
+        if (!got_empty)
+            vlc_player_CondWait(ctx->player, &ctx->wait);
+    }
+
+    vlc_player_Stop(ctx->player);
+    wait_state(ctx, VLC_PLAYER_STATE_STOPPED);
+}
+
 int
 main(void)
 {
@@ -139,6 +191,10 @@ main(void)
 
     ctx_init(&ctx, DISABLE_VIDEO_OUTPUT);
     test_live_now_playing_untimed(&ctx);
+    ctx_destroy(&ctx);
+
+    ctx_init(&ctx, DISABLE_VIDEO_OUTPUT);
+    test_live_now_playing_empty(&ctx);
     ctx_destroy(&ctx);
     return 0;
 }

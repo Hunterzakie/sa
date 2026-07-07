@@ -1836,6 +1836,7 @@ struct access_sys
     uint64_t update_after;
     uint64_t read;
     vlc_tick_t now_playing_pts;
+    int update_empty;
 };
 
 static block_t *
@@ -1877,9 +1878,9 @@ AccessControl(stream_t *access, int query, va_list args)
             vlc_tick_t pts;
 
             if (sys->read >= sys->update_after
-             && sys->now_playing_updated != NULL)
+             && (sys->update_empty || sys->now_playing_updated != NULL))
             {
-                np = sys->now_playing_updated;
+                np = sys->update_empty ? "" : sys->now_playing_updated;
                 pts = sys->now_playing_pts;
             }
             else if (sys->now_playing != NULL)
@@ -1920,6 +1921,7 @@ AccessOpen(vlc_object_t *obj)
     int64_t pts_ms = var_InheritInteger(obj, "mock-now_playing_pts");
     sys->now_playing_pts = (pts_ms > 0) ? VLC_TICK_FROM_MS(pts_ms)
                                         : VLC_TICK_INVALID;
+    sys->update_empty = var_InheritInteger(obj, "mock-now_playing_update_empty");
     sys->read = 0;
 
     access->p_sys = sys;
@@ -1965,6 +1967,9 @@ vlc_module_begin()
             change_volatile()
             change_safe()
         add_integer("mock-now_playing_pts", 0, NULL, NULL)
+            change_volatile()
+            change_safe()
+        add_integer("mock-now_playing_update_empty", 0, NULL, NULL)
             change_volatile()
             change_safe()
         add_shortcut("mockstream")
