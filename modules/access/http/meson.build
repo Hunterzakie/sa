@@ -14,6 +14,7 @@ vlc_http_lib = static_library('vlc_http',
         'h2conn.c',
         'h1conn.c',
         'chunked.c',
+        'icymeta.c',
         'tunnel.c',
         'connmgr.c',
         'ports.c',
@@ -62,6 +63,10 @@ if (get_option('tests').allowed())
         files('chunked_test.c'),
         link_with: vlc_http_lib,
         include_directories: [vlc_include_dirs])
+    http_icymeta_test = executable('http_icymeta_test',
+        files('icymeta_test.c'),
+        link_with: vlc_http_lib,
+        include_directories: [vlc_include_dirs])
     http_msg_test = executable('http_msg_test',
         files('message_test.c'),
         link_with: vlc_http_lib,
@@ -82,6 +87,7 @@ if (get_option('tests').allowed())
     test('http_h2conn_test', h2conn_test, suite: 'http')
     test('http_h1conn_test', h1conn_test, suite: 'http')
     test('http_h1chunked_test', h1chunked_test, suite: 'http')
+    test('http_icymeta_test', http_icymeta_test, suite: 'http')
     test('http_msg_test', http_msg_test, suite: 'http')
     test('http_file_test', http_file_test, suite: 'http')
     test('http_tunnel_test', http_tunnel_test, suite: 'http', timeout: 90)
