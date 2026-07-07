@@ -72,6 +72,16 @@ VLC_API int vout_OSDEpg( vout_thread_t *vout, input_item_t *input);
 VLC_API void vout_OSDText( vout_thread_t *vout, int channel, int position, vlc_tick_t duration, const char *text );
 
 /**
+ * \brief Display the media title (filename) as an OSD overlay.
+ * \param vout The vout on which the title will be displayed
+ * \param channel Subpicture channel
+ * \param position Position of the title
+ * \param duration Duration the title is displayed for
+ * \param title Title text to be displayed
+ */
+VLC_API void vout_OSDTitle( vout_thread_t *vout, int channel, int position, vlc_tick_t duration, const char *title );
+
+/**
  * Write an informative message at the default location, for the default duration and only
  * if the OSD option is enabled.
  *

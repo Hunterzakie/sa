@@ -1025,7 +1025,7 @@ static struct subpicture_region_rendered *SpuRenderRegion(spu_t *spu,
                                 apply_scale ? scale_size : spu_scale_unit());
 
     /* Handle overlapping subtitles when possible */
-    if (subpic->b_subtitle && !region->b_absolute)
+    if ((subpic->b_subtitle || subpic->b_title) && !region->b_absolute)
         SpuAreaFixOverlap(dst_area, subtitle_area, subtitle_area_count,
                           i_align);
 
@@ -1372,147 +1372,157 @@ static vlc_render_subpicture *SpuRenderSubpictures(spu_t *spu,
     else
         subtitle_area = subtitle_area_buffer;
 
-    /* Process all subpictures and regions (in the right order) */
-    for (size_t index = 0; index < i_subpicture; index++) {
-        const spu_render_entry_t *entry = &p_entries[index];
-        subpicture_t *subpic = entry->subpic;
-        subpicture_region_t *region;
+    /* Process the title after other subpictures are processed
+     * so overlap with subtitles is avoided */
+    for (int iteration = 0; iteration < 2; iteration++) {
+        /* Process all subpictures and regions (in the right order) */
+        for (size_t index = 0; index < i_subpicture; index++) {
+            const spu_render_entry_t *entry = &p_entries[index];
+            subpicture_t *subpic = entry->subpic;
 
-        if (vlc_spu_regions_is_empty(&subpic->regions))
-            continue;
-
-        spu_UpdateOriginalSize(spu, subpic, fmt_src);
-
-        const unsigned i_original_width = subpic->i_original_picture_width;
-        const unsigned i_original_height = subpic->i_original_picture_height;
-
-        /* Render all regions
-         * We always transform non absolute subtitle into absolute one on the
-         * first rendering to allow good subtitle overlap support.
-         */
-        vlc_spu_regions_foreach(region, &subpic->regions) {
-            spu_area_t area;
-
-            /* last minute text rendering */
-            if (unlikely(subpicture_region_IsText( region )))
-            {
-                subpicture_region_t *rendered_text =
-                    SpuRenderText(spu, region,
-                            i_original_width, i_original_height,
-                            chroma_list);
-                if ( rendered_text  == NULL)
-                    // not a rendering error for Text-To-Speech
-                    continue;
-                // replace the text region with the rendered region
-                vlc_list_replace(&region->node, &rendered_text->node);
-                subpicture_region_Delete(region);
-                region = rendered_text;
-            }
-            region_FixFmt(region);
-
-            const bool subpic_in_video = !spu_in_full_window ||
-                                         !region->b_in_window;
-            unsigned output_width, output_height;
-            unsigned output_x, output_y;
-            if (subpic_in_video) {
-                output_x      = video_position->x;
-                output_y      = video_position->y;
-                output_width  = video_position->width;
-                output_height = video_position->height;
-            } else {
-                output_x      = fmt_dst->i_x_offset;
-                output_y      = fmt_dst->i_y_offset;
-                output_width  = fmt_dst->i_visible_width;
-                output_height = fmt_dst->i_visible_height;
-            }
-
-            /* Compute region scale AR */
-            vlc_rational_t region_sar = (vlc_rational_t) {
-                .num = region->fmt.i_sar_num,
-                .den = region->fmt.i_sar_den
-            };
-            if (region_sar.num <= 0 || region_sar.den <= 0) {
-
-                const uint64_t i_sar_num = (uint64_t)output_width  *
-                                           fmt_dst->i_sar_num * i_original_height;
-                const uint64_t i_sar_den = (uint64_t)output_height *
-                                           fmt_dst->i_sar_den * i_original_width;
-
-                vlc_ureduce(&region_sar.num, &region_sar.den,
-                            i_sar_num, i_sar_den, 65536);
-            }
-
-            /* Compute scaling from original size to destination size
-             * FIXME The current scaling ensure that the heights match, the width being
-             * cropped.
-             */
-            // position the rendered video, rather than the whole output format
-            // expand the width using the SAR
-            spu_scale_t scale;
-            scale = spu_scale_createq((uint64_t)output_height          * fmt_dst->i_sar_den * region_sar.num,
-                                      (uint64_t)i_original_height      * fmt_dst->i_sar_num * region_sar.den,
-                                      output_height,
-                                      i_original_height);
-
-            /* Check scale validity */
-            assert(scale.w != 0 && scale.h != 0);
-
-            bool cached_is_in_window;
-            int cached_alignment;
-            subpicture_t forced_subpic = *subpic;
-            struct subtitle_position_cache *cache_pos = NULL;
-            if (subpic->b_subtitle && !region->b_absolute)
-            {
-                cache_pos =
-                    subtitles_positions_FindRelativeRegion(&sys->subs_pos, region);
-                if (cache_pos != NULL)
-                {
-                    region->i_x = cache_pos->x;
-                    region->i_y = cache_pos->y;
-                    cached_is_in_window = region->b_in_window;
-                    cached_alignment = region->i_align;
-                    region->i_align = SUBPICTURE_ALIGN_TOP | SUBPICTURE_ALIGN_LEFT;
-                    region->b_absolute = true;
-                    region->b_in_window = true;
-                }
-            }
-
-            /* */
-            output_last_ptr = SpuRenderRegion(spu, &area,
-                            &forced_subpic, entry->channel_order,
-                            region, scale, !external_scale,
-                            chroma_list,
-                            output_x, output_y, output_width, output_height,
-                            subtitle_area, subtitle_area_count,
-                            subpic->b_subtitle ? render_subtitle_date : system_now);
-            if (unlikely(output_last_ptr == NULL))
+            if (iteration == 0 && subpic->b_title)
+                continue;
+            if (iteration == 1 && !subpic->b_title)
                 continue;
 
-            if (subpic_in_video) {
-                // place the region inside the video area
-                output_last_ptr->place.x += video_position->x;
-                output_last_ptr->place.y += video_position->y;
-            }
+            subpicture_region_t *region;
 
-            if (cache_pos != NULL)
-            {
-                region->b_absolute = false;
-                region->b_in_window = cached_is_in_window;
-                region->i_align = cached_alignment;
-                assert(area.x == cache_pos->x);
-                assert(area.y == cache_pos->y);
-            }
+            if (vlc_spu_regions_is_empty(&subpic->regions))
+                continue;
 
-            vlc_vector_push(&output->regions, output_last_ptr);
+            spu_UpdateOriginalSize(spu, subpic, fmt_src);
 
-            if (subpic->b_subtitle) {
-                if (likely(subtitle_area))
-                    subtitle_area[subtitle_area_count++] = area;
-                if (!region->b_absolute)
+            const unsigned i_original_width = subpic->i_original_picture_width;
+            const unsigned i_original_height = subpic->i_original_picture_height;
+
+            /* Render all regions
+             * We always transform non absolute subtitle into absolute one on the
+             * first rendering to allow good subtitle overlap support.
+             */
+            vlc_spu_regions_foreach(region, &subpic->regions) {
+                spu_area_t area;
+
+                /* last minute text rendering */
+                if (unlikely(subpicture_region_IsText( region )))
                 {
-                    if (!external_scale)
-                        area = spu_area_unscaled(area, scale);
-                    subtitles_positions_AddRelativeRegion(&sys->subs_pos, region, &area, cache_pos);
+                    subpicture_region_t *rendered_text =
+                        SpuRenderText(spu, region,
+                                i_original_width, i_original_height,
+                                chroma_list);
+                    if ( rendered_text  == NULL)
+                        // not a rendering error for Text-To-Speech
+                        continue;
+                    // replace the text region with the rendered region
+                    vlc_list_replace(&region->node, &rendered_text->node);
+                    subpicture_region_Delete(region);
+                    region = rendered_text;
+                }
+                region_FixFmt(region);
+
+                const bool subpic_in_video = !spu_in_full_window ||
+                                            !region->b_in_window;
+                unsigned output_width, output_height;
+                unsigned output_x, output_y;
+                if (subpic_in_video) {
+                    output_x      = video_position->x;
+                    output_y      = video_position->y;
+                    output_width  = video_position->width;
+                    output_height = video_position->height;
+                } else {
+                    output_x      = fmt_dst->i_x_offset;
+                    output_y      = fmt_dst->i_y_offset;
+                    output_width  = fmt_dst->i_visible_width;
+                    output_height = fmt_dst->i_visible_height;
+                }
+
+                /* Compute region scale AR */
+                vlc_rational_t region_sar = (vlc_rational_t) {
+                    .num = region->fmt.i_sar_num,
+                    .den = region->fmt.i_sar_den
+                };
+                if (region_sar.num <= 0 || region_sar.den <= 0) {
+
+                    const uint64_t i_sar_num = (uint64_t)output_width  *
+                                            fmt_dst->i_sar_num * i_original_height;
+                    const uint64_t i_sar_den = (uint64_t)output_height *
+                                            fmt_dst->i_sar_den * i_original_width;
+
+                    vlc_ureduce(&region_sar.num, &region_sar.den,
+                                i_sar_num, i_sar_den, 65536);
+                }
+
+                /* Compute scaling from original size to destination size
+                 * FIXME The current scaling ensure that the heights match, the width being
+                 * cropped.
+                 */
+                // position the rendered video, rather than the whole output format
+                // expand the width using the SAR
+                spu_scale_t scale;
+                scale = spu_scale_createq((uint64_t)output_height          * fmt_dst->i_sar_den * region_sar.num,
+                                        (uint64_t)i_original_height      * fmt_dst->i_sar_num * region_sar.den,
+                                        output_height,
+                                        i_original_height);
+
+                /* Check scale validity */
+                assert(scale.w != 0 && scale.h != 0);
+
+                bool cached_is_in_window;
+                int cached_alignment;
+                subpicture_t forced_subpic = *subpic;
+                struct subtitle_position_cache *cache_pos = NULL;
+                if (subpic->b_subtitle && !region->b_absolute)
+                {
+                    cache_pos =
+                        subtitles_positions_FindRelativeRegion(&sys->subs_pos, region);
+                    if (cache_pos != NULL)
+                    {
+                        region->i_x = cache_pos->x;
+                        region->i_y = cache_pos->y;
+                        cached_is_in_window = region->b_in_window;
+                        cached_alignment = region->i_align;
+                        region->i_align = SUBPICTURE_ALIGN_TOP | SUBPICTURE_ALIGN_LEFT;
+                        region->b_absolute = true;
+                        region->b_in_window = true;
+                    }
+                }
+
+                /* */
+                output_last_ptr = SpuRenderRegion(spu, &area,
+                                &forced_subpic, entry->channel_order,
+                                region, scale, !external_scale,
+                                chroma_list,
+                                output_x, output_y, output_width, output_height,
+                                subtitle_area, subtitle_area_count,
+                                subpic->b_subtitle ? render_subtitle_date : system_now);
+                if (unlikely(output_last_ptr == NULL))
+                    continue;
+
+                if (subpic_in_video) {
+                    // place the region inside the video area
+                    output_last_ptr->place.x += video_position->x;
+                    output_last_ptr->place.y += video_position->y;
+                }
+
+                if (cache_pos != NULL)
+                {
+                    region->b_absolute = false;
+                    region->b_in_window = cached_is_in_window;
+                    region->i_align = cached_alignment;
+                    assert(area.x == cache_pos->x);
+                    assert(area.y == cache_pos->y);
+                }
+
+                vlc_vector_push(&output->regions, output_last_ptr);
+
+                if (subpic->b_subtitle) {
+                    if (likely(subtitle_area))
+                        subtitle_area[subtitle_area_count++] = area;
+                    if (!region->b_absolute)
+                    {
+                        if (!external_scale)
+                            area = spu_area_unscaled(area, scale);
+                        subtitles_positions_AddRelativeRegion(&sys->subs_pos, region, &area, cache_pos);
+                    }
                 }
             }
         }
