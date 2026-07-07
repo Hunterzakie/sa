@@ -127,7 +127,7 @@ FocusScope {
                  "qrc:///qt/qml/VLC/MainInterface/NoMedialibHome.qml"
         }, {
             listed: MainCtx.mediaLibraryAvailable,
-            displayText: qsTr("Video"),
+            displayText: qsTr("Videos"),
             icon: VLCIcons.topbar_video,
             name: "video",
             url: "qrc:///qt/qml/VLC/MediaLibrary/VideoDisplay.qml"
@@ -137,6 +137,12 @@ FocusScope {
             icon: VLCIcons.topbar_music,
             name: "music",
             url: "qrc:///qt/qml/VLC/MediaLibrary/MusicDisplay.qml"
+        }, {
+            listed: true,
+            displayText: qsTr("Playlists"),
+            icon: VLCIcons.playlist,
+            name: "playlist",
+            url: "qrc:///qt/qml/VLC/Playlist/PlaylistDisplay.qml"
         }, {
             listed: true,
             displayText: qsTr("Browse"),
@@ -299,6 +305,9 @@ FocusScope {
                     return
                 }
 
+                if (name === "playlist" && MainCtx.playlistVisible)
+                    MainCtx.playlistVisible = false
+
                 selectedIndex = index
                 History.push([name])
             }
@@ -448,12 +457,6 @@ FocusScope {
                                               stackViewParent.edgeExtension,
                                               stackView.width + (2 * stackViewParent.edgeExtension),
                                               height - (2 * stackViewParent.edgeExtension))
-
-                        visualRect: (stackView.width < stackViewParent.width) ? Qt.rect(stackViewParent.edgeExtension,
-                                                                                        viewportRect.y,
-                                                                                        width - (2 * stackViewParent.edgeExtension),
-                                                                                        viewportRect.height)
-                                                                              : Qt.rect(0, 0, 0, 0)
                     }
                 }
 

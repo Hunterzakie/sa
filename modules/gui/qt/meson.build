@@ -804,6 +804,7 @@ qml_modules += {
     'outdir' : 'VLC/Playlist',
     'sources': files(
         'playlist/qml/PlaylistDelegate.qml',
+        'playlist/qml/PlaylistDisplay.qml',
         'playlist/qml/PlaylistPane.qml',
         'playlist/qml/PlaylistToolbar.qml',
         'playlist/qml/PlaylistDetachedWindow.qml',
