@@ -76,6 +76,12 @@ typedef struct
     char        *buffer;
     size_t       seek_threshold;
 
+    /* Latest in-band (ICY) timed metadata: the worker thread (the only one that
+     * touches stream->s) pulls it and caches it here under lock, so Control can
+     * answer STREAM_GET_TIMED_META without touching stream->s. */
+    char        *timed_title;
+    vlc_tick_t   timed_pts;
+
     struct stream_ctrl *controls;
 } stream_sys_t;
 
@@ -122,6 +128,26 @@ static int ThreadControl(stream_t *stream, int query, ...)
 
     vlc_mutex_lock(&sys->lock);
     return ret;
+}
+
+/* Worker-thread only: pull the latest in-band timed metadata from the source
+ * (safe — this thread owns stream->s) and cache it under lock for Control. */
+static void ThreadPullTimedMeta(stream_t *stream)
+{
+    stream_sys_t *sys = stream->p_sys;
+    char *title;
+    vlc_tick_t pts;
+
+    vlc_mutex_unlock(&sys->lock);
+    int ret = vlc_stream_Control(stream->s, STREAM_GET_TIMED_META,
+                                 &title, &pts);
+    vlc_mutex_lock(&sys->lock);
+
+    if (ret != VLC_SUCCESS)
+        return;
+    free(sys->timed_title);
+    sys->timed_title = title;
+    sys->timed_pts = pts;
 }
 
 static void *Thread(void *data)
@@ -260,6 +286,7 @@ static void *Thread(void *data)
         assert(sys->buffer_length <= sys->buffer_size);
         //msg_Dbg(stream, "buffer: %zu/%zu", sys->buffer_length,
         //        sys->buffer_size);
+        ThreadPullTimedMeta(stream);
         vlc_cond_signal(&sys->wait_data);
     }
 
@@ -379,6 +406,27 @@ static int Control(stream_t *stream, int query, va_list args)
         case STREAM_GET_SEEKPOINT:
         case STREAM_GET_META:
             return VLC_EGENERIC;
+        case STREAM_GET_TIMED_META:
+        {   /* Answer from the worker-populated cache under lock — never touch
+             * stream->s here (it races the worker's reads). */
+            char **titlep = va_arg(args, char **);
+            vlc_tick_t *ptsp = va_arg(args, vlc_tick_t *);
+            int ret = VLC_EGENERIC;
+
+            vlc_mutex_lock(&sys->lock);
+            if (sys->timed_title != NULL)
+            {
+                char *dup = strdup(sys->timed_title);
+                if (dup != NULL)
+                {
+                    *titlep = dup;
+                    *ptsp = sys->timed_pts;
+                    ret = VLC_SUCCESS;
+                }
+            }
+            vlc_mutex_unlock(&sys->lock);
+            return ret;
+        }
         case STREAM_GET_CONTENT_TYPE:
             if (sys->content_type == NULL)
                 return VLC_EGENERIC;
@@ -472,6 +520,8 @@ static int Open(vlc_object_t *obj)
     sys->buffer_length = 0;
     sys->buffer_size = var_InheritInteger(obj, "prefetch-buffer-size") << 10u;
     sys->seek_threshold = var_InheritInteger(obj, "prefetch-seek-threshold");
+    sys->timed_title = NULL;
+    sys->timed_pts = VLC_TICK_INVALID;
     sys->controls = NULL;
 
     uint64_t size = stream_Size(stream->s);
@@ -510,6 +560,7 @@ static int Open(vlc_object_t *obj)
 error:
     free(sys->buffer);
     free(sys->content_type);
+    free(sys->timed_title);
     free(sys);
     return VLC_ENOMEM;
 }
@@ -539,6 +590,7 @@ static void Close (vlc_object_t *obj)
     }
     free(sys->buffer);
     free(sys->content_type);
+    free(sys->timed_title);
     free(sys);
 }
 
