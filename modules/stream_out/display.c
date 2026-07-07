@@ -85,7 +85,9 @@ typedef struct
 
     struct vlc_sout_clock_bus *main_clock;
     bool first_pcr_signaled;
+    vlc_tick_t start_stream_pcr;
     bool error;
+    bool buffering;
 } sout_stream_sys_t;
 
 typedef struct
@@ -198,10 +200,35 @@ static int Control( sout_stream_t *p_stream, int i_query, va_list args )
             *va_arg( args, bool * ) = true;
             break;
 
+        case SOUT_STREAM_SET_BUFFERING:
+        {
+            sout_stream_sys_t *p_sys = p_stream->p_sys;
+            bool buffering = va_arg(args, int);
+            if (buffering && !p_sys->buffering)
+            {
+                /* Entering buffering means the input pipeline was flushed
+                 * and the timeline restarts from a new origin. This is
+                 * similar to discontinuity detection but at the stream
+                 * output level. */
+                sout_ClockMainReset(p_sys->main_clock);
+                p_sys->start_stream_pcr = VLC_TICK_INVALID;
+            }
+            else if (!buffering && p_sys->buffering
+                     && p_sys->start_stream_pcr != VLC_TICK_INVALID)
+            {
+                /* Much like in the es_out when the buffering is done,
+                 * we need to restart the clock on the first PCR we
+                 * got to initialize the clock bus. */
+                sout_ClockMainSetFirstPcr(p_sys->main_clock,
+                                          p_sys->start_stream_pcr);
+            }
+            p_sys->buffering = buffering;
+            break;
+        }
+
         default:
            return VLC_EGENERIC;
     }
-    (void) p_stream;
     return VLC_SUCCESS;
 }
 
@@ -209,11 +236,11 @@ static void SetPCR( sout_stream_t *p_stream, vlc_tick_t pcr )
 {
     sout_stream_sys_t *sys = p_stream->p_sys;
 
-    if( sys->first_pcr_signaled )
-        return;
-
-    sout_ClockMainSetFirstPcr( sys->main_clock, pcr );
     sys->first_pcr_signaled = true;
+
+    /* See SOUT_STREAM_SET_BUFFERING. */
+    if (sys->start_stream_pcr == VLC_TICK_INVALID)
+        sys->start_stream_pcr = pcr;
 }
 
 static const struct sout_stream_operations ops = {
@@ -261,7 +288,9 @@ static int Open( vlc_object_t *p_this )
     p_sys->i_delay =
         VLC_TICK_FROM_MS( var_GetInteger(p_stream, SOUT_CFG_PREFIX "delay") );
     p_sys->first_pcr_signaled = false;
+    p_sys->start_stream_pcr = VLC_TICK_INVALID;
     p_sys->error = false;
+    p_sys->buffering = true;
 
     p_stream->ops = &ops;
     p_stream->p_sys = p_sys;
