@@ -1136,6 +1136,7 @@ libqml_module_network_a_QML = \
 	network/qml/BrowseTreeHeader.qml \
 	network/qml/DiscoverDisplay.qml \
 	network/qml/DiscoverUrlDisplay.qml \
+	network/qml/NetworkSourcesDisplay.qml \
 	network/qml/NetworkAddressbar.qml \
 	network/qml/NetworkGridItem.qml \
 	network/qml/NetworkThumbnailItem.qml \
@@ -1242,6 +1243,7 @@ libqml_module_playlist_a_CXXFLAGS = $(libqt_plugin_la_CXXFLAGS)
 libqml_module_playlist_a_CPPFLAGS = $(libqt_plugin_la_CPPFLAGS)
 libqml_module_playlist_a_QML = \
 	playlist/qml/PlaylistDelegate.qml \
+	playlist/qml/PlaylistDisplay.qml \
 	playlist/qml/PlaylistPane.qml \
 	playlist/qml/PlaylistToolbar.qml \
 	playlist/qml/PlaylistDetachedWindow.qml

@@ -703,6 +703,7 @@ qml_modules += {
         'network/qml/BrowseTreeHeader.qml',
         'network/qml/DiscoverDisplay.qml',
         'network/qml/DiscoverUrlDisplay.qml',
+        'network/qml/NetworkSourcesDisplay.qml',
         'network/qml/NetworkAddressbar.qml',
         'network/qml/NetworkGridItem.qml',
         'network/qml/NetworkThumbnailItem.qml',
@@ -804,6 +805,7 @@ qml_modules += {
     'outdir' : 'VLC/Playlist',
     'sources': files(
         'playlist/qml/PlaylistDelegate.qml',
+        'playlist/qml/PlaylistDisplay.qml',
         'playlist/qml/PlaylistPane.qml',
         'playlist/qml/PlaylistToolbar.qml',
         'playlist/qml/PlaylistDetachedWindow.qml',
