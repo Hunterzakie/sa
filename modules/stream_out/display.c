@@ -175,6 +175,14 @@ static int Send( sout_stream_t *p_stream, void *id, vlc_frame_t *frames )
     return VLC_SUCCESS;
 }
 
+static void Flush( sout_stream_t *p_stream, void *id )
+{
+    (void) p_stream;
+
+    sout_stream_id_sys_t *id_sys = id;
+    vlc_input_decoder_Flush( id_sys->dec );
+}
+
 static int Control( sout_stream_t *p_stream, int i_query, va_list args )
 {
     switch( i_query )
@@ -212,6 +220,7 @@ static const struct sout_stream_operations ops = {
     .add = Add,
     .del = Del,
     .send = Send,
+    .flush = Flush,
     .control = Control,
     .set_pcr = SetPCR,
     .close = Close,
