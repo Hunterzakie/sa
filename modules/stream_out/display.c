@@ -33,6 +33,7 @@
 
 #include <vlc_decoder.h>
 #include <vlc_frame.h>
+#include <vlc_list.h>
 #include <vlc_plugin.h>
 #include <vlc_sout.h>
 
@@ -88,12 +89,16 @@ typedef struct
     vlc_tick_t start_stream_pcr;
     bool error;
     bool buffering;
+
+    struct vlc_list decoders; /* List of sout_stream_id_sys_t */
 } sout_stream_sys_t;
 
 typedef struct
 {
     vlc_input_decoder_t *dec;
     vlc_clock_t *clock;
+    struct vlc_list node;
+    bool waiting;
 } sout_stream_id_sys_t;
 
 static void *Add( sout_stream_t *p_stream, const es_format_t *p_fmt, const char *es_id )
@@ -131,6 +136,14 @@ static void *Add( sout_stream_t *p_stream, const es_format_t *p_fmt, const char 
     if( p_sys->i_delay != VLC_TICK_INVALID )
         vlc_input_decoder_ChangeDelay( id->dec, p_sys->i_delay );
 
+    /* Only hold the output if we are buffering, since there is no
+     * other unblocking signal once started. */
+    id->waiting = p_sys->buffering;
+    if (id->waiting)
+        vlc_input_decoder_StartWait(id->dec);
+
+    vlc_list_append(&id->node, &p_sys->decoders);
+
     return id;
 }
 
@@ -139,6 +152,11 @@ static void Del( sout_stream_t *p_stream, void *id )
     (void) p_stream;
 
     sout_stream_id_sys_t *id_sys = id;
+    vlc_list_remove( &id_sys->node );
+
+    if (id_sys->waiting)
+        vlc_input_decoder_StopWait(id_sys->dec);
+
     vlc_input_decoder_Flush(id_sys->dec);
     vlc_input_decoder_Delete( id_sys->dec );
     sout_ClockDelete( id_sys->clock );
@@ -169,7 +187,7 @@ static int Send( sout_stream_t *p_stream, void *id, vlc_frame_t *frames )
         frames->p_next = NULL;
 
         if( id != NULL && frames->i_buffer > 0 )
-            vlc_input_decoder_Decode( id_sys->dec, frames, false );
+            vlc_input_decoder_Decode( id_sys->dec, frames, !p_sys->buffering );
 
         frames = p_next;
     }
@@ -203,6 +221,7 @@ static int Control( sout_stream_t *p_stream, int i_query, va_list args )
         case SOUT_STREAM_SET_BUFFERING:
         {
             sout_stream_sys_t *p_sys = p_stream->p_sys;
+            sout_stream_id_sys_t *id_sys;
             bool buffering = va_arg(args, int);
             if (buffering && !p_sys->buffering)
             {
@@ -212,15 +231,38 @@ static int Control( sout_stream_t *p_stream, int i_query, va_list args )
                  * output level. */
                 sout_ClockMainReset(p_sys->main_clock);
                 p_sys->start_stream_pcr = VLC_TICK_INVALID;
+
+                vlc_list_foreach(id_sys, &p_sys->decoders, node)
+                {
+                    if (id_sys->waiting)
+                        continue;
+                    vlc_input_decoder_StartWait(id_sys->dec);
+                    id_sys->waiting = true;
+                }
             }
-            else if (!buffering && p_sys->buffering
-                     && p_sys->start_stream_pcr != VLC_TICK_INVALID)
+            else if (!buffering && p_sys->buffering)
             {
-                /* Much like in the es_out when the buffering is done,
-                 * we need to restart the clock on the first PCR we
-                 * got to initialize the clock bus. */
-                sout_ClockMainSetFirstPcr(p_sys->main_clock,
-                                          p_sys->start_stream_pcr);
+                /* Buffering is finished, let's unblock the decoders. */
+
+                vlc_list_foreach(id_sys, &p_sys->decoders, node)
+                {
+                    if (id_sys->waiting)
+                        vlc_input_decoder_Wait(id_sys->dec);
+                }
+
+                /* Much like in the es_out when the buffering is done, restart
+                 * the clock on the first PCR we got to initialize the bus. */
+                if (p_sys->start_stream_pcr != VLC_TICK_INVALID)
+                    sout_ClockMainSetFirstPcr(p_sys->main_clock,
+                                              p_sys->start_stream_pcr);
+
+                vlc_list_foreach(id_sys, &p_sys->decoders, node)
+                {
+                    if (!id_sys->waiting)
+                        continue;
+                    vlc_input_decoder_StopWait(id_sys->dec);
+                    id_sys->waiting = false;
+                }
             }
             p_sys->buffering = buffering;
             break;
@@ -291,6 +333,7 @@ static int Open( vlc_object_t *p_this )
     p_sys->start_stream_pcr = VLC_TICK_INVALID;
     p_sys->error = false;
     p_sys->buffering = true;
+    vlc_list_init(&p_sys->decoders);
 
     p_stream->ops = &ops;
     p_stream->p_sys = p_sys;
