@@ -378,6 +378,7 @@ sout_StreamControlVa
 sout_ClockMainCreate
 sout_ClockMainDelete
 sout_ClockMainSetFirstPcr
+sout_ClockMainReset
 sout_ClockCreate
 sout_ClockDelete
 spu_Create

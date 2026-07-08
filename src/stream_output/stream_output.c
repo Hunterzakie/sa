@@ -827,6 +827,13 @@ void sout_ClockMainSetFirstPcr(struct vlc_sout_clock_bus *bus, vlc_tick_t pcr )
     vlc_clock_main_Unlock(bus->clocks.bus);
 }
 
+void sout_ClockMainReset(struct vlc_sout_clock_bus *bus)
+{
+    vlc_clock_main_Lock(bus->clocks.bus);
+    vlc_clock_main_Reset(bus->clocks.bus);
+    vlc_clock_main_Unlock(bus->clocks.bus);
+}
+
 vlc_clock_t *sout_ClockCreate(struct vlc_sout_clock_bus *bus,
                               const es_format_t *fmt)
 {
