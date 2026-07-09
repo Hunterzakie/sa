@@ -568,6 +568,7 @@ LIBVLC_API bool libvlc_media_is_parsed( libvlc_media_t *p_md );
  *
  * \param p_md media descriptor object
  * \param p_new_user_data pointer to user data
+ * \version LibVLC 3.0.0 or later
  */
 LIBVLC_API void
     libvlc_media_set_user_data( libvlc_media_t *p_md, void *p_new_user_data );
@@ -580,6 +581,7 @@ LIBVLC_API void
  * \see libvlc_media_set_user_data
  *
  * \param p_md media descriptor object
+ * \version LibVLC 3.0.0 or later
  */
 LIBVLC_API void *libvlc_media_get_user_data( libvlc_media_t *p_md );
 
