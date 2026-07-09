@@ -221,6 +221,9 @@ static void media_destroy( void *libvlc_owner )
 {
     libvlc_media_t *p_md = libvlc_owner;
 
+    if( p_md->pf_user_data_release != NULL )
+        p_md->pf_user_data_release( p_md->p_user_data );
+
     if( p_md->p_subitems )
         libvlc_media_list_release( p_md->p_subitems );
 
@@ -599,10 +602,19 @@ libvlc_media_is_parsed(libvlc_media_t *media)
 
 // Sets media descriptor's user_data
 void
-libvlc_media_set_user_data( libvlc_media_t * p_md, void * p_new_user_data )
+libvlc_media_set_user_data_with_cb( libvlc_media_t * p_md,
+                                    void * p_new_user_data,
+                                    void (*release_cb)( void *user_data ) )
 {
     assert( p_md );
     p_md->p_user_data = p_new_user_data;
+    p_md->pf_user_data_release = release_cb;
+}
+
+void
+libvlc_media_set_user_data( libvlc_media_t * p_md, void * p_new_user_data )
+{
+    libvlc_media_set_user_data_with_cb( p_md, p_new_user_data, NULL );
 }
 
 // Get media descriptor's user_data
