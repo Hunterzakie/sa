@@ -162,7 +162,7 @@ FocusScope {
 
         z: 99
 
-        text: root.model?.transactionPending ? qsTr("Processing...") : ""
+        text: root.model?.transactionPending ? qsTr("Processing") : ""
 
         Timer {
             id: visibilityTimer

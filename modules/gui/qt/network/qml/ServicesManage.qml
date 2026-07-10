@@ -172,10 +172,31 @@ Widgets.ListViewExt {
         }
     }
 
-    Widgets.BusyIndicatorExt {
-        runningDelayed: discoveryModel.loading
+    Widgets.ProgressIndicator {
+        id: progressIndicator
+
+        text: ""
+        visible: false
         anchors.centerIn: parent
         color: servicesView.colorContext.fg.primary
         z: 1
+
+        readonly property bool loading: (servicesView.model?.loading ?? false)
+
+        onLoadingChanged: {
+            if (!loading)
+                progressIndicator.visible = false
+        }
+
+        Timer {
+            running: progressIndicator.loading
+
+            interval: VLCStyle.duration_humanMoment
+
+            onTriggered: {
+                progressIndicator.visible = true
+            }
+        }
+
     }
 }

@@ -150,16 +150,14 @@ T.Button {
             Layout.fillWidth: !label.visible
             Layout.fillHeight: true
 
-            // FIXME: use `BusyIndicatorExt` when it is ready (!7180)
-            BusyIndicator {
+            Widgets.BusyIndicatorExt {
                 anchors.fill: parent
 
                 padding: 0
 
                 running: control.busy
 
-                palette.text: control.color
-                palette.dark: control.color
+                visible: running
             }
         }
 
