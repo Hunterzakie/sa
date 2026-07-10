@@ -8,6 +8,7 @@ function assert_url(result, protocol, username, password, host, port, path)
 end
 
 vlc.msg.info('---- Testing misc functions ----')
+vlc.msg.info('app: ' .. vlc.misc.app())
 vlc.msg.info('version: ' .. vlc.misc.version())
 vlc.msg.info('copyright: ' .. vlc.misc.copyright())
 vlc.msg.info('license: ' .. vlc.misc.license())

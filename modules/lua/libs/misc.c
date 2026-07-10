@@ -131,6 +131,15 @@ static int vlclua_license( lua_State *L )
 }
 
 /*****************************************************************************
+ * Get the VLC app name
+ *****************************************************************************/
+static int vlclua_name( lua_State *L )
+{
+    lua_pushstring( L, PACKAGE_NAME );
+    return 1;
+}
+
+/*****************************************************************************
  * Quit VLC
  *****************************************************************************/
 static int vlclua_quit( lua_State *L )
@@ -177,6 +186,7 @@ static const luaL_Reg vlclua_misc_reg[] = {
     { "version", vlclua_version },
     { "copyright", vlclua_copyright },
     { "license", vlclua_license },
+    { "name", vlclua_name },
 
     { "action_id", vlclua_action_id },
 

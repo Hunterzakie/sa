@@ -209,6 +209,7 @@ Misc (Interfaces only)
 misc.version(): Get the VLC version string.
 misc.copyright(): Get the VLC copyright statement.
 misc.license(): Get the VLC license.
+misc.name(): Get the app name.
 
 misc.action_id( name ): get the id of the given action.
 
