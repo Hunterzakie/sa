@@ -197,7 +197,7 @@ function host()
                          switch_status = switch_status,
                          append = append,
                        }
-        client:send( "VLC media player "..vlc.misc.version().."\n" )
+        client:send( vlc.misc.name().." "..vlc.misc.version().."\n" )
         clients[client] = client
         client:switch_status(status.password)
     end
