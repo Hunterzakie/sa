@@ -116,19 +116,22 @@ void NavigationHistory::update(QStringList path)
 
 void NavigationHistory::update(QStringList path, const QVariantMap& properties)
 {
+    auto createPropertyMap = [&properties]() {
+        auto prop = std::make_unique<QQmlPropertyMap>();
+        for (auto it = properties.keyValueBegin(); it != properties.keyValueEnd(); ++it)
+            prop->insert((*it).first, (*it).second);
+        return prop;
+    };
+
     if (m_history.size() == 0)
     {
-        auto prop = std::make_unique<QQmlPropertyMap>();
-        for (auto it =  properties.keyValueBegin(); it != properties.keyValueEnd(); ++it)
-        {
-            prop->insert((*it).first, (*it).second);
-        }
-        m_history.emplace_back(path, std::move(prop));
+        m_history.emplace_back(path, createPropertyMap());
     }
     else
     {
         auto& last = *m_history.rbegin();
         last.first = path;
+        last.second = createPropertyMap();
     }
     updateCurrent();
 }
