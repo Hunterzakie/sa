@@ -5,6 +5,7 @@ project('VLC', ['c', 'cpp'],
 
 vlc_copyright_years = '1996-2026'
 vlc_version_codename = 'Otto Chriek'
+vlc_package_full_name = 'VLC Media Player'
 vlc_package_vendor = 'VideoLAN'
 
 # LibVLC library (ABI) version
@@ -1023,6 +1024,7 @@ cdata.set_quoted('PACKAGE',             vlc_package_name)
 cdata.set_quoted('PACKAGE_NAME',        meson.project_name())
 cdata.set_quoted('PACKAGE_STRING',      f'@vlc_package_name@ @vlc_version@')
 cdata.set_quoted('PACKAGE_TARNAME',     vlc_package_name)
+cdata.set_quoted('PACKAGE_FULL_NAME',   vlc_package_full_name)
 cdata.set_quoted('PACKAGE_VENDOR',      vlc_package_vendor)
 cdata.set_quoted('COPYRIGHT_YEARS',     vlc_copyright_years)
 cdata.set_quoted('COPYRIGHT_MESSAGE',   f'Copyright © @vlc_copyright_years@ the VideoLAN team')

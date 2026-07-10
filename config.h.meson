@@ -512,6 +512,9 @@
 /* Define to the full name of this package. */
 #mesondefine PACKAGE_NAME
 
+/* Full name of the program */
+#mesondefine PACKAGE_FULL_NAME
+
 /* Define to the full name and version of this package. */
 #mesondefine PACKAGE_STRING
 
