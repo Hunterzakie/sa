@@ -59,6 +59,22 @@ VideoAll {
         sortCriteria: MainCtx.sort.criteria
 
         ml: MediaLib
+
+        onSearchPatternChanged: {
+            MainCtx.search.pattern = searchPattern
+            searchPattern = Qt.binding(() => { return MainCtx.search.pattern })
+        }
+
+        onSortOrderChanged: {
+            MainCtx.sort.order = sortOrder
+            sortOrder = Qt.binding(() => { return MainCtx.sort.order })
+
+        }
+
+        onSortCriteriaChanged: {
+            MainCtx.sort.criteria = sortCriteria
+            sortCriteria = Qt.binding(() => { return MainCtx.sort.criteria })
+        }
     }
 
     contextMenu: MLContextMenu { model: modelVideo; showPlayAsAudioAction: true }

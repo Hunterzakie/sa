@@ -38,5 +38,20 @@ MusicAlbums {
     sortCriteria: MainCtx.sort.criteria
     sortOrder: MainCtx.sort.order
 
+    onSearchPatternChanged: {
+        MainCtx.search.pattern = searchPattern
+        searchPattern = Qt.binding(() => { return MainCtx.search.pattern })
+    }
+
+    onSortOrderChanged: {
+        MainCtx.sort.order = sortOrder
+        sortOrder = Qt.binding(() => { return MainCtx.sort.order })
+    }
+
+    onSortCriteriaChanged: {
+        MainCtx.sort.criteria = sortCriteria
+        sortCriteria = Qt.binding(() => { return MainCtx.sort.criteria })
+    }
+
     onCurrentIndexChanged: History.viewProp.initialIndex = currentIndex
 }

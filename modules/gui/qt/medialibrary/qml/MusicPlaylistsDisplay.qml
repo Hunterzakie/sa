@@ -73,6 +73,21 @@ Widgets.PageLoader {
             sortOrder: MainCtx.sort.order
             sortCriteria: MainCtx.sort.criteria
 
+            onSearchPatternChanged: {
+                MainCtx.search.pattern = searchPattern
+                searchPattern = Qt.binding(() => { return MainCtx.search.pattern })
+            }
+
+            onSortOrderChanged: {
+                MainCtx.sort.order = sortOrder
+                sortOrder = Qt.binding(() => { return MainCtx.sort.order })
+            }
+
+            onSortCriteriaChanged: {
+                MainCtx.sort.criteria = sortCriteria
+                sortCriteria = Qt.binding(() => { return MainCtx.sort.criteria })
+            }
+
             displayMarginBeginning: root.displayMarginBeginning
             displayMarginEnd: root.displayMarginEnd
 
@@ -98,6 +113,21 @@ Widgets.PageLoader {
             searchPattern: MainCtx.search.pattern
             sortOrder: MainCtx.sort.order
             sortCriteria: MainCtx.sort.criteria
+
+            onSearchPatternChanged: {
+                MainCtx.search.pattern = searchPattern
+                searchPattern = Qt.binding(() => { return MainCtx.search.pattern })
+            }
+
+            onSortOrderChanged: {
+                MainCtx.sort.order = sortOrder
+                sortOrder = Qt.binding(() => { return MainCtx.sort.order })
+            }
+
+            onSortCriteriaChanged: {
+                MainCtx.sort.criteria = sortCriteria
+                sortCriteria = Qt.binding(() => { return MainCtx.sort.criteria })
+            }
 
             displayMarginBeginning: root.displayMarginBeginning
             displayMarginEnd: root.displayMarginEnd

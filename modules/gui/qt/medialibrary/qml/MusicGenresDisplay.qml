@@ -69,6 +69,21 @@ Widgets.PageLoader {
             sortOrder: MainCtx.sort.order
             sortCriteria: MainCtx.sort.criteria
 
+            onSearchPatternChanged: {
+                MainCtx.search.pattern = searchPattern
+                searchPattern = Qt.binding(() => { return MainCtx.search.pattern })
+            }
+
+            onSortOrderChanged: {
+                MainCtx.sort.order = sortOrder
+                sortOrder = Qt.binding(() => { return MainCtx.sort.order })
+            }
+
+            onSortCriteriaChanged: {
+                MainCtx.sort.criteria = sortCriteria
+                sortCriteria = Qt.binding(() => { return MainCtx.sort.criteria })
+            }
+
             onShowAlbumView: (id, name, reason) => {
                 History.push([...root.pagePrefix, "albums"], { parentId: id, genreName: name }, reason)
             }
@@ -100,6 +115,21 @@ Widgets.PageLoader {
             searchPattern: MainCtx.search.pattern
             sortOrder: MainCtx.sort.order
             sortCriteria: MainCtx.sort.criteria
+
+            onSearchPatternChanged: {
+                MainCtx.search.pattern = searchPattern
+                searchPattern = Qt.binding(() => { return MainCtx.search.pattern })
+            }
+
+            onSortOrderChanged: {
+                MainCtx.sort.order = sortOrder
+                sortOrder = Qt.binding(() => { return MainCtx.sort.order })
+            }
+
+            onSortCriteriaChanged: {
+                MainCtx.sort.criteria = sortCriteria
+                sortCriteria = Qt.binding(() => { return MainCtx.sort.criteria })
+            }
 
             onCurrentIndexChanged: History.viewProp.initialIndex = currentIndex
         }
