@@ -288,7 +288,6 @@ int main(int i_argc, const char *ppsz_argv[])
         }
 
         libvlc_SetExitHandler(vlc->p_libvlc_int, vlc_terminate, &context);
-        libvlc_set_app_id(vlc, "org.VideoLAN.VLC", PACKAGE_VERSION, PACKAGE_NAME);
         libvlc_set_user_agent(vlc, "VLC media player", "VLC/"PACKAGE_VERSION);
 
 
