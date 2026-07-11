@@ -568,9 +568,32 @@ LIBVLC_API bool libvlc_media_is_parsed( libvlc_media_t *p_md );
  *
  * \param p_md media descriptor object
  * \param p_new_user_data pointer to user data
+ * \version LibVLC 3.0.0 or later
  */
 LIBVLC_API void
     libvlc_media_set_user_data( libvlc_media_t *p_md, void *p_new_user_data );
+
+/**
+ * Sets media descriptor's user_data with a release callback, invoked when
+ * the media is destroyed.
+ *
+ * Same as libvlc_media_set_user_data() but allows to tie the user_data
+ * lifetime to the media one.
+ *
+ * \note The release callback is invoked once, from any thread, when the media
+ * is destroyed. It must not call any libvlc function referencing the media
+ * being destroyed.
+ *
+ * \param p_md media descriptor object
+ * \param p_new_user_data pointer to user data
+ * \param release_cb callback invoked with the user_data when the media is
+ *                   destroyed, or NULL
+ * \version LibVLC 4.0.0 or later
+ */
+LIBVLC_API void
+    libvlc_media_set_user_data_with_cb( libvlc_media_t *p_md,
+                                        void *p_new_user_data,
+                                        void (*release_cb)( void *user_data ) );
 
 /**
  * Get media descriptor's user_data. user_data is specialized data
@@ -580,6 +603,7 @@ LIBVLC_API void
  * \see libvlc_media_set_user_data
  *
  * \param p_md media descriptor object
+ * \version LibVLC 3.0.0 or later
  */
 LIBVLC_API void *libvlc_media_get_user_data( libvlc_media_t *p_md );
 
