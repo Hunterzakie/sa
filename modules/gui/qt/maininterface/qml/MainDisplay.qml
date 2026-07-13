@@ -256,8 +256,8 @@ FocusScope {
             right: parent.right
         }
 
-        leftPadding: VLCStyle.applicationHorizontalMargin
-        rightPadding: VLCStyle.applicationHorizontalMargin
+        leftPadding: VLCStyle.applicationHorizontalMargin + implicitLeftPadding
+        rightPadding: VLCStyle.applicationHorizontalMargin + implicitRightPadding
         topPadding: menuTopbar.visible ? 0 : VLCStyle.applicationVerticalMargin
 
         plListView: {
