@@ -136,10 +136,29 @@ T.ToolBar {
                 color: theme.accent
             }
 
-            Item {
-                // Spacer
-
+            Widgets.CaptionLabel {
                 Layout.fillWidth: true
+
+                color: theme.fg.primary
+
+                // Visible at all times, spacer with SSD (no text).
+                text: {
+                    if (!root._showCSD)
+                        return ""
+
+                    let pre
+                    if (Window?.title?.length > 0) // `Window.title` is not available in Qt 6.2
+                        pre = Window.title
+                    else if (Window.window?.title.length > 0)
+                        pre = Window.window.title
+                    else if (MainCtx.intfMainWindow?.title.length > 0)
+                        pre = MainCtx.intfMainWindow.title
+
+                    if (pre)
+                        return pre + " \u2014 " + Application.displayName // Akin to KWin
+                    else
+                        return Application.displayName
+                }
             }
 
             Widgets.IconToolButton {
