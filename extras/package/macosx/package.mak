@@ -93,69 +93,69 @@ endif
 	VLC_LIB_PATH="$@/Contents/Frameworks" "$(srcdir)/extras/package/macosx/codesign.sh" -i -
 
 package-macosx-sdk: macos-install
-	rm -f "$(top_builddir)/vlc-macos-sdk-$(VERSION).tar.gz"
+	rm -f "$(top_builddir)/$(PACKAGE_TARNAME)-macos-sdk-$(VERSION).tar.gz"
 	tar -cf - --exclude "share/macosx" -C "$(macos_destdir)" . \
-		| gzip -c > "$(top_builddir)/vlc-macos-sdk-$(VERSION).tar.gz"
+		| gzip -c > "$(top_builddir)/$(PACKAGE_TARNAME)-macos-sdk-$(VERSION).tar.gz"
 
 package-macosx: VLC.app
-	rm -f "$(top_builddir)/vlc-$(VERSION).dmg"
+	rm -f "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION).dmg"
 if HAVE_DMGBUILD
 	@echo "Packaging fancy DMG using dmgbuild"
 	cd "$(top_srcdir)/extras/package/macosx/dmg" && dmgbuild -s "dmg_settings.py" \
-		-D app="$(abs_top_builddir)/VLC.app" "$(PACKAGE_FULL_NAME)" "$(abs_top_builddir)/vlc-$(VERSION).dmg"
+		-D app="$(abs_top_builddir)/VLC.app" "$(PACKAGE_FULL_NAME)" "$(abs_top_builddir)/$(PACKAGE_TARNAME)-$(VERSION).dmg"
 else !HAVE_DMGBUILD
 	@echo "Packaging non-fancy DMG"
 	## Create directory for DMG contents
-	mkdir -p "$(top_builddir)/vlc-$(VERSION)"
+	mkdir -p "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)"
 	## Copy contents
-	cp -Rp "$(top_builddir)/VLC.app" "$(top_builddir)/vlc-$(VERSION)/VLC.app"
+	cp -Rp "$(top_builddir)/VLC.app" "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)/VLC.app"
 	## Symlink to Applications so users can easily drag-and-drop the App to it
-	$(LN_S) -f /Applications "$(top_builddir)/vlc-$(VERSION)/"
+	$(LN_S) -f /Applications "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)/"
 	## Create DMG
-	hdiutil create -srcfolder "$(top_builddir)/vlc-$(VERSION)" -volname "VLC Media Player" \
-		-format UDBZ -fs HFS+ -o "$(top_builddir)/vlc-$(VERSION).dmg"
+	hdiutil create -srcfolder "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)" -volname "VLC" \
+		-format UDBZ -fs HFS+ -o "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION).dmg"
 	## Cleanup
-	rm -rf "$(top_builddir)/vlc-$(VERSION)"
+	rm -rf "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)"
 endif
 
 package-macosx-zip: VLC.app
-	rm -f "$(top_builddir)/vlc-$(VERSION).zip"
-	mkdir -p $(top_builddir)/vlc-$(VERSION)/Goodies/
-	cp -Rp $(top_builddir)/VLC.app $(top_builddir)/vlc-$(VERSION)/VLC.app
-	cd $(srcdir); cp -R AUTHORS COPYING README.md THANKS NEWS $(abs_top_builddir)/vlc-$(VERSION)/Goodies/
-	zip -r -y -9 $(top_builddir)/vlc-$(VERSION).zip $(top_builddir)/vlc-$(VERSION)
-	rm -rf "$(top_builddir)/vlc-$(VERSION)"
+	rm -f "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION).zip"
+	mkdir -p $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)/Goodies/
+	cp -Rp $(top_builddir)/VLC.app $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)/VLC.app
+	cd $(srcdir); cp -R AUTHORS COPYING README.md THANKS NEWS $(abs_top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)/Goodies/
+	zip -r -y -9 $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION).zip $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)
+	rm -rf "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)"
 
 package-macosx-release:
-	rm -f "$(top_builddir)/vlc-$(VERSION)-release.zip"
-	mkdir -p $(top_builddir)/vlc-$(VERSION)-release
-	cp -Rp $(top_builddir)/VLC.app $(top_builddir)/vlc-$(VERSION)-release/
-	cp $(srcdir)/extras/package/macosx/dmg/* $(top_builddir)/vlc-$(VERSION)-release/
-	cp "$(srcdir)/extras/package/macosx/codesign.sh" $(top_builddir)/vlc-$(VERSION)-release/
-	cp "$(srcdir)/extras/package/macosx/vlc-hardening.entitlements" $(top_builddir)/vlc-$(VERSION)-release/
-	cp "$(pkglibexecdir)/vlc-cache-gen" $(top_builddir)/vlc-$(VERSION)-release/
-	install_name_tool -add_rpath "@executable_path/VLC.app/Contents/Frameworks" $(top_builddir)/vlc-$(VERSION)-release/vlc-cache-gen
-	zip -r -y -9 $(top_builddir)/vlc-$(VERSION)-release.zip $(top_builddir)/vlc-$(VERSION)-release
-	rm -rf "$(top_builddir)/vlc-$(VERSION)-release"
+	rm -f "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release.zip"
+	mkdir -p $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release
+	cp -Rp $(top_builddir)/VLC.app $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release/
+	cp $(srcdir)/extras/package/macosx/dmg/* $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release/
+	cp "$(srcdir)/extras/package/macosx/codesign.sh" $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release/
+	cp "$(srcdir)/extras/package/macosx/vlc-hardening.entitlements" $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release/
+	cp "$(top_builddir)/macos-install/$(pkglibexecdir)/vlc-cache-gen" $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release/
+	install_name_tool -add_rpath "@executable_path/VLC.app/Contents/Frameworks" $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release/vlc-cache-gen
+	zip -r -y -9 $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release.zip $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release
+	rm -rf "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release"
 
 package-translations:
-	mkdir -p "$(srcdir)/vlc-translations-$(VERSION)"
+	mkdir -p "$(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION)"
 	for i in `cat "$(top_srcdir)/po/LINGUAS"`; do \
-	  cp "$(srcdir)/po/$${i}.po" "$(srcdir)/vlc-translations-$(VERSION)/" ; \
+	  cp "$(srcdir)/po/$${i}.po" "$(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION)/" ; \
 	done
-	cp "$(srcdir)/doc/translations.txt" "$(srcdir)/vlc-translations-$(VERSION)/README.txt"
+	cp "$(srcdir)/doc/translations.txt" "$(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION)/README.txt"
 
-	echo "#!/bin/sh" >>"$(srcdir)/vlc-translations-$(VERSION)/convert.po.sh"
-	echo "" >>"$(srcdir)/vlc-translations-$(VERSION)/convert.po.sh"
-	echo 'if test $$# != 1; then' >>"$(srcdir)/vlc-translations-$(VERSION)/convert.po.sh"
-	echo "	echo \"Usage: convert-po.sh <.po file>\"" >>"$(srcdir)/vlc-translations-$(VERSION)/convert.po.sh"
-	echo "	exit 1" >>"$(srcdir)/vlc-translations-$(VERSION)/convert.po.sh"
-	echo "fi" >>"$(srcdir)/vlc-translations-$(VERSION)/convert.po.sh"
-	echo "" >>"$(srcdir)/vlc-translations-$(VERSION)/convert.po.sh"
-	echo 'msgfmt --statistics -o vlc.mo $$1' >>"$(srcdir)/vlc-translations-$(VERSION)/convert.po.sh"
+	echo "#!/bin/sh" >>"$(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION)/convert.po.sh"
+	echo "" >>"$(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION)/convert.po.sh"
+	echo 'if test $$# != 1; then' >>"$(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION)/convert.po.sh"
+	echo "	echo \"Usage: convert-po.sh <.po file>\"" >>"$(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION)/convert.po.sh"
+	echo "	exit 1" >>"$(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION)/convert.po.sh"
+	echo "fi" >>"$(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION)/convert.po.sh"
+	echo "" >>"$(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION)/convert.po.sh"
+	echo 'msgfmt --statistics -o vlc.mo $$1' >>"$(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION)/convert.po.sh"
 
-	$(AMTAR) chof - $(srcdir)/vlc-translations-$(VERSION) \
-	  | GZIP=$(GZIP_ENV) gzip -c >$(srcdir)/vlc-translations-$(VERSION).tar.gz
+	$(AMTAR) chof - $(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION) \
+	  | GZIP=$(GZIP_ENV) gzip -c >$(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION).tar.gz
 
 .PHONY: package-macosx package-macosx-zip package-macosx-release package-translations pseudo-bundle macos-install package-macosx-sdk
 
