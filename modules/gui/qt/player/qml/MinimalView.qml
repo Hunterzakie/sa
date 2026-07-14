@@ -45,6 +45,24 @@ FocusScope {
     property alias videoSurface: videoSurface
     property alias csdDecorations: csdDecorations
 
+    function showControls() {
+        mouseAutoHide.stop()
+        videoSurface.cursorShape = Qt.ArrowCursor
+        root._csdOnVideo = true
+    }
+
+    function hideControls() {
+        // Cursor hides when toggleControlBarButton is not visible
+        videoSurface.forceActiveFocus()
+        videoSurface.cursorShape = Qt.BlankCursor
+        root._csdOnVideo = false
+    }
+
+    function transientShowControls() {
+        showControls()
+        mouseAutoHide.restart()
+    }
+
     VideoSurface {
         id: videoSurface
 
@@ -57,15 +75,11 @@ FocusScope {
         anchors.fill: parent
 
         onMouseMoved: {
-            mouseAutoHide.restart()
-            videoSurface.cursorShape = Qt.ArrowCursor
-            root._csdOnVideo = true
+            root.transientShowControls()
         }
 
         onVisibleChanged: {
-            mouseAutoHide.restart()
-            videoSurface.cursorShape = Qt.ArrowCursor
-            root._csdOnVideo = true
+            root.transientShowControls()
         }
 
         Timer {
@@ -76,10 +90,7 @@ FocusScope {
             interval: MainCtx.mouseHideTimeout
 
             onTriggered: {
-                // Cursor hides when toggleControlBarButton is not visible
-                videoSurface.forceActiveFocus()
-                videoSurface.cursorShape = Qt.BlankCursor
-                root._csdOnVideo = false
+                root.hideControls()
             }
         }
     }
@@ -159,6 +170,18 @@ FocusScope {
             source:  VLCStyle.palette.hasCSDImage
                      ? "qrc:///qt/qml/VLC/Widgets/CSDThemeButtonSet.qml"
                      : "qrc:///qt/qml/VLC/Widgets/CSDWindowButtonSet.qml"
+
+            Connections {
+                target: csdDecorations.item
+                enabled: csdDecorations.status === Loader.Ready
+                function onButtonHoveredChanged() {
+                    if (csdDecorations.item.buttonHovered) {
+                        root.showControls()
+                    } else {
+                        root.transientShowControls()
+                    }
+                }
+            }
         }
     }
 
