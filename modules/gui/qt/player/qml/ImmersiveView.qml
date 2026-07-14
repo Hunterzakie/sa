@@ -90,6 +90,14 @@ MinimalView {
                 when: !(root._csdOnVideo || immersiveModeToggleButton.hovered)
                 value: false
             }
+
+            onHoveredChanged: {
+                if (hovered) {
+                    root.showControls()
+                } else {
+                    root.transientShowControls()
+                }
+            }
         }
     }
 
