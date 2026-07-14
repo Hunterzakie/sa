@@ -152,11 +152,6 @@ T.Page {
         topPadding: VLCStyle.layoutTitle_top_padding
         bottomPadding: VLCStyle.layoutTitle_bottom_padding
 
-        // FIXME: `GridItem`'s background extends beyond its
-        //        bounding rect, violating the hypothetical
-        //        clip test (see 7e6b23db).
-        bottomInset: (MainCtx.hasGridListMode && MainCtx.gridView) ? VLCStyle.gridItemSelectedBorder : undefined
-
         // Settings
 
         implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
