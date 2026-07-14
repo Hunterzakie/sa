@@ -188,7 +188,7 @@ Widgets.PageExt {
             Widgets.ViewHeader {
                 visible: continueWatchingRow.visible
                 text: qsTr("Continue Watching")
-                view: continueWatchingRow
+                view: continueWatchingRow.currentItem
                 seeAllButton.visible: continueWatchingRow.model.maximumCount > continueWatchingRow.model.count
 
                 onSeeAllButtonClicked: function (reason) {
@@ -268,7 +268,7 @@ Widgets.PageExt {
             Widgets.ViewHeader {
                 visible: favoritesRow.visible
                 text: qsTr("Favorites")
-                view: favoritesRow
+                view: favoritesRow.currentItem
                 seeAllButton.visible: favoritesRow.model.maximumCount > favoritesRow.model.count
 
                 onSeeAllButtonClicked: function (reason) {
@@ -344,7 +344,7 @@ Widgets.PageExt {
             Widgets.ViewHeader {
                 text: qsTr("New Videos")
                 visible: newVideoRow.visible
-                view: newVideoRow
+                view: newVideoRow.currentItem
                 seeAllButton.visible: newVideoRow.model.maximumCount > newVideoRow.model.count
 
                 onSeeAllButtonClicked: function (reason) {
@@ -424,7 +424,7 @@ Widgets.PageExt {
             Widgets.ViewHeader {
                 text: qsTr("New Music")
                 visible: newMusicRow.visible
-                view: newMusicRow
+                view: newMusicRow.currentItem
                 seeAllButton.visible: newMusicRow.model.maximumCount > newMusicRow.model.count
 
                 onSeeAllButtonClicked: function (reason) {
