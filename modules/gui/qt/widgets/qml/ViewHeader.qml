@@ -54,7 +54,7 @@ T.Pane {
 
     // Settings
 
-    width: view.width
+    width: view?.width ?? implicitWidth
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
                             implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
