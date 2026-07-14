@@ -37,6 +37,9 @@ Widgets.ExpandGridView {
     required property int basePictureWidth
     required property int basePictureHeight
 
+    property real horizontalSpacing: gridHelper.horizontalSpacing
+    property real verticalSpacing: VLCStyle.column_spacing
+
     // Aliases
 
     property alias titleTopMargin: gridHelper.titleTopMargin
@@ -49,13 +52,12 @@ Widgets.ExpandGridView {
 
     // Settings
 
-    nbItemPerRow: gridHelper.nbItemPerRow
-
     // responsive cell sizing based on available area
-    cellWidth: gridHelper.cellWidth
-    cellHeight: gridHelper.cellHeight
+    cellWidth: gridHelper.cellWidth + (horizontalSpacing * 2)
+    cellHeight: gridHelper.cellHeight + (verticalSpacing * 2)
 
-    horizontalSpacing: gridHelper.horizontalSpacing
+    contentLeftMargin: horizontalSpacing + leftPadding
+    contentRightMargin: horizontalSpacing + rightPadding
 
     // Children
 
@@ -65,7 +67,7 @@ Widgets.ExpandGridView {
         basePictureWidth: root.basePictureWidth
         basePictureHeight: root.basePictureHeight
 
-        availableWidth: root._availableContentWidth
+        availableWidth: root.contentWidth
 
         maxNbItemPerRow: basePictureWidth === basePictureHeight ? 10 : 6
     }

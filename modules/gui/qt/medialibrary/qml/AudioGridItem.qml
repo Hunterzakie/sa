@@ -24,8 +24,7 @@ import VLC.Style
 import VLC.Util
 
 Widgets.GridItem {
-    property var model: ({})
-    property int index: -1
+    required property var model
 
     image: model.cover || ""
     fallbackImage: VLCStyle.noArtAlbumCover

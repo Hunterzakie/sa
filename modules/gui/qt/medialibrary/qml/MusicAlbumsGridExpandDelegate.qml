@@ -40,7 +40,7 @@ T.Pane {
     property var model
 
     property int index
-    property Item view // can not use `ItemView` because of `ExpandGridView`
+    property ItemView view
 
     property var headerFocusScope
     property var enqueueActionBtn
@@ -56,10 +56,6 @@ T.Pane {
     bottomPadding: VLCStyle.margin_xxsmall
 
     signal retract()
-    
-    // components should shrink with change of height, but it doesn't happen fast enough
-    // causing expand and shrink animation bit laggy, so clip the delegate to fix it
-    clip: true
 
     function setCurrentItemFocus(reason) {
         root.playActionBtn.forceActiveFocus(reason);

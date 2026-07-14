@@ -58,8 +58,8 @@ Widgets.PageExt {
         model: sourcesModel
 
         delegate: Widgets.GridItem {
-            property var model: ({})
-            property int index: -1
+            required property var model
+
             readonly property bool is_dummy: model.type === NetworkSourcesModel.TYPE_DUMMY
             readonly property bool is_podcast: !is_dummy && model.name && model.name.startsWith("podcast")
 

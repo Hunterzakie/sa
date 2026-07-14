@@ -134,7 +134,7 @@ MainViewLoader {
             selectionModel: root.selectionModel
             model: genreModel
 
-            headerDelegate: root.header
+            header: root.header
 
             displayMarginBeginning: root.displayMarginBeginning
             displayMarginEnd: root.displayMarginEnd
@@ -142,8 +142,7 @@ MainViewLoader {
             delegate: Widgets.GridItem {
                 id: genreGridDelegate
 
-                property var model: ({})
-                property int index: -1
+                required property var model
 
                 width: gridView_id.cellWidth
                 height: gridView_id.cellHeight

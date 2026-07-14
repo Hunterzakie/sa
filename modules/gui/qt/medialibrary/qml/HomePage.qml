@@ -271,6 +271,11 @@ Widgets.PageExt {
                 view: favoritesRow.currentItem
                 seeAllButton.visible: favoritesRow.model.maximumCount > favoritesRow.model.count
 
+                // FIXME: The delegate of upper sub-view provide the padding instead:
+                topPadding: VLCStyle.layoutTitle_top_padding +
+                            ((continueWatchingRow.visible && ((continueWatchingRow.currentItem instanceof Widgets.GridViewExt)) ? (-continueWatchingRow.currentItem.verticalSpacing / 2)
+                                                                                                                                : 0.0))
+
                 onSeeAllButtonClicked: function (reason) {
                     root.seeAllButtonClicked("favorites", reason)
                 }
@@ -346,6 +351,11 @@ Widgets.PageExt {
                 visible: newVideoRow.visible
                 view: newVideoRow.currentItem
                 seeAllButton.visible: newVideoRow.model.maximumCount > newVideoRow.model.count
+
+                // FIXME: The delegate of upper sub-view provide the padding instead:
+                topPadding: VLCStyle.layoutTitle_top_padding +
+                            ((favoritesRow.visible && ((favoritesRow.currentItem instanceof Widgets.GridViewExt)) ? (-favoritesRow.currentItem.verticalSpacing / 2)
+                                                                                                                  : 0.0))
 
                 onSeeAllButtonClicked: function (reason) {
                     root.seeAllButtonClicked("newVideo", reason)

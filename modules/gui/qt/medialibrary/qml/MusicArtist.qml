@@ -625,22 +625,7 @@ FocusScope {
             }
 
             expandDelegate: MusicAlbumsGridExpandDelegate {
-                id: expandDelegateId
 
-                x: 0
-                width: gridView_id.width
-                onRetract: gridView_id.retract()
-                Navigation.parentItem: root
-
-                Navigation.cancelAction: function() {
-                    gridView_id.setCurrentItemFocus(Qt.TabFocusReason);
-                }
-
-                Navigation.upAction: function() {
-                    gridView_id.setCurrentItemFocus(Qt.TabFocusReason);
-                }
-
-                Navigation.downAction: function() {}
             }
 
             onActionAtIndex: (index) => {

@@ -37,14 +37,10 @@ T.Pane {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
                              implicitContentHeight + topPadding + bottomPadding)
 
-    property var model : ({})
-    property int index: -1
-    property Item view // can not use `ItemView` because of `ExpandGridView`
+    property var model
+
     property bool _showMoreInfo: false
     signal retract()
-
-    // otherwise produces artefacts on retract animation
-    clip: true
 
     focus: true
 

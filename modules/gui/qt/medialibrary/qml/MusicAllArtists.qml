@@ -115,7 +115,7 @@ MainViewLoader {
             displayMarginBeginning: root.displayMarginBeginning
             displayMarginEnd: root.displayMarginEnd
 
-            headerDelegate: root.header
+            header: root.header
             Navigation.parentItem: root
 
             onActionAtIndex: (index) => {

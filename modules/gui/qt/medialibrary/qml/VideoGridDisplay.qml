@@ -87,9 +87,6 @@ Widgets.ExpandGridItemView {
 
         // Properties
 
-        required property var model
-        required property int index
-
         // Settings
 
         width: gridView.cellWidth
@@ -135,17 +132,7 @@ Widgets.ExpandGridItemView {
     }
 
     expandDelegate: VideoInfoExpandPanel {
-        x: 0
 
-        width: gridView.width
-
-        Navigation.parentItem: gridView
-
-        Navigation.cancelAction: gridView.forceFocus
-        Navigation.upAction: gridView.forceFocus
-        Navigation.downAction: gridView.forceFocus
-
-        onRetract: gridView.retract()
     }
 
     function forceFocus() {

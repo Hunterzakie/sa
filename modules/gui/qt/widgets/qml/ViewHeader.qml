@@ -24,6 +24,7 @@ import QtQuick.Templates as T
 
 
 import VLC.MainInterface
+import VLC.Widgets as Widgets
 import VLC.Style
 import VLC.Util
 
@@ -33,10 +34,12 @@ T.Pane {
     // Properties
     required property Item view
 
+    readonly property GridView gridView: GridView.view ?? ((view instanceof GridView) ? view : null)
+
     leftPadding: view?.contentLeftMargin ?? 0
     rightPadding: view?.contentRightMargin ?? 0
 
-    bottomPadding: VLCStyle.layoutTitle_bottom_padding
+    bottomPadding: VLCStyle.layoutTitle_bottom_padding + ((gridView instanceof Widgets.GridViewExt) ? (-gridView.verticalSpacing / 2) : 0)
     topPadding: VLCStyle.layoutTitle_top_padding
 
     // Aliases

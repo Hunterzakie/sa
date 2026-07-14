@@ -27,8 +27,7 @@ import VLC.Util
 Widgets.GridItem {
     id: root
 
-    property var model: ({})
-    property int index: -1
+    required property var model
 
     pictureWidth: VLCStyle.gridCover_network_width
     pictureHeight: VLCStyle.gridCover_network_height

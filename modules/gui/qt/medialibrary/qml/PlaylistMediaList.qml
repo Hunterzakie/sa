@@ -295,7 +295,7 @@ MainViewLoader {
 
             selectionModel: root.selectionModel
 
-            headerDelegate: root.header
+            header: root.header
 
             displayMarginBeginning: root.displayMarginBeginning
             displayMarginEnd: root.displayMarginEnd
@@ -305,10 +305,6 @@ MainViewLoader {
             delegate: VideoGridItem {
                 //---------------------------------------------------------------------------------
                 // Properties
-
-                property var model: ({})
-
-                property int index: -1
 
                 //---------------------------------------------------------------------------------
                 // Settings

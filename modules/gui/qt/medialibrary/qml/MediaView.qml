@@ -147,7 +147,6 @@ MainViewLoader {
             delegate: Widgets.GridItem {
                 id: gridDelegate
 
-                required property int index
                 required property var model
 
                 // TODO: Investigate if it makes sense to use `sourceClipRect`

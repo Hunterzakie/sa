@@ -24,6 +24,7 @@ import VLC.MainInterface
 import VLC.Style
 import VLC.Menus
 import VLC.Util
+import VLC.Widgets as Widgets
 
 T.Page {
     id: root
@@ -115,6 +116,9 @@ T.Page {
 
         leftPadding: VLCStyle.dynamicAppMargins(width) + VLCStyle.layout_left_margin + root.leftPadding
         rightPadding: VLCStyle.dynamicAppMargins(width) + VLCStyle.layout_right_margin + root.rightPadding
+
+        // FIXME: `GridView` does not support spacing:
+        bottomPadding: VLCStyle.layoutTitle_bottom_padding + ((root._firstChild instanceof Widgets.GridViewExt) ? (-root._firstChild.verticalSpacing / 2) : 0.0)
 
         sortMenu: root.sortMenu
 
