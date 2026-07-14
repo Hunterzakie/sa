@@ -202,7 +202,7 @@ Widgets.PageExt {
             Navigation.upItem: root.header
 
             HomeDeviceTitle {
-                view: foldersSection
+                view: foldersSection._currentView
 
                 text: qsTr("Folders")
 
@@ -229,7 +229,7 @@ Widgets.PageExt {
             }
 
             HomeDeviceTitle {
-                view: computerSection
+                view: computerSection._currentView
 
                 text: qsTr("Computer")
 
@@ -258,7 +258,7 @@ Widgets.PageExt {
             }
 
             HomeDeviceTitle {
-                view: deviceSection
+                view: deviceSection._currentView
 
                 text: qsTr("Devices")
 
@@ -287,7 +287,7 @@ Widgets.PageExt {
             }
 
             HomeDeviceTitle {
-                view: lanSection
+                view: lanSection._currentView
 
                 text: qsTr("Network")
 
