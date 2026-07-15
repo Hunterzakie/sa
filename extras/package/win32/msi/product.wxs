@@ -43,6 +43,9 @@
             <![CDATA[Installed OR (VersionNT >= 601)]]>
         </Condition>
 
+        <!-- agree with the license by default as we can't remove the checkbox easily -->
+        <Property Id="LicenseAccepted">1</Property>
+
         <MajorUpgrade Schedule="afterInstallInitialize" DowngradeErrorMessage="A later version of [ProductName] is already installed. Setup will now exit."/>
         <Property Id="NSISLOCATION">
             <RegistrySearch Id="NSISLOCATION" Type="raw" Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\Uninstall\VLC media player" Name="UninstallString" />
