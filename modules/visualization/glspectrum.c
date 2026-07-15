@@ -308,32 +308,15 @@ static block_t *DoWork(filter_t *p_filter, block_t *p_in_buf)
 static void initOpenGLScene(filter_t *p_filter)
 {
     filter_sys_t *p_sys = p_filter->p_sys;
-    struct glspectrum_opengl_vtable *vt = &p_sys->vt;
+    const opengl_vtable_t *vt = &p_sys->vt;
 
+    vt->ClearColor(0.f, 0.f, 0.f, 0.f);
     vt->Enable(GL_CULL_FACE);
     vt->Enable(GL_DEPTH_TEST);
     vt->DepthMask(GL_TRUE);
-
-    vt->MatrixMode(GL_PROJECTION);
-    vt->Frustum(-1.0f, 1.0f, -1.0f, 1.0f, 0.5f, 10.0f);
-
-    vt->MatrixMode(GL_MODELVIEW);
-    vt->Translatef(0.0, -2.0, -2.0);
-
-    // Init the light.
-    vt->Enable(GL_LIGHTING);
-
-    vt->ColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
-    vt->Enable(GL_COLOR_MATERIAL);
-
-    vt->Enable(GL_LIGHT0);
-    vt->Lightfv(GL_LIGHT0, GL_DIFFUSE, lightZeroColor);
-    vt->Lightfv(GL_LIGHT0, GL_POSITION, lightZeroPosition);
-
-    vt->ShadeModel(GL_SMOOTH);
-
     vt->Enable(GL_BLEND);
     vt->BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    vt->UseProgram(p_sys->program);
 }
 
 
@@ -644,114 +627,51 @@ static int InitOpenGLResources(filter_t *p_filter)
 
 
 /**
- * Draw one bar of the Spectrum.
- */
-static void drawBar(filter_t *p_filter)
-{
-    filter_sys_t *p_sys = p_filter->p_sys;
-    struct glspectrum_opengl_vtable *vt = &p_sys->vt;
-
-    const float w = SPECTRUM_WIDTH / NB_BANDS - 0.05f;
-
-    const GLfloat vertexCoords[] = {
-        0.f, 0.f, 0.f,     w, 0.f, 0.f,   0.f, 1.f, 0.f,
-        0.f, 1.f, 0.f,     w, 0.f, 0.f,     w, 1.f, 0.f,
-
-        0.f, 0.f, -w,    0.f, 0.f, 0.f,   0.f, 1.f,  -w,
-        0.f, 1.f, -w,    0.f, 0.f, 0.f,   0.f, 1.f, 0.f,
-
-          w, 0.f, 0.f,     w, 0.f,  -w,     w, 1.f, 0.f,
-          w, 1.f, 0.f,     w, 0.f,  -w,     w, 1.f,  -w,
-
-          w, 0.f,  -w,   0.f, 0.f,  -w,   0.f, 1.f,  -w,
-        0.f, 1.f,  -w,     w, 1.f,  -w,     w, 0.f,  -w,
-
-        0.f, 1.f, 0.f,     w, 1.f, 0.f,     w, 1.f,  -w,
-        0.f, 1.f, 0.f,     w, 1.f,  -w,   0.f, 1.f,  -w,
-    };
-
-    const GLfloat normals[] = {
-        0.f, 0.f, 1.f,   0.f, 0.f, 1.f,   0.f, 0.f, 1.f,
-        0.f, 0.f, 1.f,   0.f, 0.f, 1.f,   0.f, 0.f, 1.f,
-
-        -1.f, 0.f, 0.f,   -1.f, 0.f, 0.f,   -1.f, 0.f, 0.f,
-        -1.f, 0.f, 0.f,   -1.f, 0.f, 0.f,   -1.f, 0.f, 0.f,
-
-        1.f, 0.f, 0.f,   1.f, 0.f, 0.f,   1.f, 0.f, 0.f,
-        1.f, 0.f, 0.f,   1.f, 0.f, 0.f,   1.f, 0.f, 0.f,
-
-        0.f, 0.f, -1.f,   0.f, 0.f, -1.f,   0.f, 0.f, -1.f,
-        0.f, 0.f, -1.f,   0.f, 0.f, -1.f,   0.f, 0.f, -1.f,
-
-        0.f, 1.f, 0.f,   0.f, 1.f, 0.f,   0.f, 1.f, 0.f,
-        0.f, 1.f, 0.f,   0.f, 1.f, 0.f,   0.f, 1.f, 0.f,
-    };
-
-    vt->VertexPointer(3, GL_FLOAT, 0, vertexCoords);
-    vt->NormalPointer(GL_FLOAT, 0, normals);
-    vt->DrawArrays(GL_TRIANGLES, 0, 6 * 5);
-}
-
-
-/**
- * Set the color of one bar of the spectrum.
- * @param f_height the height of the bar.
- */
-static void setBarColor(filter_t *p_filter, float f_height)
-{
-    filter_sys_t *p_sys = p_filter->p_sys;
-    struct glspectrum_opengl_vtable *vt = &p_sys->vt;
-
-    float r, b;
-
-#define BAR_MAX_HEIGHT 4.2f
-    r = -1.f + 2 / BAR_MAX_HEIGHT * f_height;
-    b = 2.f - 2 / BAR_MAX_HEIGHT * f_height;
-#undef BAR_MAX_HEIGHT
-
-    /* Test the ranges. */
-    r = r > 1.f ? 1.f : r;
-    b = b > 1.f ? 1.f : b;
-
-    r = r < 0.f ? 0.f : r;
-    b = b < 0.f ? 0.f : b;
-
-    /* Set the bar color. */
-    vt->Color4f(r, 0.f, b, 1.f);
-}
-
-
-/**
  * Draw all the bars of the spectrum.
  * @param heights the heights of all the bars.
  */
-static void drawBars(filter_t *p_filter, float heights[])
+static void drawBars(filter_t *p_filter, const float heights[static NB_BANDS])
 {
     filter_sys_t *p_sys = p_filter->p_sys;
-    struct glspectrum_opengl_vtable *vt = &p_sys->vt;
+    const opengl_vtable_t *vt = &p_sys->vt;
 
-    vt->PushMatrix();
-    vt->Translatef(-2.f, 0.f, 0.f);
+    float projection[16];
+    float view[16];
+    float model[16];
+    float mvp[16];
 
-    vt->EnableClientState(GL_VERTEX_ARRAY);
-    vt->EnableClientState(GL_NORMAL_ARRAY);
+    Matrix4Frustum(projection, -1.f, 1.f, -1.f, 1.f, 0.5f, 10.f);
 
-    float w = SPECTRUM_WIDTH / NB_BANDS;
+    Matrix4Identity(view);
+    Matrix4Translate(view, 0.f, -2.f, -2.f);
+    Matrix4RotateY(view, p_sys->f_rotationAngle);
+
+    vt->BindVertexArray(p_sys->vao);
+
+    const float w = SPECTRUM_WIDTH / NB_BANDS;
     for (unsigned i = 0; i < NB_BANDS; ++i)
     {
-        vt->PushMatrix();
-        vt->Scalef(1.f, heights[i], 1.f);
-        setBarColor(p_filter, heights[i]);
-        drawBar(p_filter);
-        vt->PopMatrix();
+        float bar_model[16];
 
-        vt->Translatef(w, 0.f, 0.f);
+        Matrix4Identity(bar_model);
+        Matrix4Translate(bar_model, -2.f + i * w, 0.f, 0.f);
+        Matrix4Scale(bar_model, 1.f, heights[i], 1.f);
+
+        Matrix4Multiply(model, view, bar_model);
+
+        Matrix4Multiply(mvp, projection, model);
+
+        float color[4];
+        getBarColor(heights[i], color);
+
+        vt->UniformMatrix4fv(p_sys->uloc.mvp, 1, GL_FALSE, mvp);
+        vt->UniformMatrix4fv(p_sys->uloc.model, 1, GL_FALSE, model);
+        vt->Uniform4fv(p_sys->uloc.color, 1, color);
+
+        vt->DrawArrays(GL_TRIANGLES, 0, BAR_VERTEX_COUNT);
     }
 
-    vt->DisableClientState(GL_VERTEX_ARRAY);
-    vt->DisableClientState(GL_NORMAL_ARRAY);
-
-    vt->PopMatrix();
+    vt->BindVertexArray(0);
 }
 
 
@@ -774,7 +694,7 @@ static void *Thread( void *p_data )
         return NULL;
     }
 
-    struct glspectrum_opengl_vtable *vt = &p_sys->vt;
+    const opengl_vtable_t *vt = &p_sys->vt;
 
     initOpenGLScene(p_filter);
     float height[NB_BANDS] = {0};
@@ -898,11 +818,7 @@ static void *Thread( void *p_data )
 
         /* Render the frame. */
         vt->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        vt->PushMatrix();
-            vt->Rotatef(p_sys->f_rotationAngle, 0, 1, 0);
-            drawBars(p_filter, height);
-        vt->PopMatrix();
+        drawBars(p_filter, height);
 
         /* Wait to swapp the frame on time. */
         vlc_tick_wait(block->i_pts + (block->i_length / 2));
