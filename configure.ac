@@ -337,7 +337,8 @@ int foo() { return my_array[0]; }
        #endif
       ]],[[;]])
     ],[
-      AC_DEFINE([_WIN32_WINNT], [0x0601], [Define to '0x0601' for Windows 7 APIs.])
+      dnl Define to '0x0601' for Windows 7 APIs.
+      AX_APPEND_FLAG([-D_WIN32_WINNT=0x0601], [CPPFLAGS])
     ])
     AC_MSG_CHECKING([if libsynchronization is needed])
     AC_PREPROC_IFELSE([AC_LANG_PROGRAM(
