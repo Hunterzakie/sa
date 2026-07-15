@@ -12,10 +12,16 @@
  * (at your option) any later version.
  *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#include <vlc_common.h>
 #include <vlc_cpu.h>
 #include <checkasm/checkasm.h>
-
-const char vlc_module_name[] = "vlc-checkasm";
+#include <vlc/vlc.h>
+#include <assert.h>
+void checkasm_check_merge(void);
 
 static void set_cpu_flags(CheckasmCpu new_flags)
 {
@@ -25,6 +31,15 @@ static void set_cpu_flags(CheckasmCpu new_flags)
 
 int main(int argc, const char *argv[])
 {
+    
+    
+#ifdef TOP_BUILDDIR
+    setenv("VLC_PLUGIN_PATH", TOP_BUILDDIR "/modules", 1);
+#endif
+    
+    libvlc_instance_t *vlc = libvlc_new(0, NULL);
+    assert(vlc != NULL);
+    
 CheckasmCpuInfo cpu_flags[] = {
 # if defined(__i386__) || defined(__x86_64__)
         {.flag = VLC_CPU_SSE2, .name = "SSE2", .suffix = "sse2"},
@@ -49,6 +64,7 @@ CheckasmCpuInfo cpu_flags[] = {
 {.flag = 0, .name = NULL}, // Sentinel
 };
     CheckasmTest tests[] = {
+        {"merge", checkasm_check_merge },
         {0}, // Sentinel
     };
     CheckasmConfig config = {
@@ -57,5 +73,8 @@ CheckasmCpuInfo cpu_flags[] = {
         .cpu = vlc_CPU(),
         .set_cpu_flags = set_cpu_flags,
     };
-    return checkasm_main(&config, argc, argv);
+    
+    int ret = checkasm_main(&config, argc, argv);
+    libvlc_release(vlc);
+    return ret;
 }

@@ -667,9 +667,23 @@ libtest_checkasm_la_SOURCES += checkasm/ext/src/x86/checkasm.asm
 
 endif
 
+noinst_LTLIBRARIES += libdeinterlace_merge_generic.la
+libdeinterlace_merge_generic_la_SOURCES= ../modules/video_filter/deinterlace/merge.c
+libdeinterlace_merge_generic_la_CPPFLAGS= $(AM_CPPFLAGS) -I$(top_srcdir)/include
+
 EXTRA_PROGRAMS += vlc-checkasm
 noinst_PROGRAMS += vlc-checkasm
-vlc_checkasm_SOURCES = checkasm/checkasm.c
+vlc_checkasm_SOURCES = checkasm/checkasm.c checkasm/merge.c
 vlc_checkasm_CPPFLAGS = $(AM_CPPFLAGS) -I$(srcdir)/checkasm/ext/include -I$(top_srcdir)/include
-vlc_checkasm_LDADD = libtest_checkasm.la -lm $(LIBVLCCORE)
+vlc_checkasm_LDADD = libtest_checkasm.la libdeinterlace_merge_generic.la -lm $(LIBVLCCORE) $(LIBVLC) ../compat/libcompat.la
+
+if !HAVE_DYNAMIC_PLUGINS
+vlc_checkasm_CPPFLAGS += -DHAVE_STATIC_MODULES
+vlc_checkasm_LDADD += ../modules/libdeinterlace_plugin.la
+
+if HAVE_SSE2
+vlc_checkasm_LDADD += ../modules/libdeinterlace_x86_plugin.la
+endif
+endif
+
 endif
