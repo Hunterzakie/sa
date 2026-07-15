@@ -41,6 +41,7 @@
 #include "visual/window.h"
 
 #include "../video_output/opengl/gl_common.h"
+#include "../video_output/opengl/gl_util.h"
 
 
 /*****************************************************************************
@@ -70,57 +71,49 @@ vlc_module_begin()
     set_callback(Open)
 vlc_module_end()
 
-/* Legacy glBegin()/glEnd() API */
-typedef void (APIENTRY *PFNGLMATRIXMODEPROC)(GLenum);
-typedef void (APIENTRY *PFNGLPUSHMATRIXPROC)(void);
-typedef void (APIENTRY *PFNGLPOPMATRIXPROC)(void);
-typedef void (APIENTRY *PFNGLFRUSTUMPROC)(GLdouble, GLdouble, GLdouble, GLdouble, GLdouble, GLdouble);
-typedef void (APIENTRY *PFNGLTRANSLATEFPROC)(float, float, float);
-typedef void (APIENTRY *PFNGLSCALEFPROC)(float, float, float);
-typedef void (APIENTRY *PFNGLROTATEFPROC)(float, float, float, float);
-typedef void (APIENTRY *PFNGLCOLORMATERIALPROC)(GLenum, GLenum);
-typedef void (APIENTRY *PFNGLCOLOR4FPROC)(float, float, float, float);
-typedef void (APIENTRY *PFNGLLIGHTFVPROC)(GLenum, GLenum, const float*);
-typedef void (APIENTRY *PFNGLSHADEMODELPROC)(GLenum);
-
-typedef void (APIENTRY *PFNGLVERTEXPOINTERPROC)(GLint, GLenum, GLsizei, const void *);
-typedef void (APIENTRY *PFNGLNORMALPOINTERPROC)(GLenum, GLsizei, const void *);
-typedef void (APIENTRY *PFNGLENABLECLIENTSTATEPROC)(GLenum);
-typedef void (APIENTRY *PFNGLDISABLECLIENTSTATEPROC)(GLenum);
-
 #define OPENGL_VTABLE_F(F) \
-    /* Usual functions */ \
-    F(PFNGLENABLEPROC              , Enable) \
-    F(PFNGLCLEARPROC               , Clear) \
-    F(PFNGLDRAWARRAYSPROC          , DrawArrays) \
-    F(PFNGLDEPTHMASKPROC           , DepthMask) \
-    F(PFNGLBLENDFUNCPROC           , BlendFunc) \
-    F(PFNGLVIEWPORTPROC            , Viewport) \
-    /* Legacy fixed pipeline functions */ \
-    F(PFNGLMATRIXMODEPROC          , MatrixMode ) \
-    F(PFNGLPUSHMATRIXPROC          , PushMatrix) \
-    F(PFNGLPOPMATRIXPROC           , PopMatrix) \
-    F(PFNGLFRUSTUMPROC             , Frustum) \
-    F(PFNGLTRANSLATEFPROC          , Translatef) \
-    F(PFNGLSCALEFPROC              , Scalef) \
-    F(PFNGLROTATEFPROC             , Rotatef) \
-    F(PFNGLCOLORMATERIALPROC       , ColorMaterial) \
-    F(PFNGLCOLOR4FPROC             , Color4f) \
-    F(PFNGLLIGHTFVPROC             , Lightfv) \
-    F(PFNGLSHADEMODELPROC          , ShadeModel) \
-    F(PFNGLVERTEXPOINTERPROC       , VertexPointer) \
-    F(PFNGLNORMALPOINTERPROC       , NormalPointer) \
-    F(PFNGLENABLECLIENTSTATEPROC   , EnableClientState) \
-    F(PFNGLDISABLECLIENTSTATEPROC  , DisableClientState)
-
-
-struct glspectrum_opengl_vtable
-{
-#define DECLARE_VTABLE(type, symbol) \
-    type symbol;
-OPENGL_VTABLE_F(DECLARE_VTABLE)
-};
-
+    /* Rendering state */ \
+    F(PFNGLENABLEPROC,                Enable) \
+    F(PFNGLCLEARPROC,                 Clear) \
+    F(PFNGLCLEARCOLORPROC,            ClearColor) \
+    F(PFNGLDRAWARRAYSPROC,            DrawArrays) \
+    F(PFNGLDEPTHMASKPROC,             DepthMask) \
+    F(PFNGLBLENDFUNCPROC,             BlendFunc) \
+    F(PFNGLVIEWPORTPROC,              Viewport) \
+    F(PFNGLGETSTRINGPROC,             GetString) \
+    /* Shader commands */ \
+    F(PFNGLCREATESHADERPROC,          CreateShader) \
+    F(PFNGLSHADERSOURCEPROC,          ShaderSource) \
+    F(PFNGLCOMPILESHADERPROC,         CompileShader) \
+    F(PFNGLDELETESHADERPROC,          DeleteShader) \
+    F(PFNGLGETSHADERIVPROC,           GetShaderiv) \
+    F(PFNGLGETSHADERINFOLOGPROC,      GetShaderInfoLog) \
+    F(PFNGLGETSHADERSOURCEPROC,       GetShaderSource) \
+    F(PFNGLATTACHSHADERPROC,          AttachShader) \
+    /* Program commands */ \
+    F(PFNGLCREATEPROGRAMPROC,         CreateProgram) \
+    F(PFNGLLINKPROGRAMPROC,           LinkProgram) \
+    F(PFNGLUSEPROGRAMPROC,            UseProgram) \
+    F(PFNGLDELETEPROGRAMPROC,         DeleteProgram) \
+    F(PFNGLGETPROGRAMIVPROC,          GetProgramiv) \
+    F(PFNGLGETPROGRAMINFOLOGPROC,     GetProgramInfoLog) \
+    F(PFNGLGETATTACHEDSHADERPROC,     GetAttachedShaders) \
+    /* Uniform and attribute commands */ \
+    F(PFNGLGETUNIFORMLOCATIONPROC,      GetUniformLocation) \
+    F(PFNGLGETATTRIBLOCATIONPROC,       GetAttribLocation) \
+    F(PFNGLUNIFORMMATRIX4FVPROC,        UniformMatrix4fv) \
+    F(PFNGLUNIFORM4FVPROC,              Uniform4fv) \
+    F(PFNGLVERTEXATTRIBPOINTERPROC,     VertexAttribPointer) \
+    F(PFNGLENABLEVERTEXATTRIBARRAYPROC, EnableVertexAttribArray) \
+    /* Buffer commands */ \
+    F(PFNGLGENBUFFERSPROC,            GenBuffers) \
+    F(PFNGLDELETEBUFFERSPROC,         DeleteBuffers) \
+    F(PFNGLBINDBUFFERPROC,            BindBuffer) \
+    F(PFNGLBUFFERDATAPROC,            BufferData) \
+    /* Vertex array commands */ \
+    F(PFNGLGENVERTEXARRAYSPROC,       GenVertexArrays) \
+    F(PFNGLDELETEVERTEXARRAYSPROC,    DeleteVertexArrays) \
+    F(PFNGLBINDVERTEXARRAYPROC,       BindVertexArray)
 
 /*****************************************************************************
  * Local prototypes
@@ -138,7 +131,21 @@ typedef struct
 
     /* Opengl */
     vlc_gl_t *gl;
-    struct glspectrum_opengl_vtable vt;
+    opengl_vtable_t vt;
+
+    GLuint program;
+    GLuint vao;
+    GLuint vbo;
+
+    struct {
+        GLint mvp;
+        GLint model;
+        GLint color;
+    } uloc;
+    struct {
+        GLint position;
+        GLint normal;
+    } aloc;
 
     float f_rotationAngle;
     float f_rotationIncrement;
@@ -156,13 +163,15 @@ static void *Thread(void *);
 #define ROTATION_INCREMENT .1f
 #define BAR_DECREMENT .075f
 #define ROTATION_MAX 20
-
-const GLfloat lightZeroColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
-const GLfloat lightZeroPosition[] = {0.0f, 3.0f, 10.0f, 0.0f};
+#define BAR_VERTEX_COUNT (6 * 5)
 
 static const struct vlc_filter_operations filter_ops = {
     .filter_audio = DoWork, .close = Close,
 };
+
+static int InitOpenGLResources(filter_t *p_filter);
+static void DestroyOpenGLResources(filter_t *p_filter);
+
 
 /**
  * Open the module.
@@ -214,17 +223,31 @@ static int Open(vlc_object_t * p_this)
 #define LOAD_SYMBOL(type, name) do { \
     p_sys->vt.name = vlc_gl_GetProcAddress(p_sys->gl, "gl" #name); \
     if (p_sys->vt.name == NULL) { \
+        msg_Err(p_filter, "Can't load OpenGL symbol gl" #name); \
         vlc_gl_ReleaseCurrent(p_sys->gl); \
         goto error; \
     } \
 } while(0);
 
     OPENGL_VTABLE_F(LOAD_SYMBOL);
+#undef LOAD_SYMBOL
+
+    if (InitOpenGLResources(p_filter) != VLC_SUCCESS)
+    {
+        msg_Err(p_filter, "Can't initialize OpenGL resources");
+        vlc_gl_ReleaseCurrent(p_sys->gl);
+        goto error;
+    }
 
     vlc_gl_ReleaseCurrent(p_sys->gl);
 
     /* Create the thread */
     if (vlc_clone(&p_sys->thread, Thread, p_filter)) {
+        if (vlc_gl_MakeCurrent(p_sys->gl) == VLC_SUCCESS)
+        {
+            DestroyOpenGLResources(p_filter);
+            vlc_gl_ReleaseCurrent(p_sys->gl);
+        }
         vlc_gl_surface_Destroy(p_sys->gl);
         return VLC_ENOMEM;
     }
@@ -252,6 +275,12 @@ static void Close(filter_t *p_filter)
     /* Terminate the thread. */
     vlc_queue_Kill(&p_sys->queue, &p_sys->dead);
     vlc_join(p_sys->thread, NULL);
+
+    if (vlc_gl_MakeCurrent(p_sys->gl) == VLC_SUCCESS)
+    {
+        DestroyOpenGLResources(p_filter);
+        vlc_gl_ReleaseCurrent(p_sys->gl);
+    }
 
     /* Free the resources */
     vlc_gl_surface_Destroy(p_sys->gl);
@@ -305,6 +334,312 @@ static void initOpenGLScene(filter_t *p_filter)
 
     vt->Enable(GL_BLEND);
     vt->BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+
+static void Matrix4Identity(float m[static 16])
+{
+    memcpy(m, MATRIX4_IDENTITY, sizeof(MATRIX4_IDENTITY));
+}
+
+static void Matrix4Multiply(float out[static 16],
+                            const float a[static 16],
+                            const float b[static 16])
+{
+    float tmp[16];
+
+    for (int col = 0; col < 4; ++col)
+        for (int row = 0; row < 4; ++row)
+        {
+            tmp[col * 4 + row] = 0.f;
+            for (int k = 0; k < 4; ++k)
+                tmp[col * 4 + row] += a[k * 4 + row] * b[col * 4 + k];
+        }
+
+    memcpy(out, tmp, sizeof(tmp));
+}
+
+static void Matrix4Frustum(float m[static 16],
+                           float left, float right,
+                           float bottom, float top,
+                           float nearVal, float farVal)
+{
+    const float rl = right - left;
+    const float tb = top - bottom;
+    const float fn = farVal - nearVal;
+
+    const float m_values[16] = {
+        2.f * nearVal / rl, 0.f, 0.f, 0.f,
+        0.f, 2.f * nearVal / tb, 0.f, 0.f,
+        (right + left) / rl, (top + bottom) / tb, -(farVal + nearVal) / fn, -1.f,
+        0.f, 0.f, -2.f * farVal * nearVal / fn, 0.f,
+    };
+
+    memcpy(m, m_values, sizeof(m_values));
+}
+
+static void Matrix4Translate(float m[static 16], float x, float y, float z)
+{
+    float t[16];
+    Matrix4Identity(t);
+    t[12] = x;
+    t[13] = y;
+    t[14] = z;
+    Matrix4Multiply(m, m, t);
+}
+
+static void Matrix4Scale(float m[static 16], float x, float y, float z)
+{
+    float s[16];
+    Matrix4Identity(s);
+    s[0] = x;
+    s[5] = y;
+    s[10] = z;
+    Matrix4Multiply(m, m, s);
+}
+
+static void Matrix4RotateY(float m[static 16], float angle_deg)
+{
+    const float rad = angle_deg * (float)M_PI / 180.f;
+    const float c = cosf(rad);
+    const float s = sinf(rad);
+    float r[16];
+
+    Matrix4Identity(r);
+    r[0] = c;
+    r[2] = s;
+    r[8] = -s;
+    r[10] = c;
+    Matrix4Multiply(m, m, r);
+}
+
+static void getBarColor(float f_height, float color[static 4])
+{
+    float r, b;
+
+#define BAR_MAX_HEIGHT 4.2f
+    r = -1.f + 2 / BAR_MAX_HEIGHT * f_height;
+    b = 2.f - 2 / BAR_MAX_HEIGHT * f_height;
+#undef BAR_MAX_HEIGHT
+
+    r = VLC_CLIP(r, 0.f, 1.f);
+    b = VLC_CLIP(b, 0.f, 1.f);
+
+    color[0] = r;
+    color[1] = 0.f;
+    color[2] = b;
+    color[3] = 1.f;
+}
+
+static int InitShaderProgram(filter_t *p_filter)
+{
+    filter_sys_t *p_sys = p_filter->p_sys;
+    const opengl_vtable_t *vt = &p_sys->vt;
+    char *glsl_version = NULL;
+
+    static const char *const VERTEX_SHADER_SRC =
+        "#ifdef GL_ES\n"
+        "precision mediump float;\n"
+        "#endif\n"
+        "#if __VERSION__ < 300\n"
+        "attribute vec3 a_position;\n"
+        "attribute vec3 a_normal;\n"
+        "varying vec3 v_normal;\n"
+        "varying vec4 v_color;\n"
+        "#else\n"
+        "in vec3 a_position;\n"
+        "in vec3 a_normal;\n"
+        "out vec3 v_normal;\n"
+        "out vec4 v_color;\n"
+        "#endif\n"
+        "uniform mat4 u_mvp;\n"
+        "uniform mat4 u_model;\n"
+        "uniform vec4 u_color;\n"
+        "void main() {\n"
+        "  gl_Position = u_mvp * vec4(a_position, 1.0);\n"
+        "  v_normal = mat3(u_model) * a_normal;\n"
+        "  v_color = u_color;\n"
+        "}\n";
+
+    static const char *const FRAGMENT_SHADER_SRC =
+        "#ifdef GL_ES\n"
+        "precision mediump float;\n"
+        "#endif\n"
+        "#if __VERSION__ < 300\n"
+        "#define FragColor gl_FragColor\n"
+        "varying vec3 v_normal;\n"
+        "varying vec4 v_color;\n"
+        "#else\n"
+        "out vec4 FragColor;\n"
+        "in vec3 v_normal;\n"
+        "in vec4 v_color;\n"
+        "#endif\n"
+        "void main() {\n"
+        "  vec3 normal = normalize(v_normal);\n"
+        "  vec3 light_dir = normalize(vec3(0.0, 3.0, 10.0));\n"
+        "  float diffuse = max(dot(normal, light_dir), 0.0);\n"
+        "  vec3 rgb = v_color.rgb * (0.2 + 0.8 * diffuse);\n"
+        "  FragColor = vec4(rgb, v_color.a);\n"
+        "}\n";
+
+    if (p_sys->gl->api_type == VLC_OPENGL_ES2)
+        glsl_version = strdup("#version 100\n");
+    else
+    {
+        int glsl = 120;
+        const GLubyte *str = vt->GetString(GL_SHADING_LANGUAGE_VERSION);
+        if (str != NULL)
+        {
+            int major, minor;
+            if (sscanf((const char *)str, "%d.%d", &major, &minor) == 2)
+                glsl = major * 100 + minor;
+        }
+        int target_version = __MIN(glsl, 410);
+        if (asprintf(&glsl_version, "#version %d\n", target_version) <= 0)
+            return VLC_ENOMEM;
+    }
+    if (glsl_version == NULL)
+        return VLC_ENOMEM;
+
+    const char *vertex_shader[] = { glsl_version, VERTEX_SHADER_SRC };
+    const char *fragment_shader[] = { glsl_version, FRAGMENT_SHADER_SRC };
+
+    p_sys->program = vlc_gl_BuildProgram(VLC_OBJECT(p_filter), vt,
+                                         2, vertex_shader,
+                                         2, fragment_shader);
+    free(glsl_version);
+
+    if (!p_sys->program)
+        return VLC_EGENERIC;
+
+#define GET_LOC(type, x, str) do { \
+    x = vt->Get##type##Location(p_sys->program, str); \
+    if (x == -1) { \
+        msg_Err(p_filter, "Unable to Get"#type"Location(%s)", str); \
+        return VLC_EGENERIC; \
+    } \
+} while (0)
+#define GET_ULOC(x, str) GET_LOC(Uniform, x, str)
+#define GET_ALOC(x, str) GET_LOC(Attrib, x, str)
+
+    GET_ULOC(p_sys->uloc.mvp, "u_mvp");
+    GET_ULOC(p_sys->uloc.model, "u_model");
+    GET_ULOC(p_sys->uloc.color, "u_color");
+    GET_ALOC(p_sys->aloc.position, "a_position");
+    GET_ALOC(p_sys->aloc.normal, "a_normal");
+
+#undef GET_ULOC
+#undef GET_ALOC
+#undef GET_LOC
+
+    return VLC_SUCCESS;
+}
+
+static int InitBarGeometry(filter_t *p_filter)
+{
+    filter_sys_t *p_sys = p_filter->p_sys;
+    const opengl_vtable_t *vt = &p_sys->vt;
+    const float w = SPECTRUM_WIDTH / NB_BANDS - 0.05f;
+
+    const GLfloat vertexCoords[] = {
+        0.f, 0.f, 0.f,     w, 0.f, 0.f,   0.f, 1.f, 0.f,
+        0.f, 1.f, 0.f,     w, 0.f, 0.f,     w, 1.f, 0.f,
+
+        0.f, 0.f, -w,    0.f, 0.f, 0.f,   0.f, 1.f,  -w,
+        0.f, 1.f, -w,    0.f, 0.f, 0.f,   0.f, 1.f, 0.f,
+
+          w, 0.f, 0.f,     w, 0.f,  -w,     w, 1.f, 0.f,
+          w, 1.f, 0.f,     w, 0.f,  -w,     w, 1.f,  -w,
+
+          w, 0.f,  -w,   0.f, 0.f,  -w,   0.f, 1.f,  -w,
+        0.f, 1.f,  -w,     w, 1.f,  -w,     w, 0.f,  -w,
+
+        0.f, 1.f, 0.f,     w, 1.f, 0.f,     w, 1.f,  -w,
+        0.f, 1.f, 0.f,     w, 1.f,  -w,   0.f, 1.f,  -w,
+    };
+
+    const GLfloat normals[] = {
+        0.f, 0.f, 1.f,   0.f, 0.f, 1.f,   0.f, 0.f, 1.f,
+        0.f, 0.f, 1.f,   0.f, 0.f, 1.f,   0.f, 0.f, 1.f,
+
+        -1.f, 0.f, 0.f,   -1.f, 0.f, 0.f,   -1.f, 0.f, 0.f,
+        -1.f, 0.f, 0.f,   -1.f, 0.f, 0.f,   -1.f, 0.f, 0.f,
+
+        1.f, 0.f, 0.f,   1.f, 0.f, 0.f,   1.f, 0.f, 0.f,
+        1.f, 0.f, 0.f,   1.f, 0.f, 0.f,   1.f, 0.f, 0.f,
+
+        0.f, 0.f, -1.f,   0.f, 0.f, -1.f,   0.f, 0.f, -1.f,
+        0.f, 0.f, -1.f,   0.f, 0.f, -1.f,   0.f, 0.f, -1.f,
+
+        0.f, 1.f, 0.f,   0.f, 1.f, 0.f,   0.f, 1.f, 0.f,
+        0.f, 1.f, 0.f,   0.f, 1.f, 0.f,   0.f, 1.f, 0.f,
+    };
+
+    struct bar_vertex {
+        float position[3];
+        float normal[3];
+    } vertices[BAR_VERTEX_COUNT];
+
+    for (unsigned i = 0; i < BAR_VERTEX_COUNT; ++i)
+    {
+        memcpy(vertices[i].position, &vertexCoords[i * 3], sizeof(vertices[i].position));
+        memcpy(vertices[i].normal, &normals[i * 3], sizeof(vertices[i].normal));
+    }
+
+    vt->GenVertexArrays(1, &p_sys->vao);
+    vt->GenBuffers(1, &p_sys->vbo);
+
+    vt->BindVertexArray(p_sys->vao);
+    vt->BindBuffer(GL_ARRAY_BUFFER, p_sys->vbo);
+    vt->BufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    vt->VertexAttribPointer(p_sys->aloc.position, 3, GL_FLOAT, GL_FALSE,
+                            sizeof(struct bar_vertex),
+                            (const void *)offsetof(struct bar_vertex, position));
+    vt->EnableVertexAttribArray(p_sys->aloc.position);
+
+    vt->VertexAttribPointer(p_sys->aloc.normal, 3, GL_FLOAT, GL_FALSE,
+                            sizeof(struct bar_vertex),
+                            (const void *)offsetof(struct bar_vertex, normal));
+    vt->EnableVertexAttribArray(p_sys->aloc.normal);
+
+    vt->BindVertexArray(0);
+    vt->BindBuffer(GL_ARRAY_BUFFER, 0);
+
+    return VLC_SUCCESS;
+}
+
+static void DestroyOpenGLResources(filter_t *p_filter)
+{
+    filter_sys_t *p_sys = p_filter->p_sys;
+    const opengl_vtable_t *vt = &p_sys->vt;
+
+    if (p_sys->vbo)
+        vt->DeleteBuffers(1, &p_sys->vbo);
+    if (p_sys->vao)
+        vt->DeleteVertexArrays(1, &p_sys->vao);
+    if (p_sys->program)
+        vt->DeleteProgram(p_sys->program);
+
+    p_sys->vbo = 0;
+    p_sys->vao = 0;
+    p_sys->program = 0;
+}
+
+static int InitOpenGLResources(filter_t *p_filter)
+{
+    int ret = InitShaderProgram(p_filter);
+    if (ret != VLC_SUCCESS)
+        return ret;
+
+    ret = InitBarGeometry(p_filter);
+    if (ret != VLC_SUCCESS)
+    {
+        DestroyOpenGLResources(p_filter);
+        return ret;
+    }
+
+    return VLC_SUCCESS;
 }
 
 

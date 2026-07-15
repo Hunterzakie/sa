@@ -14,7 +14,8 @@ libglspectrum_plugin_la_SOURCES = \
 	visualization/glspectrum.c \
 	visualization/visual/fft.c visualization/visual/fft.h \
 	visualization/visual/window.c visualization/visual/window.h \
-	visualization/visual/window_presets.h
+	visualization/visual/window_presets.h \
+	video_output/opengl/gl_util.c video_output/opengl/gl_util.h
 libglspectrum_plugin_la_LIBADD = $(GL_LIBS) $(LIBM)
 libglspectrum_plugin_la_CPPFLAGS = $(AM_CPPFLAGS)
 if HAVE_OSX
