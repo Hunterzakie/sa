@@ -55,6 +55,7 @@
 #include "util/textureproviderobserver.hpp"
 #include "util/textureproviderindirection.hpp"
 #include "util/sgmanipulator.hpp"
+#include "util/windowfocusrecoverymanager.hpp"
 
 #include "dialogs/help/aboutmodel.hpp"
 #include "dialogs/dialogs_provider.hpp"
@@ -420,6 +421,7 @@ void MainUI::registerQMLTypes()
         qmlRegisterType<TextureProviderObserver>( uri, versionMajor, versionMinor, "TextureProviderObserver" );
         qmlRegisterType<TextureProviderIndirection>( uri, versionMajor, versionMinor, "TextureProviderIndirection" );
         qmlRegisterType<SGManipulator>( uri, versionMajor, versionMinor, "SGManipulator" );
+        qmlRegisterTypesAndRevisions<WindowFocusRecoveryManager>( uri, versionMajor );
 
         qmlRegisterModule(uri, versionMajor, versionMinor);
         qmlProtectModule(uri, versionMajor);
