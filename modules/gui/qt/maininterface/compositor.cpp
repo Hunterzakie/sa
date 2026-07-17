@@ -467,17 +467,31 @@ bool CompositorVideo::setBlurBehind(QWindow *window, const bool enable)
 
         if (enable)
         {
-            connect(window, &QWindow::widthChanged, this, &CompositorVideo::adjustBlurBehind, Qt::UniqueConnection);
-            connect(window, &QWindow::heightChanged, this, &CompositorVideo::adjustBlurBehind, Qt::UniqueConnection);
-            connect(m_mainCtx, &MainCtx::windowExtendedMarginChanged, this, &CompositorVideo::adjustBlurBehind, Qt::UniqueConnection);
-            connect(m_mainCtx, &MainCtx::useClientSideDecorationChanged, this, &CompositorVideo::adjustBlurBehind, Qt::UniqueConnection);
+            if (Q_LIKELY(window == m_mainCtx->intfMainWindow()))
+            {
+                connect(m_mainCtx, &MainCtx::intfSizeChanged, this, &CompositorVideo::adjustBlurBehind);
+                connect(m_mainCtx, &MainCtx::windowExtendedMarginChanged, this, &CompositorVideo::adjustBlurBehind, Qt::UniqueConnection);
+                connect(m_mainCtx, &MainCtx::useClientSideDecorationChanged, this, &CompositorVideo::adjustBlurBehind, Qt::UniqueConnection);
+            }
+            else
+            {
+                connect(window, &QWindow::widthChanged, this, &CompositorVideo::adjustBlurBehind, Qt::UniqueConnection);
+                connect(window, &QWindow::heightChanged, this, &CompositorVideo::adjustBlurBehind, Qt::UniqueConnection);
+            }
         }
         else
         {
-            disconnect(window, &QWindow::widthChanged, this, &CompositorVideo::adjustBlurBehind);
-            disconnect(window, &QWindow::heightChanged, this, &CompositorVideo::adjustBlurBehind);
-            disconnect(m_mainCtx, &MainCtx::windowExtendedMarginChanged, this, &CompositorVideo::adjustBlurBehind);
-            disconnect(m_mainCtx, &MainCtx::useClientSideDecorationChanged, this, &CompositorVideo::adjustBlurBehind);
+            if (Q_LIKELY(window == m_mainCtx->intfMainWindow()))
+            {
+                disconnect(m_mainCtx, &MainCtx::intfSizeChanged, this, &CompositorVideo::adjustBlurBehind);
+                disconnect(m_mainCtx, &MainCtx::windowExtendedMarginChanged, this, &CompositorVideo::adjustBlurBehind);
+                disconnect(m_mainCtx, &MainCtx::useClientSideDecorationChanged, this, &CompositorVideo::adjustBlurBehind);
+            }
+            else
+            {
+                disconnect(window, &QWindow::widthChanged, this, &CompositorVideo::adjustBlurBehind);
+                disconnect(window, &QWindow::heightChanged, this, &CompositorVideo::adjustBlurBehind);
+            }
         }
 
         adjustBlurBehind();

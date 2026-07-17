@@ -585,6 +585,7 @@ signals:
 
     void intfScaleFactorChanged();
     void intfDevicePixelRatioChanged();
+    void intfSizeChanged(const QSize&);
 
     void pinVideoControlsChanged();
     void pinOpacityChanged();
