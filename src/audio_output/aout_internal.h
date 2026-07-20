@@ -102,6 +102,7 @@ static inline aout_owner_t *aout_owner (audio_output_t *aout)
 aout_volume_t *aout_volume_New(vlc_object_t *, const audio_replay_gain_t *);
 #define aout_volume_New(o, g) aout_volume_New(VLC_OBJECT(o), g)
 int aout_volume_SetFormat(aout_volume_t *, vlc_fourcc_t);
+float aout_volume_GetVolume(aout_volume_t *);
 void aout_volume_SetVolume(aout_volume_t *, float);
 int aout_volume_Amplify(aout_volume_t *, block_t *);
 void aout_volume_Delete(aout_volume_t *);
