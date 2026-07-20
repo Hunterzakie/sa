@@ -64,7 +64,6 @@ typedef struct
 
     struct
     {
-        atomic_bool update;
         vlc_mutex_t lock;
         vlc_viewpoint_t value;
     } vp;
@@ -181,6 +180,7 @@ void vlc_aout_stream_NotifyTiming(vlc_aout_stream *stream, vlc_tick_t system_ts,
                                   vlc_tick_t audio_ts);
 void vlc_aout_stream_NotifyDrained(vlc_aout_stream *stream);
 void vlc_aout_stream_NotifyGain(vlc_aout_stream *stream, float gain);
+void vlc_aout_stream_RequestViewpointUpdate(vlc_aout_stream *stream);
 
 void vlc_aout_stream_RequestRestart(vlc_aout_stream *stream, unsigned);
 void vlc_aout_stream_RequestRetiming(vlc_aout_stream *stream, vlc_tick_t system_ts,

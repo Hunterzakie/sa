@@ -107,6 +107,7 @@ struct vlc_aout_stream
     audio_sample_format_t mixer_format;
 
     atomic_uchar restart;
+    atomic_bool viewpoint_update;
 
     atomic_uint buffers_lost;
     atomic_uint buffers_played;
@@ -408,7 +409,7 @@ vlc_aout_stream * vlc_aout_stream_New(audio_output_t *p_aout,
 
     atomic_init (&stream->buffers_lost, 0);
     atomic_init (&stream->buffers_played, 0);
-    atomic_store_explicit(&owner->vp.update, true, memory_order_relaxed);
+    atomic_init(&stream->viewpoint_update, true);
 
     atomic_init(&stream->drained, false);
     atomic_init(&stream->drain_deadline, VLC_TICK_INVALID);
@@ -875,11 +876,11 @@ int vlc_aout_stream_Play(vlc_aout_stream *stream, block_t *block)
         if (play_date == VLC_TICK_INVALID)
             return stream_StartDiscontinuity(stream, block);
 
-        if (atomic_load_explicit(&owner->vp.update, memory_order_relaxed))
+        if (atomic_exchange_explicit(&stream->viewpoint_update, false,
+                                     memory_order_acquire))
         {
             vlc_mutex_lock (&owner->vp.lock);
             aout_FiltersChangeViewpoint (stream->filters, &owner->vp.value);
-            atomic_store_explicit(&owner->vp.update, false, memory_order_relaxed);
             vlc_mutex_unlock (&owner->vp.lock);
         }
 
@@ -1011,6 +1012,12 @@ void vlc_aout_stream_NotifyGain(vlc_aout_stream *stream, float gain)
 {
     if (stream->volume != NULL)
         aout_volume_SetVolume(stream->volume, gain);
+}
+
+void vlc_aout_stream_RequestViewpointUpdate(vlc_aout_stream *stream)
+{
+    atomic_store_explicit(&stream->viewpoint_update, true,
+                          memory_order_release);
 }
 
 void vlc_aout_stream_NotifyDrained(vlc_aout_stream *stream)

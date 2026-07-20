@@ -301,7 +301,6 @@ audio_output_t *aout_New (vlc_object_t *parent)
     vlc_mutex_init (&owner->vp.lock);
     vlc_viewpoint_init (&owner->vp.value);
     vlc_list_init(&owner->dev.list);
-    atomic_init (&owner->vp.update, false);
     vlc_atomic_rc_init(&owner->rc);
     vlc_audio_meter_Init(&owner->meter, aout);
 
@@ -978,8 +977,12 @@ static void aout_ChangeViewpoint(audio_output_t *aout,
 
     vlc_mutex_lock(&owner->vp.lock);
     owner->vp.value = *p_viewpoint;
-    atomic_store_explicit(&owner->vp.update, true, memory_order_relaxed);
     vlc_mutex_unlock(&owner->vp.lock);
+
+    vlc_aout_stream *stream = aout_LockStream(aout);
+    if (stream != NULL)
+        vlc_aout_stream_RequestViewpointUpdate(stream);
+    aout_UnlockStream(aout);
 }
 
 vlc_audio_meter_plugin *
