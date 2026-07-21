@@ -77,6 +77,8 @@ int vlc_replay_gain_CopyFromMeta( audio_replay_gain_t *p_dst, const vlc_meta_t *
             if( psz_meta )
             {
                 float f_value = vlc_strtof_c( psz_meta, NULL );
+                if( !isfinite( f_value ) )
+                    continue;
 
                 if( rg_meta[i].flag & GAINS_MASK )
                 {
@@ -105,8 +107,11 @@ int vlc_replay_gain_CopyFromMeta( audio_replay_gain_t *p_dst, const vlc_meta_t *
         const char *psz_meta = vlc_meta_GetExtra( p_meta, rg_loudness[i] );
         if( psz_meta )
         {
+            float v = vlc_strtof_c( psz_meta, NULL );
+            if( !isfinite( v ) )
+                continue;
             p_dst->pb_reference_loudness = true;
-            p_dst->pf_reference_loudness = vlc_strtof_c( psz_meta, NULL );
+            p_dst->pf_reference_loudness = v;
             break;
         }
     }
