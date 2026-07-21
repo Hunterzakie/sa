@@ -1037,8 +1037,12 @@ static int ParseMicroDvd( vlc_object_t *p_obj, subs_properties_t *p_props,
             /* We found a possible setting of the framerate "{1}{1}23.976" */
             /* Check if it's usable, and if the sub-original-fps is not set */
             float f_fps = vlc_strtof_c( psz_text, NULL );
-            if( f_fps > 0.f && var_GetFloat( p_obj, "sub-original-fps" ) <= 0.f )
-                p_props->i_microsecperframe = llroundf((float)CLOCK_FREQ / f_fps);
+            if( isfinite(f_fps) && f_fps > 0.f && var_GetFloat( p_obj, "sub-original-fps" ) <= 0.f )
+            {
+                float v = (float)CLOCK_FREQ / f_fps;
+                if( v < VLC_TICK_MAX )
+                    p_props->i_microsecperframe = llroundf(v);
+            }
         }
         free( psz_text );
     }
