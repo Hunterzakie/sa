@@ -53,6 +53,7 @@
 #include "opus.h"
 
 #include <limits.h>
+#include <math.h>
 
 /*****************************************************************************
  * Module descriptor
@@ -2587,15 +2588,23 @@ static void Ogg_ExtractComments( demux_t *p_demux, es_format_t *p_fmt,
         const char *track_gain = vlc_meta_GetExtra( p_ogg->p_meta, "R128_TRACK_GAIN" );
         if( track_gain )
         {
-            p_arg->pb_gain[AUDIO_REPLAY_GAIN_TRACK] = true;
-            p_arg->pf_gain[AUDIO_REPLAY_GAIN_TRACK] = vlc_strtof_c( track_gain, NULL ) / 256.f;
+            float v = vlc_strtof_c( track_gain, NULL );
+            if( isfinite(v) )
+            {
+                p_arg->pb_gain[AUDIO_REPLAY_GAIN_TRACK] = true;
+                p_arg->pf_gain[AUDIO_REPLAY_GAIN_TRACK] = v / 256.f;
+            }
         }
 
         const char *album_gain = vlc_meta_GetExtra( p_ogg->p_meta, "R128_ALBUM_GAIN" );
         if( album_gain )
         {
-            p_arg->pb_gain[AUDIO_REPLAY_GAIN_ALBUM] = true;
-            p_arg->pf_gain[AUDIO_REPLAY_GAIN_ALBUM] = vlc_strtof_c( album_gain, NULL ) / 256.f;
+            float v = vlc_strtof_c( album_gain, NULL );
+            if( isfinite(v) )
+            {
+                p_arg->pb_gain[AUDIO_REPLAY_GAIN_ALBUM] = true;
+                p_arg->pf_gain[AUDIO_REPLAY_GAIN_ALBUM] = v / 256.f;
+            }
         }
 
         if( track_gain || album_gain )
