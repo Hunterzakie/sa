@@ -226,6 +226,8 @@ static ttml_length_t ttml_read_length( const char *psz )
 
     char* psz_end = NULL;
     float size = vlc_strtof_c( psz, &psz_end );
+    if( !isfinite(size) || size < 0 )
+        return len;
     len.i_value = size;
     if( psz_end )
     {
@@ -487,7 +489,7 @@ static void ComputeTTMLStyles( ttml_context_t *p_ctx, const vlc_dictionary_t *p_
         p_text_style->f_font_relsize = len.i_value / TTML_LINE_TO_HEIGHT_RATIO;
     else
     if( len.unit == TTML_UNIT_PIXELS )
-        p_text_style->i_font_size = len.i_value;
+        p_text_style->i_font_size = len.i_value < INT_MAX ? (int)len.i_value : INT_MAX;
 }
 
 static void FillTTMLStyle( const char *psz_attr, const char *psz_namespace,
@@ -533,7 +535,7 @@ static void FillTTMLStyle( const char *psz_attr, const char *psz_namespace,
     else if( !strcasecmp( "fontSize", psz_attr ) )
     {
         ttml_length_t len = ttml_read_length( psz_val );
-        if( len.unit != TTML_UNIT_UNKNOWN && len.i_value > 0.0 )
+        if( len.unit != TTML_UNIT_UNKNOWN )
             p_ttml_style->font_size = len;
     }
     else if( !strcasecmp( "direction", psz_attr ) )
