@@ -60,6 +60,8 @@
 # endif
 #endif
 
+#include <math.h>
+
 /*****************************************************************************
  * decoder_sys_t : vorbis decoder descriptor
  *****************************************************************************/
@@ -417,22 +419,34 @@ static int ProcessHeaders( decoder_t *p_dec )
         const char *track_gain = vlc_meta_GetExtra( p_dec->p_description, "RG_RADIO" );
         if( track_gain )
         {
-            p_arg->pb_gain[AUDIO_REPLAY_GAIN_TRACK] = true;
-            p_arg->pf_gain[AUDIO_REPLAY_GAIN_TRACK] = vlc_strtof_c( track_gain, NULL );
+            float v = vlc_strtof_c( track_gain, NULL );
+            if( isfinite(v) )
+            {
+                p_arg->pb_gain[AUDIO_REPLAY_GAIN_TRACK] = true;
+                p_arg->pf_gain[AUDIO_REPLAY_GAIN_TRACK] = v;
+            }
         }
 
         const char *track_peak = vlc_meta_GetExtra( p_dec->p_description, "RG_PEAK" );
         if( track_peak )
         {
-            p_arg->pb_peak[AUDIO_REPLAY_GAIN_TRACK] = true;
-            p_arg->pf_peak[AUDIO_REPLAY_GAIN_TRACK] = vlc_strtof_c( track_peak, NULL );
+            float v = vlc_strtof_c( track_peak, NULL );
+            if( isfinite(v) )
+            {
+                p_arg->pb_peak[AUDIO_REPLAY_GAIN_TRACK] = true;
+                p_arg->pf_peak[AUDIO_REPLAY_GAIN_TRACK] = v;
+            }
         }
 
         const char *album_gain = vlc_meta_GetExtra( p_dec->p_description, "RG_AUDIOPHILE" );
         if( album_gain )
         {
-            p_arg->pb_gain[AUDIO_REPLAY_GAIN_ALBUM] = true;
-            p_arg->pf_gain[AUDIO_REPLAY_GAIN_ALBUM] = vlc_strtof_c( album_gain, NULL );
+            float v = vlc_strtof_c( album_gain, NULL );
+            if( isfinite(v) )
+            {
+                p_arg->pb_gain[AUDIO_REPLAY_GAIN_ALBUM] = true;
+                p_arg->pf_gain[AUDIO_REPLAY_GAIN_ALBUM] = v;
+            }
         }
     }
 
