@@ -33,6 +33,7 @@
 
 #include <jpeglib.h>
 #include <setjmp.h>
+#include <math.h>
 
 /* JPEG_SYS_COMMON_MEMBERS:
  * members common to encoder and decoder descriptors
@@ -257,7 +258,10 @@ static bool getRDFFloat(const char *psz_rdf, float *out, const char *psz_var)
     if (unlikely(p_end == NULL || p_end == p_start + 1))
         return false;
 
-    *out = vlc_strtof_c(p_start, NULL);
+    float v = vlc_strtof_c(p_start, NULL);
+    if(!isfinite(v))
+        return false;
+    *out = v;
     return true;
 }
 
