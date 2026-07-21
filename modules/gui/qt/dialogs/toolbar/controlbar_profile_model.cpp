@@ -90,6 +90,22 @@ decltype (ControlbarProfileModel::m_defaults)
                                 }
                             }
                         }
+                    },
+                    {
+                        PlayerControlbarModel::Immersiveplayer,
+                        {
+                            {
+                                {
+
+                                },
+                                {
+
+                                },
+                                {
+
+                                }
+                            }
+                        }
                     }
                 }
             },
@@ -166,6 +182,27 @@ decltype (ControlbarProfileModel::m_defaults)
                                 }
                             }
                         }
+                    },
+                    {
+                        PlayerControlbarModel::Immersiveplayer,
+                        {
+                            {
+                                {
+                                    ControlListModel::ARTWORK_INFO
+                                },
+                                {
+                                    ControlListModel::SKIP_BACK_BUTTON,
+                                    ControlListModel::PREVIOUS_BUTTON,
+                                    ControlListModel::PLAY_BUTTON,
+                                    ControlListModel::NEXT_BUTTON,
+                                    ControlListModel::SKIP_FW_BUTTON
+                                },
+                                {
+                                    ControlListModel::VOLUME,
+                                    ControlListModel::FULLSCREEN_BUTTON
+                                }
+                            }
+                        }
                     }
                 }
             },
@@ -189,7 +226,10 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::NAVIGATION_BUTTONS,
                                     ControlListModel::WIDGET_SPACER,
                                     ControlListModel::PLAYLIST_BUTTON
-                                }, {},
+                                },
+                                {
+
+                                },
                                 {
                                     ControlListModel::VOLUME
                                 }
@@ -212,7 +252,10 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::NAVIGATION_BUTTONS,
                                     ControlListModel::WIDGET_SPACER,
                                     ControlListModel::PLAYLIST_BUTTON
-                                }, {},
+                                },
+                                {
+
+                                },
                                 {
                                     ControlListModel::VOLUME
                                 }
@@ -231,7 +274,31 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::PLAY_BUTTON,
                                     ControlListModel::STOP_BUTTON,
                                     ControlListModel::NEXT_BUTTON
-                                }, {}
+                                },
+                                {
+
+                                }
+                            }
+                        }
+                    },
+                    {
+                        PlayerControlbarModel::Immersiveplayer,
+                        {
+                            {
+                                {
+                                    ControlListModel::SKIP_BACK_BUTTON,
+                                    ControlListModel::PREVIOUS_BUTTON,
+                                    ControlListModel::PLAY_BUTTON,
+                                    ControlListModel::NEXT_BUTTON,
+                                    ControlListModel::SKIP_FW_BUTTON
+                                },
+                                {
+
+                                },
+                                {
+                                    ControlListModel::VOLUME,
+                                    ControlListModel::FULLSCREEN_BUTTON
+                                }
                             }
                         }
                     }
@@ -261,7 +328,9 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::ATOB_BUTTON,
                                     ControlListModel::FRAME_NEXT_BUTTON
                                 },
-                                {},
+                                {
+
+                                },
                                 {
                                     ControlListModel::VOLUME
                                 }
@@ -288,7 +357,9 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::ATOB_BUTTON,
                                     ControlListModel::FRAME_NEXT_BUTTON
                                 },
-                                {},
+                                {
+
+                                },
                                 {
                                     ControlListModel::VOLUME
                                 }
@@ -309,7 +380,26 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::STOP_BUTTON,
                                     ControlListModel::NEXT_BUTTON,
                                     ControlListModel::LOOP_BUTTON
-                                }, {}
+                                },
+                                {
+
+                                }
+                            }
+                        }
+                    },
+                    {
+                        PlayerControlbarModel::Immersiveplayer,
+                        {
+                            {
+                                {
+
+                                },
+                                {
+
+                                },
+                                {
+
+                                }
                             }
                         }
                     }
@@ -366,7 +456,26 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::PREVIOUS_BUTTON,
                                     ControlListModel::PLAY_BUTTON,
                                     ControlListModel::NEXT_BUTTON
-                                }, {}
+                                },
+                                {
+
+                                }
+                            }
+                        }
+                    },
+                    {
+                        PlayerControlbarModel::Immersiveplayer,
+                        {
+                            {
+                                {
+
+                                },
+                                {
+
+                                },
+                                {
+
+                                }
                             }
                         }
                     }
@@ -394,7 +503,9 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::LOOP_BUTTON,
                                     ControlListModel::RANDOM_BUTTON
                                 },
-                                {},
+                                {
+
+                                },
                                 {
                                     ControlListModel::VOLUME
                                 }
@@ -419,7 +530,9 @@ decltype (ControlbarProfileModel::m_defaults)
                                     ControlListModel::LOOP_BUTTON,
                                     ControlListModel::RANDOM_BUTTON
                                 },
-                                {},
+                                {
+
+                                },
                                 {
                                     ControlListModel::VOLUME
                                 }
@@ -449,6 +562,22 @@ decltype (ControlbarProfileModel::m_defaults)
                                 },
                                 {
                                     ControlListModel::VOLUME
+                                }
+                            }
+                        }
+                    },
+                    {
+                        PlayerControlbarModel::Immersiveplayer,
+                        {
+                            {
+                                {
+
+                                },
+                                {
+
+                                },
+                                {
+
                                 }
                             }
                         }

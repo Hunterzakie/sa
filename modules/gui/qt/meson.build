@@ -739,6 +739,7 @@ qml_modules += {
        'player/qml/PlayerPlaylistVisibilityFSM.qml',
        'player/qml/PlayerToolbarVisibilityFSM.qml',
        'player/qml/MinimalView.qml',
+       'player/qml/ImmersiveView.qml',
        'player/qml/ResumeDialog.qml',
        'player/qml/SliderBar.qml',
        'player/qml/TopBar.qml',

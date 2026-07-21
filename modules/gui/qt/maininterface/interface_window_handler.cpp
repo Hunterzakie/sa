@@ -99,9 +99,22 @@ InterfaceWindowHandler::InterfaceWindowHandler(qt_intf_t *_p_intf, MainCtx* main
             return;
         }
 
+        int baseWidth;
+        int baseHeight;
+        if (m_mainCtx->immersiveMode())
+        {
+            baseWidth = 256;
+            baseHeight = 200;
+        }
+        else
+        {
+            baseWidth = 320;
+            baseHeight = 360;
+        }
+
         int margin = m_mainCtx->windowExtendedMargin() * 2;
-        int width = 320 + margin;
-        int height = 360 + margin;
+        int width = baseWidth + margin;
+        int height = baseHeight + margin;
 
         double intfScaleFactor = m_mainCtx->getIntfScaleFactor();
         int scaledWidth = std::ceil( intfScaleFactor * width );
