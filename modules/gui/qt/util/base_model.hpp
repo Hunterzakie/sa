@@ -81,6 +81,8 @@ public:
 
     virtual bool loading() const;
 
+    Q_INVOKABLE bool requestEndResetModel();
+
     Q_INVOKABLE QMap<QString, QVariant> getDataAt(int idx) const;
     Q_INVOKABLE QMap<QString, QVariant> getDataAt(const QModelIndex & index) const;
 
@@ -94,6 +96,12 @@ signals:
     void countChanged(unsigned int) const;
     void maximumCountChanged(unsigned int) const;
     void loadingChanged() const;
+
+    // If the following signal is connected, the model is not going to finalize model reset
+    // until given permission by calling `requestEndResetModel()`, when applicable. This way
+    // makes it possible to freeze the view for certain time, which can be used for debouncing
+    // purposes. Note that the model has the right to reset when necessary, regardless of this.
+    void endResetModelRequested();
 
 public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;

@@ -299,6 +299,11 @@ QtObject {
      */
     readonly property int duration_humanMoment: 2000
 
+    // NOTE: This value should be higher for slow systems and lower for fast systems. 50 ms
+    //       appears to be a balanced value for most modern systems. In the future, we may
+    //       adjust it by actually measuring how fast is the system.
+    readonly property int duration_debounceThreshold: 50
+
     //timing before showing up a tooltip
     readonly property int delayToolTipAppear: (Application?.styleHints?.toolTipWakeUpDelay ?? 700)
 

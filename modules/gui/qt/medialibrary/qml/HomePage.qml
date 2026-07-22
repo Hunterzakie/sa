@@ -136,7 +136,7 @@ Widgets.PageExt {
 
             MainCtx.setTimeout(() => {
                 flickable._hasMedias = Qt.binding(() => { return continueWatchingRow.visible || favoritesRow.visible || newMediaRow.visible } )
-            }, 50, [], flickable)
+            }, VLCStyle.duration_debounceThreshold, [], flickable)
         }
 
         readonly property bool usingTouch: MainCtx.usingTouch
@@ -225,6 +225,8 @@ Widgets.PageExt {
                 Navigation.parentItem: mediaRows
 
                 model: MLRecentVideoModel {
+                    id: recentVideoModel
+
                     ml: MediaLib
 
                     sortCriteria: root.sort.criteria
@@ -233,6 +235,10 @@ Widgets.PageExt {
 
                     // FIXME: Make limit 0 load no items, instead of loading all items.
                     limit: MainCtx.gridView ? Math.max(continueWatchingRow.currentItem?.nbItemPerRow ?? null, 1) : 5
+
+                    onEndResetModelRequested: {
+                        MainCtx.setTimeout(recentVideoModel.requestEndResetModel, VLCStyle.duration_debounceThreshold, [], recentVideoModel)
+                    }
                 }
 
                 contextMenu: MLContextMenu {
@@ -303,6 +309,8 @@ Widgets.PageExt {
                 Navigation.parentItem: mediaRows
 
                 model: MLMediaModel {
+                    id: favoritesModel
+
                     favoriteOnly: true
 
                     ml: MediaLib
@@ -313,6 +321,10 @@ Widgets.PageExt {
 
                     // FIXME: Make limit 0 load no items, instead of loading all items.
                     limit: MainCtx.gridView ? Math.max(favoritesRow.currentItem?.nbItemPerRow ?? null, 1) : 5
+
+                    onEndResetModelRequested: {
+                        MainCtx.setTimeout(favoritesModel.requestEndResetModel, VLCStyle.duration_debounceThreshold, [], favoritesModel)
+                    }
                 }
 
                 onActiveFocusChanged: {
@@ -377,6 +389,8 @@ Widgets.PageExt {
                 Navigation.parentItem: mediaRows
 
                 model: MLMediaModel {
+                    id: newMediaModel
+
                     ml: MediaLib
 
                     sortCriteria: root.sort.criteria || "insertion"
@@ -385,6 +399,10 @@ Widgets.PageExt {
 
                     // FIXME: Make limit 0 load no items, instead of loading all items.
                     limit: MainCtx.gridView ? Math.max(newMediaRow.currentItem?.nbItemPerRow ?? null, 1) : 5
+
+                    onEndResetModelRequested: {
+                        MainCtx.setTimeout(newMediaModel.requestEndResetModel, VLCStyle.duration_debounceThreshold, [], newMediaModel)
+                    }
                 }
 
                 onActiveFocusChanged: {

@@ -28,6 +28,14 @@ BaseModel::BaseModel(BaseModelPrivate* priv, QObject* parent)
     connect(this, &BaseModel::sortCriteriaChanged,  this, &BaseModel::resetCache);
     connect(this, &BaseModel::sortOrderChanged,  this, &BaseModel::resetCache);
     connect(this, &BaseModel::searchPatternChanged,  this, &BaseModel::resetCache);
+    connect(this, &QAbstractItemModel::modelAboutToBeReset, this, [this]() {
+        Q_D(BaseModel);
+        d->m_endResetModelPending = true;
+    });
+    connect(this, &QAbstractItemModel::modelReset, this, [this]() {
+        Q_D(BaseModel);
+        d->m_endResetModelPending = false;
+    });
 }
 
 BaseModel::~BaseModel()
@@ -224,6 +232,17 @@ QMap<QString, QVariant> BaseModel::getDataAt(const QModelIndex & index) const
         dataDict[roles[role]] = data(index, role);
     }
     return dataDict;
+}
+
+bool BaseModel::requestEndResetModel()
+{
+    Q_D(BaseModel);
+    if (d->m_endResetModelPending)
+    {
+        endResetModel();
+        return true;
+    }
+    return false;
 }
 
 QMap<QString, QVariant> BaseModel::getDataAt(int idx) const

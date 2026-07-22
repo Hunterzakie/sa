@@ -24,6 +24,8 @@
 #include "listcache.hpp"
 #include "base_model.hpp"
 
+#include <QMetaMethod>
+
 class BaseModelPrivate {
     Q_DECLARE_PUBLIC(BaseModel)
 public:
@@ -84,7 +86,13 @@ protected:
     void resetCacheImpl(T& cache)
     {
         Q_Q(BaseModel);
-        emit q->beginResetModel();
+
+        // If reset is pending, we are already in a "reset" state,
+        // so we should skip begin reset here (in case this method
+        // is called before reset is finalized):
+        if (!m_endResetModelPending)
+            q->beginResetModel();
+
         // 'abandon' existing cache and queue it for deletion
         if (cache)
         {
@@ -92,7 +100,18 @@ protected:
             cache->deleteLater();
             cache.release();
         }
-        emit q->endResetModel();
+
+        static const QMetaMethod endResetModelRequestedSignal = QMetaMethod::fromSignal(&BaseModel::endResetModelRequested);
+        if (q->isSignalConnected(endResetModelRequestedSignal))
+        {
+            m_endResetModelPending = true;
+            emit q->endResetModelRequested();
+        }
+        else
+        {
+            q->endResetModel();
+        }
+
         validateCache();
     }
 
@@ -117,6 +136,7 @@ protected:
     unsigned int m_limit = 0;
     unsigned int m_offset = 0;
     bool m_qmlInitializing = false;
+    bool m_endResetModelPending = false;
 };
 
 template<typename T>
