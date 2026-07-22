@@ -28,6 +28,7 @@ foreach vlc_test: vlc_tests
         'env',
         'enabled',
         'wrapper',
+        'test_cases',
     ]
 
     foreach key : vlc_test.keys()
@@ -92,27 +93,42 @@ foreach vlc_test: vlc_tests
         cpp_args: [vlc_test.get('cpp_args', []), common_args],
         objc_args: [vlc_test.get('objc_args', []), common_args])
 
+    test_cases = vlc_test.get('test_cases', { '' : [] })
+
     # Handle optional test wrapper (e.g., xvfb-run for X11 tests)
     # The wrapper must be a program object
     if vlc_test.has_key('wrapper')
         test_wrapper = vlc_test['wrapper']
         if test_wrapper.found()
-            test(vlc_test['name'],
-                test_wrapper,
-                args: [test_exe],
-                env: vlc_test.get('env', []),
-                suite: [vlc_test.get('suite', []), 'test'],
-                depends: [test_modules_deps])
+            foreach test_suffix, test_args : test_cases
+                test_name = vlc_test['name']
+                if test_suffix != ''
+                    test_name += '_' + test_suffix
+                endif
+                test(test_name,
+                    test_wrapper,
+                    args: [test_exe] + test_args,
+                    env: vlc_test.get('env', []),
+                    suite: [vlc_test.get('suite', []), 'test'],
+                    depends: [test_modules_deps])
+            endforeach
         else
             warning('Test \'@0@\' skipped: wrapper not found'.format(
                 vlc_test['name']))
         endif
     else
-        test(vlc_test['name'],
-            test_exe,
-            env: vlc_test.get('env', []),
-            suite: [vlc_test.get('suite', []), 'test'],
-            depends: [test_modules_deps])
+        foreach test_suffix, test_args : test_cases
+            test_name = vlc_test['name']
+            if test_suffix != ''
+                test_name += '_' + test_suffix
+            endif
+            test(test_name,
+                test_exe,
+                args: test_args,
+                env: vlc_test.get('env', []),
+                suite: [vlc_test.get('suite', []), 'test'],
+                depends: [test_modules_deps])
+        endforeach
     endif
 endforeach
 
