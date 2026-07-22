@@ -469,6 +469,10 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
             }
         }
     }
+
+    if( p_sys->fmt.i_codec == VLC_CODEC_UNKNOWN )
+        msg_Err( p_demux, "Unrecognized wf tag: 0x%x", GetWLE( &p_wf->wFormatTag ) );
+
     if( physical_channels_mask == 0 && p_sys->fmt.audio.i_channels > 2
      && p_sys->fmt.audio.i_channels <= AOUT_CHAN_MAX )
     {
