@@ -155,6 +155,9 @@ static inline int ParseWaveFmt( vlc_object_t *o,
         }
     }
 
+    if( p_fmt->i_codec == VLC_CODEC_UNKNOWN )
+        msg_Err( o, "Unrecognized wf tag: 0x%x", GetWLE( &p_wf->wFormatTag ) );
+
     if( p_fmt->i_extra > 0 )
     {
         p_fmt->p_extra = malloc( p_fmt->i_extra );
