@@ -1974,7 +1974,8 @@ static int Ogg_ConfigureStream( demux_t *p_demux, ogg_packet oggpacket, logical_
                         date_Init( &p_stream->dts, p_stream->fmt.audio.i_rate, 1 );
 
                         wf_tag_to_fourcc( i_format_tag,
-                                          &p_stream->fmt.i_codec, 0 );
+                                          &p_stream->fmt.i_codec,
+                                          &p_stream->fmt.i_original_fourcc, 0 );
 
                         if( p_stream->fmt.i_codec == VLC_CODEC_UNKNOWN )
                         {
@@ -2117,7 +2118,8 @@ static int Ogg_ConfigureStream( demux_t *p_demux, ogg_packet oggpacket, logical_
                         p_stream->fmt.audio.i_bitspersample = st->bits_per_sample;
 
                         wf_tag_to_fourcc( i_format_tag,
-                                          &p_stream->fmt.i_codec, 0 );
+                                          &p_stream->fmt.i_codec,
+                                          &p_stream->fmt.i_original_fourcc, 0 );
 
                         if( p_stream->fmt.i_codec == VLC_CODEC_UNKNOWN )
                         {

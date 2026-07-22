@@ -71,7 +71,7 @@ static inline int ParseWaveFmt( vlc_object_t *o,
     uint32_t physical_channels_mask = 0;
 
     wf_tag_to_fourcc( GetWLE( &p_wf->wFormatTag ), &p_fmt->i_codec,
-                      ppsz_name );
+                      &p_fmt->i_original_fourcc, ppsz_name );
     p_fmt->audio.i_channels      = GetWLE ( &p_wf->nChannels );
     p_fmt->audio.i_rate          = GetDWLE( &p_wf->nSamplesPerSec );
     p_fmt->audio.i_blockalign    = GetWLE( &p_wf->nBlockAlign );

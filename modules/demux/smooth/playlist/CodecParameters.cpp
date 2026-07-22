@@ -88,7 +88,7 @@ void CodecParameters::setBitsPerSample(uint16_t i)
 
 void CodecParameters::setAudioTag(uint16_t i)
 {
-    wf_tag_to_fourcc(i, &fourcc, nullptr);
+    wf_tag_to_fourcc(i, &fourcc, nullptr, nullptr);
 }
 
 static void FillExtradata(es_format_t *fmt, const std::vector<uint8_t> &extradata)
@@ -175,7 +175,7 @@ void CodecParameters::fromWaveFormatEx(const std::vector<uint8_t> &data)
     if(data.size() >= sizeof(WAVEFORMATEX))
     {
         formatex.wFormatTag = GetWLE(&data[0]);
-        wf_tag_to_fourcc(formatex.wFormatTag, &fourcc, nullptr);
+        wf_tag_to_fourcc(formatex.wFormatTag, &fourcc, nullptr, nullptr);
         formatex.nChannels = GetWLE(&data[2]);
         formatex.nSamplesPerSec = GetDWLE(&data[4]);
         formatex.nAvgBytesPerSec = GetDWLE(&data[8]);

@@ -865,7 +865,7 @@ static bool SetupAudioFromWaveFormatEx( const MP4_Box_t *p_WMA2, es_format_t *p_
 {
     if( p_WMA2 && BOXDATA(p_WMA2) )
     {
-        wf_tag_to_fourcc(BOXDATA(p_WMA2)->Format.wFormatTag, &p_fmt->i_codec, NULL);
+        wf_tag_to_fourcc(BOXDATA(p_WMA2)->Format.wFormatTag, &p_fmt->i_codec, &p_fmt->i_original_fourcc, NULL);
         p_fmt->audio.i_channels = BOXDATA(p_WMA2)->Format.nChannels;
         p_fmt->audio.i_rate = BOXDATA(p_WMA2)->Format.nSamplesPerSec;
         p_fmt->i_bitrate = BOXDATA(p_WMA2)->Format.nAvgBytesPerSec * 8;

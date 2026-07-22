@@ -2305,7 +2305,7 @@ vlc_fourcc_t AVI_FourccGetCodec( unsigned int i_cat, vlc_fourcc_t i_codec )
     switch( i_cat )
     {
         case AUDIO_ES:
-            wf_tag_to_fourcc( i_codec, &i_codec, NULL );
+            wf_tag_to_fourcc( i_codec, &i_codec, NULL, NULL );
             return i_codec;
         case VIDEO_ES:
             return vlc_fourcc_GetCodec( i_cat, i_codec );

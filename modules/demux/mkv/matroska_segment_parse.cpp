@@ -1998,15 +1998,8 @@ bool matroska_segment_c::TrackInit( mkv_track_t * p_tk )
                 }
                 else
                 {
-                    wf_tag_to_fourcc( GetWLE( &p_wf->wFormatTag ), &p_tk->fmt.i_codec, NULL );
-                    if( p_wf->wFormatTag == WAVE_FORMAT_AAC_LATM )
-                    {
-                        p_tk->fmt.i_original_fourcc = VLC_FOURCC('L','A','T','M');
-                    }
-                    else if( p_wf->wFormatTag == WAVE_FORMAT_AAC_ADTS )
-                    {
-                        p_tk->fmt.i_original_fourcc = VLC_FOURCC('A','D','T','S');
-                    }
+                    wf_tag_to_fourcc( GetWLE( &p_wf->wFormatTag ), &p_tk->fmt.i_codec,
+                                      &p_tk->fmt.i_original_fourcc, NULL );
                 }
 
                 if( p_tk->fmt.i_codec == VLC_CODEC_UNKNOWN )

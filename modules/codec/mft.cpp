@@ -776,7 +776,7 @@ HRESULT mft_sys_t::SetOutputType(vlc_logger *logger,
             fmt_out.audio.i_rate = rate;
 
         vlc_fourcc_t fourcc;
-        wf_tag_to_fourcc(subtype.Data1, &fourcc, NULL);
+        wf_tag_to_fourcc(subtype.Data1, &fourcc, NULL, NULL);
         fmt_out.i_codec = vlc_fourcc_GetCodecAudio(fourcc, fmt_out.audio.i_bitspersample);
 
         fmt_out.audio.i_physical_channels = pi_channels_maps[fmt_out.audio.i_channels];
