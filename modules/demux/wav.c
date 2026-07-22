@@ -359,7 +359,6 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
     WAVEFORMATEXTENSIBLE *p_wf_ext = NULL;
     WAVEFORMATEX         *p_wf = NULL;
     const char *psz_name;
-    unsigned int i_extended;
 
     i_size += 2;
     if( i_size < sizeof( WAVEFORMATEX ) || i_size > (sizeof( WAVEFORMATEX ) + UINT16_MAX ) )
@@ -382,139 +381,22 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
         msg_Err( p_demux, "cannot load 'fmt ' chunk" );
         goto error;
     }
-    uint32_t physical_channels_mask = 0;
 
-    wf_tag_to_fourcc( GetWLE( &p_wf->wFormatTag ), &p_sys->fmt.i_codec,
-                      &psz_name );
-    p_sys->fmt.audio.i_channels      = GetWLE ( &p_wf->nChannels );
-    p_sys->fmt.audio.i_rate          = GetDWLE( &p_wf->nSamplesPerSec );
-    p_sys->fmt.audio.i_blockalign    = GetWLE( &p_wf->nBlockAlign );
-    p_sys->fmt.i_bitrate             = GetDWLE( &p_wf->nAvgBytesPerSec ) * 8;
-    p_sys->fmt.audio.i_bitspersample = GetWLE( &p_wf->wBitsPerSample );
-    if( i_size >= sizeof(WAVEFORMATEX) )
-        p_sys->fmt.i_extra = __MIN( GetWLE( &p_wf->cbSize ), i_size - sizeof(WAVEFORMATEX) );
-    i_extended = 0;
+    if( ParseWaveFmt( VLC_OBJECT(p_demux), p_wf_ext, i_size,
+                      &p_sys->fmt, &psz_name ) != VLC_SUCCESS )
+        goto error;
 
-    /* Handle new WAVE_FORMAT_EXTENSIBLE wav files */
-    /* see the following link for more information:
-     * http://www.microsoft.com/whdc/device/audio/multichaud.mspx#EFAA */
-    if( GetWLE( &p_wf->wFormatTag ) == WAVE_FORMAT_EXTENSIBLE &&
-        i_size >= sizeof( WAVEFORMATEXTENSIBLE ) &&
-        ( p_sys->fmt.i_extra + sizeof( WAVEFORMATEX )
-            >= sizeof( WAVEFORMATEXTENSIBLE ) ) )
-    {
-        unsigned i_channel_mask;
-        GUID guid_subformat;
-
-        guid_subformat = p_wf_ext->SubFormat;
-        guid_subformat.Data1 = GetDWLE( &p_wf_ext->SubFormat.Data1 );
-        guid_subformat.Data2 = GetWLE( &p_wf_ext->SubFormat.Data2 );
-        guid_subformat.Data3 = GetWLE( &p_wf_ext->SubFormat.Data3 );
-
-        sf_tag_to_fourcc( &guid_subformat, &p_sys->fmt.i_codec, &psz_name );
-
-        msg_Dbg( p_demux, "extensible format guid " GUID_FMT, GUID_PRINT(guid_subformat) );
-
-        i_extended = sizeof( WAVEFORMATEXTENSIBLE ) - sizeof( WAVEFORMATEX );
-        p_sys->fmt.i_extra -= i_extended;
-
-        i_channel_mask = GetDWLE( &p_wf_ext->dwChannelMask );
-        if( i_channel_mask )
-        {
-            int i_match = 0;
-            physical_channels_mask = getChannelMask( &i_channel_mask, p_sys->fmt.audio.i_channels, &i_match );
-            if( i_channel_mask )
-                msg_Warn( p_demux, "Some channels are unrecognized or uselessly specified (0x%x)", i_channel_mask );
-            if( i_match < p_sys->fmt.audio.i_channels )
-            {
-                int i_missing = p_sys->fmt.audio.i_channels - i_match;
-                msg_Warn( p_demux, "Trying to fill up unspecified position for %d channels", p_sys->fmt.audio.i_channels - i_match );
-
-                static const uint32_t pi_pair[] = { AOUT_CHAN_REARLEFT|AOUT_CHAN_REARRIGHT,
-                                                    AOUT_CHAN_MIDDLELEFT|AOUT_CHAN_MIDDLERIGHT,
-                                                    AOUT_CHAN_LEFT|AOUT_CHAN_RIGHT };
-                /* FIXME: Unused yet
-                static const uint32_t pi_center[] = { AOUT_CHAN_REARCENTER,
-                                                      0,
-                                                      AOUT_CHAN_CENTER }; */
-
-                /* Try to complete with pair */
-                for( unsigned i = 0; i < ARRAY_SIZE(pi_pair); i++ )
-                {
-                    if( i_missing >= 2 && !(physical_channels_mask & pi_pair[i] ) )
-                    {
-                        i_missing -= 2;
-                        physical_channels_mask |= pi_pair[i];
-                    }
-                }
-                /* Well fill up with what we can */
-                for( unsigned i = 0; i < ARRAY_SIZE(pi_channels_aout) && i_missing > 0; i++ )
-                {
-                    if( !( physical_channels_mask & pi_channels_aout[i] ) )
-                    {
-                        physical_channels_mask |= pi_channels_aout[i];
-                        i_missing--;
-
-                        if( i_missing <= 0 )
-                            break;
-                    }
-                }
-
-                i_match = p_sys->fmt.audio.i_channels - i_missing;
-            }
-            if( i_match < p_sys->fmt.audio.i_channels )
-            {
-                msg_Err( p_demux, "Invalid/unsupported channel mask" );
-                physical_channels_mask = 0;
-            }
-        }
-    }
-    if( physical_channels_mask == 0 && p_sys->fmt.audio.i_channels > 2
-     && p_sys->fmt.audio.i_channels <= AOUT_CHAN_MAX )
-    {
-        /* A dwChannelMask of 0 tells the audio device to render the first
-         * channel to the first port on the device, the second channel to the
-         * second port on the device, and so on. pi_default_channels is
-         * different than pi_channels_aout. Indeed FLC/FRC must be treated a
-         * SL/SR in that case. See "Default Channel Ordering" and "Details
-         * about dwChannelMask" from msdn */
-
-        static const uint32_t pi_default_channels[] = {
-            AOUT_CHAN_LEFT, AOUT_CHAN_RIGHT, AOUT_CHAN_CENTER,
-            AOUT_CHAN_LFE, AOUT_CHAN_REARLEFT, AOUT_CHAN_REARRIGHT,
-            AOUT_CHAN_MIDDLELEFT, AOUT_CHAN_MIDDLERIGHT, AOUT_CHAN_REARCENTER };
-
-        for( unsigned i = 0; i < p_sys->fmt.audio.i_channels &&
-             i < ARRAY_SIZE(pi_default_channels);
-             i++ )
-            physical_channels_mask |= pi_default_channels[i];
-    }
-
-    if( physical_channels_mask )
+    if( p_sys->fmt.audio.i_physical_channels )
     {
         if( p_sys->fmt.i_codec == VLC_FOURCC('a','r','a','w') ||
             p_sys->fmt.i_codec == VLC_FOURCC('a','f','l','t') )
             p_sys->i_chans_to_reorder =
                 aout_CheckChannelReorder( pi_channels_aout, NULL,
-                                          physical_channels_mask,
+                                          p_sys->fmt.audio.i_physical_channels,
                                           p_sys->pi_chan_table );
 
         msg_Dbg( p_demux, "channel mask: %x, reordering: %u",
-                 physical_channels_mask, p_sys->i_chans_to_reorder );
-    }
-
-    p_sys->fmt.audio.i_physical_channels = physical_channels_mask;
-
-    if( p_sys->fmt.i_extra > 0 )
-    {
-        p_sys->fmt.p_extra = malloc( p_sys->fmt.i_extra );
-        if( unlikely(!p_sys->fmt.p_extra) )
-        {
-            p_sys->fmt.i_extra = 0;
-            goto error;
-        }
-        memcpy( p_sys->fmt.p_extra, (uint8_t *)p_wf + sizeof( WAVEFORMATEX ) + i_extended,
-                p_sys->fmt.i_extra );
+                 p_sys->fmt.audio.i_physical_channels, p_sys->i_chans_to_reorder );
     }
 
     msg_Dbg( p_demux, "format: 0x%4.4x, fourcc: %4.4s, channels: %d, "
