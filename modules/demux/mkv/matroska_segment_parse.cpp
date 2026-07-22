@@ -1938,80 +1938,21 @@ bool matroska_segment_c::TrackInit( mkv_track_t * p_tk )
             mkv_track_t * p_tk = vars.p_tk;
             es_format_t * p_fmt = &vars.p_tk->fmt;
 
-            if( p_tk->i_extra_data < (int)sizeof( WAVEFORMATEX ) )
-            {
-                msg_Err( vars.p_demuxer, "missing/invalid WAVEFORMATEX" );
-                p_tk->fmt.i_codec = VLC_CODEC_UNKNOWN;
-            }
-            else
-            {
                 ONLY_FMT(AUDIO);
-                WAVEFORMATEX *p_wf = (WAVEFORMATEX*)p_tk->p_extra_data;
-
-                p_tk->fmt.audio.i_channels   = GetWLE( &p_wf->nChannels );
-                p_tk->fmt.audio.i_rate = GetDWLE( &p_wf->nSamplesPerSec );
-                p_tk->fmt.i_bitrate    = GetDWLE( &p_wf->nAvgBytesPerSec ) * 8;
-                p_tk->fmt.audio.i_blockalign = GetWLE( &p_wf->nBlockAlign );
-                p_tk->fmt.audio.i_bitspersample = GetWLE( &p_wf->wBitsPerSample );
-
-                p_tk->fmt.i_extra            = GetWLE( &p_wf->cbSize );
-                if ( (size_t)p_tk->fmt.i_extra > p_tk->i_extra_data - sizeof( WAVEFORMATEX ) )
-                    p_tk->fmt.i_extra = 0;
-                if( p_tk->fmt.i_extra != 0 )
+                if( ParseWaveFmt( VLC_OBJECT(vars.p_demuxer),
+                                  p_tk->p_extra_data, p_tk->i_extra_data,
+                                  &p_tk->fmt, nullptr ) == VLC_SUCCESS )
                 {
-                    p_tk->fmt.p_extra = xmalloc( p_tk->fmt.i_extra );
-                    if( p_tk->fmt.p_extra )
-                        memcpy( p_tk->fmt.p_extra, &p_wf[1], p_tk->fmt.i_extra );
-                    else
-                        p_tk->fmt.i_extra = 0;
-                }
-
-                if( p_wf->wFormatTag == WAVE_FORMAT_EXTENSIBLE &&
-                    p_tk->i_extra_data >= sizeof(WAVEFORMATEXTENSIBLE) )
-                {
-                    WAVEFORMATEXTENSIBLE *p_wext = container_of(p_wf, WAVEFORMATEXTENSIBLE, Format);
-                    GUID subFormat = p_wext->SubFormat;
-
-                    sf_tag_to_fourcc( &subFormat,  &p_tk->fmt.i_codec, NULL);
-                    /* FIXME should we use Samples */
-
-                    if( p_tk->fmt.audio.i_channels > 2 &&
-                        ( p_tk->fmt.i_codec != VLC_CODEC_UNKNOWN ) )
+                    if( p_tk->fmt.audio.i_physical_channels )
                     {
-                        uint32_t wfextcm = GetDWLE( &p_wext->dwChannelMask );
-                        int match;
-                        unsigned i_channel_mask = getChannelMask( &wfextcm,
-                                                                  p_tk->fmt.audio.i_channels,
-                                                                  &match );
-                        p_tk->fmt.i_codec = vlc_fourcc_GetCodecAudio( p_tk->fmt.i_codec,
-                                                                      p_tk->fmt.audio.i_bitspersample );
-                        if( i_channel_mask )
-                        {
-                            p_tk->i_chans_to_reorder = aout_CheckChannelReorder(
-                                pi_channels_aout, NULL,
-                                i_channel_mask,
-                                p_tk->pi_chan_table );
-
-                            p_tk->fmt.audio.i_physical_channels = i_channel_mask;
-                        }
+                        p_tk->i_chans_to_reorder = aout_CheckChannelReorder(
+                            pi_channels_aout, NULL,
+                            p_tk->fmt.audio.i_physical_channels,
+                            p_tk->pi_chan_table );
                     }
                 }
                 else
-                {
-                    wf_tag_to_fourcc( GetWLE( &p_wf->wFormatTag ), &p_tk->fmt.i_codec, NULL );
-                    if( p_wf->wFormatTag == WAVE_FORMAT_AAC_LATM )
-                    {
-                        p_tk->fmt.i_original_fourcc = VLC_FOURCC('L','A','T','M');
-                    }
-                    else if( p_wf->wFormatTag == WAVE_FORMAT_AAC_ADTS )
-                    {
-                        p_tk->fmt.i_original_fourcc = VLC_FOURCC('A','D','T','S');
-                    }
-                }
-
-                if( p_tk->fmt.i_codec == VLC_CODEC_UNKNOWN )
-                    msg_Err( vars.p_demuxer, "Unrecognized wf tag: 0x%x", GetWLE( &p_wf->wFormatTag ) );
-            }
+                    p_tk->fmt.i_codec = VLC_CODEC_UNKNOWN;
             p_fmt->b_packetized = !p_fmt->audio.i_blockalign;
         }
         static void A_MPEG_helper_ (HandlerPayload& vars) {
