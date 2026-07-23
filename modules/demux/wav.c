@@ -356,8 +356,7 @@ static void InitFmt( demux_t *p_demux )
 static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
 {
     demux_sys_t *p_sys = p_demux->p_sys;
-    WAVEFORMATEXTENSIBLE *p_wf_ext = NULL;
-    WAVEFORMATEX         *p_wf = NULL;
+    uint8_t *p_wf = NULL;
     const char *psz_name;
 
     i_size += 2;
@@ -368,12 +367,10 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
     }
 
     /* load waveformatex */
-    p_wf_ext = malloc( i_size );
-    if( unlikely( !p_wf_ext ) )
+    p_wf = malloc( i_size );
+    if( unlikely( !p_wf ) )
          goto error;
 
-    p_wf         = &p_wf_ext->Format;
-    p_wf->cbSize = 0;
     i_size      -= 2;
     if( vlc_stream_Read( p_demux->s, p_wf, i_size ) != (int)i_size ||
         ( ( i_size & 1 ) && vlc_stream_Read( p_demux->s, NULL, 1 ) != 1 ) )
@@ -382,7 +379,7 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
         goto error;
     }
 
-    if( ParseWaveFmt( VLC_OBJECT(p_demux), p_wf_ext, i_size,
+    if( ParseWaveFmt( VLC_OBJECT(p_demux), p_wf, i_size,
                       &p_sys->fmt, &psz_name ) != VLC_SUCCESS )
         goto error;
 
@@ -402,7 +399,7 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
     msg_Dbg( p_demux, "format: 0x%4.4x, fourcc: %4.4s, channels: %d, "
              "freq: %u Hz, bitrate: %uKo/s, blockalign: %d, bits/samples: %d, "
              "extra size: %zu",
-             GetWLE( &p_wf->wFormatTag ), (char *)&p_sys->fmt.i_codec,
+             GetWLE( p_wf ), (char *)&p_sys->fmt.i_codec,
              p_sys->fmt.audio.i_channels, p_sys->fmt.audio.i_rate,
              p_sys->fmt.i_bitrate / 8 / 1024, p_sys->fmt.audio.i_blockalign,
              p_sys->fmt.audio.i_bitspersample, p_sys->fmt.i_extra );
