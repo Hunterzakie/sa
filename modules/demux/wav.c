@@ -417,13 +417,6 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
         if( FrameInfo_PCM( &p_sys->i_frame_size, &p_sys->i_frame_samples,
                            &p_sys->fmt ) )
             goto error;
-        p_sys->fmt.i_codec =
-            vlc_fourcc_GetCodecAudio( p_sys->fmt.i_codec,
-                                      p_sys->fmt.audio.i_bitspersample );
-        if( p_sys->fmt.i_codec == 0 ) {
-            msg_Err( p_demux, "Unrecognized codec" );
-            goto error;
-        }
         break;
     case VLC_CODEC_ADPCM_MS:
     /* FIXME not sure at all FIXME */

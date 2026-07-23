@@ -173,6 +173,23 @@ static inline int ParseWaveFmt( vlc_object_t *o,
         }
     }
 
+    switch( p_fmt->i_codec )
+    {
+    case VLC_FOURCC( 'a', 'r', 'a', 'w' ):
+    case VLC_FOURCC( 'a', 'f', 'l', 't' ):
+    case VLC_FOURCC( 'u', 'l', 'a', 'w' ):
+    case VLC_CODEC_ALAW:
+    case VLC_CODEC_MULAW:
+        p_fmt->i_codec =
+            vlc_fourcc_GetCodecAudio( p_fmt->i_codec,
+                                        p_fmt->audio.i_bitspersample );
+        if( p_fmt->i_codec == 0 ) {
+            msg_Err( o, "Unrecognized codec" );
+            return VLC_EINVAL;
+        }
+        break;
+    }
+
     if( p_fmt->i_codec == VLC_CODEC_UNKNOWN )
         msg_Err( o, "Unrecognized wf tag: 0x%x", GetWLE( &p_wf->wFormatTag ) );
 
