@@ -65,8 +65,7 @@ static inline int ParseWaveFmt( vlc_object_t *o,
                                 const void *p_data, size_t i_size,
                                 es_format_t *p_fmt, const char **ppsz_name )
 {
-    const WAVEFORMATEXTENSIBLE *p_wf_ext = (const WAVEFORMATEXTENSIBLE *)p_data;
-    const WAVEFORMATEX *p_wf = &p_wf_ext->Format;
+    const uint8_t *data = (const uint8_t *)p_data;
     size_t i_extended = 0;
     uint32_t physical_channels_mask = 0;
 
@@ -75,25 +74,27 @@ static inline int ParseWaveFmt( vlc_object_t *o,
         msg_Err( o, "missing WAVEFORMATEX" );
         return VLC_EINVAL;
     }
-    if( GetWLE( &p_wf->wFormatTag ) == WAVE_FORMAT_EXTENSIBLE &&
+    uint16_t wFormatTag = GetWLE( &data[0] /* wFormatTag */ );
+    if( wFormatTag == WAVE_FORMAT_EXTENSIBLE &&
         unlikely(i_size < sizeof( WAVEFORMATEXTENSIBLE )) )
     {
         msg_Err( o, "missing WAVEFORMATEXTENSIBLE" );
         return VLC_EINVAL;
     }
 
-    wf_tag_to_fourcc( GetWLE( &p_wf->wFormatTag ), &p_fmt->i_codec,
+    wf_tag_to_fourcc( wFormatTag, &p_fmt->i_codec,
                       &p_fmt->i_original_fourcc, ppsz_name );
-    p_fmt->audio.i_channels      = GetWLE ( &p_wf->nChannels );
-    p_fmt->audio.i_rate          = GetDWLE( &p_wf->nSamplesPerSec );
-    p_fmt->audio.i_blockalign    = GetWLE( &p_wf->nBlockAlign );
-    p_fmt->i_bitrate             = GetDWLE( &p_wf->nAvgBytesPerSec ) * 8;
-    p_fmt->audio.i_bitspersample = GetWLE( &p_wf->wBitsPerSample );
+    p_fmt->audio.i_channels      = GetWLE ( &data[2] /* nChannels */ );
+    p_fmt->audio.i_rate          = GetDWLE( &data[4] /* nSamplesPerSec */ );
+    p_fmt->audio.i_blockalign    = GetWLE( &data[12] /* nBlockAlign */ );
+    p_fmt->i_bitrate             = GetDWLE( &data[8] /* nAvgBytesPerSec */ ) * 8;
+    p_fmt->audio.i_bitspersample = GetWLE( &data[14] /* wBitsPerSample */ );
+    size_t cbSize = GetWLE( &data[16] /* cbSize */ );
     if( i_size >= sizeof(WAVEFORMATEX) )
-        p_fmt->i_extra = __MIN( GetWLE( &p_wf->cbSize ), i_size - sizeof(WAVEFORMATEX) );
-    else if ( GetWLE( &p_wf->cbSize ) != 0)
+        p_fmt->i_extra = __MIN( cbSize, i_size - sizeof(WAVEFORMATEX) );
+    else if ( cbSize!= 0)
     {
-        msg_Dbg( o, "WAVEFORMATEX missing %u extra data", (unsigned) GetWLE( &p_wf->cbSize )  );
+        msg_Dbg( o, "WAVEFORMATEX missing %zu extra data", cbSize  );
         return VLC_EINVAL;
     }
     else
@@ -102,11 +103,12 @@ static inline int ParseWaveFmt( vlc_object_t *o,
     /* Handle new WAVE_FORMAT_EXTENSIBLE wav files */
     /* see the following link for more information:
      * http://www.microsoft.com/whdc/device/audio/multichaud.mspx#EFAA */
-    if( GetWLE( &p_wf->wFormatTag ) == WAVE_FORMAT_EXTENSIBLE &&
+    if( wFormatTag == WAVE_FORMAT_EXTENSIBLE &&
         ( p_fmt->i_extra >= sizeof( WAVEFORMATEXTENSIBLE ) - sizeof( WAVEFORMATEX ) ) )
     {
         uint32_t dwChannelMask;
         GUID guid_subformat;
+        const WAVEFORMATEXTENSIBLE *p_wf_ext = (const WAVEFORMATEXTENSIBLE *)p_data;
 
         guid_subformat = p_wf_ext->SubFormat;
         guid_subformat.Data1 = GetDWLE( &p_wf_ext->SubFormat.Data1 );
@@ -190,7 +192,7 @@ static inline int ParseWaveFmt( vlc_object_t *o,
     }
 
     if( p_fmt->i_codec == VLC_CODEC_UNKNOWN )
-        msg_Err( o, "Unrecognized wf tag: 0x%x", GetWLE( &p_wf->wFormatTag ) );
+        msg_Err( o, "Unrecognized wf tag: 0x%x", wFormatTag );
 
     if( p_fmt->i_extra > 0 )
     {
