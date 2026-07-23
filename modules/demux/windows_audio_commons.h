@@ -91,6 +91,13 @@ static inline int ParseWaveFmt( vlc_object_t *o,
     p_fmt->audio.i_bitspersample = GetWLE( &p_wf->wBitsPerSample );
     if( i_size >= sizeof(WAVEFORMATEX) )
         p_fmt->i_extra = __MIN( GetWLE( &p_wf->cbSize ), i_size - sizeof(WAVEFORMATEX) );
+    else if ( GetWLE( &p_wf->cbSize ) != 0)
+    {
+        msg_Dbg( o, "WAVEFORMATEX missing %u extra data", (unsigned) GetWLE( &p_wf->cbSize )  );
+        return VLC_EINVAL;
+    }
+    else
+        p_fmt->i_extra = 0;
 
     /* Handle new WAVE_FORMAT_EXTENSIBLE wav files */
     /* see the following link for more information:
