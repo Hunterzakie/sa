@@ -393,6 +393,8 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
     p_sys->fmt.audio.i_bitspersample = GetWLE( &p_wf->wBitsPerSample );
     if( i_size >= sizeof(WAVEFORMATEX) )
         p_sys->fmt.i_extra = __MIN( GetWLE( &p_wf->cbSize ), i_size - sizeof(WAVEFORMATEX) );
+    else
+        p_sys->fmt.i_extra = 0;
     i_extended = 0;
 
     /* Handle new WAVE_FORMAT_EXTENSIBLE wav files */
