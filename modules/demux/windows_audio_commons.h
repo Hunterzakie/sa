@@ -108,12 +108,10 @@ static inline int ParseWaveFmt( vlc_object_t *o,
     {
         uint32_t dwChannelMask;
         GUID guid_subformat;
-        const WAVEFORMATEXTENSIBLE *p_wf_ext = (const WAVEFORMATEXTENSIBLE *)p_data;
-
-        guid_subformat = p_wf_ext->SubFormat;
-        guid_subformat.Data1 = GetDWLE( &p_wf_ext->SubFormat.Data1 );
-        guid_subformat.Data2 = GetWLE( &p_wf_ext->SubFormat.Data2 );
-        guid_subformat.Data3 = GetWLE( &p_wf_ext->SubFormat.Data3 );
+        guid_subformat.Data1 = GetDWLE( &data[24] /* SubFormat.Data1 */ );
+        guid_subformat.Data2 = GetWLE( &data[28] /* SubFormat.Data2 */ );
+        guid_subformat.Data3 = GetWLE( &data[30] /* SubFormat.Data2 */ );
+        memcpy( &guid_subformat.Data4, &data[32], sizeof( guid_subformat.Data4 ) );
 
         sf_tag_to_fourcc( &guid_subformat, &p_fmt->i_codec, ppsz_name );
 
@@ -122,7 +120,7 @@ static inline int ParseWaveFmt( vlc_object_t *o,
         i_extended = sizeof( WAVEFORMATEXTENSIBLE ) - sizeof( WAVEFORMATEX );
         p_fmt->i_extra -= i_extended;
 
-        dwChannelMask = GetDWLE( &p_wf_ext->dwChannelMask );
+        dwChannelMask = GetDWLE( &data[20] /* dwChannelMask */ );
         if( dwChannelMask )
         {
             int i_match = 0;
