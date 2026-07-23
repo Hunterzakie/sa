@@ -388,7 +388,9 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
     static_assert(offsetof(WAVEFORMATEX, wBitsPerSample) == 14, "bogus wBitsPerSample offset");
     static_assert(offsetof(WAVEFORMATEX, cbSize) == 16, "bogus cbSize offset");
 
-    const WAVEFORMATEXTENSIBLE *p_wf_ext = (const WAVEFORMATEXTENSIBLE *)p_data;
+    static_assert(offsetof(WAVEFORMATEXTENSIBLE, dwChannelMask) == 20, "bogus dwChannelMask offset");
+    static_assert(offsetof(WAVEFORMATEXTENSIBLE, SubFormat) == 24, "bogus SubFormat offset");
+
     uint32_t physical_channels_mask = 0;
     uint16_t wFormatTag = GetWLE( &p_data[0] /* wFormatTag */ );
 
@@ -414,10 +416,7 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
         uint32_t dwChannelMask;
         GUID guid_subformat;
 
-        guid_subformat = p_wf_ext->SubFormat;
-        guid_subformat.Data1 = GetDWLE( &p_wf_ext->SubFormat.Data1 );
-        guid_subformat.Data2 = GetWLE( &p_wf_ext->SubFormat.Data2 );
-        guid_subformat.Data3 = GetWLE( &p_wf_ext->SubFormat.Data3 );
+        memcpy(&guid_subformat, &p_data[26] /* SubFormat */, sizeof(GUID) );
 
         sf_tag_to_fourcc( &guid_subformat, &p_sys->fmt.i_codec, &psz_name );
 
@@ -426,7 +425,7 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
         i_extended = sizeof( WAVEFORMATEXTENSIBLE ) - sizeof( WAVEFORMATEX );
         p_sys->fmt.i_extra -= i_extended;
 
-        dwChannelMask = GetDWLE( &p_wf_ext->dwChannelMask );
+        dwChannelMask = GetDWLE( &p_data[20] /* dwChannelMask */ );
         if( dwChannelMask )
         {
             int i_match = 0;
