@@ -356,8 +356,7 @@ static void InitFmt( demux_t *p_demux )
 static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
 {
     demux_sys_t *p_sys = p_demux->p_sys;
-    WAVEFORMATEXTENSIBLE *p_wf_ext = NULL;
-    WAVEFORMATEX         *p_wf = NULL;
+    uint8_t *p_data = NULL;
     const char *psz_name;
     unsigned int i_extended;
 
@@ -369,19 +368,19 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
     }
 
     /* load waveformatex */
-    p_wf_ext = malloc( i_size );
-    if( unlikely( !p_wf_ext ) )
+    p_data = malloc( i_size );
+    if( unlikely( !p_data ) )
          goto error;
 
-    p_wf         = &p_wf_ext->Format;
-    p_wf->cbSize = 0;
     i_size      -= 2;
-    if( vlc_stream_Read( p_demux->s, p_wf, i_size ) != (int)i_size ||
+    if( vlc_stream_Read( p_demux->s, p_data, i_size ) != (int)i_size ||
         ( ( i_size & 1 ) && vlc_stream_Read( p_demux->s, NULL, 1 ) != 1 ) )
     {
         msg_Err( p_demux, "cannot load 'fmt ' chunk" );
         goto error;
     }
+    const WAVEFORMATEXTENSIBLE *p_wf_ext = (const WAVEFORMATEXTENSIBLE *)p_data;
+    const WAVEFORMATEX         *p_wf = &p_wf_ext->Format;
     uint32_t physical_channels_mask = 0;
 
     wf_tag_to_fourcc( GetWLE( &p_wf->wFormatTag ), &p_sys->fmt.i_codec,
@@ -518,7 +517,7 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
             p_sys->fmt.i_extra = 0;
             goto error;
         }
-        memcpy( p_sys->fmt.p_extra, (uint8_t *)p_wf + sizeof( WAVEFORMATEX ) + i_extended,
+        memcpy( p_sys->fmt.p_extra, p_data + sizeof( WAVEFORMATEX ) + i_extended,
                 p_sys->fmt.i_extra );
     }
 
@@ -530,8 +529,8 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
              p_sys->fmt.i_bitrate / 8 / 1024, p_sys->fmt.audio.i_blockalign,
              p_sys->fmt.audio.i_bitspersample, p_sys->fmt.i_extra );
 
-    free( p_wf );
-    p_wf = NULL;
+    free( p_data );
+    p_data = NULL;
 
     switch( p_sys->fmt.i_codec )
     {
@@ -609,7 +608,7 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
 error:
     es_format_Clean( &p_sys->fmt );
     InitFmt( p_demux );
-    free( p_wf );
+    free( p_data );
     return VLC_EGENERIC;
 }
 
