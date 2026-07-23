@@ -103,8 +103,7 @@ static inline int ParseWaveFmt( vlc_object_t *o,
     /* see the following link for more information:
      * http://www.microsoft.com/whdc/device/audio/multichaud.mspx#EFAA */
     if( GetWLE( &p_wf->wFormatTag ) == WAVE_FORMAT_EXTENSIBLE &&
-        ( p_fmt->i_extra + sizeof( WAVEFORMATEX )
-            >= sizeof( WAVEFORMATEXTENSIBLE ) ) )
+        ( p_fmt->i_extra >= sizeof( WAVEFORMATEXTENSIBLE ) - sizeof( WAVEFORMATEX ) ) )
     {
         unsigned i_channel_mask;
         GUID guid_subformat;
