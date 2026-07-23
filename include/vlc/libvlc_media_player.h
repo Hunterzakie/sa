@@ -1829,11 +1829,26 @@ LIBVLC_API double libvlc_media_player_get_position( libvlc_media_player_t *p_mi 
  *
  * \param p_mi the Media Player
  * \param b_fast prefer fast seeking or precise seeking
- * \param f_pos the position
+ * \param f_pos the position in the range [0.f;1.f]
  * \return 0 on success, -1 on error
  */
 LIBVLC_API int libvlc_media_player_set_position( libvlc_media_player_t *p_mi,
                                                  double f_pos, bool b_fast );
+
+/**
+ * Jump the movie position (in percent).
+ *
+ * This will trigger a precise and relative seek (from the current pos).
+ * This has no effect if playback is not enabled.
+ * This might not work depending on the underlying input format and protocol.
+ *
+ * \param p_mi the Media Player
+ * \param f_pos the position in the range [-1.f;1.f]
+ * \return 0 on success, -1 on error
+ * \version LibVLC 4.0.0 and later.
+ */
+LIBVLC_API int libvlc_media_player_jump_position( libvlc_media_player_t *p_mi,
+                                                  double f_pos );
 
 /**
  * Enable A to B loop for the current media by setting the start time and end

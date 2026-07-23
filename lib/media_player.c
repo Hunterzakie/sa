@@ -1502,20 +1502,33 @@ int libvlc_media_player_jump_time( libvlc_media_player_t *p_mi,
     return set_time( p_mi, i_time, false, VLC_PLAYER_WHENCE_RELATIVE );
 }
 
-int libvlc_media_player_set_position( libvlc_media_player_t *p_mi,
-                                      double position, bool b_fast )
+static int
+set_pos( libvlc_media_player_t *p_mi, double position, bool b_fast,
+         enum vlc_player_whence whence )
 {
     vlc_player_t *player = p_mi->player;
     vlc_player_Lock(player);
 
     enum vlc_player_seek_speed speed = b_fast ? VLC_PLAYER_SEEK_FAST
                                               : VLC_PLAYER_SEEK_PRECISE;
-    vlc_player_SeekByPos(player, position, speed, VLC_PLAYER_WHENCE_ABSOLUTE);
+    vlc_player_SeekByPos(player, position, speed, whence);
 
     vlc_player_Unlock(player);
 
     /* may not fail anymore, keep int not to break the API */
     return 0;
+}
+
+int libvlc_media_player_set_position( libvlc_media_player_t *p_mi,
+                                      double position, bool b_fast )
+{
+    return set_pos( p_mi, position, b_fast, VLC_PLAYER_WHENCE_ABSOLUTE );
+}
+
+int libvlc_media_player_jump_position( libvlc_media_player_t *p_mi,
+                                       double position )
+{
+    return set_pos( p_mi, position, false, VLC_PLAYER_WHENCE_RELATIVE );
 }
 
 double libvlc_media_player_get_position( libvlc_media_player_t *p_mi )
