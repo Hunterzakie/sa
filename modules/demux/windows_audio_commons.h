@@ -70,6 +70,18 @@ static inline int ParseWaveFmt( vlc_object_t *o,
     size_t i_extended = 0;
     uint32_t physical_channels_mask = 0;
 
+    if ( unlikely(i_size < sizeof(WAVEFORMATEX)) )
+    {
+        msg_Err( o, "missing WAVEFORMATEX" );
+        return VLC_EINVAL;
+    }
+    if( GetWLE( &p_wf->wFormatTag ) == WAVE_FORMAT_EXTENSIBLE &&
+        unlikely(i_size < sizeof( WAVEFORMATEXTENSIBLE )) )
+    {
+        msg_Err( o, "missing WAVEFORMATEXTENSIBLE" );
+        return VLC_EINVAL;
+    }
+
     wf_tag_to_fourcc( GetWLE( &p_wf->wFormatTag ), &p_fmt->i_codec,
                       &p_fmt->i_original_fourcc, ppsz_name );
     p_fmt->audio.i_channels      = GetWLE ( &p_wf->nChannels );
@@ -84,7 +96,6 @@ static inline int ParseWaveFmt( vlc_object_t *o,
     /* see the following link for more information:
      * http://www.microsoft.com/whdc/device/audio/multichaud.mspx#EFAA */
     if( GetWLE( &p_wf->wFormatTag ) == WAVE_FORMAT_EXTENSIBLE &&
-        i_size >= sizeof( WAVEFORMATEXTENSIBLE ) &&
         ( p_fmt->i_extra + sizeof( WAVEFORMATEX )
             >= sizeof( WAVEFORMATEXTENSIBLE ) ) )
     {
