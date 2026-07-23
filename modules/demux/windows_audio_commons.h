@@ -105,7 +105,7 @@ static inline int ParseWaveFmt( vlc_object_t *o,
     if( GetWLE( &p_wf->wFormatTag ) == WAVE_FORMAT_EXTENSIBLE &&
         ( p_fmt->i_extra >= sizeof( WAVEFORMATEXTENSIBLE ) - sizeof( WAVEFORMATEX ) ) )
     {
-        unsigned i_channel_mask;
+        uint32_t dwChannelMask;
         GUID guid_subformat;
 
         guid_subformat = p_wf_ext->SubFormat;
@@ -120,13 +120,13 @@ static inline int ParseWaveFmt( vlc_object_t *o,
         i_extended = sizeof( WAVEFORMATEXTENSIBLE ) - sizeof( WAVEFORMATEX );
         p_fmt->i_extra -= i_extended;
 
-        i_channel_mask = GetDWLE( &p_wf_ext->dwChannelMask );
-        if( i_channel_mask )
+        dwChannelMask = GetDWLE( &p_wf_ext->dwChannelMask );
+        if( dwChannelMask )
         {
             int i_match = 0;
-            physical_channels_mask = getChannelMask( &i_channel_mask, p_fmt->audio.i_channels, &i_match );
-            if( i_channel_mask )
-                msg_Warn( o, "Some channels are unrecognized or uselessly specified (0x%x)", i_channel_mask );
+            physical_channels_mask = getChannelMask( &dwChannelMask, p_fmt->audio.i_channels, &i_match );
+            if( dwChannelMask )
+                msg_Warn( o, "Some channels are unrecognized or uselessly specified (0x%x)", dwChannelMask );
             if( i_match < p_fmt->audio.i_channels )
             {
                 int i_missing = p_fmt->audio.i_channels - i_match;
