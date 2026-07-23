@@ -379,19 +379,27 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
         msg_Err( p_demux, "cannot load 'fmt ' chunk" );
         goto error;
     }
-    const WAVEFORMATEXTENSIBLE *p_wf_ext = (const WAVEFORMATEXTENSIBLE *)p_data;
-    const WAVEFORMATEX         *p_wf = &p_wf_ext->Format;
-    uint32_t physical_channels_mask = 0;
 
-    wf_tag_to_fourcc( GetWLE( &p_wf->wFormatTag ), &p_sys->fmt.i_codec,
-                      &psz_name );
-    p_sys->fmt.audio.i_channels      = GetWLE ( &p_wf->nChannels );
-    p_sys->fmt.audio.i_rate          = GetDWLE( &p_wf->nSamplesPerSec );
-    p_sys->fmt.audio.i_blockalign    = GetWLE( &p_wf->nBlockAlign );
-    p_sys->fmt.i_bitrate             = GetDWLE( &p_wf->nAvgBytesPerSec ) * 8;
-    p_sys->fmt.audio.i_bitspersample = GetWLE( &p_wf->wBitsPerSample );
+    static_assert(offsetof(WAVEFORMATEX, wFormatTag) == 0, "bogus wFormatTag offset");
+    static_assert(offsetof(WAVEFORMATEX, nChannels) == 2, "bogus nChannels offset");
+    static_assert(offsetof(WAVEFORMATEX, nSamplesPerSec) == 4, "bogus nSamplesPerSec offset");
+    static_assert(offsetof(WAVEFORMATEX, nBlockAlign) == 12, "bogus nBlockAlign offset");
+    static_assert(offsetof(WAVEFORMATEX, nAvgBytesPerSec) == 8, "bogus nAvgBytesPerSec offset");
+    static_assert(offsetof(WAVEFORMATEX, wBitsPerSample) == 14, "bogus wBitsPerSample offset");
+    static_assert(offsetof(WAVEFORMATEX, cbSize) == 16, "bogus cbSize offset");
+
+    const WAVEFORMATEXTENSIBLE *p_wf_ext = (const WAVEFORMATEXTENSIBLE *)p_data;
+    uint32_t physical_channels_mask = 0;
+    uint16_t wFormatTag = GetWLE( &p_data[0] /* wFormatTag */ );
+
+    wf_tag_to_fourcc( wFormatTag, &p_sys->fmt.i_codec, &psz_name );
+    p_sys->fmt.audio.i_channels      = GetWLE ( &p_data[2] /* nChannels */ );
+    p_sys->fmt.audio.i_rate          = GetDWLE( &p_data[4] /* nSamplesPerSec */ );
+    p_sys->fmt.audio.i_blockalign    = GetWLE( &p_data[12] /* nBlockAlign */ );
+    p_sys->fmt.i_bitrate             = GetDWLE( &p_data[8] /* nAvgBytesPerSec */ ) * 8;
+    p_sys->fmt.audio.i_bitspersample = GetWLE( &p_data[14] /* wBitsPerSample */ );
     if( i_size >= sizeof(WAVEFORMATEX) )
-        p_sys->fmt.i_extra = __MIN( GetWLE( &p_wf->cbSize ), i_size - sizeof(WAVEFORMATEX) );
+        p_sys->fmt.i_extra = __MIN( GetWLE( &p_data[16] /* cbSize */ ), i_size - sizeof(WAVEFORMATEX) );
     else
         p_sys->fmt.i_extra = 0;
     i_extended = 0;
@@ -399,7 +407,7 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
     /* Handle new WAVE_FORMAT_EXTENSIBLE wav files */
     /* see the following link for more information:
      * http://www.microsoft.com/whdc/device/audio/multichaud.mspx#EFAA */
-    if( GetWLE( &p_wf->wFormatTag ) == WAVE_FORMAT_EXTENSIBLE &&
+    if( wFormatTag == WAVE_FORMAT_EXTENSIBLE &&
         i_size >= sizeof( WAVEFORMATEXTENSIBLE ) &&
         ( p_sys->fmt.i_extra >= sizeof( WAVEFORMATEXTENSIBLE ) - sizeof( WAVEFORMATEX ) ) )
     {
@@ -471,7 +479,7 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
     }
 
     if( p_sys->fmt.i_codec == VLC_CODEC_UNKNOWN )
-        msg_Err( p_demux, "Unrecognized wf tag: 0x%x", GetWLE( &p_wf->wFormatTag ) );
+        msg_Err( p_demux, "Unrecognized wf tag: 0x%x", wFormatTag );
 
     if( physical_channels_mask == 0 && p_sys->fmt.audio.i_channels > 2
      && p_sys->fmt.audio.i_channels <= AOUT_CHAN_MAX )
@@ -524,7 +532,7 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
     msg_Dbg( p_demux, "format: 0x%4.4x, fourcc: %4.4s, channels: %d, "
              "freq: %u Hz, bitrate: %uKo/s, blockalign: %d, bits/samples: %d, "
              "extra size: %zu",
-             GetWLE( &p_wf->wFormatTag ), (char *)&p_sys->fmt.i_codec,
+             wFormatTag, (char *)&p_sys->fmt.i_codec,
              p_sys->fmt.audio.i_channels, p_sys->fmt.audio.i_rate,
              p_sys->fmt.i_bitrate / 8 / 1024, p_sys->fmt.audio.i_blockalign,
              p_sys->fmt.audio.i_bitspersample, p_sys->fmt.i_extra );
