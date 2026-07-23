@@ -1938,21 +1938,21 @@ bool matroska_segment_c::TrackInit( mkv_track_t * p_tk )
             mkv_track_t * p_tk = vars.p_tk;
             es_format_t * p_fmt = &vars.p_tk->fmt;
 
-                ONLY_FMT(AUDIO);
-                if( ParseWaveFmt( VLC_OBJECT(vars.p_demuxer),
-                                  p_tk->p_extra_data, p_tk->i_extra_data,
-                                  &p_tk->fmt, nullptr ) == VLC_SUCCESS )
+            ONLY_FMT(AUDIO);
+            if( ParseWaveFmt( VLC_OBJECT(vars.p_demuxer),
+                                p_tk->p_extra_data, p_tk->i_extra_data,
+                                &p_tk->fmt, nullptr ) == VLC_SUCCESS )
+            {
+                if( p_tk->fmt.audio.i_physical_channels )
                 {
-                    if( p_tk->fmt.audio.i_physical_channels )
-                    {
-                        p_tk->i_chans_to_reorder = aout_CheckChannelReorder(
-                            pi_channels_aout, NULL,
-                            p_tk->fmt.audio.i_physical_channels,
-                            p_tk->pi_chan_table );
-                    }
+                    p_tk->i_chans_to_reorder = aout_CheckChannelReorder(
+                        pi_channels_aout, NULL,
+                        p_tk->fmt.audio.i_physical_channels,
+                        p_tk->pi_chan_table );
                 }
-                else
-                    p_tk->fmt.i_codec = VLC_CODEC_UNKNOWN;
+            }
+            else
+                p_tk->fmt.i_codec = VLC_CODEC_UNKNOWN;
             p_fmt->b_packetized = !p_fmt->audio.i_blockalign;
         }
         static void A_MPEG_helper_ (HandlerPayload& vars) {
