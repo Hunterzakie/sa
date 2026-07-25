@@ -236,7 +236,7 @@ static int Open(vlc_object_t *obj)
 
     if (status >= 300)
     {
-        msg_Err(access, "HTTP %d error", status);
+        msg_Err(access, "HTTP %d error for %s", status, access->psz_url);
         goto error;
     }
 
