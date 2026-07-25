@@ -931,7 +931,7 @@ static HRESULT MMSession(audio_output_t *aout, IMMDeviceEnumerator *it)
         }
     }
 
-    WakeConditionVariable(&sys->ready);
+    WakeAllConditionVariable(&sys->ready);
     vlc_sem_post(&sys->init_passed);
 
     if (FAILED(hr))
@@ -1210,6 +1210,9 @@ static int Start(audio_output_t *aout, audio_sample_format_t *restrict fmt)
 
     EnterMTA();
     EnterCriticalSection(&sys->lock);
+
+    while (sys->device_status == DEVICE_PENDING)
+        SleepConditionVariableCS(&sys->ready, &sys->lock, INFINITE);
 
     if ((atomic_exchange(&sys->default_device_changed, false) && DeviceRestartLocked(aout) != 0)
       || sys->dev == NULL)
