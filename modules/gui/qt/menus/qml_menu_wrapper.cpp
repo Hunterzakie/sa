@@ -839,6 +839,12 @@ void PlaylistListContextMenu::popup(const QModelIndexList & selected, QPoint pos
         ml->addAndPlay(ids);
     });
 
+    action = menu->addAction(qtr("Shuffle and play"));
+
+    connect(action, &QAction::triggered, [ml, ids]() {
+        ml->shuffleAndPlay(ids);
+    });
+
     action = menu->addAction(qtr("Enqueue"));
 
     connect(action, &QAction::triggered, [ml, ids]() {
@@ -890,6 +896,13 @@ void PlaylistMediaContextMenu::popup(const QModelIndexList & selected, QPoint po
     connect(action, &QAction::triggered, [ml, ids]() {
         ml->addAndPlay(ids);
     });
+
+    if (ids.count() > 1) {
+        action = menu->addAction(qtr("Shuffle and play"));
+        connect(action, &QAction::triggered, [ml, ids]() {
+            ml->shuffleAndPlay(ids);
+        });
+    }
 
     action = menu->addAction(qtr("Enqueue"));
 
