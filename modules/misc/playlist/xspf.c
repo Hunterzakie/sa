@@ -56,7 +56,7 @@ static char *input_xml( input_item_t *p_item, char *(*func)(input_item_t *) )
  * \param p_file file to write xml-converted item to
  * \param p_i_count counter for track identifiers
  */
-static void xspf_export_item( playlist_item_t *p_item, FILE *p_file,
+static void xspf_export_item( playlist_item_t *p_item, const playlist_export_t *p_export, size_t prefix_len,
                               int *p_i_count )
 {
     if( !p_item ) return;
@@ -65,7 +65,7 @@ static void xspf_export_item( playlist_item_t *p_item, FILE *p_file,
     if( p_item->i_children > 0 )
     {
         for( int i = 0; i < p_item->i_children; i++ )
-            xspf_export_item( p_item->pp_children[i], p_file, p_i_count );
+            xspf_export_item( p_item->pp_children[i], p_export, prefix_len, p_i_count );
         return;
     }
 
@@ -74,6 +74,7 @@ static void xspf_export_item( playlist_item_t *p_item, FILE *p_file,
         return;
 
     input_item_t *p_input = p_item->p_input;
+    FILE *p_file = p_export->p_file;
     char *psz;
     vlc_tick_t i_duration;
 
@@ -84,7 +85,17 @@ static void xspf_export_item( playlist_item_t *p_item, FILE *p_file,
 
     char *psz_uri = input_xml( p_input, input_item_GetURI );
     if( psz_uri && *psz_uri )
-        fprintf( p_file, "\t\t\t<location>%s</location>\n", psz_uri );
+    {
+        /* We cannot really know if relative or absolute URL is better. As a
+         * heuristic, we write a relative URL if the item is in the same
+         * directory as the playlist, or a sub-directory thereof. */
+        size_t skip = 0;
+        if( likely(prefix_len != (size_t)-1)
+         && !strncmp( p_export->base_url, psz_uri, prefix_len ) )
+            skip = prefix_len;
+
+        fprintf( p_file, "\t\t\t<location>%s</location>\n", psz_uri + skip );
+    }
 
     /* -> the name/title (only if different from uri)*/
     psz = input_xml( p_input, input_item_GetTitle );
@@ -230,6 +241,14 @@ int xspf_export_playlist( vlc_object_t *p_this )
     char             *psz_temp;
     playlist_item_t  *p_node = p_export->p_root;
 
+    size_t prefix_len = -1;
+    if( likely(p_export->base_url != NULL) )
+    {
+        const char *p = strrchr( p_export->base_url, '/' );
+        assert(p != NULL);
+        prefix_len = (p + 1) - p_export->base_url;
+    }
+
     /* write XSPF XML header */
     fprintf( p_export->p_file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" );
     fprintf( p_export->p_file,
@@ -252,7 +271,7 @@ int xspf_export_playlist( vlc_object_t *p_this )
     i_count = 0;
     for( i = 0; i < p_node->i_children; i++ )
     {
-        xspf_export_item( p_node->pp_children[i], p_export->p_file,
+        xspf_export_item( p_node->pp_children[i], p_export, prefix_len,
                           &i_count );
     }
     fprintf( p_export->p_file, "\t</trackList>\n" );
