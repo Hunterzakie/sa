@@ -155,6 +155,7 @@ Widgets.PageExt {
 
             focus: true
 
+            showCone: !flickable._hasMedias
             orientation: flickable._hasMedias ? Qt.Horizontal : Qt.Vertical
 
             anchors.centerIn: flickable._hasMedias ? undefined : parent
