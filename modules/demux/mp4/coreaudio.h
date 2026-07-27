@@ -421,7 +421,7 @@ static const struct CoreAudioTableEntry
     { CoreAudio_Layout_DVD_6,             pi_vlc_chan_order_CoreAudio, AOUT_CHANS_2_1 | AOUT_CHANS_REAR },
     { CoreAudio_Layout_DVD_10,            pi_vlc_chan_order_CoreAudio, AOUT_CHANS_3_1 },
     { CoreAudio_Layout_DVD_11,            pi_vlc_chan_order_CoreAudio, AOUT_CHANS_3_1 | AOUT_CHAN_REARCENTER },
-    { CoreAudio_Layout_DVD_18,                    pi_vlc_chan_order_B, AOUT_CHANS_5_1 },
+    { CoreAudio_Layout_DVD_18,                    pi_vlc_chan_order_B, AOUT_CHANS_4_1 },
 
     { CoreAudio_Layout_AudioUnit_6_0,             pi_vlc_chan_order_B, AOUT_CHANS_5_0 | AOUT_CHAN_REARCENTER },
     //CoreAudio_Layout_AudioUnit_7_0
