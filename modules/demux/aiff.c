@@ -281,7 +281,7 @@ static int Open( vlc_object_t *p_this )
         p_sys->i_chans_to_reorder =
             aout_CheckChannelReorder( pi_channels_in, NULL,
                                       p_sys->fmt.audio.i_physical_channels,
-                                      p_sys->pi_chan_table ) > 0;
+                                      p_sys->pi_chan_table );
         p_sys->audio_fourcc =
             vlc_fourcc_GetCodecAudio( p_sys->fmt.i_codec,
                                       p_sys->fmt.audio.i_bitspersample );
