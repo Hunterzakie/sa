@@ -234,7 +234,7 @@ static int Open( vlc_object_t *p_this )
             msg_Dbg( p_demux, "SSND: (offset=%d blocksize=%d)",
                      p_sys->i_ssnd_offset, p_sys->i_ssnd_blocksize );
         }
-        else if( !memcmp( p_peek, "CHAN", 4 ) && i_chunk_size > 8 + 12 )
+        else if( !memcmp( p_peek, "CHAN", 4 ) && i_data_size >= 12 )
         {
             ssize_t ret = vlc_stream_Peek( p_demux->s, &p_peek, i_chunk_size );
             if( ret == -1 || (size_t) ret != i_chunk_size )
