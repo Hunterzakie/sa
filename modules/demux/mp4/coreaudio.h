@@ -294,27 +294,41 @@ static const struct
 static inline int CoreAudio_Bitmap_to_vlc_bitmap( const struct CoreAudio_layout_s *c,
                                                   uint16_t *pi_mapping,
                                                   uint8_t *pi_channels,
-                                                  const uint32_t **pp_chans_order )
+                                                  uint32_t pi_chans_order[AOUT_CHAN_MAX + 1] )
 {
-    *pp_chans_order = pi_vlc_chan_order_CoreAudio;
+    uint32_t i_mapped_bitmap = 0;
+
     *pi_mapping = 0;
     *pi_channels = 0;
     for (uint8_t i=0;i<ARRAY_SIZE(CoreAudio_Bitmap_mapping);i++)
     {
         if ( CoreAudio_Bitmap_mapping[i].i_bitmap & c->i_channels_bitmap )
         {
-            if ( (CoreAudio_Bitmap_mapping[i].i_vlc_bitmap & *pi_mapping) ||
-                 *pi_channels >= AOUT_CHAN_MAX )
-            {
-                /* double mapping or unsupported number of channels */
-                *pi_mapping = 0;
-                *pi_channels = 0;
-                return VLC_EGENERIC;
-            }
-            *pi_mapping |= CoreAudio_Bitmap_mapping[i].i_vlc_bitmap;
+            const uint32_t i_vlc_bitmap =
+                CoreAudio_Bitmap_mapping[i].i_vlc_bitmap;
+
+            i_mapped_bitmap |= CoreAudio_Bitmap_mapping[i].i_bitmap;
+            if( i_vlc_bitmap == 0 || (i_vlc_bitmap & *pi_mapping) ||
+                *pi_channels >= AOUT_CHAN_MAX )
+                goto error;
+
+            *pi_mapping |= i_vlc_bitmap;
+            pi_chans_order[(*pi_channels)++] = i_vlc_bitmap;
         }
     }
+
+    if( *pi_channels == 0 || i_mapped_bitmap != c->i_channels_bitmap ||
+        *pi_channels != vlc_popcount(c->i_channels_bitmap) )
+        goto error;
+
+    pi_chans_order[*pi_channels] = 0;
     return VLC_SUCCESS;
+
+error:
+    *pi_mapping = 0;
+    *pi_channels = 0;
+    pi_chans_order[0] = 0;
+    return VLC_EGENERIC;
 }
 
 static const uint32_t pi_vlc_chan_order_C[] = {
@@ -497,21 +511,60 @@ static const struct CoreAudioTableEntry
 static inline int CoreAudio_Layout_to_vlc( const struct CoreAudio_layout_s *c,
                                            uint16_t *pi_bitmap,
                                            uint8_t *pi_channels,
-                                           const uint32_t **pp_chans_order )
+                                           uint32_t pi_chans_order[AOUT_CHAN_MAX + 1] )
 {
+    *pi_bitmap = 0;
+    *pi_channels = 0;
+    pi_chans_order[0] = 0;
+
     if( c->i_channels_layout_tag == CoreAudio_Layout_BITMAP )
-        return CoreAudio_Bitmap_to_vlc_bitmap( c, pi_bitmap, pi_channels, pp_chans_order );
+        return CoreAudio_Bitmap_to_vlc_bitmap( c, pi_bitmap, pi_channels,
+                                               pi_chans_order );
 
     for (size_t i=0;i<ARRAY_SIZE(CoreAudio_Layout_mapping);i++)
     {
         if(CoreAudio_Layout_mapping[i].layout == c->i_channels_layout_tag )
         {
-            *pi_bitmap = CoreAudio_Layout_mapping[i].i_vlc_bitmap;
-            *pp_chans_order = CoreAudio_Layout_mapping[i].p_chans_order;
-            *pi_channels = c->i_channels_layout_tag & 0xFF;
-            break;
+            const struct CoreAudioTableEntry *p_mapping =
+                &CoreAudio_Layout_mapping[i];
+            const uint32_t *p_order = p_mapping->p_chans_order != NULL
+                                    ? p_mapping->p_chans_order
+                                    : pi_vlc_chan_order_wg4;
+            const uint8_t i_channels = c->i_channels_layout_tag & 0xFF;
+            uint32_t i_seen = 0;
+
+            if( i_channels == 0 || i_channels > AOUT_CHAN_MAX ||
+                vlc_popcount(p_mapping->i_vlc_bitmap) != i_channels )
+                goto error;
+
+            for( size_t j = 0; p_order[j] != 0; j++ )
+            {
+                const uint32_t i_channel = p_order[j];
+
+                if( !(p_mapping->i_vlc_bitmap & i_channel) )
+                    continue;
+                if( (i_seen & i_channel) || *pi_channels >= i_channels )
+                    goto error;
+
+                i_seen |= i_channel;
+                pi_chans_order[(*pi_channels)++] = i_channel;
+            }
+
+            if( *pi_channels != i_channels ||
+                i_seen != p_mapping->i_vlc_bitmap )
+                goto error;
+
+            *pi_bitmap = p_mapping->i_vlc_bitmap;
+            pi_chans_order[*pi_channels] = 0;
+            return VLC_SUCCESS;
         }
     }
-    return VLC_SUCCESS;
+    return VLC_EGENERIC;
+
+error:
+    *pi_bitmap = 0;
+    *pi_channels = 0;
+    pi_chans_order[0] = 0;
+    return VLC_EGENERIC;
 }
 #endif

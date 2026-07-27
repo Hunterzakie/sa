@@ -195,7 +195,10 @@ static int Open( vlc_object_t *p_this )
     p_sys->i_chans_to_reorder = 0;
     es_format_Init( &p_sys->fmt, AUDIO_ES, VLC_FOURCC( 't', 'w', 'o', 's' ) );
 
-    const uint32_t *pi_channels_in = NULL;
+    uint32_t pi_channels_in[AOUT_CHAN_MAX + 1];
+    uint16_t i_channel_layout = 0;
+    uint8_t i_layout_channels = 0;
+    bool b_channel_layout = false;
 
     for( ;; )
     {
@@ -246,11 +249,15 @@ static int Open( vlc_object_t *p_this )
             layout.i_channels_description_count = GetDWBE( &p_peek[8+8] );
             /* TODO: handle CoreAudio_layout_s.p_descriptions */
 
-            if ( CoreAudio_Layout_to_vlc( &layout,
-                                          &p_sys->fmt.audio.i_physical_channels,
-                                          &p_sys->fmt.audio.i_channels,
-                                          &pi_channels_in ) != VLC_SUCCESS )
+            if ( CoreAudio_Layout_to_vlc( &layout, &i_channel_layout,
+                                          &i_layout_channels,
+                                          pi_channels_in ) != VLC_SUCCESS )
+            {
+                b_channel_layout = false;
                 msg_Warn( p_demux, "discarding chan mapping" );
+            }
+            else
+                b_channel_layout = true;
         }
         else
         {
@@ -276,8 +283,9 @@ static int Open( vlc_object_t *p_this )
         }
     }
 
-    if( pi_channels_in != NULL )
+    if( b_channel_layout )
     {
+        p_sys->fmt.audio.i_physical_channels = i_channel_layout;
         p_sys->i_chans_to_reorder =
             aout_CheckChannelReorder( pi_channels_in, NULL,
                                       p_sys->fmt.audio.i_physical_channels,
