@@ -246,6 +246,17 @@ static const uint32_t pi_vlc_chan_order_CoreAudio[] =
     0
 };
 
+/* MPEG 7.1 C puts its side surrounds before the rear ones, the other way
+ * around from the layouts sharing pi_vlc_chan_order_CoreAudio. */
+static const uint32_t pi_vlc_chan_order_CoreAudio_7_1_C[] =
+{
+    AOUT_CHAN_LEFT, AOUT_CHAN_RIGHT, AOUT_CHAN_CENTER,
+    AOUT_CHAN_LFE,
+    AOUT_CHAN_MIDDLELEFT, AOUT_CHAN_MIDDLERIGHT,
+    AOUT_CHAN_REARLEFT, AOUT_CHAN_REARRIGHT,
+    0
+};
+
 static const struct
 {
     uint32_t i_bitmap;
@@ -399,7 +410,7 @@ static const struct CoreAudioTableEntry
     { CoreAudio_Layout_MPEG_6_1_A,        pi_vlc_chan_order_CoreAudio, AOUT_CHANS_5_1 | AOUT_CHAN_REARCENTER },
     { CoreAudio_Layout_MPEG_7_1_A,        pi_vlc_chan_order_CoreAudio, AOUT_CHANS_7_1 },
     { CoreAudio_Layout_MPEG_7_1_B,              pi_vlc_chan_order_AAC, AOUT_CHANS_7_1 },
-    { CoreAudio_Layout_MPEG_7_1_C,        pi_vlc_chan_order_CoreAudio, AOUT_CHANS_7_1 },
+    { CoreAudio_Layout_MPEG_7_1_C,  pi_vlc_chan_order_CoreAudio_7_1_C, AOUT_CHANS_7_1 },
     { CoreAudio_Layout_Emagic_Default_7_1,        pi_vlc_chan_order_B, AOUT_CHANS_7_1 },
 
     { CoreAudio_Layout_ITU_2_1,           pi_vlc_chan_order_CoreAudio, AOUT_CHANS_3_0 },
