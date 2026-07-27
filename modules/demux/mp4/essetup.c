@@ -1281,17 +1281,22 @@ int SetupAudioES( demux_t *p_demux, const mp4_track_t *p_track,
         {
             const unsigned i_bps = aout_BitsPerSample( p_fmt->i_codec );
             /* Uncompressed audio */
-            if( i_bps )
-                 p_cfg->i_chans_to_reorder =
+            if( i_bps && (i_channels != p_soun->i_channelcount ||
+                          i_channels != stdc_count_ones(i_vlc_mapping)) )
+            {
+                msg_Warn( p_demux, "discarding inconsistent chan mapping" );
+            }
+            else if( i_bps )
+            {
+                p_cfg->i_chans_to_reorder =
                     aout_CheckChannelReorder( rg_chans_order, NULL,
                                               i_vlc_mapping,
                                               p_cfg->rgi_chans_reordering );
 
-            /* we can only set bitmap for VLC mapping or [re]mapped pcm audio
-             * as vlc can't enumerate channels for compressed content */
-            if( i_bps )
-            {
-                p_fmt->audio.i_channels = stdc_count_ones(i_vlc_mapping);
+                /* we can only set bitmap for VLC mapping or [re]mapped pcm
+                 * audio as vlc can't enumerate channels for compressed
+                 * content */
+                p_fmt->audio.i_channels = i_channels;
                 p_fmt->audio.i_physical_channels = i_vlc_mapping;
             }
         }

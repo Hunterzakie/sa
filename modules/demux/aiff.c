@@ -34,6 +34,7 @@
 #include <vlc_aout.h>
 #include <vlc_meta.h>
 #include <limits.h>
+#include <stdbit.h>
 
 #include "mp4/coreaudio.h"
 
@@ -285,16 +286,24 @@ static int Open( vlc_object_t *p_this )
 
     if( b_channel_layout )
     {
-        p_sys->fmt.audio.i_physical_channels = i_channel_layout;
-        p_sys->i_chans_to_reorder =
-            aout_CheckChannelReorder( pi_channels_in, NULL,
-                                      p_sys->fmt.audio.i_physical_channels,
-                                      p_sys->pi_chan_table );
-        p_sys->audio_fourcc =
-            vlc_fourcc_GetCodecAudio( p_sys->fmt.i_codec,
-                                      p_sys->fmt.audio.i_bitspersample );
-        if( p_sys->audio_fourcc == 0 )
-            p_sys->i_chans_to_reorder = 0;
+        if( i_layout_channels != p_sys->fmt.audio.i_channels ||
+            i_layout_channels != stdc_count_ones(i_channel_layout) )
+        {
+            msg_Warn( p_demux, "discarding inconsistent chan mapping" );
+        }
+        else
+        {
+            p_sys->fmt.audio.i_physical_channels = i_channel_layout;
+            p_sys->i_chans_to_reorder =
+                aout_CheckChannelReorder( pi_channels_in, NULL,
+                                          p_sys->fmt.audio.i_physical_channels,
+                                          p_sys->pi_chan_table );
+            p_sys->audio_fourcc =
+                vlc_fourcc_GetCodecAudio( p_sys->fmt.i_codec,
+                                          p_sys->fmt.audio.i_bitspersample );
+            if( p_sys->audio_fourcc == 0 )
+                p_sys->i_chans_to_reorder = 0;
+        }
     }
 
     p_sys->i_ssnd_start = p_sys->i_ssnd_pos + 16 + p_sys->i_ssnd_offset;
