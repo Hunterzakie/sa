@@ -47,6 +47,7 @@ struct vlc_aout_stream
     aout_volume_t *volume;
     aout_filters_t *filters;
     aout_filters_cfg_t filters_cfg;
+    bool output_failed;
 
     atomic_bool drained;
     _Atomic vlc_tick_t drain_deadline;
@@ -295,7 +296,7 @@ static void stream_Reset(vlc_aout_stream *stream)
 {
     aout_owner_t *owner = aout_stream_owner(stream);
 
-    if (stream->mixer_format.i_format)
+    if (!stream->output_failed)
     {
         vlc_audio_meter_Flush(&owner->meter);
 
@@ -382,6 +383,7 @@ vlc_aout_stream * vlc_aout_stream_New(audio_output_t *p_aout,
     if (stream == NULL)
         return NULL;
     stream->instance = aout_instance(p_aout);
+    stream->output_failed = false;
 
     stream->volume = NULL;
     if (!owner->bitexact)
@@ -456,7 +458,7 @@ void vlc_aout_stream_Delete (vlc_aout_stream *stream)
     audio_output_t *aout = aout_stream_aout(stream);
     aout_owner_t *owner = aout_stream_owner(stream);
 
-    if (stream->mixer_format.i_format)
+    if (!stream->output_failed)
     {
         vlc_audio_meter_Reset(&owner->meter, NULL);
         if (stream->filters)
@@ -500,19 +502,22 @@ static int stream_CheckReady (vlc_aout_stream *stream)
                 vlc_tracer_TraceEvent(tracer, "RENDER", stream->str_id, "restart");
 
             msg_Dbg (aout, "restarting output...");
-            if (stream->mixer_format.i_format)
+            if (!stream->output_failed)
                 aout_OutputDelete (aout);
+            stream->output_failed = false;
             stream->filter_format = stream->mixer_format = stream->input_format;
             stream->filters_cfg = AOUT_FILTERS_CFG_INIT;
 
             stream_Reset(stream);
 
-            if (aout_OutputNew(aout, stream, &stream->mixer_format, stream->input_profile,
-                               &stream->filter_format, &stream->filters_cfg))
-                stream->mixer_format.i_format = 0;
+            stream->output_failed =
+                aout_OutputNew(aout, stream, &stream->mixer_format,
+                               stream->input_profile, &stream->filter_format,
+                               &stream->filters_cfg) != 0;
             if (stream->volume != NULL)
                 aout_volume_SetFormat(stream->volume,
-                                      stream->mixer_format.i_format);
+                                      stream->output_failed ? 0
+                                                            : stream->mixer_format.i_format);
 
             /* Notify the decoder that the aout changed in order to try a new
              * suitable codec (like an HDMI audio format). However, keep the
@@ -527,7 +532,7 @@ static int stream_CheckReady (vlc_aout_stream *stream)
         msg_Dbg (aout, "restarting filters...");
         stream->sync.resamp_type = AOUT_RESAMPLING_NONE;
 
-        if (stream->mixer_format.i_format && !owner->bitexact)
+        if (!stream->output_failed && !owner->bitexact)
         {
             stream->filters = aout_FiltersNewWithClock(VLC_OBJECT(aout),
                                                        stream->sync.clock,
@@ -537,19 +542,22 @@ static int stream_CheckReady (vlc_aout_stream *stream)
             if (stream->filters == NULL)
             {
                 aout_OutputDelete (aout);
-                stream->mixer_format.i_format = 0;
+                stream->output_failed = true;
             }
-            aout_FiltersSetClockDelay(stream->filters, stream->sync.delay);
+            else
+                aout_FiltersSetClockDelay(stream->filters,
+                                          stream->sync.delay);
         }
 
         vlc_audio_meter_Reset(&owner->meter,
-                              stream->mixer_format.i_format ? &stream->mixer_format : NULL);
+                              stream->output_failed ? NULL
+                                                    : &stream->mixer_format);
 
         /* TODO: This would be a good time to call clean up any video output
          * left over by an audio visualization:
         input_resource_TerminatVout(MAGIC HERE); */
     }
-    return (stream->mixer_format.i_format) ? status : AOUT_DEC_FAILED;
+    return stream->output_failed ? AOUT_DEC_FAILED : status;
 }
 
 /**
@@ -942,7 +950,7 @@ void vlc_aout_stream_ChangePause(vlc_aout_stream *stream, bool paused, vlc_tick_
 {
     audio_output_t *aout = aout_stream_aout(stream);
 
-    if (stream->mixer_format.i_format)
+    if (!stream->output_failed)
     {
         struct vlc_tracer *tracer = aout_stream_tracer(stream);
         if (tracer != NULL)
@@ -1003,7 +1011,7 @@ void vlc_aout_stream_Flush(vlc_aout_stream *stream)
     if (tracer != NULL)
         vlc_tracer_TraceEvent(tracer, "RENDER", stream->str_id, "flushed");
 
-    if (stream->mixer_format.i_format)
+    if (!stream->output_failed)
         aout->flush(aout);
     stream_Reset(stream);
 }
@@ -1069,7 +1077,7 @@ void vlc_aout_stream_Drain(vlc_aout_stream *stream)
 {
     audio_output_t *aout = aout_stream_aout(stream);
 
-    if (!stream->mixer_format.i_format)
+    if (stream->output_failed)
         return;
 
     if (unlikely(stream->discontinuity.draining))
