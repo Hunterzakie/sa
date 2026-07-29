@@ -1268,6 +1268,28 @@ static void *Thread( void *obj )
             return ThreadCleanup( p_intf, CLEANUP_ERROR );
         }
 
+        if (qEnvironmentVariable("QT_QUICK_BACKEND", QStringLiteral("rhi")) == QLatin1String("rhi") &&
+            qEnvironmentVariableIsEmpty("QSG_RHI_BACKEND") &&
+            /* FIXME: CompositorX11 only supports RHI OpenGL and software mode. */
+            p_intf->p_compositor->type() != vlc::Compositor::X11Compositor)
+        {
+            const auto window = p_intf->p_compositor->quickWindow();
+            QObject::connect(window, &QQuickWindow::frameSwapped, &app, [window = QPointer(window)]() {
+                if (Q_LIKELY(window))
+                {
+                    // `QQuickWindow::graphicsApi()` should not be called from the rendering thread, that's why
+                    // queued connection is used here.
+                    const QSGRendererInterface::GraphicsApi api = window->graphicsApi();
+#ifdef _WIN32
+                    if (api != QSGRendererInterface::Direct3D12)
+                        qInfo("Experimental RHI backend Direct3D 12 may be enabled with `QSG_RHI_BACKEND=d3d12`.");
+#endif
+                    if (api != QSGRendererInterface::Vulkan)
+                        qInfo("Experimental RHI backend Vulkan may be enabled with `QSG_RHI_BACKEND=vulkan`.");
+                }
+            }, static_cast<Qt::ConnectionType>(Qt::SingleShotConnection | Qt::QueuedConnection));
+        }
+
         /* Check window type from the Qt platform back-end */
         bool known_type = true;
 
