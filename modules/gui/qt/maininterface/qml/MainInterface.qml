@@ -307,7 +307,7 @@ Item {
 
             focus: true
             // If there is depth buffer, clipping is not necessary:
-            clip: _extendedFrameVisible && !effect.hasDepthBuffer
+            clip: _extendedFrameVisible && !effect.relyOnDepthTest
 
             source: {
                 // priority applies accross modes
@@ -366,7 +366,13 @@ Item {
         color: Qt.rgba(0.0, 0.0, 0.0, 0.5) // sg opacity < 1.0 force enables blending, so we adjust the color instead
 
         // If there is depth buffer, we enable hollow mode. The inner area is discarded, so we can do this:
-        z: hasDepthBuffer ? 99 : -1
+        z: relyOnDepthTest ? 99 : -1
+
+        // NOTE: We don't want to use this optimization when GammaRay is being used, as it becomes quite
+        //       annoying with the quick scene inspector:
+        // NOTE: This is purposefully not readonly, so that it can be adjusted by GammaRay for debugging
+        //       purposes when necessary:
+        property bool relyOnDepthTest: hasDepthBuffer && !(MainCtx.intfMainWindow?.title.includes("GammaRay"))
 
         readonly property bool hasDepthBuffer: (Window.window && MainCtx.windowHasDepthBuffer(Window.window))
 
