@@ -21,15 +21,56 @@
 
 #include <QString>
 #include <QStringList>
+#include <QByteArray>
 
 #include "util/qt_dirs.hpp"
 #include "util/shared_input_item.hpp"
+
+// `lib/libvlc_internal.h`
+extern "C" VLC_WEAK void input_item_SetLibvlcOwner(input_item_t *, void *, void (*release)(void *));
 
 namespace vlc {
   namespace playlist {
 
 class Media
 {
+    static void ReleaseBuffer(void *buffer)
+    {
+        delete static_cast<QByteArray*>(buffer);
+    }
+
+    static int imem_get_cb(void *opaque, const char *cookie,
+                           int64_t *dts, int64_t *pts, unsigned *flags,
+                           size_t *size, void **data)
+    {
+        Q_UNUSED(cookie);
+        Q_UNUSED(dts);
+        Q_UNUSED(pts);
+        Q_UNUSED(flags);
+
+        assert(opaque);
+        assert(data);
+        assert(size);
+
+        const auto buffer = static_cast<QByteArray*>(opaque);
+        if (Q_UNLIKELY(buffer->size() <= 0 || !buffer->constData()))
+            return 1;
+
+        *size = buffer->size();
+        *data = buffer->data();
+
+        return 0;
+    }
+
+    static void imem_release_cb(void *opaque, const char *cookie, size_t, void *)
+    {
+        Q_UNUSED(opaque);
+        Q_UNUSED(cookie);
+
+        // We don't free the buffer with `imem-release`, the buffer
+        // is to be released when the input item itself is gone.
+    }
+
 public:
     Media(input_item_t *media = nullptr, const QStringList &options = {})
     {
@@ -53,6 +94,33 @@ public:
         if (!ptr)
             throw std::bad_alloc();
         setMediaOptions(options);
+    }
+
+    explicit Media(const QByteArray& data)
+    {
+        if (Q_UNLIKELY(!input_item_SetLibvlcOwner))
+        {
+            throw std::runtime_error( "Weak symbol input_item_SetLibvlcOwner() could not be "
+                                      "resolved. Direct data item can not be played!" );
+        }
+
+        assert(data.size() > 0);
+
+        const auto inputItem = input_item_New("imem://", nullptr);
+        if (Q_UNLIKELY(!inputItem))
+            throw std::bad_alloc();
+
+        ptr.reset(inputItem, false);
+
+        const auto buffer = new QByteArray(data);
+        input_item_SetLibvlcOwner(inputItem, buffer, ReleaseBuffer);
+
+        // Akin to `libvlc_media_new_callbacks()`:
+        setMediaOptions({QString::asprintf(":imem-get=%lld", reinterpret_cast<long long>(imem_get_cb)),
+                         QString::asprintf(":imem-release=%lld", reinterpret_cast<long long>(imem_release_cb)),
+                         QString::asprintf(":imem-data=%lld", reinterpret_cast<long long>(buffer)),
+                         QString::asprintf(":imem-size=%lld", reinterpret_cast<long long>(buffer->size())),
+                         QString::asprintf(":imem-cat=4")});
     }
 
     void setMediaOptions(const QStringList &options = {})
