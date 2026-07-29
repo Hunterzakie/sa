@@ -58,7 +58,11 @@ QVector<Media> toMediaList(const QVariantList &sources)
     std::transform(sources.begin(), sources.end(),
                    std::back_inserter(mediaList), [](const QVariant& value) {
         const auto typeId = value.typeId();
-        if ((typeId == QMetaType::QUrl) || (typeId == QMetaType::QString))
+        if (value.canConvert<Media>())
+        {
+            return value.value<Media>();
+        }
+        else if ((typeId == QMetaType::QUrl) || (typeId == QMetaType::QString))
         {
             std::optional<QString> input;
             QUrl mrl;
