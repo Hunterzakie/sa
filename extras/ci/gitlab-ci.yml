@@ -196,11 +196,21 @@ uwp32-libvlc-llvm:
     extends: .win-common
     image:
         name: $VLC_WIN_LLVM_UCRT_IMAGE
+    after_script:
+        - ninja clang-tidy -C win32-uwp-meson 2>&1 > clang-tidy.txt
+        - !reference [default, after_script]
+    artifacts:
+        paths:
+            - clang-tidy.txt
+        # a fancier format would be welcome
+        # reports:
+        #     sast: clang-tidy.txt
     variables:
         <<: *variables-win32
         VLCARCH: win64-uwp
         LIBVLC_EXTRA_BUILD_FLAGS: -z
         UWP_EXTRA_BUILD_FLAGS: -u -w -x -S 0x0A000007 -m
+        MCONFIGFLAGS: -Db_colorout=never
     allow_failure: true
 
 .nightly-win-common:
