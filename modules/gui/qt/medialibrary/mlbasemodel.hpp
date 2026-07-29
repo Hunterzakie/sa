@@ -104,6 +104,8 @@ public:
     void setFavoriteOnly(const bool favoriteOnly);
 
     Q_INVOKABLE void addAndPlay(const QModelIndexList &list, const QStringList &options = {});
+    Q_INVOKABLE void playAll(const QStringList &options = {});
+    Q_INVOKABLE void enqueueAll(const QStringList &options = {});
 
     vlc_ml_sorting_criteria_t getMLSortingCriteria() const;
 
@@ -154,6 +156,7 @@ private:
                                             , std::vector<std::unique_ptr<MLItem>> &items)>;
 
     quint64 loadItems(const QVector<int> &index, ItemCallback cb);
+    void loadAll(std::function<void(const QVariantList &ids)> cb);
 
 
 protected:
