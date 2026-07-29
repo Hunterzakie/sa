@@ -143,6 +143,19 @@ public:
 
     int serialize(const QString& fileName);
 
+    Q_INVOKABLE Media mediaFromData(const QByteArray& data)
+    {
+        try
+        {
+            return Media(data);
+        }
+        catch (const std::exception& exception)
+        {
+            qWarning() << exception.what();
+            return {};
+        }
+    }
+
 public:
     PlaylistController(vlc_playlist_t *playlist, QObject *parent = nullptr);
     virtual ~PlaylistController();
