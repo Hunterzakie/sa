@@ -252,9 +252,19 @@ nightly-win64-llvm-meson:
     extends: .nightly-win-common
     image:
         name: $VLC_WIN_LLVM_MSVCRT_IMAGE
+    after_script:
+        - ninja clang-tidy -C win64-meson 2>&1 > clang-tidy.txt
+        - !reference [default, after_script]
+    artifacts:
+        paths:
+            - clang-tidy.txt
+        # a fancier format would be welcome
+        # reports:
+        #     sast: clang-tidy.txt
     variables:
         <<: *variables-win64
         LIBVLC_EXTRA_BUILD_FLAGS: -D / -m -t
+        MCONFIGFLAGS: -Db_colorout=never
 
 nightly-win64-arm-llvm:
     extends: .nightly-win-common
