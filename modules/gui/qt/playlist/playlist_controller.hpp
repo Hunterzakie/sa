@@ -128,6 +128,7 @@ public:
     Q_INVOKABLE void insert(unsigned index, const QVariantList&, bool startPlaying = false);
 
     void append(const QVector<Media> &, bool startPlaying = false);
+    void prioritizeAndPlay(const QVector<Media> &);
     void insert(size_t index, const QVector<Media> &, bool startPlaying = false);
     void move(const QVector<PlaylistItem> &, size_t target, ssize_t indexHint);
     void remove(const QVector<PlaylistItem> &, ssize_t indexHint);
