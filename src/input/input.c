@@ -114,6 +114,11 @@ static int input_SlaveSourceAdd( input_thread_t *, enum slave_type,
 static char *input_SubtitleFile2Uri( input_thread_t *, const char * );
 static void input_ChangeState( input_thread_t *p_input, int i_state, vlc_tick_t ); /* TODO fix name */
 
+static inline bool input_priv_IsPlaybackType(input_thread_private_t *priv)
+{
+    return priv->type == INPUT_TYPE_PLAYBACK;
+}
+
 /**
  * Start a input_thread_t created by input_Create.
  *
@@ -303,7 +308,7 @@ input_thread_t * input_Create( vlc_object_t *p_parent, input_item_t *p_item,
     if( !p_item->p_stats )
         p_item->p_stats = calloc( 1, sizeof(*p_item->p_stats) );
 
-    if( priv->type != INPUT_TYPE_PLAYBACK )
+    if( !input_priv_IsPlaybackType( priv ) )
     {
         p_input->obj.logger = NULL;
         p_input->obj.no_interact = true;
@@ -348,7 +353,7 @@ input_thread_t * input_Create( vlc_object_t *p_parent, input_item_t *p_item,
     input_item_SetESNowPlaying( p_item, NULL );
 
     /* */
-    if( priv->type == INPUT_TYPE_PLAYBACK && var_InheritBool( p_input, "stats" ) )
+    if( input_priv_IsPlaybackType( priv ) && var_InheritBool( p_input, "stats" ) )
         priv->stats = input_stats_Create();
     else
         priv->stats = NULL;
@@ -856,7 +861,7 @@ static void InitTitle( input_thread_t * p_input, bool had_titles )
     input_thread_private_t *priv = input_priv(p_input);
     input_source_t *p_master = priv->master;
 
-    if( priv->type != INPUT_TYPE_PLAYBACK )
+    if( !input_priv_IsPlaybackType( priv ) )
         return;
 
     vlc_mutex_lock( &priv->p_item->lock );
@@ -3009,7 +3014,7 @@ static int InputSourceInit( input_source_t *in, input_thread_t *p_input,
 
     /* get attachment
      * FIXME improve for preparsing: move it after GET_META and check psz_arturl */
-    if( input_priv(p_input)->type == INPUT_TYPE_PLAYBACK )
+    if( input_priv_IsPlaybackType( input_priv(p_input) ) )
     {
         if( demux_Control( in->p_demux, DEMUX_GET_TITLE_INFO,
                            &in->title, &in->i_title,
