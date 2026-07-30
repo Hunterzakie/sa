@@ -831,6 +831,23 @@ VLC_API int
 vlc_playlist_GoTo(vlc_playlist_t *playlist, ssize_t index);
 
 /**
+ * Prioritize a set of items for random playback
+ *
+ * The 'count' items at [index, index + count) added to the end of queue
+ * and are played next shuffled among the themselves. Once the set has been
+ * completed, random selection continues over to the rest of the queue.
+ * Enables random playback if it was disabled. (The queue itself is NOT
+ * reordered)
+ *
+ * \param playlist the playlist, locked
+ * \param index    the index of the first item of the set
+ * \param count    the number of items to prioritize
+ * \return VLC_SUCCESS on success, another value on error
+ */
+VLC_API int
+vlc_playlist_PrioritizeAndPlay(vlc_playlist_t *playlist, size_t index, size_t count);
+
+/**
  * Go to a given item.
  *
  * If the index is known, use vlc_playlist_GoTo() instead.
