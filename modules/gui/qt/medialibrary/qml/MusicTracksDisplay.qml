@@ -84,7 +84,7 @@ Widgets.PageExt {
             width: VLCStyle.bannerButton_width
             height: VLCStyle.bannerButton_height
             padding: VLCStyle.margin_xxxsmall
-            iconSize: VLCStyle.icon_banner
+            iconSize: MainCtx.dp(20, VLCStyle.scale)
 
             iconTxt: VLCIcons.enqueue
             text: qsTr("Enqueue all")
