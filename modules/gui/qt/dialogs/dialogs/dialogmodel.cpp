@@ -240,7 +240,7 @@ VLCDialogModel::VLCDialogModel(qt_intf_t* intf, QObject* parent)
     const vlc_dialog_cbs cbs =
         {
             onDialogLogin, onDialogQuestion, onDialogProgress,
-            onDialogCancelled, onDialogProgressUpdated
+            onDialogCancelled, onDialogProgressUpdated, nullptr
         };
     vlc_dialog_provider_set_callbacks(intf, &cbs, this);
 }

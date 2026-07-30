@@ -89,6 +89,19 @@ display_progress_cb(void *p_data, vlc_dialog_id *p_id, const char *psz_title,
 }
 
 static void
+display_passcode_cb(void *p_data, vlc_dialog_id *p_id, const char *psz_title,
+                    const char *psz_text, const char *psz_ok,
+                    const char *psz_cancel)
+{
+    libvlc_instance_t *p_instance = p_data;
+
+    p_instance->dialog.cbs.pf_display_passcode(p_instance->dialog.data,
+                                               (libvlc_dialog_id *) p_id,
+                                               psz_title, psz_text,
+                                               psz_ok, psz_cancel);
+}
+
+static void
 cancel_cb(void *p_data, vlc_dialog_id *p_id)
 {
     libvlc_instance_t *p_instance = p_data;
@@ -127,6 +140,8 @@ libvlc_dialog_set_callbacks(libvlc_instance_t *p_instance,
             .pf_cancel = p_cbs->pf_cancel != NULL ? cancel_cb : NULL,
             .pf_update_progress = p_cbs->pf_update_progress != NULL ?
                                   update_progress_cb : NULL,
+            .pf_display_passcode = p_cbs->pf_display_passcode != NULL ?
+                                   display_passcode_cb : NULL,
         };
 
         p_instance->dialog.cbs = *p_cbs;
@@ -171,6 +186,13 @@ int
 libvlc_dialog_post_action(libvlc_dialog_id *p_id, int i_action)
 {
     int i_ret = vlc_dialog_id_post_action((vlc_dialog_id *)p_id, i_action);
+    return i_ret == VLC_SUCCESS ? 0 : -1;
+}
+
+int
+libvlc_dialog_post_passcode(libvlc_dialog_id *p_id, const char *psz_passcode)
+{
+    int i_ret = vlc_dialog_id_post_passcode((vlc_dialog_id *)p_id, psz_passcode);
     return i_ret == VLC_SUCCESS ? 0 : -1;
 }
 

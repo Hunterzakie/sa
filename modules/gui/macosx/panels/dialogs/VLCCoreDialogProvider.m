@@ -1,7 +1,7 @@
 /*****************************************************************************
  * VLCCoreDialogProvider.m: Mac OS X Core Dialogs
  *****************************************************************************
- * Copyright (C) 2005-2019 VLC authors and VideoLAN
+ * Copyright (C) 2005-2026 VLC authors and VideoLAN
  *
  * Authors: Derk-Jan Hartman <hartman at videolan dot org>
  *          Felix Paul Kühne <fkuehne at videolan dot org>
@@ -30,9 +30,10 @@
 #import <vlc_common.h>
 #import <vlc_dialog.h>
 
-@interface VLCCoreDialogProvider ()
+@interface VLCCoreDialogProvider () <NSTextFieldDelegate>
 {
     VLCErrorWindowController *_errorPanel;
+    NSButton *_passcodeOkButton;
 }
 
 - (void)displayErrorWithTitle:(NSString *)title
@@ -43,6 +44,12 @@
                       text:(NSString *)text
                   username:(NSString *)username
                 askToStore:(BOOL)askToStore;
+
+- (void)displayPasscodeDialog:(vlc_dialog_id *)dialogID
+                        title:(NSString *)title
+                         text:(NSString *)text
+                      okTitle:(NSString *)okTitle
+                  cancelTitle:(NSString *)cancelTitle;
 
 - (void)displayQuestion:(vlc_dialog_id *)dialogID
                   title:(NSString *)title
@@ -150,6 +157,29 @@ static void displayProgressCallback(void *p_data,
     }
 }
 
+static void displayPasscodeCallback(void *p_data,
+                                    vlc_dialog_id *p_id,
+                                    const char *psz_title,
+                                    const char *psz_text,
+                                    const char *psz_ok,
+                                    const char *psz_cancel)
+{
+    @autoreleasepool {
+        VLCCoreDialogProvider *dialogProvider = (__bridge VLCCoreDialogProvider *)p_data;
+        NSString *title = toNSStr(psz_title);
+        NSString *text = toNSStr(psz_text);
+        NSString *okTitle = toNSStr(psz_ok);
+        NSString *cancelTitle = toNSStr(psz_cancel);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [dialogProvider displayPasscodeDialog:p_id
+                                            title:title
+                                             text:text
+                                          okTitle:okTitle
+                                      cancelTitle:cancelTitle];
+        });
+    }
+}
+
 static void cancelCallback(void *p_data,
                            vlc_dialog_id *p_id)
 {
@@ -193,7 +223,8 @@ static void updateProgressCallback(void *p_data,
             displayQuestionCallback,
             displayProgressCallback,
             cancelCallback,
-            updateProgressCallback
+            updateProgressCallback,
+            displayPasscodeCallback
         };
 
         vlc_dialog_provider_set_error_callback(p_intf, displayErrorCallback, (__bridge void *)self);
@@ -263,6 +294,40 @@ static void updateProgressCallback(void *p_data,
                                  password ? [password UTF8String] : NULL,
                                  _authenticationStorePasswordCheckbox.state == NSOnState);
     }
+}
+
+- (void)displayPasscodeDialog:(vlc_dialog_id *)dialogID
+                        title:(NSString *)title
+                         text:(NSString *)text
+                      okTitle:(NSString *)okTitle
+                  cancelTitle:(NSString *)cancelTitle
+{
+    NSAlert * const alert = [[NSAlert alloc] init];
+    alert.messageText = title;
+    alert.informativeText = text;
+    _passcodeOkButton = [alert addButtonWithTitle:okTitle];
+    _passcodeOkButton.enabled = NO;
+    [alert addButtonWithTitle:cancelTitle];
+
+    NSSecureTextField * const passcodeField =
+        [[NSSecureTextField alloc] initWithFrame:NSMakeRect(0, 0, 280, 24)];
+    passcodeField.delegate = self;
+    alert.accessoryView = passcodeField;
+    alert.window.initialFirstResponder = passcodeField;
+
+    const NSModalResponse response = [alert runModal];
+    _passcodeOkButton = nil;
+
+    if (response == NSAlertFirstButtonReturn)
+        vlc_dialog_id_post_passcode(dialogID, passcodeField.stringValue.UTF8String);
+    else
+        vlc_dialog_id_dismiss(dialogID);
+}
+
+- (void)controlTextDidChange:(NSNotification *)notification
+{
+    NSTextField * const field = notification.object;
+    _passcodeOkButton.enabled = field.stringValue.length > 0;
 }
 
 - (IBAction)authenticationDialogAction:(id)sender

@@ -54,6 +54,7 @@ enum dialog_type
     VLC_DIALOG_LOGIN,
     VLC_DIALOG_QUESTION,
     VLC_DIALOG_PROGRESS,
+    VLC_DIALOG_PASSCODE,
 };
 
 struct dialog_answer
@@ -71,6 +72,10 @@ struct dialog_answer
         {
             int i_action;
         } question;
+        struct
+        {
+            char *psz_passcode;
+        } passcode;
     } u;
 };
 
@@ -143,6 +148,8 @@ dialog_id_release(vlc_dialog_id *p_id)
         free(p_id->answer.u.login.psz_username);
         free(p_id->answer.u.login.psz_password);
     }
+    else if (p_id->answer.i_type == VLC_DIALOG_PASSCODE)
+        free(p_id->answer.u.passcode.psz_passcode);
     free(p_id->psz_progress_text);
     free(p_id);
 }
@@ -499,6 +506,88 @@ vlc_dialog_wait_login(vlc_object_t *p_obj,  char **ppsz_username,
 }
 
 static int
+dialog_display_passcode_va(vlc_dialog_provider *p_provider,
+                           vlc_dialog_id **pp_id, const char *psz_ok,
+                           const char *psz_cancel, const char *psz_title,
+                           const char *psz_fmt, va_list ap)
+{
+    vlc_mutex_lock(&p_provider->lock);
+    if (p_provider->cbs.pf_display_passcode == NULL
+     || p_provider->cbs.pf_cancel == NULL)
+    {
+        vlc_mutex_unlock(&p_provider->lock);
+        return VLC_EGENERIC;
+    }
+
+    char *psz_text;
+    if (vasprintf(&psz_text, psz_fmt, ap) == -1)
+    {
+        vlc_mutex_unlock(&p_provider->lock);
+        return VLC_ENOMEM;
+    }
+
+    vlc_dialog_id *p_id = dialog_add_locked(p_provider, VLC_DIALOG_PASSCODE);
+    if (p_id == NULL)
+    {
+        free(psz_text);
+        vlc_mutex_unlock(&p_provider->lock);
+        return VLC_ENOMEM;
+    }
+    p_provider->cbs.pf_display_passcode(p_provider->p_cbs_data, p_id,
+                                        psz_title, psz_text,
+                                        psz_ok, psz_cancel);
+    free(psz_text);
+    vlc_mutex_unlock(&p_provider->lock);
+    *pp_id = p_id;
+
+    return VLC_SUCCESS;
+}
+
+int
+vlc_dialog_wait_passcode_va(vlc_object_t *p_obj, char **ppsz_passcode,
+                            const char *psz_ok, const char *psz_cancel,
+                            const char *psz_title, const char *psz_fmt,
+                            va_list ap)
+{
+    assert(p_obj != NULL && ppsz_passcode != NULL && psz_ok != NULL
+        && psz_cancel != NULL && psz_title != NULL && psz_fmt != NULL);
+
+    vlc_dialog_provider *p_provider = get_dialog_provider(p_obj, true);
+    if (p_provider == NULL)
+        return VLC_EGENERIC;
+
+    vlc_dialog_id *p_id;
+    int i_ret = dialog_display_passcode_va(p_provider, &p_id, psz_ok,
+                                           psz_cancel, psz_title, psz_fmt, ap);
+    if (i_ret < 0 || p_id == NULL)
+        return i_ret;
+
+    struct dialog_answer answer;
+    i_ret = dialog_wait(p_provider, p_id, VLC_DIALOG_PASSCODE, &answer);
+    if (i_ret <= 0)
+        return i_ret;
+
+    *ppsz_passcode = answer.u.passcode.psz_passcode;
+    return 1;
+}
+
+#undef vlc_dialog_wait_passcode
+int
+vlc_dialog_wait_passcode(vlc_object_t *p_obj, char **ppsz_passcode,
+                         const char *psz_ok, const char *psz_cancel,
+                         const char *psz_title, const char *psz_fmt, ...)
+{
+    assert(psz_fmt != NULL);
+    va_list ap;
+    va_start(ap, psz_fmt);
+    int i_ret = vlc_dialog_wait_passcode_va(p_obj, ppsz_passcode, psz_ok,
+                                            psz_cancel, psz_title, psz_fmt,
+                                            ap);
+    va_end(ap);
+    return i_ret;
+}
+
+static int
 dialog_display_question_va(vlc_dialog_provider *p_provider, vlc_dialog_id **pp_id,
                            vlc_dialog_question_type i_type,
                            const char *psz_cancel, const char *psz_action1,
@@ -823,6 +912,24 @@ vlc_dialog_id_post_login(vlc_dialog_id *p_id, const char *psz_username,
     {
         free(answer.u.login.psz_username);
         free(answer.u.login.psz_password);
+        dialog_id_post(p_id, NULL);
+        return VLC_ENOMEM;
+    }
+
+    return dialog_id_post(p_id, &answer);
+}
+
+int
+vlc_dialog_id_post_passcode(vlc_dialog_id *p_id, const char *psz_passcode)
+{
+    assert(p_id != NULL && psz_passcode != NULL);
+
+    struct dialog_answer answer = {
+        .i_type = VLC_DIALOG_PASSCODE,
+        .u.passcode.psz_passcode = strdup(psz_passcode),
+    };
+    if (answer.u.passcode.psz_passcode == NULL)
+    {
         dialog_id_post(p_id, NULL);
         return VLC_ENOMEM;
     }

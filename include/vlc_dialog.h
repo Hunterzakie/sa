@@ -163,6 +163,41 @@ vlc_dialog_wait_question_va(vlc_object_t *p_obj,
                             const char *psz_fmt, va_list ap);
 
 /**
+ * Requests a single secret value (e.g. passcode or PIN)
+ *
+ * This function waits until the user dismisses the dialog or responds. It's
+ * interruptible via vlc_interrupt.
+ *
+ * @param p_obj the VLC object emitting the dialog
+ * @param ppsz_passcode a pointer to the passcode provided by the user, it
+ * must be freed with free() on success
+ * @param psz_ok text of the confirm button
+ * @param psz_cancel text of the cancel button
+ * @param psz_title title of the passcode dialog
+ * @param psz_fmt format string for the passcode message
+ * @return < 0 on error, 0 if the user cancelled it, and 1 if ok
+ */
+VLC_API int
+vlc_dialog_wait_passcode(vlc_object_t *p_obj, char **ppsz_passcode,
+                         const char *psz_ok, const char *psz_cancel,
+                         const char *psz_title, const char *psz_fmt, ...)
+                         VLC_FORMAT(6,7);
+#define vlc_dialog_wait_passcode(a, b, c, d, e, f, ...) \
+    vlc_dialog_wait_passcode(VLC_OBJECT(a), b, c, d, e, f, ##__VA_ARGS__)
+
+/**
+ * Requests a single secret value (e.g. passcode or PIN)
+ *
+ * Equivalent to vlc_dialog_wait_passcode() except that it's called with a
+ * va_list.
+ */
+VLC_API int
+vlc_dialog_wait_passcode_va(vlc_object_t *p_obj, char **ppsz_passcode,
+                            const char *psz_ok, const char *psz_cancel,
+                            const char *psz_title, const char *psz_fmt,
+                            va_list ap);
+
+/**
  * Display a progress dialog
  *
  * This function returns immediately
@@ -367,6 +402,27 @@ typedef struct vlc_dialog_cbs
      */
     void (*pf_update_progress)(void *p_data, vlc_dialog_id *p_id,
                                float f_position, const char *psz_text);
+
+    /**
+     * Called when a passcode dialog needs to be displayed
+     *
+     * You can interact with this dialog by calling
+     * vlc_dialog_id_post_passcode() to post an answer or
+     * vlc_dialog_id_dismiss() to cancel this dialog.
+     *
+     * @note to receive this callback, vlc_dialog_cbs.pf_cancel should not be
+     * NULL.
+     *
+     * @param p_data opaque pointer for the callback
+     * @param p_id id used to interact with the dialog
+     * @param psz_title title of the dialog
+     * @param psz_text text of the dialog
+     * @param psz_ok text of the confirm button
+     * @param psz_cancel text of the cancel button
+     */
+    void (*pf_display_passcode)(void *p_data, vlc_dialog_id *p_id,
+                                const char *psz_title, const char *psz_text,
+                                const char *psz_ok, const char *psz_cancel);
 } vlc_dialog_cbs;
 
 /**
@@ -434,6 +490,20 @@ vlc_dialog_id_get_context(vlc_dialog_id *p_id);
 VLC_API int
 vlc_dialog_id_post_login(vlc_dialog_id *p_id, const char *psz_username,
                          const char *psz_password, bool b_store);
+
+/**
+ * Post a passcode answer
+ *
+ * After this call, p_id won't be valid anymore
+ *
+ * @see vlc_dialog_cbs.pf_display_passcode
+ *
+ * @param p_id id of the dialog
+ * @param psz_passcode valid string (can be empty)
+ * @return VLC_SUCCESS on success, or a VLC error code on error
+ */
+VLC_API int
+vlc_dialog_id_post_passcode(vlc_dialog_id *p_id, const char *psz_passcode);
 
 /**
  * Post a question answer

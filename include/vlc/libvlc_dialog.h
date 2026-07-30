@@ -153,6 +153,27 @@ typedef struct libvlc_dialog_cbs
      */
     void (*pf_update_progress)(void *p_data, libvlc_dialog_id *p_id,
                                float f_position, const char *psz_text);
+
+    /**
+     * Called when a passcode dialog needs to be displayed
+     *
+     * You can interact with this dialog by calling
+     * libvlc_dialog_post_passcode() to post an answer or
+     * libvlc_dialog_dismiss() to cancel this dialog.
+     *
+     * @note to receive this callback, libvlc_dialog_cbs.pf_cancel should not
+     * be NULL.
+     *
+     * @param p_data opaque pointer for the callback
+     * @param p_id id used to interact with the dialog
+     * @param psz_title title of the dialog
+     * @param psz_text text of the dialog
+     * @param psz_ok text of the confirm button
+     * @param psz_cancel text of the cancel button
+     */
+    void (*pf_display_passcode)(void *p_data, libvlc_dialog_id *p_id,
+                                const char *psz_title, const char *psz_text,
+                                const char *psz_ok, const char *psz_cancel);
 } libvlc_dialog_cbs;
 
 
@@ -240,6 +261,22 @@ libvlc_dialog_post_login(libvlc_dialog_id *p_id, const char *psz_username,
  */
 LIBVLC_API int
 libvlc_dialog_post_action(libvlc_dialog_id *p_id, int i_action);
+
+/**
+ * Post a passcode answer
+ *
+ * After this call, p_id won't be valid anymore
+ *
+ * @see libvlc_dialog_cbs.pf_display_passcode
+ *
+ * @version LibVLC 4.0.0 and later.
+ *
+ * @param p_id id of the dialog
+ * @param psz_passcode valid string (can be empty)
+ * @return 0 on success, or -1 on error
+ */
+LIBVLC_API int
+libvlc_dialog_post_passcode(libvlc_dialog_id *p_id, const char *psz_passcode);
 
 /**
  * Dismiss a dialog

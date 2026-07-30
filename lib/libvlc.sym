@@ -39,6 +39,7 @@ libvlc_dialog_dismiss
 libvlc_dialog_get_context
 libvlc_dialog_post_action
 libvlc_dialog_post_login
+libvlc_dialog_post_passcode
 libvlc_dialog_set_callbacks
 libvlc_dialog_set_context
 libvlc_dialog_set_error_callback
