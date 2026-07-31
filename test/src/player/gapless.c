@@ -10,7 +10,7 @@
 
 /* Gapless applies only to one selected clock-master audio ES. The audio-driven
  * tests use audio-only medias, at rate 1 and long enough to buffer past
- * DEFAULT_PTS_DELAY (300ms), which dec.c:ArmGaplessHandoff requires.
+ * AOUT_GAPLESS_MIN_BUFFER (50ms), which dec.c:ArmGaplessHandoff requires.
  *
  * Within the 2 * pts_delay preload window
  * (es_out.c:EsOutGaplessEventTimeChanged) the successor must open, decode and arm
@@ -195,15 +195,16 @@ test_gapless_pts_offset(struct ctx *ctx)
     gapless_run(ctx, 2, 2);
 }
 
-/* With a short pts_delay (100ms) the preload window (2 * pts_delay) is smaller
- * than the predecessor's own EOF read-ahead: it commits to a normal drain
- * before the preloaded successor can arm, and the handoff falls back
+/* With a short pts_delay (40ms) the preload window (2 * pts_delay) is too small
+ * for the successor to open and arm, and the buffer is below the postpone target
+ * so the drain cannot be held back: the predecessor commits to a normal drain
+ * with no successor stream yet, and the handoff falls back
  * (dec.c:vlc_aout_stream_TryGaplessHandoff, "predecessor already draining"). */
 static void
 test_gapless_short_delay(struct ctx *ctx)
 {
     struct media_params params = gapless_audio_params();
-    params.pts_delay = VLC_TICK_FROM_MS(100);
+    params.pts_delay = VLC_TICK_FROM_MS(40);
     vlc_player_SetGaplessEnabled(ctx->player, true);
 
     player_set_next_mock_media(ctx, "media1", &params);
@@ -212,11 +213,12 @@ test_gapless_short_delay(struct ctx *ctx)
     gapless_run(ctx, 2, 2);
 }
 
-/* With a large audio frame the predecessor reads too far ahead and reaches EOF
- * before the preloaded successor can arm within the 2 * pts_delay window: the
- * handoff times out ("not ready in time") and falls back. Like pts_offset,
- * this exercises input_WakeGapless() (the successor is never armed), and the
- * promotion flush adds a segment. */
+/* With a large audio frame the predecessor reads far ahead and reaches EOF
+ * while the preloaded successor is still arming. The drain-postpone holds the
+ * output back until only ~100ms of buffer remains, giving
+ * the successor the wall-clock it needs to produce its first sample and arm:
+ * the seam stitches gaplessly (flat segment count) instead of falling back.
+ * This is the regression test for that postpone. */
 static void
 test_gapless_large_frame(struct ctx *ctx)
 {
@@ -227,7 +229,7 @@ test_gapless_large_frame(struct ctx *ctx)
     player_set_next_mock_media(ctx, "media1", &params);
     player_set_next_mock_media(ctx, "media2", &params);
 
-    gapless_run(ctx, 2, 2);
+    gapless_run(ctx, 2, 1);
 }
 
 /* A fallback in the middle of a chain must not disable later transitions:
@@ -240,7 +242,7 @@ test_gapless_recovery(struct ctx *ctx)
     struct media_params params = gapless_audio_params();
     vlc_player_SetGaplessEnabled(ctx->player, true);
 
-    params.pts_delay = VLC_TICK_FROM_MS(100);
+    params.pts_delay = VLC_TICK_FROM_MS(40);
     player_set_next_mock_media(ctx, "media1", &params);
     params.pts_delay = VLC_TICK_FROM_MS(500);
     player_set_next_mock_media(ctx, "media2", &params);
@@ -487,7 +489,7 @@ main(int argc, char **argv)
         { "success", test_gapless_success, 2, 2 },
         { "short_chain", test_gapless_short_chain, 2, 2 },
         { "success_small_next", test_gapless_success_small_next, 1, 1 },
-        { "large_frame", test_gapless_large_frame, 0, 1 },
+        { "large_frame", test_gapless_large_frame, 1, 1 },
         { "pts_offset", test_gapless_pts_offset, 0, 1 },
         { "format_change", test_gapless_format_change, 0, 1 },
         { "short_delay", test_gapless_short_delay, 0, 1 },

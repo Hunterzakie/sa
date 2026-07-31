@@ -42,6 +42,11 @@
 
 #define BLOCK_FLAG_CORE_PRIVATE_FILTERED (1 << BLOCK_FLAG_CORE_PRIVATE_SHIFT)
 
+/* Minimum buffer remaining at the seam to arm a gapless handoff: the time an
+ * armed successor needs to wake and push its first, already decoded, sample.
+ * The decoder drain postpone target must stay above it. */
+#define AOUT_GAPLESS_MIN_BUFFER VLC_TICK_FROM_MS(50)
+
 struct vlc_aout_stream
 {
     aout_instance_t *instance;
@@ -1495,7 +1500,7 @@ vlc_aout_stream_ArmGaplessHandoff(vlc_aout_stream *stream, vlc_tick_t *seam)
     vlc_tick_t delay;
     vlc_mutex_lock(&stream->timing.lock);
     int ret = stream_GetDelay(stream, &delay);
-    if (ret != 0 || delay < DEFAULT_PTS_DELAY)
+    if (ret != 0 || delay < AOUT_GAPLESS_MIN_BUFFER)
     {
         vlc_mutex_unlock(&stream->timing.lock);
         if (ret != 0)

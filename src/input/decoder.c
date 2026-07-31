@@ -2107,6 +2107,27 @@ static void Decoder_VideoDrained(vlc_input_decoder_t *owner)
     }
 }
 
+/* Hold back the audio drain until the buffered output is nearly exhausted, so
+ * a pending gapless successor has the most wall-clock to arm the handoff. */
+static void DecoderThread_PostponeDrain( vlc_input_decoder_t *p_owner )
+{
+    if( p_owner->cat != AUDIO_ES || p_owner->audio.stream == NULL )
+        return;
+
+    vlc_tick_t delay;
+    if( vlc_aout_stream_GetDelay( p_owner->audio.stream, &delay ) != 0 )
+        return;
+
+    const vlc_tick_t target = VLC_TICK_FROM_MS(100);
+    if( delay <= target )
+        return;
+
+    vlc_tick_t deadline = vlc_tick_now() + (delay - target);
+    while( !p_owner->flushing && !p_owner->aborting && !p_owner->paused
+        && vlc_tick_now() < deadline )
+        vlc_fifo_WaitTimeout( p_owner->p_fifo, deadline );
+}
+
 /**
  * The decoding main loop
  *
@@ -2230,7 +2251,11 @@ static void *DecoderThread( void *p_data )
             if (DecoderWaitGapless(p_owner, INPUT_GAPLESS_STATUS_PROMOTED) != 0)
                 break;
 
-            switch (p_owner->cat)
+            DecoderThread_PostponeDrain( p_owner );
+
+            if( p_owner->flushing || p_owner->aborting )
+                ; /* drain cancelled */
+            else switch (p_owner->cat)
             {
                 case AUDIO_ES:
                     if( p_owner->audio.stream != NULL
