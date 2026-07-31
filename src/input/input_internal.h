@@ -164,6 +164,8 @@ typedef enum input_event_type_e
     INPUT_EVENT_FRAME_NEXT_STATUS,
     /* frame-previous status */
     INPUT_EVENT_FRAME_PREVIOUS_STATUS,
+
+    INPUT_EVENT_GAPLESS_PRELOAD_REQUEST,
 } input_event_type_e;
 
 #define VLC_INPUT_CAPABILITIES_SEEKABLE (1<<0)
@@ -356,6 +358,10 @@ struct vlc_input_event
         int frame_next_status;
         /* INPUT_EVENT_FRAME_PREVIOUS_STATUS */
         int frame_previous_status;
+        /* INPUT_EVENT_GAPLESS_PRELOAD_REQUEST */
+        struct {
+            bool next;
+        } gapless_preload;
     };
 };
 
