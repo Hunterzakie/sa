@@ -55,7 +55,13 @@ T.ToolBar {
                              implicitContentHeight + topPadding + bottomPadding)
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
-                             implicitContentWidth + leftPadding + rightPadding + (_showCSD ? csdButtons.implicitWidth : 0))
+                             implicitContentWidth + leftPadding + rightPadding)
+
+    leftPadding: implicitLeftPadding
+    rightPadding: implicitRightPadding
+
+    property real implicitLeftPadding: VLCStyle.margin_xsmall
+    property real implicitRightPadding: _showCSD ? 0.0 : VLCStyle.margin_xsmall
 
     readonly property ColorContext colorContext: ColorContext {
         id: theme
@@ -70,197 +76,187 @@ T.ToolBar {
     contentItem: Item {
 
         implicitHeight: VLCStyle.globalToolbar_height
-        implicitWidth: navigationButtons.implicitWidth
-                     + playqueueButtonsTop.implicitWidth
-                     + VLCStyle.margin_xsmall * 2
+        implicitWidth: rowLayout.implicitWidth
 
-        Item {
-            id: navigationButtons
+        RowLayout {
+            id: rowLayout
 
-            implicitWidth: navigationButtonsRow.implicitWidth
+            anchors.fill: parent
 
-            anchors {
-                left: parent.left
-                top: parent.top
-                bottom: parent.bottom
-                leftMargin: VLCStyle.margin_xsmall
-            }
+            spacing: VLCStyle.margin_normal
 
             Navigation.parentItem: root
 
-            Row {
-                id: navigationButtonsRow
+            Widgets.IconToolButton {
+                id: navigationVisibilty
 
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: VLCStyle.margin_normal
+                focus: true
 
-                Navigation.parentItem: root
-                Navigation.rightItem: playqueueButtonsTop
+                text: VLCIcons.panel_left
+                description: qsTr("Show navigation menu")
 
-                Widgets.IconToolButton {
-                    id: navigationVisibilty
+                font.pixelSize: VLCStyle.icon_banner
+                Layout.preferredHeight: VLCStyle.bannerButton_height
+                Layout.preferredWidth: VLCStyle.bannerButton_width
 
-                    focus: true
+                onClicked: root.toggleNavigationVisibility()
 
-                    text: VLCIcons.panel_left
-                    description: qsTr("Show navigation menu")
+                Navigation.parentItem: rowLayout
+                Navigation.rightItem: historyBack
+            }
 
-                    font.pixelSize: VLCStyle.icon_banner
-                    height: VLCStyle.bannerButton_height
-                    width: VLCStyle.bannerButton_width
+            Widgets.IconToolButton {
+                id: historyBack
 
-                    onClicked: root.toggleNavigationVisibility()
+                font.pixelSize: VLCStyle.icon_banner
+                text: VLCIcons.back
+                description: qsTr("Previous")
 
-                    Navigation.parentItem: navigationButtons
-                    Navigation.rightItem: historyBack
+                Layout.preferredHeight: VLCStyle.bannerButton_height
+                Layout.preferredWidth: VLCStyle.bannerButton_width
+
+                onClicked: History.previous()
+                enabled: !History.previousEmpty
+
+                onEnabledChanged: {
+                    if (historyBack.activeFocus)
+                        navigationVisibilty.focus = true
                 }
 
-                Widgets.IconToolButton {
-                    id: historyBack
+                Navigation.parentItem: rowLayout
+                Navigation.leftItem: navigationVisibilty
+                Navigation.rightItem: playlistBtn
+            }
 
-                    font.pixelSize: VLCStyle.icon_banner
-                    text: VLCIcons.back
-                    description: qsTr("Previous")
+            Widgets.BannerCone {
+                id: logo
 
-                    height: VLCStyle.bannerButton_height
-                    width: VLCStyle.bannerButton_width
+                sourceSize.width: VLCStyle.bannerButton_height
+                sourceSize.height: VLCStyle.bannerButton_height
+                color: theme.accent
+            }
 
-                    onClicked: History.previous()
-                    enabled: !History.previousEmpty
+            Widgets.CaptionLabel {
+                Layout.fillWidth: true
 
-                    onEnabledChanged: {
-                        if (historyBack.activeFocus)
-                            navigationVisibilty.focus = true
+                color: theme.fg.primary
+
+                // Visible at all times, spacer with SSD (no text).
+                text: {
+                    if (!root._showCSD)
+                        return ""
+
+                    let pre
+                    if (Window?.title?.length > 0) // `Window.title` is not available in Qt 6.2
+                        pre = Window.title
+                    else if (Window.window?.title.length > 0)
+                        pre = Window.window.title
+                    else if (MainCtx.intfMainWindow?.title.length > 0)
+                        pre = MainCtx.intfMainWindow.title
+
+                    if (pre)
+                        return pre + " \u2014 " + Application.displayName // Akin to KWin
+                    else
+                        return Application.displayName
+                }
+            }
+
+            Widgets.IconToolButton {
+                id: playlistBtn
+
+                font.pixelSize: VLCStyle.icon_banner
+                text: VLCIcons.playlist
+                description: qsTr("Playlist")
+                Layout.preferredWidth: VLCStyle.bannerButton_width
+                Layout.preferredHeight: VLCStyle.bannerButton_height
+                //highlighted: MainCtx.playlistVisible
+
+                Navigation.parentItem: rowLayout
+                Navigation.rightItem: menuBtn
+                Navigation.leftItem: historyBack
+
+                onClicked:  root.togglePlayqueueVisibility()
+
+                DropArea {
+                    anchors.fill: parent
+
+                    onContainsDragChanged: {
+                        if (containsDrag) {
+                            _timer.restart()
+
+                            if (plListView)
+                                MainCtx.setCursor(Qt.DragCopyCursor)
+                        } else {
+                            _timer.stop()
+
+                            if (plListView)
+                                MainCtx.restoreCursor()
+                        }
                     }
 
-                    Navigation.parentItem: navigationButtons
-                    Navigation.leftItem: navigationVisibilty
-                    Navigation.rightItem: playlistBtn
-                }
-
-                Widgets.BannerCone {
-                    id: logo
-
-                    sourceSize.width: VLCStyle.bannerButton_height
-                    sourceSize.height: VLCStyle.bannerButton_height
-                    color: theme.accent
-                }
-            }
-        }
-
-        Item {
-            id: playqueueButtonsTop
-
-            implicitWidth: playqueueButtonsTopRow.implicitWidth
-
-            anchors {
-                right: parent.right
-                top: parent.top
-                bottom: parent.bottom
-                //put the buttons below the CSD if we have enough space
-                rightMargin: VLCStyle.margin_xsmall
-                    + ((root._showCSD && root.topPadding < csdButtons.height)
-                        ? Math.max(csdButtons.width - root.rightPadding, 0)
-                        : 0)
-            }
-
-            Navigation.parentItem: root
-
-            Row {
-                id: playqueueButtonsTopRow
-
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: VLCStyle.margin_normal
-
-                Navigation.parentItem: root
-                Navigation.leftItem: navigationButtons
-
-                Widgets.IconToolButton {
-                    id: playlistBtn
-
-                    font.pixelSize: VLCStyle.icon_banner
-                    text: VLCIcons.playlist
-                    description: qsTr("Playlist")
-                    width: VLCStyle.bannerButton_width
-                    height: VLCStyle.bannerButton_height
-                    //highlighted: MainCtx.playlistVisible
-
-                    Navigation.parentItem: playqueueButtonsTop
-                    Navigation.rightItem: menuBtn
-                    Navigation.leftItem: historyBack
-
-                    onClicked:  root.togglePlayqueueVisibility()
-
-                    DropArea {
-                        anchors.fill: parent
-
-                        onContainsDragChanged: {
-                            if (containsDrag) {
-                                _timer.restart()
-
-                                if (plListView)
-                                    MainCtx.setCursor(Qt.DragCopyCursor)
-                            } else {
-                                _timer.stop()
-
-                                if (plListView)
-                                    MainCtx.restoreCursor()
-                            }
-                        }
-
-                        onEntered: (drag) => {
-                            if (root.plListView) {
-                                console.assert(root.plListView.isDropAcceptableFunc)
-                                console.assert(root.plListView.model)
-                                if (root.plListView.isDropAcceptableFunc(drag, root.plListView.model.count)) {
-                                    drag.accept()
-                                } else {
-                                    drag.accepted = false
-                                }
+                    onEntered: (drag) => {
+                        if (root.plListView) {
+                            console.assert(root.plListView.isDropAcceptableFunc)
+                            console.assert(root.plListView.model)
+                            if (root.plListView.isDropAcceptableFunc(drag, root.plListView.model.count)) {
+                                drag.accept()
                             } else {
                                 drag.accepted = false
                             }
+                        } else {
+                            drag.accepted = false
                         }
+                    }
 
-                        onDropped: (drop) => {
-                            if (root.plListView) {
-                                console.assert(plListView.acceptDropFunc)
-                                root.plListView.acceptDropFunc(root.plListView.model.count, drop)
-                            }
+                    onDropped: (drop) => {
+                        if (root.plListView) {
+                            console.assert(plListView.acceptDropFunc)
+                            root.plListView.acceptDropFunc(root.plListView.model.count, drop)
                         }
+                    }
 
-                        Timer {
-                            id: _timer
-                            interval: VLCStyle.duration_humanMoment
+                    Timer {
+                        id: _timer
+                        interval: VLCStyle.duration_humanMoment
 
-                            onTriggered: {
-                                MainCtx.playqueuePanel.visible = true
-                            }
+                        onTriggered: {
+                            MainCtx.playqueuePanel.visible = true
                         }
                     }
                 }
+            }
 
-                Widgets.IconToolButton {
-                    id: menuBtn
+            Widgets.IconToolButton {
+                id: menuBtn
 
-                    visible: !MainCtx.hasToolbarMenu
-                    font.pixelSize: VLCStyle.icon_banner
-                    text: VLCIcons.more
-                    description: qsTr("Menu")
-                    width: VLCStyle.bannerButton_width
-                    height: VLCStyle.bannerButton_height
-                    checked: contextMenu.shown
+                visible: !MainCtx.hasToolbarMenu
+                font.pixelSize: VLCStyle.icon_banner
+                text: VLCIcons.more
+                description: qsTr("Menu")
+                Layout.preferredWidth: VLCStyle.bannerButton_width
+                Layout.preferredHeight: VLCStyle.bannerButton_height
+                checked: contextMenu.shown
 
-                    Navigation.parentItem: playqueueButtonsTop
-                    Navigation.leftItem: playlistBtn
+                Navigation.parentItem: rowLayout
+                Navigation.leftItem: playlistBtn
 
-                    onClicked: contextMenu.popup(this.mapToGlobal(0, height))
+                onClicked: contextMenu.popup(this.mapToGlobal(0, height))
 
-                    Menus.QmlGlobalMenu {
-                        id: contextMenu
-                        ctx: MainCtx
-                    }
+                Menus.QmlGlobalMenu {
+                    id: contextMenu
+                    ctx: MainCtx
                 }
+            }
+
+            Loader {
+                id: csdButtons
+
+                visible: active
+                height: VLCStyle.globalToolbar_height
+                active: root._showCSD
+                source: VLCStyle.palette.hasCSDImage
+                          ? "qrc:///qt/qml/VLC/Widgets/CSDThemeButtonSet.qml"
+                          : "qrc:///qt/qml/VLC/Widgets/CSDWindowButtonSet.qml"
             }
         }
 
@@ -272,22 +268,5 @@ T.ToolBar {
             sourceComponent: Widgets.CSDTitlebarTapNDrapHandler {
             }
         }
-    }
-
-    Loader {
-        id: csdButtons
-
-        //csd button are
-        parent:  root
-        anchors {
-            right: parent.right
-            top: parent.top
-        }
-
-        height: VLCStyle.globalToolbar_height
-        active: root._showCSD
-        source: VLCStyle.palette.hasCSDImage
-                  ? "qrc:///qt/qml/VLC/Widgets/CSDThemeButtonSet.qml"
-                  : "qrc:///qt/qml/VLC/Widgets/CSDWindowButtonSet.qml"
     }
 }
