@@ -543,7 +543,7 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
                 return i_ret;
         }
         /* just byte pos seek */
-        i_ret = vlc_stream_Seek( p_demux->s, (int64_t) (f * stream_Size( p_demux->s )) );
+        i_ret = vlc_stream_Seek( p_demux->s, (uint64_t) (f * stream_Size( p_demux->s )) );
         if( i_ret == VLC_SUCCESS )
         {
             p_sys->i_next_block_flags |= BLOCK_FLAG_DISCONTINUITY;
