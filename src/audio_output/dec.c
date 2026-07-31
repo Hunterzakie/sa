@@ -217,6 +217,14 @@ static int stream_GetDelayEstimate(vlc_aout_stream *stream, vlc_tick_t *delay)
     return ret;
 }
 
+int vlc_aout_stream_GetDelay(vlc_aout_stream *stream, vlc_tick_t *delay)
+{
+    vlc_mutex_lock(&stream->timing.lock);
+    int ret = stream_GetDelayEstimate(stream, delay);
+    vlc_mutex_unlock(&stream->timing.lock);
+    return ret;
+}
+
 static bool stream_IsDrained(vlc_aout_stream *stream)
 {
     vlc_tick_t drain_deadline =
