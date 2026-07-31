@@ -92,13 +92,14 @@ struct vlc_aout_stream
 
     struct
     {
-        vlc_mutex_t lock; /* Guard first_pts, last_drift, rate_system_ts,
-                             rate_audio_ts, system_ts, audio_ts,
+        vlc_mutex_t lock; /* Guard first_pts, first_play_date, last_drift,
+                             rate_system_ts, rate_audio_ts, system_ts, audio_ts,
                              stitching_length, seam_system_ts */
 
         vlc_tick_t last_drift;
 
         vlc_tick_t first_pts;
+        vlc_tick_t first_play_date; /* Fallback before the first timing report */
         int64_t played_samples; /* Used for stream_GetDelay() emulation */
 
         vlc_tick_t rate_system_ts;
@@ -193,6 +194,27 @@ static int stream_GetDelay(vlc_aout_stream *stream, vlc_tick_t *delay)
                          + system_ts;
     *delay = play_date - system_now;
     return 0;
+}
+
+static int stream_GetDelayEstimate(vlc_aout_stream *stream, vlc_tick_t *delay)
+{
+    vlc_mutex_assert(&stream->timing.lock);
+    int ret = stream_GetDelay(stream, delay);
+    if (ret != 0
+     && stream->timing.first_play_date != VLC_TICK_INVALID)
+    {
+        /* A short stream can reach EOF before an asynchronous output reports
+         * timing. Fall back on the submitted playout schedule, without using it
+         * as a measured timing point. */
+        vlc_tick_t sent =
+            vlc_tick_from_samples(stream->timing.played_samples,
+                                  stream->mixer_format.i_rate);
+        vlc_tick_t end_date = stream->timing.first_play_date + sent;
+        vlc_tick_t now = vlc_tick_now();
+        *delay = end_date > now ? end_date - now : 0;
+        ret = 0;
+    }
+    return ret;
 }
 
 static bool stream_IsDrained(vlc_aout_stream *stream)
@@ -319,6 +341,7 @@ static void stream_ResetTimings(vlc_aout_stream *stream)
 
     vlc_mutex_lock(&stream->timing.lock);
     stream->timing.first_pts = VLC_TICK_INVALID;
+    stream->timing.first_play_date = VLC_TICK_INVALID;
     stream->timing.last_drift = VLC_TICK_INVALID;
     stream->timing.system_ts = VLC_TICK_INVALID;
     stream->timing.audio_ts = VLC_TICK_INVALID;
@@ -892,6 +915,11 @@ static void stream_OutputPlay(vlc_aout_stream *stream, block_t *block,
 
     stream->timing.played_samples += block->i_nb_samples;
     aout->play(aout, block, play_date);
+
+    vlc_mutex_lock(&stream->timing.lock);
+    if (stream->timing.first_play_date == VLC_TICK_INVALID)
+        stream->timing.first_play_date = play_date;
+    vlc_mutex_unlock(&stream->timing.lock);
 }
 
 static void stream_Silence (vlc_aout_stream *stream, vlc_tick_t length, vlc_tick_t pts)
@@ -1402,16 +1430,14 @@ static void stream_Drain(vlc_aout_stream *stream)
         assert(atomic_load_explicit(&stream->drain_deadline,
                                     memory_order_relaxed) == VLC_TICK_INVALID);
 
-        vlc_tick_t drain_deadline = vlc_tick_now();
-
         vlc_tick_t delay;
         vlc_mutex_lock(&stream->timing.lock);
-        if (stream_GetDelay(stream, &delay) == 0)
-            drain_deadline += delay;
+        int ret = stream_GetDelayEstimate(stream, &delay);
         vlc_mutex_unlock(&stream->timing.lock);
 
-        /* else the deadline is now, and vlc_aout_stream_IsDrained() will
-         * return true on the first call. */
+        /* Without a delay, the deadline is now and
+         * vlc_aout_stream_IsDrained() returns true on the first call. */
+        vlc_tick_t drain_deadline = vlc_tick_now() + (ret == 0 ? delay : 0);
 
         atomic_store_explicit(&stream->drain_deadline, drain_deadline,
                               memory_order_relaxed);
