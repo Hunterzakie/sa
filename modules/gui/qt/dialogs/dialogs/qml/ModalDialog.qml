@@ -36,8 +36,9 @@ Dialog {
 
     anchors.centerIn: Overlay.overlay
 
-    padding: VLCStyle.margin_normal
+    padding: VLCStyle.margin_xlarge
     margins: VLCStyle.margin_large
+    spacing: VLCStyle.margin_large
 
     implicitWidth: contentWidth > 0 ? contentWidth + leftPadding + rightPadding : 0
     implicitHeight: (header && header.visible ? header.implicitHeight + spacing : 0)
@@ -85,6 +86,7 @@ Dialog {
 
     background: Rectangle {
         color: theme.bg.primary
+        radius: VLCStyle.margin_small
     }
 
     //FIXME use the right xxxLabel class
@@ -94,15 +96,10 @@ Dialog {
         elide: Label.ElideRight
         font.bold: true
         color: theme.fg.primary
-        padding: 6
-        background: Rectangle {
-            x: 1; y: 1
-            width: parent.width - 2
-            height: parent.height - 1
-            color: theme.bg.primary
-        }
-    }
-
+        // padding: 6
+        padding: VLCStyle.margin_small
+        
+    }           
     exit: Transition {
         OpacityAnimator { from: 1.0; to: 0.0 }
     }

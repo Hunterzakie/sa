@@ -70,6 +70,7 @@ ModalDialog {
         color: root.colorContext.fg.primary
         wrapMode: Text.WordWrap
         text: root.text
+        anchors.margins: VLCStyle.margin_normal 
     }
 
     footer: FocusScope {
@@ -88,9 +89,12 @@ ModalDialog {
             anchors.fill: parent
             anchors.leftMargin: VLCStyle.margin_xxsmall
             anchors.rightMargin: VLCStyle.margin_xxsmall
+            anchors.margins: VLCStyle.margin_small
 
             RowLayout {
                 anchors.fill: parent
+                spacing: VLCStyle.margin_normal
+
 
                 Widgets.ButtonExt {
                     id: cancelBtn
@@ -108,6 +112,7 @@ ModalDialog {
                 Widgets.ButtonExt {
                     id: okBtn
                     Layout.fillWidth: true
+                    
                     visible: okBtn.text !== ""
 
                     onClicked: root.accept()
