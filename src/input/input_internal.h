@@ -184,6 +184,7 @@ typedef enum input_event_type_e
     INPUT_EVENT_FRAME_PREVIOUS_STATUS,
 
     INPUT_EVENT_GAPLESS_PRELOAD_REQUEST,
+    INPUT_EVENT_GAPLESS_HANDOFF_READY,
 } input_event_type_e;
 
 #define VLC_INPUT_CAPABILITIES_SEEKABLE (1<<0)
@@ -380,6 +381,13 @@ struct vlc_input_event
         struct {
             bool next;
         } gapless_preload;
+        /* INPUT_EVENT_GAPLESS_HANDOFF_READY */
+        struct {
+            bool ready;
+            /* Absolute date the predecessor's buffer empties and the
+             * successor's first sample is heard. */
+            vlc_tick_t seam_date;
+        } gapless_handoff;
     };
 };
 

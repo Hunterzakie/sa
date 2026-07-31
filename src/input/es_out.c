@@ -438,6 +438,18 @@ decoder_on_output_paused(vlc_input_decoder_t *decoder, bool paused,
 }
 
 static void
+decoder_on_gapless_handoff_ready(vlc_input_decoder_t *decoder, bool ready,
+                                 vlc_tick_t seam, void *userdata)
+{
+    (void) decoder;
+    es_out_id_t *id = userdata;
+    struct vlc_input_es_out *out = id->out;
+    es_out_sys_t *p_sys = PRIV(&out->out);
+
+    input_SendEventGaplessHandoffReady(p_sys->p_input, ready, seam);
+}
+
+static void
 decoder_on_thumbnail_ready(vlc_input_decoder_t *decoder, picture_t *pic, void *userdata)
 {
     (void) decoder;
@@ -632,6 +644,7 @@ static const struct vlc_input_decoder_callbacks decoder_cbs = {
     .on_vout_started = decoder_on_vout_started,
     .on_vout_stopped = decoder_on_vout_stopped,
     .on_output_paused = decoder_on_output_paused,
+    .on_gapless_handoff_ready = decoder_on_gapless_handoff_ready,
     .on_thumbnail_ready = decoder_on_thumbnail_ready,
     .on_new_video_stats = decoder_on_new_video_stats,
     .on_new_audio_stats = decoder_on_new_audio_stats,

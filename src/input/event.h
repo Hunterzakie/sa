@@ -290,6 +290,16 @@ static inline void input_SendEventGaplessPreloadRequest(input_thread_t *p_input,
     });
 }
 
+static inline void input_SendEventGaplessHandoffReady(input_thread_t *p_input,
+                                                      bool gapless_ready,
+                                                      vlc_tick_t seam_date)
+{
+    input_SendEvent(p_input, &(struct vlc_input_event) {
+        .type = INPUT_EVENT_GAPLESS_HANDOFF_READY,
+        .gapless_handoff = { .ready = gapless_ready, .seam_date = seam_date },
+    });
+}
+
 /*****************************************************************************
  * Event for resource.c
  *****************************************************************************/
