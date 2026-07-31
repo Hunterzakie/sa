@@ -18,6 +18,9 @@ struct aout_sys
     vlc_tick_t first_pts;
     vlc_tick_t first_play_date;
     vlc_tick_t pos;
+    vlc_tick_t prev_pts;
+    vlc_tick_t prev_len;
+    bool drained;
 
     struct ctx *ctx;
 };
@@ -25,6 +28,15 @@ struct aout_sys
 static void aout_Play(audio_output_t *aout, block_t *block, vlc_tick_t date)
 {
     struct aout_sys *sys = aout->sys;
+
+    assert(!sys->drained);
+
+    /* Successive blocks must stay PTS-contiguous (only true at rate 1). */
+    if ((sys->ctx->flags & AUDIO_CHECK_CONTINUITY)
+     && sys->prev_pts != VLC_TICK_INVALID)
+        assert(block->i_pts <= sys->prev_pts + sys->prev_len);
+    sys->prev_pts = block->i_pts;
+    sys->prev_len = block->i_length;
 
     if (sys->first_play_date == VLC_TICK_INVALID)
     {
@@ -48,7 +60,9 @@ static void aout_Flush(audio_output_t *aout)
 {
     struct aout_sys *sys = aout->sys;
     sys->pos = 0;
-    sys->first_pts = sys->first_play_date = VLC_TICK_INVALID;
+    sys->first_pts = sys->first_play_date = sys->prev_pts = VLC_TICK_INVALID;
+    sys->prev_len = 0;
+    sys->drained = false;
 }
 
 static void aout_Pause(audio_output_t *aout, bool pause, vlc_tick_t date)
@@ -60,6 +74,8 @@ static void aout_Pause(audio_output_t *aout, bool pause, vlc_tick_t date)
 
 static void aout_InstantDrain(audio_output_t *aout)
 {
+    struct aout_sys *sys = aout->sys;
+    sys->drained = true;
     aout_DrainedReport(aout);
 }
 
