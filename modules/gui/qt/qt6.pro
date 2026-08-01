@@ -1,7 +1,7 @@
 TEMPLATE = app
 
 QT = core gui qml svg quick widgets quickcontrols2
-QTPLUGIN = qsvgicon qsvg qjpeg qico
+QTPLUGIN = qsvgicon qsvg qjpeg
 
 CONFIG -= entrypoint
 CONFIG -= debug_and_release
