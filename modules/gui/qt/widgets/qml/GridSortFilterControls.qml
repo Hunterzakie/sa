@@ -25,7 +25,7 @@ NavigableRow {
         enabled: visible
         width: VLCStyle.bannerButton_width
         height: VLCStyle.bannerButton_height
-        font.pixelSize: VLCStyle.icon_banner
+        font.pixelSize: VLCStyle.icon_normal
         text: MainCtx.gridView ? VLCIcons.list : VLCIcons.grid
         description: qsTr("List/Grid")
         onClicked: MainCtx.gridView = !MainCtx.gridView
@@ -38,7 +38,7 @@ NavigableRow {
         enabled: visible
         width: VLCStyle.bannerButton_width
         height: VLCStyle.bannerButton_height
-        font.pixelSize: VLCStyle.icon_banner
+        font.pixelSize: VLCStyle.icon_normal
         description: qsTr("Sort")
 
         model: root.sort.model
