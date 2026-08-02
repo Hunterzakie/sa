@@ -39,6 +39,13 @@ if vulkan_dep.found()
         'dependencies' : [libplacebo_dep],
     }
 
+    vlc_modules += {
+        'name' : 'placebo_sw',
+        'sources' : files('interop/sw.c'),
+        'link_with' : [libplacebo_utils],
+        'dependencies' : [libplacebo_dep],
+    }
+
     # NVDEC hardware interop
     placebo_nvdec_dep = dependency('ffnvcodec', version: '>= 11.1.5.1',
                                    required: false)

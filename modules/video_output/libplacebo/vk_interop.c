@@ -38,6 +38,7 @@ void vlc_vk_interop_Init(struct vlc_vk_interop *interop)
     interop->format_probe.vctx = NULL;
     video_format_Init(&interop->format_probe.fmt_in, 0);
     interop->format_probe.dev = NULL;
+    interop->format_probe.gpu = NULL;
     video_format_Init(&interop->format_probe.fmt_out, 0);
     interop->format_probe.vk_format = VK_FORMAT_UNDEFINED;
     interop->format_probe.tiling = VK_IMAGE_TILING_MAX_ENUM;
@@ -60,6 +61,7 @@ void vlc_vk_interop_Init(struct vlc_vk_interop *interop)
     }
     interop->plane_count = 0;
     interop->priv = NULL;
+    interop->loaded = false;
 }
 
 int vlc_vk_interop_Probe(struct vlc_vk_interop_probe *probe, vlc_object_t *obj,
@@ -101,7 +103,7 @@ int vlc_vk_interop_Probe(struct vlc_vk_interop_probe *probe, vlc_object_t *obj,
             assert(probe->ops != NULL);
             assert(probe->ops->probe_format != NULL);
             assert(probe->ops->load != NULL);
-            assert(probe->ops->import_images != NULL);
+            assert((probe->ops->import_images != NULL) ^ (probe->ops->upload_planes != NULL));
 
             found = true;
             msg_Dbg(probe->obj, "Probed vkinterop module: %u instance exts, %u device exts",
@@ -128,13 +130,14 @@ int vlc_vk_interop_Probe(struct vlc_vk_interop_probe *probe, vlc_object_t *obj,
 
 int vlc_vk_interop_ProbeFormat(struct vlc_vk_interop *interop,
                                const struct vlc_vk_interop_probe *probe,
-                               struct vlc_vk_device *dev)
+                               struct vlc_vk_device *dev, pl_gpu gpu)
 {
     assert(interop != NULL);
     assert(probe != NULL);
     assert(probe->ops != NULL);
     assert(probe->ops->probe_format != NULL);
-    assert(dev != NULL);
+    assert(gpu != NULL);
+    assert(dev != NULL || probe->ops->upload_planes != NULL);
 
     interop->ops = probe->ops;
 
@@ -142,10 +145,12 @@ int vlc_vk_interop_ProbeFormat(struct vlc_vk_interop *interop,
     interop->format_probe.vctx = probe->vctx;
     interop->format_probe.fmt_in = probe->fmt_in;
     interop->format_probe.dev = dev;
+    interop->format_probe.gpu = gpu;
 
     video_format_Init(&interop->format_probe.fmt_out, 0);
     interop->format_probe.vk_format = VK_FORMAT_UNDEFINED;
     interop->format_probe.tiling = VK_IMAGE_TILING_MAX_ENUM;
+    interop->format_probe.sw_chroma = 0;
 
     int ret = interop->ops->probe_format(&interop->format_probe);
     if (ret != VLC_SUCCESS)
@@ -154,29 +159,39 @@ int vlc_vk_interop_ProbeFormat(struct vlc_vk_interop *interop,
         return ret;
     }
 
-    if (interop->format_probe.vk_format == VK_FORMAT_UNDEFINED)
+    if (interop->ops->upload_planes == NULL)
     {
-        /* VK_FORMAT_UNDEFINED is allowed when interop provides its own sampler
-         * (e.g., Android external format where format is determined at runtime) */
-        if (interop->ops->get_sampler == NULL)
+        if (interop->format_probe.vk_format == VK_FORMAT_UNDEFINED)
         {
-            msg_Err(interop->format_probe.obj, "Interop module did not set vk_format");
+            /* VK_FORMAT_UNDEFINED is allowed when interop provides its own sampler
+             * (e.g., Android external format where format is determined at runtime) */
+            if (interop->ops->get_sampler == NULL)
+            {
+                msg_Err(interop->format_probe.obj, "Interop module did not set vk_format");
+                return VLC_EGENERIC;
+            }
+            msg_Dbg(interop->format_probe.obj, "Using external format (runtime determination)");
+        }
+
+        if (interop->format_probe.tiling == VK_IMAGE_TILING_MAX_ENUM)
+        {
+            msg_Err(interop->format_probe.obj, "Interop module did not set tiling mode");
             return VLC_EGENERIC;
         }
-        msg_Dbg(interop->format_probe.obj, "Using external format (runtime determination)");
     }
 
-    if (interop->format_probe.tiling == VK_IMAGE_TILING_MAX_ENUM)
+    if (interop->format_probe.sw_chroma == 0)
     {
-        msg_Err(interop->format_probe.obj, "Interop module did not set tiling mode");
+        msg_Err(interop->format_probe.obj, "Interop module did not set sw_chroma");
         return VLC_EGENERIC;
     }
 
     /* Clear palette pointer to avoid stale references */
     interop->format_probe.fmt_out.p_palette = NULL;
 
-    msg_Dbg(interop->format_probe.obj, "Format probe succeeded: chroma=%.4s, vk_format=0x%x, tiling=%d",
+    msg_Dbg(interop->format_probe.obj, "Format probe succeeded: chroma=%.4s, sw_chroma=%.4s, vk_format=0x%x, tiling=%d",
             (char*)&interop->format_probe.fmt_out.i_chroma,
+            (char*)&interop->format_probe.sw_chroma,
             interop->format_probe.vk_format,
             interop->format_probe.tiling);
 
@@ -187,10 +202,11 @@ int vlc_vk_interop_Load(struct vlc_vk_interop *interop)
 {
     /* Preconditions: these are internal API calls, never NULL if code is correct */
     assert(interop != NULL);
-    assert(interop->dev != NULL);
-    assert(interop->dev->device != VK_NULL_HANDLE);
+    assert(interop->format_probe.gpu != NULL);
     assert(interop->ops != NULL);
     assert(interop->ops->load != NULL);
+    assert(interop->ops->upload_planes != NULL
+        || (interop->dev != NULL && interop->dev->device != VK_NULL_HANDLE));
 
     /* Interop should already be populated by display.c with:
      * - interop->ops (from Phase 1)
@@ -208,6 +224,8 @@ int vlc_vk_interop_Load(struct vlc_vk_interop *interop)
         return ret;
     }
 
+    interop->loaded = true;
+
     if (interop->plane_count == 0 || interop->plane_count > PICTURE_PLANE_MAX)
     {
         msg_Err(interop->format_probe.obj, "vkinterop module set invalid plane_count: %u",
@@ -221,8 +239,7 @@ int vlc_vk_interop_Load(struct vlc_vk_interop *interop)
 
 void vlc_vk_interop_Close(struct vlc_vk_interop *interop)
 {
-    /* Only call close callback if load was successful (indicated by dev being set) */
-    if (interop->dev != NULL && interop->ops && interop->ops->close)
+    if (interop->loaded && interop->ops && interop->ops->close)
         interop->ops->close(interop);
 
     if (interop->format_probe.vctx)

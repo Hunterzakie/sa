@@ -86,6 +86,7 @@ typedef struct vout_display_sys_t
 
 #ifdef HAVE_VULKAN
     struct vlc_vk_device vk_dev;
+    bool vk_dev_active;
     struct vlc_vk_interop interop;
     bool interop_active;
     
@@ -202,6 +203,24 @@ error:
 }
 
 #ifdef HAVE_VULKAN
+static int CheckInteropPlanes(vout_display_t *vd,
+                              const struct vlc_vk_interop *interop)
+{
+    video_format_t fmt = interop->format_probe.fmt_out;
+    fmt.i_chroma = interop->format_probe.sw_chroma;
+
+    struct pl_plane planes[4];
+    int count = vlc_placebo_PlaneComponents(&fmt, planes);
+
+    if (count != (int) interop->plane_count) {
+        msg_Err(vd, "Interop declared %u planes, but %4.4s has %d",
+                interop->plane_count, (const char *) &fmt.i_chroma, count);
+        return VLC_EGENERIC;
+    }
+
+    return VLC_SUCCESS;
+}
+
 static int CreateInteropSem(vout_display_t *vd, vout_display_sys_t *sys,
                             VkExternalSemaphoreHandleTypeFlagBits handle_type)
 {
@@ -272,27 +291,37 @@ static int OpenVkInterop(vout_display_t *vd, vout_display_sys_t *sys,
     if (vlc_placebo_Connect(sys->pl, &params) != VLC_SUCCESS)
         goto error_pl;
 
+    const bool needs_vk = probe.ops->upload_planes == NULL;
     const struct vlc_placebo_vk_handles *vk = vlc_placebo_GetVkHandles(sys->pl);
-    if (vk == NULL)
+    if (vk == NULL && needs_vk)
         goto error_pl;
 
-    vlc_vk_device_Init(&sys->vk_dev, vlc_object_logger(VLC_OBJECT(vd)));
-    sys->vk_dev.inst.instance = vk->instance;
-    sys->vk_dev.inst.get_proc_address = vk->get_instance_proc_addr;
-    if (vlc_vk_device_SetExternal(&sys->vk_dev, vk->phys_device, vk->device,
-                                  vk->graphics_queue_family) != VLC_SUCCESS)
-        goto error_pl;
+    if (vk != NULL) {
+        vlc_vk_device_Init(&sys->vk_dev, vlc_object_logger(VLC_OBJECT(vd)));
+        sys->vk_dev.inst.instance = vk->instance;
+        sys->vk_dev.inst.get_proc_address = vk->get_instance_proc_addr;
+        if (vlc_vk_device_SetExternal(&sys->vk_dev, vk->phys_device, vk->device,
+                                      vk->graphics_queue_family) != VLC_SUCCESS)
+            goto error_pl;
+        sys->vk_dev_active = true;
+    }
+
+    struct vlc_vk_device *dev = sys->vk_dev_active ? &sys->vk_dev : NULL;
 
     /* Phase 2 */
     vlc_vk_interop_Init(&sys->interop);
-    if (vlc_vk_interop_ProbeFormat(&sys->interop, &probe, &sys->vk_dev)
+    if (vlc_vk_interop_ProbeFormat(&sys->interop, &probe, dev, sys->pl->gpu)
             != VLC_SUCCESS)
         goto error_interop;
 
     /* Phase 3 */
-    sys->interop.dev = &sys->vk_dev;
+    sys->interop.dev = dev;
     sys->interop.image_count = INTEROP_MAX_SLOTS;
     if (vlc_vk_interop_Load(&sys->interop) != VLC_SUCCESS)
+        goto error_interop;
+
+    /* Upload modules fill in their own planes, so there is no wrap to check */
+    if (needs_vk && CheckInteropPlanes(vd, &sys->interop) != VLC_SUCCESS)
         goto error_interop;
 
     if (probe.acquire_sem_handle_type != 0 && CreateInteropSem(vd, sys, probe.acquire_sem_handle_type) != VLC_SUCCESS)
@@ -313,7 +342,6 @@ static int OpenVkInterop(vout_display_t *vd, vout_display_sys_t *sys,
     if (!pl_swapchain_resize(sys->pl->swapchain, &width, &height))
         goto error_interop;
 
-    pl_gpu gpu = sys->pl->gpu;
     sys->renderer = pl_renderer_create(sys->pl->log, sys->pl->gpu);
     vlc_placebo_ReleaseCurrent(sys->pl);
 
@@ -333,16 +361,24 @@ static int OpenVkInterop(vout_display_t *vd, vout_display_sys_t *sys,
 
 error_interop:
     pl_renderer_destroy(&sys->renderer);
-    vlc_vk_interop_Close(&sys->interop);
     if (sys->interop_sem != VK_NULL_HANDLE) {
         sys->vk_dev.vkDestroySemaphore(sys->vk_dev.device, sys->interop_sem, NULL);
         sys->interop_sem = VK_NULL_HANDLE;
+    }
+    vlc_vk_interop_Close(&sys->interop);
+    if (sys->vk_dev_active) {
+        vlc_vk_device_Destroy(&sys->vk_dev);
+        sys->vk_dev_active = false;
     }
     vlc_placebo_Release(sys->pl);
     sys->pl = NULL;
     return VLC_EGENERIC;
 
 error_pl:
+    if (sys->vk_dev_active) {
+        vlc_vk_device_Destroy(&sys->vk_dev);
+        sys->vk_dev_active = false;
+    }
     vlc_placebo_Release(sys->pl);
     sys->pl = NULL;
 error_probe:
@@ -362,11 +398,9 @@ static int Open(vout_display_t *vd,
     vd->sys = sys;
 
 #ifdef HAVE_VULKAN
-    if (vctx != NULL) {
-        if (OpenVkInterop(vd, sys, fmt, vctx) == VLC_SUCCESS)
-            return VLC_SUCCESS;
-        msg_Dbg(vd, "no usable vkinterop, falling back to software upload");
-    }
+    if (OpenVkInterop(vd, sys, fmt, vctx) == VLC_SUCCESS)
+        return VLC_SUCCESS;
+    msg_Dbg(vd, "no usable vkinterop, falling back to software upload");
 #else
     (void) vctx;
 #endif
@@ -388,6 +422,9 @@ static void Close(vout_display_t *vd)
         for (int s = 0; s < INTEROP_MAX_SLOTS; s++)
             for (int i = 0; i < PICTURE_PLANE_MAX; i++)
                 pl_tex_destroy(gpu, &sys->interop_slot_tex[s][i]);
+
+        if (sys->interop_active)
+            vlc_vk_interop_Close(&sys->interop);
 #endif
         pl_renderer_destroy(&sys->renderer);
         vlc_placebo_ReleaseCurrent(sys->pl);
@@ -406,12 +443,10 @@ static void Close(vout_display_t *vd)
     free(sys->hook_path);
 
 #ifdef HAVE_VULKAN
-    if (sys->interop_active) {
-        vlc_vk_interop_Close(&sys->interop);
-        if (sys->interop_sem != VK_NULL_HANDLE)
-            sys->vk_dev.vkDestroySemaphore(sys->vk_dev.device, sys->interop_sem, NULL);
+    if (sys->interop_active && sys->interop_sem != VK_NULL_HANDLE)
+        sys->vk_dev.vkDestroySemaphore(sys->vk_dev.device, sys->interop_sem, NULL);
+    if (sys->vk_dev_active)
         vlc_vk_device_Destroy(&sys->vk_dev);
-    }
 #endif
 
     vlc_placebo_Release(sys->pl);
@@ -428,10 +463,25 @@ static void ReleasePlanes(pl_gpu gpu, pl_tex *slot_tex, unsigned count)
         ));
 }
 
+static int RenderInteropUpload(vout_display_t *vd, struct pl_frame *img,
+                               picture_t *pic)
+{
+    vout_display_sys_t *sys = vd->sys;
+    const struct vlc_vk_interop *interop = &sys->interop;
+    unsigned planes = 0;
+
+    if (interop->ops->upload_planes(interop, img->planes, &planes, pic) != VLC_SUCCESS)
+        return VLC_EGENERIC;
+
+    img->num_planes = planes;
+    return VLC_SUCCESS;
+}
+
 /* One single-plane image per plane, each wrapped once into a cached pl_tex and
  * reused across frames. The interop copies the new frame into the same images
  * each time, so the wrap stays valid. */
-static int RenderInterop(vout_display_t *vd, struct pl_frame *img, picture_t *pic)
+static int RenderInteropImport(vout_display_t *vd, struct pl_frame *img,
+                               picture_t *pic, const video_format_t *cfmt)
 {
     vout_display_sys_t *sys = vd->sys;
     pl_gpu gpu = sys->pl->gpu;
@@ -496,18 +546,10 @@ static int RenderInterop(vout_display_t *vd, struct pl_frame *img, picture_t *pi
             }
         }
 
-        struct pl_plane *plane = &img->planes[i];
-        *plane = (struct pl_plane){ .texture = slot_tex[i] };
-
-        if (i == 0) {
-            plane->components = 1;
-            plane->component_mapping[0] = PL_CHANNEL_Y;
-        } else {
-            plane->components = 2;
-            plane->component_mapping[0] = PL_CHANNEL_U;
-            plane->component_mapping[1] = PL_CHANNEL_V;
-        }
+        img->planes[i] = (struct pl_plane){ .texture = slot_tex[i] };
     }
+
+    vlc_placebo_PlaneComponents(cfmt, img->planes);
 
     /* First frame the image is still UNDEFINED for Vulkan, so we declare
      * UNDEFINED, later frames are held and released in GENERAL */
@@ -531,6 +573,18 @@ static int RenderInterop(vout_display_t *vd, struct pl_frame *img, picture_t *pi
 done:
     sys->interop_sem_value = sync.signal_value ? sync.signal_value : sync.wait_value;
     return ret;
+}
+
+static int RenderInterop(vout_display_t *vd, struct pl_frame *img,
+                         picture_t *pic, const video_format_t *cfmt)
+{
+    vout_display_sys_t *sys = vd->sys;
+    const struct vlc_vk_interop *interop = &sys->interop;
+
+    if (interop->ops->upload_planes != NULL)
+        return RenderInteropUpload(vd, img, pic);
+
+    return RenderInteropImport(vd, img, pic, cfmt);
 }
 #endif
 
@@ -566,7 +620,7 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
     video_format_t hw_fmt;
     if (sys->interop_active) {
         hw_fmt = *vd->fmt;
-        hw_fmt.i_chroma = VLC_CODEC_NV12; // TODO: derive from interop->format_probe.fmt_out
+        hw_fmt.i_chroma = sys->interop.format_probe.sw_chroma;
         cfmt = &hw_fmt;
     }
 #endif
@@ -601,7 +655,7 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
 
 #ifdef HAVE_VULKAN
     if (sys->interop_active) {
-        if (RenderInterop(vd, &img, pic) != VLC_SUCCESS) {
+        if (RenderInterop(vd, &img, pic, cfmt) != VLC_SUCCESS) {
             failed = true;
             goto done;
         }

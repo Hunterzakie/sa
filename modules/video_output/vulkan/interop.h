@@ -27,6 +27,10 @@
 
 #include "device.h"
 
+/* Used through a pointer here, because pl_plane is defined in libplacebo and we don't want to include it here
+* It is used in the upload_planes callback in the libplacebo interop implementation */
+struct pl_plane;
+
 /**
  * Vulkan hardware decoder interop interface
  *
@@ -117,6 +121,8 @@ struct vlc_vk_interop_format_probe
     /* Opaque input format */
     video_format_t fmt_in;
     const struct vlc_vk_device *dev;
+    /* Renderer GPU handle, same type as pl_gpu. Used in upload_planes in the libplacebo interop implementation */
+    const struct pl_gpu_t *gpu;
 
     /* Outputs (set by module during probe_format) */
 
@@ -153,6 +159,8 @@ struct vlc_vk_interop
     struct vlc_vk_interop_format_probe format_probe;
 
     /* Phase 3 specific fields (valid after load) */
+
+    /* NULL if the backend is not Vulkan */
     const struct vlc_vk_device *dev;
     VkSamplerYcbcrConversion ycbcr_conversion;
     VkSampler sampler;
@@ -161,6 +169,7 @@ struct vlc_vk_interop
     unsigned plane_count;
     /* Module private data (allocated during load) */
     void *priv;
+    bool loaded;
 };
 
 /**
@@ -209,6 +218,24 @@ struct vlc_vk_interop_ops
                         struct vlc_vk_interop_sync *sync,
                         picture_t *pic,
                         uint32_t image_index);
+
+    /**
+     * Upload a host-memory picture into module-owned textures
+     *
+     * The module owns the destination textures and keeps them
+     * across frames. It must fill in every plane it reports, including the
+     * component mapping and any chroma siting shift.
+     *
+     * \param interop the Vulkan interop
+     * \param[out] out_planes planes to sample, filled by the module
+     * \param[out] out_plane_count number of planes filled
+     * \param pic the picture to upload
+     * \return VLC_SUCCESS or VLC error
+     */
+    int (*upload_planes)(const struct vlc_vk_interop *interop,
+                         struct pl_plane *out_planes,
+                         unsigned *out_plane_count,
+                         picture_t *pic);
 
     /**
      * One-time per-slot setup after Load (optional)
@@ -348,5 +375,4 @@ static inline VkFormat vlc_vk_GetVulkanFormat(vlc_fourcc_t sw_chroma)
             return VK_FORMAT_UNDEFINED;
     }
 }
-
 #endif /* VLC_VULKAN_INTEROP_H */

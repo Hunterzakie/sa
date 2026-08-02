@@ -21,6 +21,8 @@
 #ifndef VLC_PLACEBO_VK_INTEROP_H
 #define VLC_PLACEBO_VK_INTEROP_H
 
+#include <libplacebo/renderer.h>
+
 #include "../vulkan/interop.h"
 
 /**
@@ -65,12 +67,13 @@ int vlc_vk_interop_Probe(struct vlc_vk_interop_probe *probe, vlc_object_t *obj,
  *
  * \param interop interop structure to populate with ops and format_probe fields
  * \param probe Phase 1 probe results (provides obj, vctx, fmt_in, ops)
- * \param phys_dev physical device handle for format queries
+ * \param dev Vulkan device for format queries
+ * \param gpu libplacebo GPU
  * \return VLC_SUCCESS if format negotiated, VLC_EGENERIC otherwise
  */
 int vlc_vk_interop_ProbeFormat(struct vlc_vk_interop *interop,
                                const struct vlc_vk_interop_probe *probe,
-                               struct vlc_vk_device *dev);
+                               struct vlc_vk_device *dev, pl_gpu gpu);
 
 /**
  * Complete interop initialization with device handles (Phase 3)
@@ -91,4 +94,5 @@ int vlc_vk_interop_Load(struct vlc_vk_interop *interop);
  * \param interop the interop to close
  */
 void vlc_vk_interop_Close(struct vlc_vk_interop *interop);
+
 #endif /* VLC_PLACEBO_VK_INTEROP_H */
