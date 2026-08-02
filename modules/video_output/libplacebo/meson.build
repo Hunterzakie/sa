@@ -45,6 +45,13 @@ if vulkan_dep.found()
         'dependencies' : [libplacebo_dep],
     }
 
+    vlc_modules += {
+        'name' : 'placebo_sw',
+        'sources' : files('interop/sw.c'),
+        'link_with' : [libplacebo_vkinterop, libplacebo_utils],
+        'dependencies' : [libplacebo_dep],
+    }
+
     # NVDEC hardware interop (CUDA <-> Vulkan external memory)
     placebo_nvdec_dep = dependency('ffnvcodec', required: false)
     if placebo_nvdec_dep.found()

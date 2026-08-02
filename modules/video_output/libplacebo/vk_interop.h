@@ -25,6 +25,8 @@
 #include <vlc_picture.h>
 #include <vlc_codec.h>
 
+#include <libplacebo/renderer.h>
+
 #include "../vulkan/device.h"
 
 /**
@@ -102,6 +104,7 @@ struct vlc_vk_interop_format_probe
     struct vlc_video_context *vctx;     /* Decoder device context */
     video_format_t fmt_in;              /* Opaque input format */
     const struct vlc_vk_device *dev;
+    pl_gpu gpu;
 
     /* Outputs (set by module during probe_format) */
     video_format_t fmt_out;             /* Requested picture format from VLC core
@@ -133,13 +136,14 @@ struct vlc_vk_interop
     struct vlc_vk_interop_format_probe format_probe;
 
     /* Phase 3 specific fields (valid after load) */
-    const struct vlc_vk_device *dev;
+    const struct vlc_vk_device *dev;    /* NULL if the backend is not Vulkan */
     VkSamplerYcbcrConversion ycbcr_conversion;
     VkSampler sampler;
     uint32_t image_count;
     struct vlc_vk_plane_info plane_info[PICTURE_PLANE_MAX];
     unsigned plane_count;
     void *priv;  /* Module private data (allocated during load) */
+    bool loaded;
 };
 
 /**
@@ -188,6 +192,24 @@ struct vlc_vk_interop_ops
                         struct vlc_vk_interop_sync *sync,
                         picture_t *pic,
                         uint32_t image_index);
+
+    /**
+     * Upload a host-memory picture into module-owned textures
+     *
+     * The module owns the destination textures and keeps them
+     * across frames. It must fill in every plane it reports, including the
+     * component mapping and any chroma siting shift.
+     *
+     * \param interop the Vulkan interop
+     * \param[out] out_planes planes to sample, filled by the module
+     * \param[out] out_plane_count number of planes filled
+     * \param pic the picture to upload
+     * \return VLC_SUCCESS or VLC error
+     */
+    int (*upload_planes)(const struct vlc_vk_interop *interop,
+                         struct pl_plane *out_planes,
+                         unsigned *out_plane_count,
+                         picture_t *pic);
 
     /**
      * One-time per-slot setup after Load (optional)
@@ -370,12 +392,13 @@ int vlc_vk_interop_Probe(struct vlc_vk_interop_probe *probe, vlc_object_t *obj,
  *
  * \param interop interop structure to populate with ops and format_probe fields
  * \param probe Phase 1 probe results (provides obj, vctx, fmt_in, ops)
- * \param phys_dev physical device handle for format queries
+ * \param dev Vulkan device for format queries
+ * \param gpu libplacebo GPU
  * \return VLC_SUCCESS if format negotiated, VLC_EGENERIC otherwise
  */
 int vlc_vk_interop_ProbeFormat(struct vlc_vk_interop *interop,
                                const struct vlc_vk_interop_probe *probe,
-                               struct vlc_vk_device *dev);
+                               struct vlc_vk_device *dev, pl_gpu gpu);
 
 /**
  * Complete interop initialization with device handles (Phase 3)

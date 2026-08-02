@@ -354,6 +354,8 @@ ProbeFormat(struct vlc_vk_interop_format_probe *format_probe)
         return VLC_EGENERIC;
     }
 
+    format_probe->sw_chroma = chroma;
+
     return VLC_SUCCESS;
 }
 

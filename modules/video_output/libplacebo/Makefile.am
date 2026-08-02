@@ -59,6 +59,18 @@ vout_PLUGINS += libplacebo_nvdec_plugin.la
 endif
 endif
 
+### Software interop
+libplacebo_sw_plugin_la_SOURCES = $(LIBPLACEBO_COMMONSOURCES) \
+				  video_output/libplacebo/interop/sw.c
+libplacebo_sw_plugin_la_CFLAGS = $(AM_CFLAGS) $(LIBPLACEBO_CFLAGS) $(VULKAN_CFLAGS)
+libplacebo_sw_plugin_la_LIBADD = $(LIBPLACEBO_LIBS) libplacebo_utils.la \
+				  libplacebo_vkinterop.la
+libplacebo_sw_plugin_la_LDFLAGS = $(AM_LDFLAGS) $(vout_RPATH)
+
+if HAVE_VULKAN
+vout_PLUGINS += libplacebo_sw_plugin.la
+endif
+
 ### Vulkan ###
 libplacebo_vk_plugin_la_SOURCES = $(LIBPLACEBO_COMMONSOURCES) \
 				  video_output/vulkan/platform.h \
