@@ -58,7 +58,7 @@ private:
 
 /**
  * @brief The CompositorOffscreenWindow class allows to fake the visiblilty
- * of the the QQuickWindow, note that this feature will only work if QT5_DECLARATIVE_PRIVATE
+ * of the the QQuickWindow, note that this feature will only work if QT_DECLARATIVE_PRIVATE
  * are available
  */
 class CompositorOffscreenWindow : public QQuickWindow
