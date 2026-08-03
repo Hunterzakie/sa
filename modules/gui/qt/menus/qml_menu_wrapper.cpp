@@ -34,6 +34,8 @@
 #include <QSignalMapper>
 #include <QScreen>
 #include <QActionGroup>
+#include <QMimeData>
+#include <QClipboard>
 
 namespace
 {
@@ -1057,9 +1059,15 @@ void PlaylistContextMenu::popup(int selectedIndex, QPoint pos )
     m_menu = std::make_unique<VLCMenu>(m_ctx->getIntf());
     QAction* action;
 
+    const auto selectedIndexes = m_selectionModel->selectedIndexesFlat();
     QList<QUrl> selectedUrlList;
-    for (const int modelIndex : m_selectionModel->selectedIndexesFlat())
-        selectedUrlList.push_back(m_model->itemAt(modelIndex).getUrl());
+    selectedUrlList.reserve(selectedIndexes.size());
+    for (const auto modelIndex : selectedIndexes)
+    {
+        const QUrl url = m_model->itemAt(modelIndex).getUrl();
+        if (Q_LIKELY(url.isValid()))
+            selectedUrlList.push_back(url);
+    }
 
     PlaylistItem selectedItem;
     if (selectedIndex >= 0)
@@ -1142,6 +1150,19 @@ void PlaylistContextMenu::popup(int selectedIndex, QPoint pos )
         });
 
         m_menu->addSeparator();
+
+        QClipboard *const applicationClipboard = qApp->clipboard();
+        if (Q_LIKELY(applicationClipboard) && !selectedUrlList.isEmpty())
+        {
+            action = m_menu->addAction(qtr("Copy Selection"));
+            connect(action, &QAction::triggered, applicationClipboard, [selectedUrlList, applicationClipboard]() {
+                const auto mimeData = new QMimeData;
+                mimeData->setUrls(selectedUrlList); // RFC-2483 "text/uri-list"
+
+                // NOTE: Ownership of mime data is transferred to the clipboard.
+                applicationClipboard->setMimeData(mimeData);
+            });
+        }
 
         action = m_menu->addAction( qtr("Remove Selected") );
         action->setIcon(QIcon(":/menu/remove.svg"));
