@@ -32,6 +32,7 @@
 #include <vlc_input_item.h>
 
 #include <assert.h>
+#include <stdint.h>
 #include <archive.h>
 #include <archive_entry.h>
 
@@ -163,7 +164,7 @@ static la_int64_t libarchive_seek_cb( libarchive_t* p_arc, void* p_obj,
     libarchive_callback_t* p_cb = (libarchive_callback_t*)p_obj;
     stream_t* p_source = p_cb->p_source;
 
-    ssize_t whence_pos;
+    uint64_t whence_pos;
 
     switch( whence )
     {
@@ -174,7 +175,7 @@ static la_int64_t libarchive_seek_cb( libarchive_t* p_arc, void* p_obj,
 
     }
 
-    if( whence_pos < -offset || vlc_stream_Seek( p_source, whence_pos + offset ) )
+    if( whence_pos > INT64_MAX || (int64_t)whence_pos < -offset || vlc_stream_Seek( p_source, whence_pos + offset ) )
         return ARCHIVE_FATAL;
 
     return vlc_stream_Tell( p_source );
