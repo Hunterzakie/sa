@@ -91,7 +91,7 @@ static int Open (vlc_object_t *obj)
     sidplay2 *player = NULL;
     ReSIDBuilder *builder = NULL;
 
-    int64_t size = stream_Size (demux->s);
+    uint64_t size = stream_Size (demux->s);
     if (size < 4 || size > LONG_MAX) /* We need to load the whole file for sidplay */
         return VLC_EGENERIC;
 
