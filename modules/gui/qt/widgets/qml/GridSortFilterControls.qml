@@ -8,7 +8,7 @@ import VLC.Menus
 NavigableRow {
     id: root
 
-    spacing: VLCStyle.margin_normal
+    spacing: VLCStyle.margin_xsmall
     enabled: gridListBtn.visible || sortControl.visible || searchBox.visible
 
     property SortMenu sortMenu: null

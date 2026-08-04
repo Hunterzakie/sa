@@ -95,7 +95,7 @@ T.ToolBar {
                 id: navigationButtonsRow
 
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: VLCStyle.margin_normal
+                spacing: VLCStyle.margin_xsmall
 
                 Navigation.parentItem: root
                 Navigation.rightItem: playqueueButtonsTop
@@ -175,7 +175,7 @@ T.ToolBar {
                 id: playqueueButtonsTopRow
 
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: VLCStyle.margin_normal
+                spacing: VLCStyle.margin_xsmall
 
                 Navigation.parentItem: root
                 Navigation.leftItem: navigationButtons
