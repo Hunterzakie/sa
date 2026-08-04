@@ -250,8 +250,8 @@ static int Open( vlc_object_t *p_object )
 {
     stream_t *p_stream = (stream_t *) p_object;
 
-    int64_t i_stream_size = stream_Size( p_stream->s );
-    if ( i_stream_size > 0 && i_stream_size < ARIB_STD_B25_TS_PROBING_MIN_DATA )
+    uint64_t i_stream_size = stream_Size( p_stream->s );
+    if ( i_stream_size != 0 && i_stream_size < ARIB_STD_B25_TS_PROBING_MIN_DATA )
         return VLC_EGENERIC;
 
     stream_sys_t *p_sys = p_stream->p_sys = calloc( 1, sizeof(*p_sys) );
