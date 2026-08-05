@@ -52,7 +52,7 @@
 #include "dialogs/open/openurl.hpp"
 #include "dialogs/help/help.hpp"
 #include "dialogs/gototime/gototime.hpp"
-#include "dialogs/podcast/podcast_configuration.hpp"
+#include "dialogs/services/sd_configuration.hpp"
 #include "dialogs/plugins/plugins.hpp"
 #include "dialogs/epg/epg.hpp"
 #include "dialogs/playlists/playlists.hpp"
@@ -84,7 +84,6 @@
     X(aboutDialog) \
     X(mediaInfoDialog) \
     X(bookmarkDialog) \
-    X(podcastDialog) \
     X(pluginDialog)\
     X(egpDialog)
 
@@ -533,9 +532,15 @@ void DialogsProvider::bookmarksDialog()
     toggleDialogVisible(m_bookmarkDialog);
 }
 
-void DialogsProvider::podcastConfigureDialog()
+void DialogsProvider::serviceConfigureDialog(const QString& name, const QString& title)
 {
-    toggleDialogVisible(m_podcastDialog);
+    if (name.isEmpty())
+        return;
+
+    auto& dialog = m_sdConfigDialogs[name];
+    if (!dialog)
+        dialog = std::make_unique<SDConfigDialog>(p_intf, name, title);
+    dialog->toggleVisible();
 }
 
 void DialogsProvider::pluginDialog()

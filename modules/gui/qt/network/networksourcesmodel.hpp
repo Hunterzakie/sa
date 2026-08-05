@@ -39,7 +39,8 @@ public:
         SOURCE_NAME = Qt::UserRole + 1,
         SOURCE_LONGNAME,
         SOURCE_TYPE,
-        SOURCE_ARTWORK
+        SOURCE_ARTWORK,
+        SOURCE_CAPABILITIES
     };
     Q_ENUM(Role)
 
@@ -48,6 +49,12 @@ public:
         TYPE_SOURCE = 0
     };
     Q_ENUM(ItemType)
+
+    enum Capability {
+        SD_CAP_SEARCH = 1,
+        SD_CAP_CONFIGURABLE = 2
+    };
+    Q_ENUM(Capability)
 
     NetworkSourcesModel( QObject* parent = nullptr );
 

@@ -61,7 +61,6 @@ libqt_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS_qt) \
 	-I$(builddir)/dialogs/help \
 	-I$(builddir)/dialogs/messages \
 	-I$(builddir)/dialogs/open \
-	-I$(builddir)/dialogs/podcast \
 	-I$(builddir)/dialogs/preferences \
 	-I$(builddir)/dialogs/sout \
 	-I$(builddir)/dialogs/vlm
@@ -137,8 +136,6 @@ libqt_plugin_la_SOURCES = \
 	dialogs/open/open_panels.cpp dialogs/open/open_panels.hpp \
 	dialogs/open/openurl.cpp dialogs/open/openurl.hpp \
 	dialogs/plugins/plugins.cpp dialogs/plugins/plugins.hpp \
-	dialogs/podcast/podcast_configuration.cpp \
-	dialogs/podcast/podcast_configuration.hpp \
 	dialogs/preferences/complete_preferences.cpp \
 	dialogs/preferences/complete_preferences.hpp \
 	dialogs/preferences/expert_model.cpp \
@@ -151,6 +148,8 @@ libqt_plugin_la_SOURCES = \
 	dialogs/preferences/preferences_widgets.hpp \
 	dialogs/preferences/simple_preferences.cpp \
 	dialogs/preferences/simple_preferences.hpp \
+	dialogs/services/sd_configuration.cpp \
+	dialogs/services/sd_configuration.hpp \
 	dialogs/sout/convert.cpp dialogs/sout/convert.hpp \
 	dialogs/sout/profile_selector.cpp \
 	dialogs/sout/profile_selector.hpp \
@@ -428,13 +427,13 @@ nodist_libqt_plugin_la_SOURCES = \
 	dialogs/open/open_panels.moc.cpp \
 	dialogs/open/openurl.moc.cpp \
 	dialogs/plugins/plugins.moc.cpp \
-	dialogs/podcast/podcast_configuration.moc.cpp \
 	dialogs/preferences/complete_preferences.moc.cpp \
 	dialogs/preferences/expert_model.moc.cpp \
 	dialogs/preferences/expert_view.moc.cpp \
 	dialogs/preferences/preferences.moc.cpp \
 	dialogs/preferences/preferences_widgets.moc.cpp \
 	dialogs/preferences/simple_preferences.moc.cpp \
+	dialogs/services/sd_configuration.moc.cpp \
 	dialogs/sout/convert.moc.cpp \
 	dialogs/sout/profile_selector.moc.cpp \
 	dialogs/sout/sout.moc.cpp \
@@ -553,7 +552,6 @@ nodist_libqt_plugin_la_SOURCES += \
 	dialogs/open/ui_open_disk.h \
 	dialogs/open/ui_open_file.h \
 	dialogs/open/ui_open_net.h \
-	dialogs/podcast/ui_podcast_configuration.h \
 	dialogs/preferences/ui_sprefs_audio.h \
 	dialogs/preferences/ui_sprefs_input.h \
 	dialogs/preferences/ui_sprefs_interface.h \
@@ -767,7 +765,6 @@ libqt_plugin_la_UI = \
 	dialogs/open/open_disk.ui \
 	dialogs/open/open_file.ui \
 	dialogs/open/open_net.ui \
-	dialogs/podcast/podcast_configuration.ui \
 	dialogs/preferences/sprefs_audio.ui \
 	dialogs/preferences/sprefs_input.ui \
 	dialogs/preferences/sprefs_interface.ui \
