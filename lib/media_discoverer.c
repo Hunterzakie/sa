@@ -262,7 +262,7 @@ libvlc_media_discoverer_list_get( libvlc_instance_t *p_inst,
     char **ppsz_names, **ppsz_longnames;
     int *p_categories;
     ppsz_names = vlc_sd_GetNames( p_inst->p_libvlc_int, &ppsz_longnames,
-                                  &p_categories );
+                                  &p_categories, NULL );
 
     if( ppsz_names == NULL )
     {

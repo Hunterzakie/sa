@@ -36,12 +36,14 @@ typedef struct
     char *name;
     char *longname;
     int category;
+    int capabilities;
 } vlc_sd_probe_t;
 
-int vlc_sd_probe_Add (vlc_probe_t *probe, const char *name,
-                      const char *longname, int category)
+int vlc_sd_probe_AddCap (vlc_probe_t *probe, const char *name,
+                         const char *longname, int category, int capabilities)
 {
-    vlc_sd_probe_t names = { strdup(name), strdup(longname), category };
+    vlc_sd_probe_t names = { strdup(name), strdup(longname), category,
+                             capabilities };
 
     if (unlikely (names.name == NULL || names.longname == NULL
                || vlc_probe_add (probe, &names, sizeof (names))))
@@ -53,12 +55,19 @@ int vlc_sd_probe_Add (vlc_probe_t *probe, const char *name,
     return VLC_PROBE_CONTINUE;
 }
 
+int vlc_sd_probe_Add (vlc_probe_t *probe, const char *name,
+                      const char *longname, int category)
+{
+    return vlc_sd_probe_AddCap (probe, name, longname, category, 0);
+}
+
 #undef vlc_sd_GetNames
 
 /**
  * Gets the list of available services discovery plugins.
  */
-char **vlc_sd_GetNames (vlc_object_t *obj, char ***pppsz_longnames, int **pp_categories)
+char **vlc_sd_GetNames (vlc_object_t *obj, char ***pppsz_longnames,
+                        int **pp_categories, int **pp_capabilities)
 {
     size_t count;
     vlc_sd_probe_t *tab = vlc_probe (obj, "services probe", &count);
@@ -72,12 +81,15 @@ char **vlc_sd_GetNames (vlc_object_t *obj, char ***pppsz_longnames, int **pp_cat
     char **names = vlc_alloc (count + 1, sizeof(char *));
     char **longnames = vlc_alloc (count + 1, sizeof(char *));
     int *categories = vlc_alloc (count + 1, sizeof(int));
+    int *capabilities = vlc_alloc (count + 1, sizeof(int));
 
-    if (unlikely (names == NULL || longnames == NULL || categories == NULL))
+    if (unlikely (names == NULL || longnames == NULL || categories == NULL
+               || capabilities == NULL))
     {
         free(names);
         free(longnames);
         free(categories);
+        free(capabilities);
         free(tab);
         return NULL;
     }
@@ -86,13 +98,17 @@ char **vlc_sd_GetNames (vlc_object_t *obj, char ***pppsz_longnames, int **pp_cat
         names[i] = tab[i].name;
         longnames[i] = tab[i].longname;
         categories[i] = tab[i].category;
+        capabilities[i] = tab[i].capabilities;
     }
     free (tab);
     names[count] = longnames[count] = NULL;
     categories[count] = 0;
+    capabilities[count] = 0;
     *pppsz_longnames = longnames;
     if( pp_categories ) *pp_categories = categories;
     else free( categories );
+    if( pp_capabilities ) *pp_capabilities = capabilities;
+    else free( capabilities );
     return names;
 }
 
@@ -114,6 +130,7 @@ services_discovery_t *vlc_sd_Create(vlc_object_t *parent, const char *cfg,
 
     free(config_ChainCreate(&sd->psz_name, &sd->p_cfg, cfg));
     sd->description = NULL;
+    sd->config_ops = NULL;
     sd->owner = *owner;
 
     sd->p_module = module_need(sd, "services_discovery",
