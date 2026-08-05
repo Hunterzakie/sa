@@ -149,13 +149,16 @@ static void displayProgressCallback(void *p_data,
 {
     @autoreleasepool {
         VLCCoreDialogProvider *dialogProvider = (__bridge VLCCoreDialogProvider *)p_data;
+        NSString *title = toNSStr(psz_title);
+        NSString *text = toNSStr(psz_text);
+        NSString *cancelTitle = toNSStr(psz_cancel);
         dispatch_async(dispatch_get_main_queue(), ^{
             [dialogProvider displayProgressDialog:p_id
-                                            title:toNSStr(psz_title)
-                                             text:toNSStr(psz_text)
+                                            title:title
+                                             text:text
                                     indeterminate:b_indeterminate
                                          position:f_position
-                                      cancelTitle:toNSStr(psz_cancel)];
+                                      cancelTitle:cancelTitle];
         });
     }
 }
