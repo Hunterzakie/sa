@@ -16,8 +16,27 @@ libplacebo_plugin_la_SOURCES = $(LIBPLACEBO_COMMONSOURCES) \
 			  video_output/libplacebo/display.c
 libplacebo_plugin_la_CFLAGS = $(AM_CFLAGS) $(LIBPLACEBO_CFLAGS)
 libplacebo_plugin_la_LIBADD = $(LIBPLACEBO_LIBS) libplacebo_utils.la
+if HAVE_VULKAN
+libplacebo_plugin_la_CFLAGS += $(VULKAN_CFLAGS) -DHAVE_VULKAN
+libplacebo_plugin_la_LIBADD += libplacebo_vkinterop.la
+endif
 
 vout_PLUGINS += libplacebo_plugin.la
+
+### Internal Vulkan device helpers ###
+libplacebo_vkinterop_la_SOURCES = \
+	video_output/vulkan/common.h \
+	video_output/vulkan/common.c \
+	video_output/vulkan/device.h \
+	video_output/vulkan/device.c \
+	video_output/vulkan/vk_funcs.h
+libplacebo_vkinterop_la_CFLAGS = $(AM_CFLAGS) $(LIBPLACEBO_CFLAGS) $(VULKAN_CFLAGS)
+libplacebo_vkinterop_la_LIBADD = $(LIBPLACEBO_LIBS)
+libplacebo_vkinterop_la_LDFLAGS = -static -undefined
+
+if HAVE_VULKAN
+noinst_LTLIBRARIES += libplacebo_vkinterop.la
+endif
 
 ### Vulkan ###
 libplacebo_vk_plugin_la_SOURCES = $(LIBPLACEBO_COMMONSOURCES) \

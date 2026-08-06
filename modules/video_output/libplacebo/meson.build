@@ -13,10 +13,24 @@ libplacebo_utils = static_library('vlc_libplacebo_utils',
                                 dependencies: [libplacebo_dep],
                                 include_directories: [vlc_include_dirs])
 
+# Internal Vulkan device helpers
+placebo_link = [libplacebo_utils]
+placebo_cargs = []
+if vulkan_dep.found()
+    libplacebo_vkinterop = static_library('vlc_libplacebo_vkinterop',
+        files('../vulkan/common.c',
+              '../vulkan/device.c'),
+        dependencies: [libplacebo_dep],
+        include_directories: [vlc_include_dirs])
+    placebo_link += libplacebo_vkinterop
+    placebo_cargs += '-DHAVE_VULKAN'
+endif
+
 vlc_modules += {
     'name' : 'placebo',
     'sources' : files('instance.c', 'display.c'),
-    'link_with' : [libplacebo_utils],
+    'link_with' : placebo_link,
+    'c_args' : placebo_cargs,
     'dependencies' : [libplacebo_dep],
 }
 
