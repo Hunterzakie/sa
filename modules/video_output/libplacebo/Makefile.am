@@ -31,6 +31,8 @@ libplacebo_vkinterop_la_SOURCES = \
 	video_output/vulkan/common.c \
 	video_output/vulkan/device.h \
 	video_output/vulkan/device.c \
+	video_output/vulkan/device_utils.h \
+	video_output/vulkan/device_utils.c \
 	video_output/vulkan/vk_funcs.h
 libplacebo_vkinterop_la_CFLAGS = $(AM_CFLAGS) $(LIBPLACEBO_CFLAGS) $(VULKAN_CFLAGS)
 libplacebo_vkinterop_la_LIBADD = $(LIBPLACEBO_LIBS)

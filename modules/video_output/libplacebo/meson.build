@@ -20,7 +20,8 @@ if vulkan_dep.found()
     libplacebo_vkinterop = static_library('vlc_libplacebo_vkinterop',
         files('vk_interop.c',
               '../vulkan/common.c',
-              '../vulkan/device.c'),
+              '../vulkan/device.c',
+              '../vulkan/device_utils.c'),
         dependencies: [libplacebo_dep],
         include_directories: [vlc_include_dirs])
     placebo_link += libplacebo_vkinterop
@@ -43,6 +44,7 @@ if vulkan_dep.found()
         'link_with' : [libplacebo_utils],
         'dependencies' : [libplacebo_dep],
     }
+
 endif
 
 ## OpenGL
