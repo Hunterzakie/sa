@@ -345,19 +345,34 @@ void CompositorVideo::adjustBlurBehind()
             if (blurBehind && m_mainCtx->windowSuportExtendedFrame() && m_mainCtx->useClientSideDecoration())
             {
                 QRegion blurRegion;
-                const QRegion maskRegion = window->mask();
-                if (maskRegion.isEmpty())
+                const auto margin = m_mainCtx->windowExtendedMargin();
+
                 {
-                    // If there is window mask, we assume that the content area is smaller than the
-                    // window geometry. We also assume that in that case window has custom margins
-                    // set (Wayland case). KWin 6.2 Wayland already considers window custom margins
-                    // when applying the blur effect, but KWin X11 does not consider `_GTK_FRAME_EXTENTS`.
-                    // Since the mask region represents the actual content area, and the outside region
-                    // is included in the frame margins, we can set the blur region only if the mask is
-                    // empty. This fixes blur backdrop applied to client shadows on X11:
-                    const auto margin = m_mainCtx->windowExtendedMargin();
-                    blurRegion = QRegion(margin, margin, window->width() - 2 * margin, window->height() - 2 * margin);
+                    if (margin > 0)
+                    {
+                        // TODO: Get rid of this workaround when the compositor does not consider xdg_surface frame extents
+                        //       when we provide a region:
+                        static const bool doNotConsiderMarginsInBlurRegion = []() {
+#ifdef _WIN32
+                            return false;
+#endif
+                            // KWin fixes it with 6.8.0, 6.7.8, and 6.6.7. Currently we do not check compositor version
+                            // for the sake of maintenance. For Cosmic, since it clips the xdg surface frame extents to
+                            // apply its own rounding and shadows (with CSD), we can request full blur at all times.
+                            // See https://invent.kde.org/plasma/kwin/-/merge_requests/9910.
+                            assert(qApp);
+                            return (qEnvironmentVariable("XDG_SESSION_DESKTOP") == QLatin1String("COSMIC") &&
+                                    qEnvironmentVariable("XDG_SESSION_TYPE") == QLatin1String("wayland") &&
+                                    qApp->platformName().startsWith(QLatin1String("wayland")));
+                        }();
+
+                        if (!doNotConsiderMarginsInBlurRegion)
+                        {
+                            blurRegion = QRegion(margin, margin, window->width() - 2 * margin, window->height() - 2 * margin);
+                        }
+                    }
                 }
+
                 m_windowEffectsModule->setBlurBehind(*m_windowEffectsModule, window, true, blurRegion);
             }
             else
