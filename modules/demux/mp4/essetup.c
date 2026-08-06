@@ -1269,11 +1269,11 @@ int SetupAudioES( demux_t *p_demux, const mp4_track_t *p_track,
     {
         uint16_t i_vlc_mapping = 0;
         uint8_t i_channels = 0;
-        const uint32_t *p_rg_chans_order = NULL;
+        uint32_t rg_chans_order[AOUT_CHAN_MAX + 1];
 
         if ( CoreAudio_Layout_to_vlc( &BOXDATA(p_chan)->layout,
                                       &i_vlc_mapping, &i_channels,
-                                      &p_rg_chans_order ) != VLC_SUCCESS )
+                                      rg_chans_order ) != VLC_SUCCESS )
         {
             msg_Warn( p_demux, "discarding chan mapping" );
         }
@@ -1281,17 +1281,22 @@ int SetupAudioES( demux_t *p_demux, const mp4_track_t *p_track,
         {
             const unsigned i_bps = aout_BitsPerSample( p_fmt->i_codec );
             /* Uncompressed audio */
-            if( i_bps )
-                 p_cfg->i_chans_to_reorder =
-                    aout_CheckChannelReorder( p_rg_chans_order, NULL,
+            if( i_bps && (i_channels != p_soun->i_channelcount ||
+                          i_channels != stdc_count_ones(i_vlc_mapping)) )
+            {
+                msg_Warn( p_demux, "discarding inconsistent chan mapping" );
+            }
+            else if( i_bps )
+            {
+                p_cfg->i_chans_to_reorder =
+                    aout_CheckChannelReorder( rg_chans_order, NULL,
                                               i_vlc_mapping,
                                               p_cfg->rgi_chans_reordering );
 
-            /* we can only set bitmap for VLC mapping or [re]mapped pcm audio
-             * as vlc can't enumerate channels for compressed content */
-            if( i_bps )
-            {
-                p_fmt->audio.i_channels = stdc_count_ones(i_vlc_mapping);
+                /* we can only set bitmap for VLC mapping or [re]mapped pcm
+                 * audio as vlc can't enumerate channels for compressed
+                 * content */
+                p_fmt->audio.i_channels = i_channels;
                 p_fmt->audio.i_physical_channels = i_vlc_mapping;
             }
         }

@@ -34,6 +34,7 @@
 #include <vlc_aout.h>
 #include <vlc_meta.h>
 #include <limits.h>
+#include <stdbit.h>
 
 #include "mp4/coreaudio.h"
 
@@ -195,7 +196,10 @@ static int Open( vlc_object_t *p_this )
     p_sys->i_chans_to_reorder = 0;
     es_format_Init( &p_sys->fmt, AUDIO_ES, VLC_FOURCC( 't', 'w', 'o', 's' ) );
 
-    const uint32_t *pi_channels_in = NULL;
+    uint32_t pi_channels_in[AOUT_CHAN_MAX + 1];
+    uint16_t i_channel_layout = 0;
+    uint8_t i_layout_channels = 0;
+    bool b_channel_layout = false;
 
     for( ;; )
     {
@@ -234,7 +238,7 @@ static int Open( vlc_object_t *p_this )
             msg_Dbg( p_demux, "SSND: (offset=%d blocksize=%d)",
                      p_sys->i_ssnd_offset, p_sys->i_ssnd_blocksize );
         }
-        else if( !memcmp( p_peek, "CHAN", 4 ) && i_chunk_size > 8 + 12 )
+        else if( !memcmp( p_peek, "CHAN", 4 ) && i_data_size >= 12 )
         {
             ssize_t ret = vlc_stream_Peek( p_demux->s, &p_peek, i_chunk_size );
             if( ret == -1 || (size_t) ret != i_chunk_size )
@@ -246,11 +250,15 @@ static int Open( vlc_object_t *p_this )
             layout.i_channels_description_count = GetDWBE( &p_peek[8+8] );
             /* TODO: handle CoreAudio_layout_s.p_descriptions */
 
-            if ( CoreAudio_Layout_to_vlc( &layout,
-                                          &p_sys->fmt.audio.i_physical_channels,
-                                          &p_sys->fmt.audio.i_channels,
-                                          &pi_channels_in ) != VLC_SUCCESS )
+            if ( CoreAudio_Layout_to_vlc( &layout, &i_channel_layout,
+                                          &i_layout_channels,
+                                          pi_channels_in ) != VLC_SUCCESS )
+            {
+                b_channel_layout = false;
                 msg_Warn( p_demux, "discarding chan mapping" );
+            }
+            else
+                b_channel_layout = true;
         }
         else
         {
@@ -276,17 +284,26 @@ static int Open( vlc_object_t *p_this )
         }
     }
 
-    if( pi_channels_in != NULL )
+    if( b_channel_layout )
     {
-        p_sys->i_chans_to_reorder =
-            aout_CheckChannelReorder( pi_channels_in, NULL,
-                                      p_sys->fmt.audio.i_physical_channels,
-                                      p_sys->pi_chan_table ) > 0;
-        p_sys->audio_fourcc =
-            vlc_fourcc_GetCodecAudio( p_sys->fmt.i_codec,
-                                      p_sys->fmt.audio.i_bitspersample );
-        if( p_sys->audio_fourcc == 0 )
-            p_sys->i_chans_to_reorder = 0;
+        if( i_layout_channels != p_sys->fmt.audio.i_channels ||
+            i_layout_channels != stdc_count_ones(i_channel_layout) )
+        {
+            msg_Warn( p_demux, "discarding inconsistent chan mapping" );
+        }
+        else
+        {
+            p_sys->fmt.audio.i_physical_channels = i_channel_layout;
+            p_sys->i_chans_to_reorder =
+                aout_CheckChannelReorder( pi_channels_in, NULL,
+                                          p_sys->fmt.audio.i_physical_channels,
+                                          p_sys->pi_chan_table );
+            p_sys->audio_fourcc =
+                vlc_fourcc_GetCodecAudio( p_sys->fmt.i_codec,
+                                          p_sys->fmt.audio.i_bitspersample );
+            if( p_sys->audio_fourcc == 0 )
+                p_sys->i_chans_to_reorder = 0;
+        }
     }
 
     p_sys->i_ssnd_start = p_sys->i_ssnd_pos + 16 + p_sys->i_ssnd_offset;

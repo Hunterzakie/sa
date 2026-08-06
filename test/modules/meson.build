@@ -84,6 +84,13 @@ vlc_tests += {
 endif
 
 vlc_tests += {
+    'name' : 'test_modules_demux_coreaudio',
+    'sources' : files('demux/coreaudio.c'),
+    'suite' : ['modules', 'test_modules'],
+    'link_with' : [libvlccore],
+}
+
+vlc_tests += {
     'name' : 'test_modules_demux_libmp4',
     'sources' : files(
         'demux/libmp4.c',
