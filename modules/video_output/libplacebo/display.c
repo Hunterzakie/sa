@@ -35,6 +35,10 @@
 
 #include "utils.h"
 #include "instance.h"
+#ifdef HAVE_VULKAN
+# include "instance_vulkan.h"
+# include "vk_interop.h"
+#endif
 
 #include <libplacebo/renderer.h>
 #include <libplacebo/utils/upload.h>
@@ -76,6 +80,12 @@ typedef struct vout_display_sys_t
     char *hook_path;
 
     struct pl_dovi_metadata dovi_metadata;
+
+#ifdef HAVE_VULKAN
+    struct vlc_vk_device vk_dev;
+    struct vlc_vk_interop interop;
+    bool interop_active;
+#endif
 } vout_display_sys_t;
 
 // Display callbacks
@@ -95,14 +105,10 @@ static const struct vlc_display_operations ops = {
     .set_icc_profile = UpdateIccProfile,
 };
 
-static int Open(vout_display_t *vd,
-                video_format_t *fmt, vlc_video_context *context)
+/* Software upload path (pl_upload_plane) */
+static int OpenUpload(vout_display_t *vd, vout_display_sys_t *sys,
+                      video_format_t *fmt)
 {
-    vout_display_sys_t *sys =
-        vlc_obj_calloc(VLC_OBJECT(vd), 1, sizeof (*sys));
-    if (unlikely(sys == NULL))
-        return VLC_ENOMEM;
-
     char *name = var_InheritString(vd, "pl-gpu");
     sys->pl = vlc_placebo_Create(vd->cfg, name);
     free(name);
@@ -174,7 +180,6 @@ static int Open(vout_display_t *vd,
     vd->ops = &ops;
 
     UpdateParams(vd);
-    (void) context;
     return VLC_SUCCESS;
 
 error:
@@ -182,6 +187,96 @@ error:
     vlc_placebo_Release(sys->pl);
     vd->sys = NULL;
     return VLC_EGENERIC;
+}
+
+#ifdef HAVE_VULKAN
+/* Hardware zero-copy path, fallbacks to software upload */
+static int OpenVkInterop(vout_display_t *vd, vout_display_sys_t *sys,
+                       video_format_t *fmt, vlc_video_context *vctx)
+{
+    /* Phase 1 */
+    struct vlc_vk_interop_probe probe;
+    if (vlc_vk_interop_Probe(&probe, VLC_OBJECT(vd), vctx, fmt) != VLC_SUCCESS)
+        return VLC_EGENERIC;
+
+    /* Create the libplacebo instance and connect it to the Vulkan device. */
+    char *name = var_InheritString(vd, "pl-gpu");
+    sys->pl = vlc_placebo_New(vd->cfg, name);
+    free(name);
+    if (sys->pl == NULL)
+        goto error_probe;
+
+    const struct vlc_placebo_create_params params = {
+        .instance_extensions      = probe.required_instance_extensions,
+        .instance_extension_count = probe.required_instance_extension_count,
+        .device_extensions        = probe.required_device_extensions,
+        .device_extension_count   = probe.required_device_extension_count,
+    };
+    if (vlc_placebo_Connect(sys->pl, &params) != VLC_SUCCESS)
+        goto error_pl;
+
+    const struct vlc_placebo_vk_handles *vk = vlc_placebo_GetVkHandles(sys->pl);
+    if (vk == NULL)
+        goto error_pl;
+
+    vlc_vk_device_Init(&sys->vk_dev, vlc_object_logger(VLC_OBJECT(vd)));
+    sys->vk_dev.inst.instance = vk->instance;
+    sys->vk_dev.inst.get_proc_address = vk->get_instance_proc_addr;
+    if (vlc_vk_device_SetExternal(&sys->vk_dev, vk->phys_device, vk->device,
+                                  vk->graphics_queue_family) != VLC_SUCCESS)
+        goto error_pl;
+
+    /* Phase 2 */
+    vlc_vk_interop_Init(&sys->interop);
+    if (vlc_vk_interop_ProbeFormat(&sys->interop, &probe, &sys->vk_dev)
+            != VLC_SUCCESS)
+        goto error_interop;
+
+    /* Phase 3 */
+    sys->interop.dev = &sys->vk_dev;
+    if (vlc_vk_interop_Load(&sys->interop) != VLC_SUCCESS)
+        goto error_interop;
+
+    msg_Dbg(vd, "TODO the backends");
+
+    goto error_interop;
+
+error_interop:
+    vlc_vk_interop_Close(&sys->interop);
+    vlc_placebo_Release(sys->pl);
+    sys->pl = NULL;
+    return VLC_EGENERIC;
+
+error_pl:
+    vlc_placebo_Release(sys->pl);
+    sys->pl = NULL;
+error_probe:
+    if (probe.vctx != NULL)
+        vlc_video_context_Release(probe.vctx);
+    return VLC_EGENERIC;
+}
+#endif
+
+static int Open(vout_display_t *vd,
+                video_format_t *fmt, vlc_video_context *vctx)
+{
+    vout_display_sys_t *sys =
+        vlc_obj_calloc(VLC_OBJECT(vd), 1, sizeof (*sys));
+    if (unlikely(sys == NULL))
+        return VLC_ENOMEM;
+    vd->sys = sys;
+
+#ifdef HAVE_VULKAN
+    if (vctx != NULL) {
+        if (OpenVkInterop(vd, sys, fmt, vctx) == VLC_SUCCESS)
+            return VLC_SUCCESS;
+        msg_Dbg(vd, "no usable vkinterop, falling back to software upload");
+    }
+#else
+    (void) vctx;
+#endif
+
+    return OpenUpload(vd, sys, fmt);
 }
 
 static void Close(vout_display_t *vd)
@@ -209,6 +304,13 @@ static void Close(vout_display_t *vd)
 
     pl_mpv_user_shader_destroy(&sys->hook);
     free(sys->hook_path);
+
+#ifdef HAVE_VULKAN
+    if (sys->interop_active) {
+        vlc_vk_interop_Close(&sys->interop);
+        vlc_vk_device_Destroy(&sys->vk_dev);
+    }
+#endif
 
     vlc_placebo_Release(sys->pl);
 }
