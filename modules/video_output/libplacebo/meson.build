@@ -14,15 +14,17 @@ libplacebo_utils = static_library('vlc_libplacebo_utils',
                                 include_directories: [vlc_include_dirs])
 
 placebo_link = [libplacebo_utils]
+placebo_sources = files('instance.c', 'display.c')
 placebo_cargs = []
 if vulkan_dep.found()
+    placebo_sources += files('vk_interop.c')
     placebo_link += libvulkan_device
     placebo_cargs += '-DHAVE_VULKAN'
 endif
 
 vlc_modules += {
     'name' : 'placebo',
-    'sources' : files('instance.c', 'display.c'),
+    'sources' : placebo_sources,
     'link_with' : placebo_link,
     'c_args' : placebo_cargs,
     'dependencies' : [libplacebo_dep],
