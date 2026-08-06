@@ -13,12 +13,13 @@ libplacebo_utils = static_library('vlc_libplacebo_utils',
                                 dependencies: [libplacebo_dep],
                                 include_directories: [vlc_include_dirs])
 
-# Internal Vulkan device helpers
+# Hardware decoder interop loader + its internal Vulkan helpers
 placebo_link = [libplacebo_utils]
 placebo_cargs = []
 if vulkan_dep.found()
     libplacebo_vkinterop = static_library('vlc_libplacebo_vkinterop',
-        files('../vulkan/common.c',
+        files('vk_interop.c',
+              '../vulkan/common.c',
               '../vulkan/device.c'),
         dependencies: [libplacebo_dep],
         include_directories: [vlc_include_dirs])

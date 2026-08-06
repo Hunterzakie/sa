@@ -23,8 +23,10 @@ endif
 
 vout_PLUGINS += libplacebo_plugin.la
 
-### Internal Vulkan device helpers ###
+### vkinterop loader (hardware decoder interop) ###
 libplacebo_vkinterop_la_SOURCES = \
+	video_output/libplacebo/vk_interop.h \
+	video_output/libplacebo/vk_interop.c \
 	video_output/vulkan/common.h \
 	video_output/vulkan/common.c \
 	video_output/vulkan/device.h \
