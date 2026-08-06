@@ -40,6 +40,7 @@ if host_system == 'darwin'
     }
 endif
 
+subdir('vulkan')
 subdir('libplacebo')
 subdir('opengl')
 

@@ -16,6 +16,10 @@ libplacebo_plugin_la_SOURCES = $(LIBPLACEBO_COMMONSOURCES) \
 			  video_output/libplacebo/display.c
 libplacebo_plugin_la_CFLAGS = $(AM_CFLAGS) $(LIBPLACEBO_CFLAGS)
 libplacebo_plugin_la_LIBADD = $(LIBPLACEBO_LIBS) libplacebo_utils.la
+if HAVE_VULKAN
+libplacebo_plugin_la_CFLAGS += $(VULKAN_CFLAGS) -DHAVE_VULKAN
+libplacebo_plugin_la_LIBADD += libvulkan_device.la
+endif
 
 vout_PLUGINS += libplacebo_plugin.la
 
