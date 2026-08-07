@@ -23,6 +23,8 @@
 #ifndef LUA_EXTENSION_H
 #define LUA_EXTENSION_H
 
+#include "lua.h"
+#include "vlc.h"
 #include <vlc_extensions.h>
 #include <vlc_arrays.h>
 #include <vlc_dialog.h>
@@ -97,6 +99,9 @@ struct lua_extension
     bool b_activated; ///< Protected by the command lock
     bool b_activating; ///< Protected by the command lock
     bool b_deactivating; ///< Protected by the command lock
+
+    bool b_autorun;
+    time_t last_saved; // used for autorun to determine whether or not to use cache
 };
 
 /* Extensions: manager functions */

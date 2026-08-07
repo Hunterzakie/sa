@@ -32,11 +32,16 @@
 #include "libs.h"
 #include "extension.h"
 #include "assert.h"
+#include "autorun.h"
 
 #include <vlc_common.h>
 #include <vlc_interface.h>
 #include <vlc_dialog.h>
 #include <vlc_player.h>
+
+#include <assert.h>
+#include <sys/stat.h>
+
 
 /* Functions to register */
 static const luaL_Reg p_reg[] =
@@ -95,6 +100,8 @@ int Open_Extension( vlc_object_t *p_this )
 
     p_mgr->p_sys = NULL;
     vlc_mutex_init( &p_mgr->lock );
+    
+
 
     /* Scan available Lua Extensions */
     if( ScanExtensions( p_mgr ) != VLC_SUCCESS )
@@ -107,6 +114,28 @@ int Open_Extension( vlc_object_t *p_this )
     var_Create( p_this, "dialog-event", VLC_VAR_ADDRESS );
     var_AddCallback( p_this, "dialog-event",
                      vlclua_extension_dialog_callback, NULL );
+    
+
+    vlc_mutex_lock(&extensions_cache.lock);
+    init_use_state(p_this);
+    if(extensions_cache.initialized){
+        extension_t *p_ext;
+
+        ARRAY_FOREACH(p_ext, extensions_cache.extensions)
+        {
+            p_ext->logger = vlc_object_logger(p_mgr);
+            struct lua_extension* sys =  p_ext->p_sys;
+            sys->p_mgr = p_mgr;
+            ARRAY_APPEND(p_mgr->extensions, p_ext);
+            if (sys->b_autorun)
+                extension_Activate(p_mgr, p_ext);
+        }
+    }
+    vlc_mutex_unlock(&extensions_cache.lock);
+    // release shared state
+    // if( vlc_atomic_rc_dec(&extensions_cache.rc)){
+    //     // free state
+    // }
 
     return VLC_SUCCESS;
 }
@@ -289,6 +318,22 @@ int ScanLuaCallback( vlc_object_t *p_this, const char *psz_filename,
         psz_script = strdup( psz_filename );
         if( !psz_script )
             return 0;
+    }
+
+    /* use cache if it's timestamp is newer than extension file's last update */
+    int cached_idx = getCachedExtensionIdx(psz_filename);
+    if (cached_idx != -1){
+        extension_t* p_ext = extensions_cache.extensions.p_elems[cached_idx];
+        struct lua_extension * p_lua_ext = p_ext->p_sys;
+        
+        struct stat attr;
+        stat(psz_filename, &attr);
+        time_t last_modified = attr.st_mtime;
+        if ( p_lua_ext->last_saved > last_modified) {
+            ARRAY_APPEND(p_mgr->extensions, p_ext);
+            /* Continue batch execution */
+            return VLC_EGENERIC;
+        }
     }
 
     /* Create new script descriptor */

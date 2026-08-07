@@ -15,6 +15,8 @@ endif
 if lua_dep.found() and get_option('lua').enabled()
   lua_sources = files(
     'extension.c',
+    # 'autorun.c',
+    # 'autorun.h',
     'extension.h',
     'extension_thread.c',
     'intf.c',
@@ -63,5 +65,11 @@ if lua_dep.found() and get_option('lua').enabled()
     'name' : 'lua',
     'sources' : lua_sources,
     'dependencies' : [lua_dep, socket_libs]
+  }
+
+  vlc_modules += {
+    'name' : 'autorunExtension',
+    'sources' : files('autorun.c'),
+    'dependencies' : []
   }
 endif

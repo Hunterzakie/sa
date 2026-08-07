@@ -43,6 +43,9 @@ liblua_plugin_la_SOURCES = \
 	lua/libs/renderers.c \
 	lua/libs/medialibrary.c
 
+liblua_plugin_la_SOURCES += lua/autorun.h \
+                            lua/autorun.c \
+                            misc/webservices/json.h misc/webservices/json.c
 if HAVE_WIN32
 liblua_plugin_la_SOURCES += lua/libs/win.c
 endif

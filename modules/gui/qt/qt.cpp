@@ -784,6 +784,14 @@ static inline void registerMetaTypes()
 static void *Thread( void *obj )
 {
     qt_intf_t *p_intf = (qt_intf_t *)obj;
+    
+    //load extensions during startup
+    ExtensionsManager *extMgr = ExtensionsManager::getInstance( p_intf );
+    assert( extMgr != NULL );
+    if( !extMgr->isLoaded() && !extMgr->cannotLoad() )
+    {
+        extMgr->loadExtensions();
+    }
 
     auto vlcQtMessageHandler = VlcQtMessageHandlerRegisterer{VLC_OBJECT(p_intf)};
 

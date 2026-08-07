@@ -28,6 +28,10 @@
 # include "config.h"
 #endif
 
+#include <vlc_extensions.h>
+#include <vlc_messages.h>
+#include <string.h>
+
 #include <assert.h>
 #include <sys/stat.h>
 
@@ -35,13 +39,11 @@
 
 #include "vlc.h"
 
-#include <vlc_configuration.h>
-#include <vlc_plugin.h>
-#include <vlc_arrays.h>
 #include <vlc_charset.h>
 #include <vlc_fs.h>
 #include <vlc_services_discovery.h>
-#include <vlc_stream.h>
+#include <vlc_plugin.h>
+#include "autorun.h"
 
 /*****************************************************************************
  * Module descriptor
@@ -725,7 +727,6 @@ vlc_module_begin ()
         add_shortcut( "luaextension" )
         set_capability( "extension", 1 )
         set_callbacks( Open_Extension, Close_Extension )
-
     add_submodule ()
         set_description( N_("Lua SD Module") )
         add_shortcut( "luasd" )
@@ -733,7 +734,11 @@ vlc_module_begin ()
         add_string( "lua-sd", "", NULL, NULL )
             change_volatile()
         set_callbacks( Open_LuaSD, Close_LuaSD )
-
+    add_submodule()
+        add_shortcut( "autorun" )
+        set_description( N_("autorun extensions") )
+        set_capability("interface",10)
+        set_callbacks(AutorunStart, AutorunStop)
     VLC_SD_PROBE_SUBMODULE
 
 vlc_module_end ()
