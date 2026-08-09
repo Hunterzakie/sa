@@ -97,6 +97,10 @@ framework_conditions = [
             'CoreGraphics',
             'AVKit',
             'Metal',
+            'WebKit',
+            'QuickLook',
+            'QuickLookThumbnailing',
+            'MediaPlayer',
         ],
         'condition': host_system == 'darwin'
     },
@@ -105,6 +109,7 @@ framework_conditions = [
             'Cocoa',
             'OpenGL',
             'AudioUnit',
+            'ScriptingBridge',
         ],
         'condition': have_osx
     },
@@ -142,11 +147,16 @@ coreaudio_dep = frameworks['CoreAudio']
 coreimage_dep = frameworks['CoreImage']
 coregraphics_dep = frameworks['CoreGraphics']
 avkit_dep = frameworks['AVKit']
+webkit_dep = frameworks['WebKit']
+quicklook_dep = frameworks['QuickLook']
+quicklookthumbnailing_dep = frameworks['QuickLookThumbnailing']
+mediaplayer_dep = frameworks['MediaPlayer']
 
 # macOS specific dependencies
 cocoa_dep = frameworks['Cocoa']
 opengl_dep = frameworks['OpenGL']
 audiounit_dep = frameworks['AudioUnit']
+scriptingbridge_dep = frameworks['ScriptingBridge']
 
 # iOS/tvOS specific dependencies
 uikit_dep = frameworks['UIKit']

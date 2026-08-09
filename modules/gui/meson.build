@@ -25,6 +25,15 @@ if get_option('minimal_macosx').require(have_osx).allowed()
     }
 endif
 
+# macOS interface module
+macosx_enabled = get_option('macosx') \
+    .disable_auto_if(host_system != 'darwin') \
+    .require(have_osx) \
+    .allowed()
+if macosx_enabled
+    subdir('macosx')
+endif
+
 # Qt interface module
 subdir('qt')
 

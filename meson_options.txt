@@ -654,6 +654,16 @@ option('minimal_macosx',
     value: 'auto',
     description: 'Minimal macOS interface support')
 
+option('macosx',
+    type: 'feature',
+    value: 'auto',
+    description: 'macOS interface support')
+
+option('macosx_ui_shaders',
+    type: 'feature',
+    value: 'auto',
+    description: 'macOS UI Metal shaders')
+
 option('udev',
     type: 'feature',
     value: 'auto',
@@ -812,7 +822,6 @@ option('sam3',
 # TODO: Missing qt-qml-cache
 # TODO: Missing qt-qml-debug
 # TODO: Missing libtar
-# TODO: Missing macosx
 # TODO: Missing sparkle
 # TODO: Missing lirc
 # TODO: Missing vsxu
