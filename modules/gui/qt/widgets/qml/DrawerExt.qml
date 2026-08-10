@@ -59,6 +59,8 @@ FocusScope {
             name: "visible"
             PropertyChanges {
                 target: content
+                explicit: true // Visibility bounces otherwise on state change, Qt bug?
+
                 y: 0
                 x: 0
                 visible: true
@@ -69,6 +71,8 @@ FocusScope {
             name: "hidden"
             PropertyChanges {
                 target: content
+                explicit: true // Visibility bounces otherwise on state change, Qt bug?
+
                 y: root.edgeToOffset(root.edge)
                 x: root.edgeToOffset(root.edge)
                 visible: false
