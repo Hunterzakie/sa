@@ -1,7 +1,7 @@
 # Libplacebo-based video outputs
 
 libplacebo_dep = dependency('libplacebo',
-                            version: '>= 2.72',
+                            version: '>= 5.237',
                             required: get_option('libplacebo'))
 
 if not libplacebo_dep.found()
