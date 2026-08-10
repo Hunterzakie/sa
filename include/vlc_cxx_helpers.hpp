@@ -34,6 +34,7 @@
 #include <type_traits>
 #include <string>
 #include <stdexcept>
+#include <atomic>
 
 #ifdef VLC_THREADS_H_
 // Ensure we can use vlc_sem_wait_i11e. We can't declare different versions
@@ -265,6 +266,134 @@ public:
         if (ptr)
             RELEASE(ptr);
         ptr = newptr;
+    }
+};
+
+template <typename T, auto OBSERVE, auto UNOBSERVE>
+class vlc_weak_ptr {
+    T *ptr = nullptr;
+    std::atomic<bool> destroyed = false;
+
+    static void release_cb(void *opaque)
+    {
+        static_cast<vlc_weak_ptr *>(opaque)->destroyed = true;
+    }
+
+    explicit vlc_weak_ptr(T *ptr, bool destroyed)
+        : ptr(ptr)
+        , destroyed(destroyed)
+    {
+        // We do not have static assertion or deny template instantiation if these
+        // functions are not provided, in order to let late resolve at runtime,
+        // such as when weak linkage is used:
+        if (unlikely(!OBSERVE || !UNOBSERVE))
+            throw std::runtime_error("Add or remove observer functions not provided.");
+
+        if (ptr && !destroyed)
+            OBSERVE(ptr, this, release_cb);
+    }
+
+public:
+    vlc_weak_ptr()
+        : vlc_weak_ptr(nullptr)
+    {
+
+    }
+
+    explicit vlc_weak_ptr(T *ptr)
+        : vlc_weak_ptr(ptr, false)
+    {
+
+    }
+
+    vlc_weak_ptr(const vlc_weak_ptr &other)
+        : vlc_weak_ptr(other.ptr, other.destroyed)
+    {
+
+    }
+
+    vlc_weak_ptr(vlc_weak_ptr &&other)
+        : vlc_weak_ptr(other.ptr, other.destroyed)
+    {
+        other.reset();
+    }
+
+    ~vlc_weak_ptr()
+    {
+        if (ptr && !destroyed)
+            UNOBSERVE(ptr, this);
+    }
+
+    explicit operator bool() const noexcept
+    {
+        return (ptr != nullptr) && !destroyed;
+    }
+
+    T &operator*() const noexcept
+    {
+        assert(ptr);
+        return *ptr;
+    }
+
+    T *operator->() const noexcept
+    {
+        return ptr;
+    }
+
+    vlc_weak_ptr& operator=(T *p)
+    {
+        if (ptr != p)
+        {
+            if (ptr && !destroyed)
+                UNOBSERVE(ptr, this);
+
+            ptr = p;
+            destroyed = false;
+
+            if (ptr)
+                OBSERVE(ptr, this, release_cb);
+        }
+
+        return *this;
+    }
+
+    vlc_weak_ptr& operator=(const vlc_weak_ptr& other)
+    {
+        if (!other.destroyed)
+        {
+            *this = other.ptr;
+        }
+        else
+        {
+            *this = nullptr;
+            ptr = other.ptr;
+            destroyed = true;
+        }
+
+        return *this;
+    }
+
+    vlc_weak_ptr& operator=(vlc_weak_ptr&& other) noexcept
+    {
+        *this = const_cast<const vlc_weak_ptr&>(other);
+        other.reset();
+        return *this;
+    }
+
+    T *get() const noexcept
+    {
+        return ptr;
+    }
+
+    // Akin to `std::weak_ptr`:
+    bool expired() const noexcept
+    {
+        return destroyed;
+    }
+
+    void reset()
+    {
+        *this = nullptr;
     }
 };
 
