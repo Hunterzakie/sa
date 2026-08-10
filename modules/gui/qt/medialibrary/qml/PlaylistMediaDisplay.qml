@@ -168,6 +168,22 @@ Widgets.PageExt {
             model: root.model
             ctx: MainCtx
 
+            displayActionKeyboardSelectionMode: (view.mode !== Widgets.ListViewExt.Mode.Select)
+            displayActionKeyboardMoveMode: (view.mode !== Widgets.ListViewExt.Mode.Move)
+            displayActionKeyboardResetMode: (view.mode !== Widgets.ListViewExt.Mode.Normal)
+
+            onKeyboardSelectionModeRequested: {
+                view.mode = Widgets.ListViewExt.Mode.Select
+            }
+
+            onKeyboardMoveModeRequested: {
+                view.mode = Widgets.ListViewExt.Mode.Move
+            }
+
+            onKeyboardResetModeRequested: {
+                view.mode = Widgets.ListViewExt.Mode.Normal
+            }
+
            function tableView_popup(index, selectedIndexes, globalPos) {
                popup(selectedIndexes, globalPos)
            }
@@ -201,6 +217,11 @@ Widgets.PageExt {
             Navigation.upItem: root.header
 
             Navigation.cancelAction: function () {
+                if (view.mode !== Widgets.ListViewExt.Normal) {
+                    view.mode = Widgets.ListViewExt.Normal
+                    return
+                }
+
                 if (view.currentIndex <= 0) {
                     root.Navigation.defaultNavigationCancel()
                 } else {
