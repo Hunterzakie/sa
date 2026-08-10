@@ -56,9 +56,13 @@ Widgets.PageExt {
     title: {
         switch (view?.mode) {
             case Widgets.ListViewExt.Mode.Select:
-                return qsTr("%1 (Selecting items: %2)").arg(modelTitle).arg(view.selectionModel.selectedIndexesFlat.length)
+                return qsTr("%1 <font color=\"%3\">(Selecting items: %2)</font>").arg(modelTitle)
+                                                                                 .arg(view.selectionModel.selectedIndexesFlat.length)
+                                                                                 .arg(header.colorContext.accent)
             case Widgets.ListViewExt.Mode.Move:
-                return qsTr("%1 (Moving items: %2)").arg(modelTitle).arg(view.selectionModel.selectedIndexesFlat.length)
+                return qsTr("%1 <font color=\"%3\">(Moving items: %2)</font>").arg(modelTitle)
+                                                                              .arg(view.selectionModel.selectedIndexesFlat.length)
+                                                                              .arg(header.colorContext.accent)
             case Widgets.ListViewExt.Mode.Normal:
             default:
                 return modelTitle
