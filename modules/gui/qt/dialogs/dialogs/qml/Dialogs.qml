@@ -46,7 +46,7 @@ Item {
     //---------------------------------------------------------------------------------------------
 
     Component.onCompleted: if (DialogErrorModel.repeatedMessageCount){
-                               hideErrorPopupTimer.restart()
+                               errorPopup.hideTimer.restart()
                                errorPopup.state = "visible"
                            }
 
@@ -146,20 +146,23 @@ Item {
         target: DialogErrorModel
 
         function onCountChanged() {
-            hideErrorPopupTimer.restart()
+            errorPopup.timer.restart()
             errorPopup.state = "visible"
         }
     }
 
-    //---------------------------------------------------------------------------------------------
-    // Childs
-    //---------------------------------------------------------------------------------------------
-
-    Widgets.DrawerExt {
-        id: errorPopup
+    // FIXME: Use `Popup` instead:
+    component MessagePopup : Widgets.DrawerExt {
+        id: messagePopup
 
         property string messageText
         property int repeatedMessageCount: 0
+
+        property bool showDetailsButton: true
+
+        property color backgroundColor: msgTheme.bg.neutral
+
+        property alias hideTimer: hideMessagePopupTimer
 
         anchors {
             bottom: parent.bottom
@@ -172,22 +175,33 @@ Item {
         height: contentItem?.height ?? 0
         z: 10
 
-        ColorContext {
-            id: errorMsgTheme
+        Accessible.name: qsTr("message popup")
+
+        signal showDetailsButtonClicked()
+        signal closeButtonClicked()
+
+        readonly property ColorContext colorContext : ColorContext {
+            id: msgTheme
             palette: VLCStyle.palette
             colorSet: ColorContext.Window
         }
 
-        component: Rectangle {
-            color: errorMsgTheme.bg.negative
+        // Workaround for bugged Qt 6.2.13:
+        component: defaultContentComponent
 
+        Component {
+            id: defaultContentComponent
+
+        Rectangle {
             height: messageText.implicitHeight + VLCStyle.margin_normal
             radius: VLCStyle.fontHeight_normal / 2
 
+            color: messagePopup.backgroundColor
+
             property real layoutWidth: layout.width
 
-            Accessible.role: Accessible.AlertMessage
-            Accessible.name: qsTr("error popup")
+            Accessible.role: messagePopup.Accessible.role
+            Accessible.name: messagePopup.Accessible.name
 
             RowLayout {
                 id: layout
@@ -198,7 +212,7 @@ Item {
 
                 Widgets.IconLabel {
                     text: VLCIcons.info
-                    color: errorMsgTheme.fg.primary
+                    color: msgTheme.fg.primary
                     Layout.leftMargin: VLCStyle.margin_xxsmall
                 }
 
@@ -209,27 +223,28 @@ Item {
                     Layout.leftMargin: VLCStyle.margin_xxsmall
                     Layout.rightMargin: VLCStyle.margin_xxsmall
 
-                    text: (DialogErrorModel.repeatedMessageCount > 1 ? '[' + DialogErrorModel.repeatedMessageCount + '] ' : '')
-                          + DialogErrorModel.notificationText
+                    text: messagePopup.messageText
 
                     wrapMode: Text.WrapAnywhere
                     font.pixelSize: VLCStyle.fontSize_normal
                     font.bold: true
-                    color: errorMsgTheme.fg.primary
+                    color: msgTheme.fg.primary
                 }
 
                 Widgets.TextToolButton {
                     id: detailsBtn
+
+                    visible: messagePopup.showDetailsButton
 
                     text: qsTr("Show Details")
 
                     colorContext.colorSet: ColorContext.ButtonAccent
 
                     onClicked: {
-                        hideErrorPopupTimer.stop()
-                        errorPopup.state = "hidden"
-                        DialogErrorModel.resetRepeatedMessageCount()
-                        DialogsProvider.messagesDialog(1)
+                        hideMessagePopupTimer.stop()
+                        messagePopup.state = "hidden"
+
+                        messagePopup.showDetailsButtonClicked()
                     }
                 }
 
@@ -241,12 +256,12 @@ Item {
                     Layout.rightMargin: VLCStyle.margin_xxsmall
 
                     color: closeBtn.colorContext.fg.primary
-                    backgroundColor: closeBtn.colorContext.bg.negative
 
                     onClicked: {
-                        hideErrorPopupTimer.stop()
-                        errorPopup.state = "hidden"
-                        DialogErrorModel.resetRepeatedMessageCount()
+                        hideMessagePopupTimer.stop()
+                        messagePopup.state = "hidden"
+
+                        messagePopup.closeButtonClicked()
                     }
                 }
             }
@@ -262,17 +277,51 @@ Item {
                 color: Qt.darker(parent.color)
             }
         }
+        }
 
         state: "hidden"
 
         Timer {
-            id: hideErrorPopupTimer
+            id: hideMessagePopupTimer
             interval: 5000
             repeat: false
             onTriggered: {
-                errorPopup.state = "hidden"
-                DialogErrorModel.resetRepeatedMessageCount()
+                messagePopup.state = "hidden"
             }
+        }
+    }
+
+    //---------------------------------------------------------------------------------------------
+    // Childs
+    //---------------------------------------------------------------------------------------------
+
+    MessagePopup {
+        id: errorPopup
+
+        anchors {
+            bottom: parent.bottom
+            horizontalCenter: parent.horizontalCenter
+            bottomMargin: VLCStyle.margin_small
+        }
+
+        Accessible.name: qsTr("error popup")
+
+        backgroundColor: colorContext.bg.negative
+        messageText: (DialogErrorModel.repeatedMessageCount > 1 ? '[' + DialogErrorModel.repeatedMessageCount + '] ' : '')
+                     + DialogErrorModel.notificationText
+
+        onStateChanged: {
+            if (state === "hidden")
+                DialogErrorModel.resetRepeatedMessageCount()
+        }
+
+        onShowDetailsButtonClicked: {
+            DialogErrorModel.resetRepeatedMessageCount()
+            DialogsProvider.messagesDialog(1)
+        }
+
+        onCloseButtonClicked: {
+            DialogErrorModel.resetRepeatedMessageCount()
         }
     }
 
