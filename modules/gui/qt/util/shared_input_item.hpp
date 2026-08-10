@@ -36,4 +36,15 @@ using SharedInputItem = ::vlc::vlc_shared_data_ptr<input_item_t,
 
 Q_DECLARE_METATYPE(SharedInputItem)
 
+// These are internal functions:
+extern "C" VLC_WEAK int input_item_AddObserver(input_item_t *, void *,
+                                               void (*release)(void *));
+extern "C" VLC_WEAK void input_item_RemoveObserver(input_item_t *, void *);
+
+using WeakInputItem = ::vlc::vlc_weak_ptr<input_item_t,
+                                          &input_item_AddObserver,
+                                          &input_item_RemoveObserver>;
+
+Q_DECLARE_METATYPE(WeakInputItem)
+
 #endif // SHAREDINPUTITEM_HPP
