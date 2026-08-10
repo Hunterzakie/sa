@@ -3555,7 +3555,7 @@ dnl
 dnl Vulkan
 dnl
 AS_IF([test "$enable_vulkan" != "no"], [
-  PKG_CHECK_MODULES([VULKAN], [vulkan >= 1.0.26], [
+  PKG_CHECK_MODULES([VULKAN], [vulkan >= 1.2], [
   ], [
     AS_IF([test -n "${enable_vulkan}"], [
       AC_MSG_ERROR([${VULKAN_PKG_ERRORS}.])
