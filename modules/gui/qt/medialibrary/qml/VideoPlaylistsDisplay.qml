@@ -82,7 +82,7 @@ Widgets.PageLoader {
                 onCurrentIndexChanged: History.viewProp.initialIndex = currentIndex
 
                 onShowList: (model, reason) => {
-                    History.push([...root.pagePrefix, "list"], { parentId: model.id, title: model.name }, reason)
+                    History.push([...root.pagePrefix, "list"], { parentId: model.id, modelTitle: model.name }, reason)
                 }
             }
         }

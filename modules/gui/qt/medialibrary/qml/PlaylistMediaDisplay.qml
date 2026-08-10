@@ -51,6 +51,20 @@ Widgets.PageExt {
     hasGridListMode: false
     isSearchable: true
 
+    property string modelTitle
+
+    title: {
+        switch (view?.mode) {
+            case Widgets.ListViewExt.Mode.Select:
+                return qsTr("%1 (Selecting items: %2)").arg(modelTitle).arg(view.selectionModel.selectedIndexesFlat.length)
+            case Widgets.ListViewExt.Mode.Move:
+                return qsTr("%1 (Moving items: %2)").arg(modelTitle).arg(view.selectionModel.selectedIndexesFlat.length)
+            case Widgets.ListViewExt.Mode.Normal:
+            default:
+                return modelTitle
+        }
+    }
+
     // Events
 
     onModelChanged: resetFocus()
