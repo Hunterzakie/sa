@@ -424,12 +424,85 @@ input_item_SetLibvlcOwner(input_item_t *item, void *libvlc_owner,
     owner->libvlc_owner_release = release;
 }
 
+typedef struct input_item_observer
+{
+    void *observer;
+    void (*release)(void *);
+
+    struct vlc_list node;
+} input_item_observer_t;
+
+int input_item_AddObserver(input_item_t *p_item, void *p_observer,
+                           void (*release)(void *))
+{
+    assert( p_item );
+    assert( p_observer );
+
+    input_item_owner_t *owner = item_owner( p_item );
+    assert( owner );
+
+    input_item_observer_t *input_item_observer = malloc(sizeof(input_item_observer_t));
+
+    if( unlikely( !input_item_observer ))
+        return VLC_ENOMEM;
+
+    vlc_mutex_lock( &p_item->lock );
+
+    input_item_observer->observer = p_observer;
+    input_item_observer->release = release;
+
+    vlc_list_append( &input_item_observer->node, &owner->observers );
+
+    vlc_mutex_unlock( &p_item->lock );
+
+    return VLC_SUCCESS;
+}
+
+void input_item_RemoveObserver(input_item_t *p_item, void *p_observer)
+{
+    assert( p_item );
+    assert( p_observer );
+
+    input_item_owner_t *owner = item_owner( p_item );
+    assert( owner );
+
+    vlc_mutex_lock( &p_item->lock );
+
+    input_item_observer_t *observer;
+    vlc_list_foreach( observer, &owner->observers, node )
+    {
+        // We do not break because same observer may have been
+        // added multiple times.
+        if ( observer == p_observer )
+        {
+            vlc_list_remove( &observer->node );
+
+            free( observer );
+        }
+    }
+
+    vlc_mutex_unlock( &p_item->lock );
+}
+
 void input_item_Release( input_item_t *p_item )
 {
     input_item_owner_t *owner = item_owner(p_item);
 
     if( !vlc_atomic_rc_dec( &owner->rc ) )
         return;
+
+    input_item_observer_t *observer;
+    vlc_list_foreach( observer, &owner->observers, node )
+    {
+        assert( observer );
+
+        if( likely( observer->release ) )
+            observer->release( observer->observer );
+
+        vlc_list_remove( &observer->node );
+
+        free( observer );
+    }
 
     if( owner->libvlc_owner_release != NULL )
         owner->libvlc_owner_release( owner->libvlc_owner );
@@ -1002,6 +1075,8 @@ input_item_NewExt( const char *psz_uri, const char *psz_name,
     vlc_atomic_rc_init( &owner->rc );
     owner->libvlc_owner = NULL;
     owner->libvlc_owner_release = NULL;
+
+    vlc_list_init( &owner->observers );
 
     input_item_t *p_input = &owner->item;
 

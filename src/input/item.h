@@ -40,11 +40,23 @@ VLC_API void input_item_SetLibvlcOwner(input_item_t *, void *,
  */
 VLC_API void *input_item_GetLibvlcOwner(input_item_t *);
 
+/**
+ * Add observer with a release callback.
+ */
+VLC_API int input_item_AddObserver(input_item_t *, void *,
+                                   void (*release)(void *));
+
+/**
+ * Remove observer.
+ */
+VLC_API void input_item_RemoveObserver(input_item_t *, void *);
+
 typedef struct input_item_owner
 {
     input_item_t item;
     void *libvlc_owner;
     void (*libvlc_owner_release)(void *libvlc_owner);
+    struct vlc_list observers;
     vlc_atomic_rc_t rc;
 } input_item_owner_t;
 
