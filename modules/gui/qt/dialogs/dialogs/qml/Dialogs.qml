@@ -22,6 +22,7 @@ import QtQuick.Templates as T
 
 import VLC.MainInterface
 import VLC.Dialogs
+import VLC.Playlist
 import VLC.Widgets as Widgets
 import VLC.Util
 import VLC.Style
@@ -322,6 +323,56 @@ Item {
 
         onCloseButtonClicked: {
             DialogErrorModel.resetRepeatedMessageCount()
+        }
+    }
+
+    MessagePopup {
+        id: playlistPopup
+
+        anchors {
+            bottom: parent.bottom
+            horizontalCenter: parent.horizontalCenter
+            bottomMargin: VLCStyle.margin_small
+        }
+
+        Accessible.name: qsTr("playlist popup")
+
+        hideTimer.interval: VLCStyle.duration_humanMoment
+
+        readonly property bool contentVisible: contentItem?.visible
+
+        readonly property int mainPlaylistCount: MainPlaylistController.count
+
+        property int _oldMainPlaylistCount: 0
+
+        messageText: {
+            if (contentVisible) {
+                if (mainPlaylistCount >= 0) {
+                    if (mainPlaylistCount > _oldMainPlaylistCount) {
+                        return qsTr("%1 items added to the play queue.").arg(mainPlaylistCount - _oldMainPlaylistCount)
+                    } else if (mainPlaylistCount < _oldMainPlaylistCount) {
+                        return qsTr("%1 items removed from the play queue.").arg(_oldMainPlaylistCount - mainPlaylistCount)
+                    } else {
+                        return ""
+                    }
+                }
+            } else {
+                return ""
+            }
+        }
+
+        showDetailsButton: false
+
+        onMainPlaylistCountChanged: {
+            if (!MainCtx.playqueuePanel.visible) {
+                state = "visible"
+                hideTimer.restart()
+            }
+        }
+
+        onContentVisibleChanged: {
+            if (!contentVisible)
+                _oldMainPlaylistCount = mainPlaylistCount
         }
     }
 
