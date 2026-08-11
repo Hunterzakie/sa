@@ -1,0 +1,33 @@
+From 5bcfb334fe0b14a8602a11e7796cd2308b607e96 Mon Sep 17 00:00:00 2001
+From: Fatih Uzunoglu <fuzun54@outlook.com>
+Date: Tue, 11 Aug 2026 18:41:47 +0300
+Subject: [PATCH] QSGRhiShaderEffectNode: do not use multiview ready default
+ shader
+
+This patch is necessary if the shader is not available.
+---
+ src/quick/scenegraph/qsgrhishadereffectnode.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/quick/scenegraph/qsgrhishadereffectnode.cpp b/src/quick/scenegraph/qsgrhishadereffectnode.cpp
+index c3b7b42cb9d..ac690971c69 100644
+--- a/src/quick/scenegraph/qsgrhishadereffectnode.cpp
++++ b/src/quick/scenegraph/qsgrhishadereffectnode.cpp
+@@ -718,12 +718,12 @@ void QSGRhiShaderEffectNode::syncMaterial(SyncData *syncData)
+     static const int defaultVertexShaderCount = 2;
+     static QSGRhiShaderEffectDefaultShader defaultVertexShaders[defaultVertexShaderCount] = {
+         QSGRhiShaderEffectDefaultShader::create(QStringLiteral(":/qt-project.org/scenegraph/shaders_ng/shadereffect.vert.qsb"), 1),
+-        QSGRhiShaderEffectDefaultShader::create(QStringLiteral(":/qt-project.org/scenegraph/shaders_ng/shadereffect.vert.qsb.mv2qsb"), 2)
++        QSGRhiShaderEffectDefaultShader{}
+     };
+     static const int defaultFragmentShaderCount = 2;
+     static QSGRhiShaderEffectDefaultShader defaultFragmentShaders[defaultFragmentShaderCount] = {
+         QSGRhiShaderEffectDefaultShader::create(QStringLiteral(":/qt-project.org/scenegraph/shaders_ng/shadereffect.frag.qsb"), 1),
+-        QSGRhiShaderEffectDefaultShader::create(QStringLiteral(":/qt-project.org/scenegraph/shaders_ng/shadereffect.frag.qsb.mv2qsb"), 2)
++        QSGRhiShaderEffectDefaultShader{}
+     };
+ 
+     if (bool(m_material.flags() & QSGMaterial::Blending) != syncData->blending) {
+-- 
+2.55.0
+
