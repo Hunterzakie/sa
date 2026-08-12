@@ -69,8 +69,8 @@ public:
                 {
                     QMessageBox msgBox;
                     msgBox.setText(qtr("The application closed abruptly."));
-                    msgBox.setInformativeText(qtr("Do you want to restore the %1 model from %2?").arg(modelIdentifier.toLower(),
-                                                                                                      fileInfo.lastModified().toString()));
+                    msgBox.setInformativeText(qtr("Do you want to restore the %1 from %2?").arg(modelIdentifier.toLower(),
+                                                                                                fileInfo.lastModified().toString()));
                     msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
                     msgBox.setDefaultButton(QMessageBox::Yes);
                     if (msgBox.exec() == QMessageBox::Yes)
