@@ -45,7 +45,7 @@ class ModelRecoveryAgent
 public:
     // NOTE: settings and model must outlive the instance of this class.
     template<class T>
-    ModelRecoveryAgent(class QSettings *settings, const QString& modelIdentifier, T* model)
+    ModelRecoveryAgent(class QSettings *settings, const QString& modelIdentifier, T* model, const QString& userFacingModelIdentifier = {})
         : m_settings(settings), m_key(modelIdentifier + QStringLiteral("/RecoveryFilePath"))
     {
         assert(settings);
@@ -69,7 +69,8 @@ public:
                 {
                     QMessageBox msgBox;
                     msgBox.setText(qtr("The application closed abruptly."));
-                    msgBox.setInformativeText(qtr("Do you want to restore the %1 from %2?").arg(modelIdentifier.toLower(),
+                    msgBox.setInformativeText(qtr("Do you want to restore the %1 from %2?").arg(userFacingModelIdentifier.isEmpty() ? modelIdentifier.toLower()
+                                                                                                                                    : userFacingModelIdentifier,
                                                                                                 fileInfo.lastModified().toString()));
                     msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
                     msgBox.setDefaultButton(QMessageBox::Yes);

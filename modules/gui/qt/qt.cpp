@@ -1156,8 +1156,9 @@ static void *Thread( void *obj )
                 return;
             try {
                 playlistModelRecoveryAgent = std::make_unique<ModelRecoveryAgent>(settings.get(),
-                                                                                  QStringLiteral("Playlist"),
-                                                                                  mpc.get());
+                                                                                  QStringLiteral("playqueue"),
+                                                                                  mpc.get(),
+                                                                                  QStringLiteral("play queue"));
             } catch (...){ }
         }, Qt::QueuedConnection);
     }
