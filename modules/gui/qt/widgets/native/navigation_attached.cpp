@@ -47,7 +47,7 @@ void NavigationAttached::defaultNavigationGeneric(QJSValue& jsCallback, QQuickIt
 
     if (directionItem)
     {
-        NavigationAttached* nextItem = qobject_cast<NavigationAttached*>(qmlAttachedPropertiesObject<NavigationAttached>(directionItem));
+        NavigationAttached* nextItem = qobject_cast<NavigationAttached*>(qmlAttachedPropertiesObject<NavigationAttached>(directionItem, false));
 
         const bool isFocusScope = directionItem->isFocusScope() && (directionItem->childItems().size() > 0);
         const QQuickItem *scopedFocusItem;
