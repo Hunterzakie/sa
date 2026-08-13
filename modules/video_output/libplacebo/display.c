@@ -38,12 +38,15 @@
 #ifdef HAVE_VULKAN
 # include "instance_vulkan.h"
 # include "vk_interop.h"
+# include <libplacebo/vulkan.h>
 #endif
 
 #include <libplacebo/renderer.h>
 #include <libplacebo/utils/upload.h>
 #include <libplacebo/swapchain.h>
 #include <libplacebo/shaders/lut.h>
+
+#define INTEROP_MAX_SLOTS 4
 
 typedef struct vout_display_sys_t
 {
@@ -85,6 +88,15 @@ typedef struct vout_display_sys_t
     struct vlc_vk_device vk_dev;
     struct vlc_vk_interop interop;
     bool interop_active;
+    
+    /* Keep a cached pl_tex for each plane of each interop slot,
+    so that we can reuse it across frames */
+    pl_tex interop_slot_tex[INTEROP_MAX_SLOTS][PICTURE_PLANE_MAX];
+    uint32_t interop_next_slot;
+
+    /* One timeline shared by every slot and plane */
+    VkSemaphore interop_sem;
+    uint64_t interop_sem_value;
 #endif
 } vout_display_sys_t;
 
@@ -190,6 +202,51 @@ error:
 }
 
 #ifdef HAVE_VULKAN
+static int CreateInteropSem(vout_display_t *vd, vout_display_sys_t *sys,
+                            VkExternalSemaphoreHandleTypeFlagBits handle_type)
+{
+    struct vlc_vk_interop *interop = &sys->interop;
+
+    if (interop->ops->setup_acquire_sem == NULL)
+        return VLC_SUCCESS;
+
+    VkExportSemaphoreCreateInfo export_info = {
+        .sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO,
+        .handleTypes = handle_type,
+    };
+    VkSemaphoreTypeCreateInfo type_info = {
+        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
+        .pNext = &export_info,
+        .semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE,
+        .initialValue = 0,
+    };
+    VkSemaphoreCreateInfo sem_info = {
+        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+        .pNext = &type_info,
+    };
+
+    VkResult res = sys->vk_dev.vkCreateSemaphore(sys->vk_dev.device, &sem_info, NULL, &sys->interop_sem);
+    if (res != VK_SUCCESS) {
+        msg_Err(vd, "Failed creating the interop timeline semaphore: %d", res);
+        sys->interop_sem = VK_NULL_HANDLE;
+        return VLC_EGENERIC;
+    }
+
+    sys->interop_sem_value = 0;
+
+    for (uint32_t i = 0; i < interop->image_count; i++) {
+        if (interop->ops->setup_acquire_sem(interop, sys->interop_sem, i)
+                != VLC_SUCCESS) {
+            msg_Err(vd, "Failed handing the timeline to interop slot %u", i);
+            sys->vk_dev.vkDestroySemaphore(sys->vk_dev.device, sys->interop_sem, NULL);
+            sys->interop_sem = VK_NULL_HANDLE;
+            return VLC_EGENERIC;
+        }
+    }
+
+    return VLC_SUCCESS;
+}
+
 /* Hardware zero-copy path, fallbacks to software upload */
 static int OpenVkInterop(vout_display_t *vd, vout_display_sys_t *sys,
                        video_format_t *fmt, vlc_video_context *vctx)
@@ -234,15 +291,53 @@ static int OpenVkInterop(vout_display_t *vd, vout_display_sys_t *sys,
 
     /* Phase 3 */
     sys->interop.dev = &sys->vk_dev;
+    sys->interop.image_count = INTEROP_MAX_SLOTS;
     if (vlc_vk_interop_Load(&sys->interop) != VLC_SUCCESS)
         goto error_interop;
 
-    msg_Dbg(vd, "TODO the backends");
+    if (probe.acquire_sem_handle_type != 0 && CreateInteropSem(vd, sys, probe.acquire_sem_handle_type) != VLC_SUCCESS)
+        goto error_interop;
 
-    goto error_interop;
+    // Set the output format to the one that was probed and accepted by the interop
+    *fmt = sys->interop.format_probe.fmt_out;
+
+    if (vlc_placebo_MakeCurrent(sys->pl) != VLC_SUCCESS)
+        goto error_interop;
+
+    // Set colorspace hint *before* first swapchain resize
+    UpdateColorspaceHint(vd, fmt);
+
+    // Set initial framebuffer size
+    int width = (int) vd->cfg->display.width;
+    int height = (int) vd->cfg->display.height;
+    if (!pl_swapchain_resize(sys->pl->swapchain, &width, &height))
+        goto error_interop;
+
+    pl_gpu gpu = sys->pl->gpu;
+    sys->renderer = pl_renderer_create(sys->pl->log, sys->pl->gpu);
+    vlc_placebo_ReleaseCurrent(sys->pl);
+
+    if (sys->renderer == NULL)
+        goto error_interop;
+
+    static const vlc_fourcc_t subfmts[] = {
+        VLC_CODEC_RGBA, VLC_CODEC_BGRA, VLC_CODEC_RGB555LE, VLC_CODEC_RGB565LE,
+        VLC_CODEC_RGB24, VLC_CODEC_XRGB, VLC_CODEC_RGB233, VLC_CODEC_GREY, 0,
+    };
+    vd->info.subpicture_chromas = subfmts;
+    vd->ops = &ops;
+    UpdateParams(vd);
+
+    sys->interop_active = true;
+    return VLC_SUCCESS;
 
 error_interop:
+    pl_renderer_destroy(&sys->renderer);
     vlc_vk_interop_Close(&sys->interop);
+    if (sys->interop_sem != VK_NULL_HANDLE) {
+        sys->vk_dev.vkDestroySemaphore(sys->vk_dev.device, sys->interop_sem, NULL);
+        sys->interop_sem = VK_NULL_HANDLE;
+    }
     vlc_placebo_Release(sys->pl);
     sys->pl = NULL;
     return VLC_EGENERIC;
@@ -289,6 +384,11 @@ static void Close(vout_display_t *vd)
             pl_tex_destroy(gpu, &sys->plane_tex[i]);
         for (int i = 0; i < sys->num_overlays; i++)
             pl_tex_destroy(gpu, &sys->overlay_tex[i]);
+#ifdef HAVE_VULKAN
+        for (int s = 0; s < INTEROP_MAX_SLOTS; s++)
+            for (int i = 0; i < PICTURE_PLANE_MAX; i++)
+                pl_tex_destroy(gpu, &sys->interop_slot_tex[s][i]);
+#endif
         pl_renderer_destroy(&sys->renderer);
         vlc_placebo_ReleaseCurrent(sys->pl);
     }
@@ -308,12 +408,131 @@ static void Close(vout_display_t *vd)
 #ifdef HAVE_VULKAN
     if (sys->interop_active) {
         vlc_vk_interop_Close(&sys->interop);
+        if (sys->interop_sem != VK_NULL_HANDLE)
+            sys->vk_dev.vkDestroySemaphore(sys->vk_dev.device, sys->interop_sem, NULL);
         vlc_vk_device_Destroy(&sys->vk_dev);
     }
 #endif
 
     vlc_placebo_Release(sys->pl);
 }
+
+#ifdef HAVE_VULKAN
+static void ReleasePlanes(pl_gpu gpu, pl_tex *slot_tex, unsigned count)
+{
+    for (unsigned i = 0; i < count; i++)
+        pl_vulkan_release_ex(gpu, pl_vulkan_release_params(
+            .tex = slot_tex[i],
+            .layout = VK_IMAGE_LAYOUT_GENERAL,
+            .qf = VK_QUEUE_FAMILY_IGNORED,
+        ));
+}
+
+/* One single-plane image per plane, each wrapped once into a cached pl_tex and
+ * reused across frames. The interop copies the new frame into the same images
+ * each time, so the wrap stays valid. */
+static int RenderInterop(vout_display_t *vd, struct pl_frame *img, picture_t *pic)
+{
+    vout_display_sys_t *sys = vd->sys;
+    pl_gpu gpu = sys->pl->gpu;
+    struct vlc_vk_interop *interop = &sys->interop;
+    const unsigned planes = interop->plane_count;
+
+    // Round-robin across image_count slots
+    const uint32_t slot = sys->interop_next_slot;
+    sys->interop_next_slot = (slot + 1) % interop->image_count;
+    pl_tex *slot_tex = sys->interop_slot_tex[slot];
+
+    const bool wrapped = slot_tex[0] != NULL;
+    const uint64_t base = sys->interop_sem_value;
+    VkImage images[PICTURE_PLANE_MAX] = { VK_NULL_HANDLE };
+    struct vlc_vk_interop_sync sync = { .sem = sys->interop_sem };
+    unsigned held = 0;
+    int ret = VLC_EGENERIC;
+
+    if (wrapped && sys->interop_sem != VK_NULL_HANDLE) {
+        while (held < planes
+            && pl_vulkan_hold_ex(gpu, pl_vulkan_hold_params(
+                   .tex = slot_tex[held],
+                   .layout = VK_IMAGE_LAYOUT_GENERAL,
+                   .qf = VK_QUEUE_FAMILY_IGNORED,
+                   .semaphore = { sys->interop_sem, base + held + 1 },
+               )))
+            held++;
+    }
+
+    sync.wait_value = base + held;
+
+    if (wrapped && sys->interop_sem != VK_NULL_HANDLE && held < planes) {
+        msg_Err(vd, "pl_vulkan_hold_ex failed for plane %u", held);
+        ReleasePlanes(gpu, slot_tex, held);
+        goto done;
+    }
+
+    if (interop->ops->import_images(interop, images, &sync, pic, slot) != VLC_SUCCESS) {
+        ReleasePlanes(gpu, slot_tex, held);
+        goto done;
+    }
+
+    img->num_planes = planes;
+    for (unsigned i = 0; i < planes; i++) {
+        const struct vlc_vk_plane_info *info = &interop->plane_info[i];
+
+        // Wrap the VkImage into a pl_tex if it hasn't been wrapped yet. The wrap is cached and reused across frames.
+        if (!wrapped) {
+            slot_tex[i] = pl_vulkan_wrap(gpu, pl_vulkan_wrap_params(
+                .image  = images[i],
+                .width  = vd->source->i_width * info->w.num / info->w.den,
+                .height = vd->source->i_height * info->h.num / info->h.den,
+                .format = info->format,
+                .usage  = VK_IMAGE_USAGE_SAMPLED_BIT,
+            ));
+
+            if (slot_tex[i] == NULL) {
+                msg_Err(vd, "pl_vulkan_wrap failed for plane %u", i);
+                for (unsigned j = 0; j < i; j++)
+                    pl_tex_destroy(gpu, &slot_tex[j]);
+                goto done;
+            }
+        }
+
+        struct pl_plane *plane = &img->planes[i];
+        *plane = (struct pl_plane){ .texture = slot_tex[i] };
+
+        if (i == 0) {
+            plane->components = 1;
+            plane->component_mapping[0] = PL_CHANNEL_Y;
+        } else {
+            plane->components = 2;
+            plane->component_mapping[0] = PL_CHANNEL_U;
+            plane->component_mapping[1] = PL_CHANNEL_V;
+        }
+    }
+
+    /* First frame the image is still UNDEFINED for Vulkan, so we declare
+     * UNDEFINED, later frames are held and released in GENERAL */
+    const VkImageLayout layout = wrapped ? VK_IMAGE_LAYOUT_GENERAL
+                                         : VK_IMAGE_LAYOUT_UNDEFINED;
+
+    const pl_vulkan_sem release_sem = sync.signal_value
+        ? (pl_vulkan_sem) { sync.sem, sync.signal_value }
+        : (pl_vulkan_sem) { VK_NULL_HANDLE, 0 };
+
+    for (unsigned i = 0; i < planes; i++)
+        pl_vulkan_release_ex(gpu, pl_vulkan_release_params(
+            .tex = slot_tex[i],
+            .layout = layout,
+            .qf = VK_QUEUE_FAMILY_IGNORED,
+            .semaphore = release_sem,
+        ));
+
+    ret = VLC_SUCCESS;
+
+done:
+    sys->interop_sem_value = sync.signal_value ? sync.signal_value : sync.wait_value;
+    return ret;
+}
+#endif
 
 static void PictureRender(vout_display_t *vd, picture_t *pic,
                           const vlc_render_subpicture *subpicture,
@@ -340,10 +559,22 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
     bool need_vflip = frame.flipped;
 #endif
 
+    /* The opaque hw chroma has no chroma description, so colour/repr must be
+     * derived from the underlying software chroma on the interop path */
+    const video_format_t *cfmt = vd->fmt;
+#ifdef HAVE_VULKAN
+    video_format_t hw_fmt;
+    if (sys->interop_active) {
+        hw_fmt = *vd->fmt;
+        hw_fmt.i_chroma = VLC_CODEC_NV12; // TODO: derive from interop->format_probe.fmt_out
+        cfmt = &hw_fmt;
+    }
+#endif
+
     struct pl_frame img = {
         .num_planes = pic->i_planes,
-        .color      = vlc_placebo_ColorSpace(vd->fmt),
-        .repr       = vlc_placebo_ColorRepr(vd->fmt),
+        .color      = vlc_placebo_ColorSpace(cfmt),
+        .repr       = vlc_placebo_ColorRepr(cfmt),
         .crop = {
             .x0 = pic->format.i_x_offset,
             .y0 = pic->format.i_y_offset,
@@ -368,25 +599,35 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
         vlc_placebo_HdrMetadata(hdm, &img.color.hdr);
     }
 
-    // Upload the image data for each plane
-    struct pl_plane_data data[4];
-    if (!vlc_placebo_PlaneData(pic, data)) {
-        // This should never happen, in theory
-        assert(!"Failed processing the picture_t into pl_plane_data!?");
-    }
-
-    for (int i = 0; i < pic->i_planes; i++) {
-        struct pl_plane *plane = &img.planes[i];
-        if (!pl_upload_plane(gpu, plane, &sys->plane_tex[i], &data[i])) {
-            msg_Err(vd, "Failed uploading image data!");
+#ifdef HAVE_VULKAN
+    if (sys->interop_active) {
+        if (RenderInterop(vd, &img, pic) != VLC_SUCCESS) {
             failed = true;
             goto done;
         }
+    } else
+#endif
+    {
+        // Upload the image data for each plane
+        struct pl_plane_data data[4];
+        if (!vlc_placebo_PlaneData(pic, data)) {
+            // This should never happen, in theory
+            assert(!"Failed processing the picture_t into pl_plane_data!?");
+        }
 
-        // Matches only the chroma planes, never luma or alpha
-        if (sys->yuv_chroma_loc != PL_CHROMA_UNKNOWN && i != 0 && i != 3)
-            pl_chroma_location_offset(sys->yuv_chroma_loc, &plane->shift_x,
-                                      &plane->shift_y);
+        for (int i = 0; i < pic->i_planes; i++) {
+            struct pl_plane *plane = &img.planes[i];
+            if (!pl_upload_plane(gpu, plane, &sys->plane_tex[i], &data[i])) {
+                msg_Err(vd, "Failed uploading image data!");
+                failed = true;
+                goto done;
+            }
+
+            // Matches only the chroma planes, never luma or alpha
+            if (sys->yuv_chroma_loc != PL_CHROMA_UNKNOWN && i != 0 && i != 3)
+                pl_chroma_location_offset(sys->yuv_chroma_loc, &plane->shift_x,
+                                          &plane->shift_y);
+        }
     }
 
     struct pl_frame target;
