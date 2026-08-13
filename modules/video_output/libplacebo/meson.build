@@ -38,6 +38,18 @@ if vulkan_dep.found()
         'link_with' : [libplacebo_utils],
         'dependencies' : [libplacebo_dep],
     }
+
+    # NVDEC hardware interop
+    placebo_nvdec_dep = dependency('ffnvcodec', version: '>= 11.1.5.1',
+                                   required: false)
+    if placebo_nvdec_dep.found()
+        vlc_modules += {
+            'name' : 'placebo_nvdec',
+            'sources' : files('interop/nvdec.c'),
+            'link_with' : [libvulkan_device],
+            'dependencies' : [vulkan_dep, placebo_nvdec_dep, dl_lib],
+        }
+    endif
 endif
 
 ## OpenGL

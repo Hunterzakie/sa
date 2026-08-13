@@ -2469,6 +2469,19 @@ AS_IF([test "$enable_nvdec" != "no"], [
 AM_CONDITIONAL([HAVE_NVDEC], [test "${have_nvdec}" != "no"])
 
 dnl
+dnl  NVDEC Vulkan interop
+dnl
+have_nvdec_vkinterop="no"
+AS_IF([test "${have_nvdec}" != "no"], [
+  PKG_CHECK_EXISTS([ffnvcodec >= 11.1.5.1], [
+    have_nvdec_vkinterop="yes"
+  ], [
+    AC_MSG_WARN([ffnvcodec >= 11.1.5.1 is needed for the NVDEC Vulkan interop.])
+  ])
+])
+AM_CONDITIONAL([HAVE_NVDEC_VKINTEROP], [test "${have_nvdec_vkinterop}" != "no"])
+
+dnl
 dnl  AMD Advanced Media Framework API
 dnl
 AC_ARG_ENABLE([amf-scaler], AS_HELP_STRING([--disable-amf-scaler],
