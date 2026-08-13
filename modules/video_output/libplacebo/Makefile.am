@@ -42,6 +42,23 @@ if HAVE_VULKAN
 noinst_LTLIBRARIES += libplacebo_vkinterop.la
 endif
 
+### NVDEC interop
+libplacebo_nvdec_plugin_la_SOURCES = \
+	video_output/libplacebo/interop/nvdec.c \
+	hw/nvdec/nvdec_fmt.h \
+	hw/nvdec/nvdec_priv.h
+libplacebo_nvdec_plugin_la_CFLAGS = $(AM_CFLAGS) $(LIBPLACEBO_CFLAGS) \
+				  $(VULKAN_CFLAGS) $(FFNVCODEC_CFLAGS)
+libplacebo_nvdec_plugin_la_LIBADD = $(LIBPLACEBO_LIBS) $(LIBDL) \
+				  libplacebo_vkinterop.la
+libplacebo_nvdec_plugin_la_LDFLAGS = $(AM_LDFLAGS) $(vout_RPATH)
+
+if HAVE_VULKAN
+if HAVE_NVDEC
+vout_PLUGINS += libplacebo_nvdec_plugin.la
+endif
+endif
+
 ### Vulkan ###
 libplacebo_vk_plugin_la_SOURCES = $(LIBPLACEBO_COMMONSOURCES) \
 				  video_output/vulkan/platform.h \
