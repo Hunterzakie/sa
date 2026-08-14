@@ -63,6 +63,8 @@ Widgets.PageLoader {
         HomePage {
             focus: true
 
+            displayMarginEnd: root.displayMarginEnd
+
             onSeeAllButtonClicked: (name, reason) => {
                 History.push([...root.pagePrefix, name], reason)
             }
