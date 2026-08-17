@@ -277,6 +277,42 @@ static int Open(struct vlc_gl_interop *interop)
             };
 
             break;
+        case VLC_CODEC_NV16:
+            interop->tex_count = 2;
+            interop->texs[0] = (struct vlc_gl_tex_cfg) {
+                .w = {1, 1},
+                .h = {1, 1},
+                .internal = GL_RED,
+                .format = GL_RED,
+                .type = GL_UNSIGNED_BYTE,
+            };
+            interop->texs[1] = (struct vlc_gl_tex_cfg) {
+                .w = {1, 2},
+                .h = {1, 1},
+                .internal = GL_RG,
+                .format = GL_RG,
+                .type = GL_UNSIGNED_BYTE,
+            };
+
+            break;
+        case VLC_CODEC_P216:
+            interop->tex_count = 2;
+            interop->texs[0] = (struct vlc_gl_tex_cfg) {
+                .w = {1, 1},
+                .h = {1, 1},
+                .internal = GL_R16,
+                .format = GL_RED,
+                .type = GL_UNSIGNED_BYTE,
+            };
+            interop->texs[1] = (struct vlc_gl_tex_cfg) {
+                .w = {1, 2},
+                .h = {1, 1},
+                .internal = GL_RG16,
+                .format = GL_RG,
+                .type = GL_UNSIGNED_BYTE,
+            };
+
+            break;
     }
 
     interop->tex_target = GL_TEXTURE_2D;

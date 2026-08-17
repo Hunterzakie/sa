@@ -279,6 +279,7 @@ static const vlc_chroma_description_t p_list_chroma_description[] = {
     { VLC_CODEC_I422,                  PLANAR_8(YUV422, 3, 2, 1) },
     { VLC_CODEC_NV16,                  SEMIPLANAR(YUV422, 2, 1, 8) },
     { VLC_CODEC_NV61,                  SEMIPLANAR(YUV422, 2, 1, 8) },
+    { VLC_CODEC_P216,                  SEMIPLANAR(YUV422, 2, 1, 16) },
     { VLC_CODEC_I440,                  PLANAR_8(YUV440, 3, 1, 2) },
     { VLC_CODEC_I444,                  PLANAR_8(YUV444, 3, 1, 1) },
     { VLC_CODEC_NV24,                  SEMIPLANAR(YUV444, 1, 1, 8) },
@@ -402,6 +403,9 @@ static const vlc_chroma_description_t p_list_chroma_description[] = {
     { VLC_CODEC_NVDEC_OPAQUE_16B,      GPU_FMT(YUV420, 16) },
     { VLC_CODEC_NVDEC_OPAQUE_10B,      GPU_FMT(YUV420, 10) },
     { VLC_CODEC_NVDEC_OPAQUE,          GPU_FMT(YUV420, 8) },
+
+    { VLC_CODEC_NVDEC_OPAQUE_422,      GPU_FMT(YUV422, 8) },
+    { VLC_CODEC_NVDEC_OPAQUE_422_16B,  GPU_FMT(YUV422, 16) },
 
     { VLC_CODEC_NVDEC_OPAQUE_444,      GPU_FMT(YUV444, 8) },
     { VLC_CODEC_NVDEC_OPAQUE_444_16B,  GPU_FMT(YUV444, 16) },

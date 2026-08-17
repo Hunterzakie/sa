@@ -185,6 +185,10 @@ static vlc_fourcc_t MapSurfaceChroma(cudaVideoChromaFormat chroma, unsigned bitD
             if (bitDepth <= 10)
                 return VLC_CODEC_P010;
             return VLC_CODEC_P016;
+        case cudaVideoChromaFormat_422:
+            if (bitDepth <= 8)
+                return VLC_CODEC_NV16;
+            return VLC_CODEC_P216;
         case cudaVideoChromaFormat_444:
             if (bitDepth <= 8)
                 return VLC_CODEC_I444;
@@ -203,6 +207,10 @@ static vlc_fourcc_t MapSurfaceOpaqueChroma(cudaVideoChromaFormat chroma, unsigne
             if (bitDepth <= 10)
                 return VLC_CODEC_NVDEC_OPAQUE_10B;
             return VLC_CODEC_NVDEC_OPAQUE_16B;
+        case cudaVideoChromaFormat_422:
+            if (bitDepth <= 8)
+                return VLC_CODEC_NVDEC_OPAQUE_422;
+            return VLC_CODEC_NVDEC_OPAQUE_422_16B;
         case cudaVideoChromaFormat_444:
             if (bitDepth <= 8)
                 return VLC_CODEC_NVDEC_OPAQUE_444;
@@ -223,6 +231,12 @@ static cudaVideoSurfaceFormat MapSurfaceFmt(int i_vlc_fourcc)
         case VLC_CODEC_NVDEC_OPAQUE:
         case VLC_CODEC_NV12:
             return cudaVideoSurfaceFormat_NV12;
+        case VLC_CODEC_NVDEC_OPAQUE_422:
+        case VLC_CODEC_NV16:
+            return cudaVideoSurfaceFormat_NV16;
+        case VLC_CODEC_NVDEC_OPAQUE_422_16B:
+        case VLC_CODEC_P216:
+            return cudaVideoSurfaceFormat_P216;
         case VLC_CODEC_NVDEC_OPAQUE_444:
         case VLC_CODEC_I444:
             return cudaVideoSurfaceFormat_YUV444;

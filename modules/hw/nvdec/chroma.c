@@ -43,6 +43,10 @@ static void ProbeChroma(vlc_chroma_conv_vec *vec)
                         false);
     vlc_chroma_conv_add(vec, 1.1, VLC_CODEC_NVDEC_OPAQUE_16B, VLC_CODEC_P016,
                         false);
+    vlc_chroma_conv_add(vec, 1.1, VLC_CODEC_NVDEC_OPAQUE_422, VLC_CODEC_NV16,
+                        false);
+    vlc_chroma_conv_add(vec, 1.1, VLC_CODEC_NVDEC_OPAQUE_422_16B, VLC_CODEC_P216,
+                        false);
     vlc_chroma_conv_add_in_outlist(vec, 1.1, VLC_CODEC_NVDEC_OPAQUE_444,
         VLC_CODEC_I444, VLC_CODEC_YUVA);
     vlc_chroma_conv_add(vec, 1.1, VLC_CODEC_NVDEC_OPAQUE_444_16B, VLC_CODEC_I444_16L,

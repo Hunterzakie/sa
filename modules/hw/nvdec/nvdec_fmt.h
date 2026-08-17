@@ -39,6 +39,10 @@ static inline vlc_fourcc_t NVDECToVlcChroma(vlc_fourcc_t chroma)
         return VLC_CODEC_P010;
     case VLC_CODEC_NVDEC_OPAQUE_16B:
         return VLC_CODEC_P016;
+    case VLC_CODEC_NVDEC_OPAQUE_422:
+        return VLC_CODEC_NV16;
+    case VLC_CODEC_NVDEC_OPAQUE_422_16B:
+        return VLC_CODEC_P216;
     case VLC_CODEC_NVDEC_OPAQUE_444:
         return VLC_CODEC_I444;
     case VLC_CODEC_NVDEC_OPAQUE_444_16B:

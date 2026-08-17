@@ -249,6 +249,8 @@ static int Open(vout_display_t *vd,
             case VLC_CODEC_NVDEC_OPAQUE:
             case VLC_CODEC_NVDEC_OPAQUE_10B:
             case VLC_CODEC_NVDEC_OPAQUE_16B:
+            case VLC_CODEC_NVDEC_OPAQUE_422:
+            case VLC_CODEC_NVDEC_OPAQUE_422_16B:
             case VLC_CODEC_NVDEC_OPAQUE_444:
             case VLC_CODEC_NVDEC_OPAQUE_444_16B:
             {

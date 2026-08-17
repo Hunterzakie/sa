@@ -938,6 +938,8 @@ static const staticentry_t p_list_video[] = {
         A("NV16"),
     B(VLC_CODEC_NV61, "Biplanar 4:2:2 Y/VU"),
         A("NV61"),
+    B(VLC_CODEC_P216, "Biplanar 4:2:2 Y/UV 16-bit LE"),
+        A("P216"),
     B(VLC_CODEC_NV24, "Biplanar 4:4:4 Y/UV"),
         A("NV24"),
     B(VLC_CODEC_NV42, "Biplanar 4:4:4 Y/VU"),
@@ -1312,6 +1314,12 @@ static const staticentry_t p_list_video[] = {
 
     B(VLC_CODEC_NVDEC_OPAQUE_16B, "4:2:0 16bits NVDEC opaque"),
         A("NVD6"),
+
+    B(VLC_CODEC_NVDEC_OPAQUE_422, "4:2:2 NVDEC opaque"),
+        A("NV28"),
+
+    B(VLC_CODEC_NVDEC_OPAQUE_422_16B, "4:2:2 16bits NVDEC opaque"),
+        A("NV26"),
 
     B(VLC_CODEC_NVDEC_OPAQUE_444, "4:4:4 NVDEC opaque"),
         A("NV48"),
