@@ -37,6 +37,8 @@
 
 #include "playlist.h"
 
+#include <math.h>
+
 /*****************************************************************************
  * Local prototypes
  *****************************************************************************/
@@ -540,7 +542,7 @@ static void parseEXTINF( char *psz_string,
     /* Parse duration */
     char *psz_end = NULL;
     float i_parsed_duration = vlc_strtof_c( psz_string, &psz_end );
-    if( i_parsed_duration > 0 )
+    if( i_parsed_duration > 0 && (double)i_parsed_duration < (double)VLC_TICK_MAX / CLOCK_FREQ )
         meta->i_duration = vlc_tick_from_sec( (double)i_parsed_duration );
 
     /* skip to first unmatched */

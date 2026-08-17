@@ -24,6 +24,8 @@
 #include <vlc_strings.h>
 #include <vlc_text_style.h>
 #include <vlc_subpicture.h>
+#include <limits.h>
+#include <math.h>
 
 #include <stdint.h>
 
@@ -40,6 +42,29 @@ enum substext_updater_region_flags_e
     UPDT_REGION_USES_16_9_GRID         = 1 << 6,
     UPDT_REGION_FIXED_DONE             = 1 << 31,
 };
+
+static int substext_clamp_float_to_int(float v, int min, int max)
+{
+    if(!isfinite(v))
+        return 0;
+    if(v <= (float)min)
+        return min;
+    if(v >= (float)max)
+        return max;
+    return v;
+}
+
+#define SUBSTEXT_INT_MAX (INT_MAX - 1) /* INT_MAX is non-init value in subpic */
+
+static int substext_float_to_int(float v)
+{
+    return substext_clamp_float_to_int(v, INT_MIN, SUBSTEXT_INT_MAX);
+}
+
+static int substext_float_to_absint(float v)
+{
+    return substext_clamp_float_to_int(v, 0, SUBSTEXT_INT_MAX);
+}
 
 struct substext_updater_region_t
 {
@@ -242,44 +267,49 @@ static void SubpictureTextUpdate(subpicture_t *subpic,
             const int inner_w = render_fmt.i_visible_width - margin_h * 2;
             const int inner_h = render_fmt.i_visible_height - margin_v * 2;
 
+            float x, y;
+
             if (r->i_align & SUBPICTURE_ALIGN_LEFT)
-                r->i_x = margin_h + render_fmt.i_x_offset;
+                x = margin_h + render_fmt.i_x_offset;
             else if (r->i_align & SUBPICTURE_ALIGN_RIGHT)
-                r->i_x = margin_h + outerright_h;
+                x = margin_h + outerright_h;
             else
-                r->i_x = 0;
+                x = 0;
 
             if (r->i_align & SUBPICTURE_ALIGN_TOP )
-                r->i_y = margin_v + render_fmt.i_y_offset;
+                y = margin_v + render_fmt.i_y_offset;
             else if (r->i_align & SUBPICTURE_ALIGN_BOTTOM )
-                r->i_y = margin_v + outerbottom_v;
+                y = margin_v + outerbottom_v;
             else
-                r->i_y = 0;
+                y = 0;
 
             if( update_region->flags & UPDT_REGION_ORIGIN_X_IS_RATIO )
-                r->i_x += update_region->origin.x * inner_w;
+                x += update_region->origin.x * inner_w;
             else
-                r->i_x += update_region->origin.x;
+                x += update_region->origin.x;
 
             if( update_region->flags & UPDT_REGION_ORIGIN_Y_IS_RATIO )
-                r->i_y += update_region->origin.y * inner_h;
+                y += update_region->origin.y * inner_h;
             else
-                r->i_y += update_region->origin.y;
+                y += update_region->origin.y;
+
+            r->i_x = substext_float_to_int( x );
+            r->i_y = substext_float_to_int( y );
 
             if( update_region->flags & UPDT_REGION_EXTENT_X_IS_RATIO )
-                r->i_max_width += update_region->extent.x * inner_w;
+                r->i_max_width += substext_float_to_absint( update_region->extent.x * inner_w );
             else
-                r->i_max_width += update_region->extent.x;
+                r->i_max_width += substext_float_to_absint( update_region->extent.x );
 
             if( update_region->flags & UPDT_REGION_EXTENT_Y_IS_RATIO )
-                r->i_max_height += update_region->extent.y * inner_h;
+                r->i_max_height += substext_float_to_absint( update_region->extent.y * inner_h );
             else
-                r->i_max_height += update_region->extent.y;
+                r->i_max_height += substext_float_to_absint( update_region->extent.y );
 
         } else {
             /* FIXME it doesn't adapt on crop settings changes */
-            r->i_x = update_region->origin.x * render_fmt.i_width  / update_region->extent.x;
-            r->i_y = update_region->origin.y * render_fmt.i_height / update_region->extent.y;
+            r->i_x = substext_float_to_int( update_region->origin.x * render_fmt.i_width  / update_region->extent.x );
+            r->i_y = substext_float_to_int( update_region->origin.y * render_fmt.i_height / update_region->extent.y );
         }
 
         /* Add missing default style, if any, to all segments */

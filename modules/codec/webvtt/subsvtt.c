@@ -46,6 +46,7 @@
 #endif
 
 #include <ctype.h>
+#include <math.h>
 
 //#define SUBSVTT_DEBUG
 
@@ -174,7 +175,7 @@ static bool parse_percent( const char *psz, float *value )
 {
     char *psz_end;
     float d = vlc_strtof_c( psz, &psz_end );
-    if( d >= 0.0 && d <= 100.0 && *psz_end == '%' )
+    if( isfinite(d) && d >= 0.0 && d <= 100.0 && *psz_end == '%' )
         *value = d / 100.0;
     return psz_end != psz;
 }
@@ -184,14 +185,14 @@ static bool parse_percent_tuple( const char *psz, float *x, float *y )
     char *psz_end;
     float a = vlc_strtof_c( psz, &psz_end );
     if( psz_end != psz &&
-        a >= 0.0 && a <= 100.0 && psz_end && *psz_end == '%' )
+        isfinite(a) && a >= 0.0 && a <= 100.0 && psz_end && *psz_end == '%' )
     {
         psz = strchr( psz_end, ',' );
         if( psz )
         {
             float b = vlc_strtof_c( ++psz, &psz_end );
             if( psz_end != psz &&
-                b >= 0.0 && b <= 100.0 && psz_end && *psz_end == '%' )
+                isfinite(b) && b >= 0.0 && b <= 100.0 && psz_end && *psz_end == '%' )
             {
                 *x = a / 100.0;
                 *y = b / 100.0;
@@ -318,7 +319,11 @@ static void webvtt_cue_settings_ParseTuple( webvtt_cue_settings_t *p_settings,
             p_settings->b_snap_to_lines = false;
         }
         else
-            p_settings->line.value = vlc_strtof_c( psz_value, NULL );
+        {
+            float v = vlc_strtof_c( psz_value, NULL );
+            if( isfinite(v) )
+                p_settings->line.value = v;
+        }
         /* else auto */
 
         const char *psz_align = strchr( psz_value, ',' );

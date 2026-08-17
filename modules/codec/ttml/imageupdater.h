@@ -17,6 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 #include <vlc_subpicture.h>
+#include <limits.h>
+#include <math.h>
 
 typedef struct ttml_image_updater_region_t ttml_image_updater_region_t;
 
@@ -99,14 +101,20 @@ static void TTML_ImageSpuUpdate(subpicture_t *p_spu,
         r->i_align = SUBPICTURE_ALIGN_LEFT|SUBPICTURE_ALIGN_TOP;
 
         if( p_updtregion->i_flags & ORIGIN_X_IS_RATIO )
-            r->i_x = p_updtregion->origin.x * p_fmt_dst->i_visible_width;
+        {
+            float v = p_updtregion->origin.x * p_fmt_dst->i_visible_width;
+            r->i_x = v < INT_MAX ? (int) v : INT_MAX;
+        }
         else
-            r->i_x = p_updtregion->origin.x;
+            r->i_x = p_updtregion->origin.x < INT_MAX ? (int) p_updtregion->origin.x : INT_MAX;
 
         if( p_updtregion->i_flags & ORIGIN_Y_IS_RATIO )
-            r->i_y = p_updtregion->origin.y * p_fmt_dst->i_visible_height;
+        {
+            float v = p_updtregion->origin.y * p_fmt_dst->i_visible_height;
+            r->i_y = v < INT_MAX ? (int) v : INT_MAX;
+        }
         else
-            r->i_y = p_updtregion->origin.y;
+            r->i_y = p_updtregion->origin.y < INT_MAX ? (int) p_updtregion->origin.y : INT_MAX;
 
         vlc_spu_regions_push(&p_spu->regions, r);
     }
