@@ -57,7 +57,8 @@ public:
         GenreRole,
         DescriptionRole,
         TrackIdRole,
-        RatingRole
+        RatingRole,
+        DiscNumberRole
     };
     Q_ENUM(Roles);
 

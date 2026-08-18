@@ -62,6 +62,7 @@ public:
     Q_PROPERTY(QString description READ getDescription CONSTANT FINAL)
     Q_PROPERTY(QString trackId READ getTrackId CONSTANT FINAL)
     Q_PROPERTY(QString rating READ getRating CONSTANT FINAL)
+    Q_PROPERTY(QString discNumber READ getDiscNumber CONSTANT FINAL)
 
     PlaylistItem(vlc_playlist_item_t *item = nullptr);
 
@@ -105,6 +106,8 @@ public:
 
     QString getRating() const;
 
+    QString getDiscNumber() const;
+
     void sync();
 
 private:
@@ -123,6 +126,7 @@ private:
         QString description;
         QString trackId;
         QString rating;
+        QString discNumber;
 
         VLCDuration duration;
 

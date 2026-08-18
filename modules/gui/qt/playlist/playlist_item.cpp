@@ -97,6 +97,11 @@ QString PlaylistItem::getRating() const
     return d->rating;
 }
 
+QString PlaylistItem::getDiscNumber() const
+{
+    return d->discNumber;
+}
+
 void PlaylistItem::sync() {
     input_item_t *media = inputItem();
     assert(media);
@@ -118,6 +123,7 @@ void PlaylistItem::sync() {
         d->description = vlc_meta_Get(media->p_meta, vlc_meta_Description);
         d->trackId = vlc_meta_Get(media->p_meta, vlc_meta_TrackID);
         d->rating = vlc_meta_Get(media->p_meta, vlc_meta_Rating);
+        d->discNumber = vlc_meta_Get(media->p_meta, vlc_meta_DiscNumber);
     }
 
     if (d->title.isNull())
