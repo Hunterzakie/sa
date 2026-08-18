@@ -84,8 +84,10 @@ static const char *const ppsz_filter_options[] = {
 
 #ifdef DONT_USE_FLOATS
 #   define type_t int
+#   define scale_t int64_t
 #else
 #   define type_t float
+#   define scale_t double
 #endif
 
 typedef struct
@@ -95,7 +97,7 @@ typedef struct
 
     type_t *pt_distribution;
     type_t *pt_buffer;
-    type_t *pt_scale;
+    scale_t *pt_scale;
 } filter_sys_t;
 
 static void gaussianblur_InitDistribution( filter_sys_t *p_sys )
@@ -184,13 +186,13 @@ static void Filter( filter_t *p_filter, picture_t *p_pic, picture_t *p_outpic )
     filter_sys_t *p_sys = p_filter->p_sys;
     const int i_dim = p_sys->i_dim;
     type_t *pt_buffer;
-    type_t *pt_scale;
+    scale_t *pt_scale;
     const type_t *pt_distribution = p_sys->pt_distribution;
 
     if( !p_sys->pt_buffer )
     {
         p_sys->pt_buffer = realloc_or_free( p_sys->pt_buffer,
-                               p_pic->p[Y_PLANE].i_visible_lines *
+                               (size_t)p_pic->p[Y_PLANE].i_visible_lines *
                                p_pic->p[Y_PLANE].i_pitch * sizeof( type_t ) );
     }
 
@@ -201,14 +203,14 @@ static void Filter( filter_t *p_filter, picture_t *p_pic, picture_t *p_outpic )
         const int i_visible_pitch = p_pic->p[Y_PLANE].i_visible_pitch;
         const int i_pitch = p_pic->p[Y_PLANE].i_pitch;
 
-        p_sys->pt_scale = xmalloc( i_visible_lines * i_pitch * sizeof( type_t ) );
+        p_sys->pt_scale = xmalloc( (size_t)i_visible_lines * i_pitch * sizeof( scale_t ) );
         pt_scale = p_sys->pt_scale;
 
         for( int i_line = 0; i_line < i_visible_lines; i_line++ )
         {
             for( int i_col = 0; i_col < i_visible_pitch; i_col++ )
             {
-                type_t t_value = 0;
+                int64_t t_value = 0;
 
                 for( int y = __MAX( -i_dim, -i_line );
                      y <= __MIN( i_dim, i_visible_lines - i_line - 1 );
@@ -218,11 +220,11 @@ static void Filter( filter_t *p_filter, picture_t *p_pic, picture_t *p_outpic )
                          x <= __MIN( i_dim, i_visible_pitch - i_col + 1 );
                          x++ )
                     {
-                        t_value += pt_distribution[y+i_dim] *
+                        t_value += (int64_t)pt_distribution[y+i_dim] *
                                    pt_distribution[x+i_dim];
                     }
                 }
-                pt_scale[i_line*i_pitch+i_col] = t_value;
+                pt_scale[i_line*i_pitch+i_col] = (scale_t)t_value;
             }
         }
     }
@@ -245,34 +247,40 @@ static void Filter( filter_t *p_filter, picture_t *p_pic, picture_t *p_outpic )
         {
             for( int i_col = 0; i_col < i_visible_pitch; i_col++ )
             {
-                type_t t_value = 0;
+                int64_t t_value = 0;
                 const int c = i_line*i_in_pitch+i_col;
                 for( int x = __MAX( -i_dim, -i_col*(x_factor+1) );
                      x <= __MIN( i_dim, (i_visible_pitch - i_col)*(x_factor+1) + 1 );
                      x++ )
                 {
-                    t_value += pt_distribution[x+i_dim] *
+                    t_value += (int64_t)pt_distribution[x+i_dim] *
                                p_in[c+(x>>x_factor)];
                 }
-                pt_buffer[c] = t_value;
+                pt_buffer[c] = (type_t)t_value;
             }
         }
         for( int i_line = 0; i_line < i_visible_lines; i_line++ )
         {
             for( int i_col = 0; i_col < i_visible_pitch; i_col++ )
             {
-                type_t t_value = 0;
+                int64_t t_value = 0;
                 const int c = i_line*i_in_pitch+i_col;
                 for( int y = __MAX( -i_dim, (-i_line)*(y_factor+1) );
                      y <= __MIN( i_dim, (i_visible_lines - i_line)*(y_factor+1) - 1 );
                      y++ )
                 {
-                    t_value += pt_distribution[y+i_dim] *
+                    t_value += (int64_t)pt_distribution[y+i_dim] *
                                pt_buffer[c+(y>>y_factor)*i_in_pitch];
                 }
 
-                const type_t t_scale = pt_scale[(i_line<<y_factor)*(i_in_pitch<<x_factor)+(i_col<<x_factor)];
-                p_out[i_line * p_outpic->p[i_plane].i_pitch + i_col] = (uint8_t)(t_value / t_scale); // FIXME wouldn't it be better to round instead of trunc ?
+                const scale_t t_scale = pt_scale[(size_t)(i_line<<y_factor)*(i_in_pitch<<x_factor)+(i_col<<x_factor)];
+                /* Guard against t_scale <= 0: distribution values may round to
+                 * zero for very large sigma values in integer mode, which would
+                 * cause a division by zero. */
+                if( unlikely( t_scale <= 0 ) )
+                    p_out[i_line * p_outpic->p[i_plane].i_pitch + i_col] = 0;
+                else
+                    p_out[i_line * p_outpic->p[i_plane].i_pitch + i_col] = (uint8_t)((t_value + t_scale / 2) / t_scale);
             }
         }
     }
