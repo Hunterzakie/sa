@@ -59,6 +59,7 @@ public:
     Q_PROPERTY(QUrl url READ getUrl CONSTANT  FINAL)
     Q_PROPERTY(QString trackNumber READ getTrackNumber CONSTANT FINAL)
     Q_PROPERTY(QString genre READ getGenre CONSTANT FINAL)
+    Q_PROPERTY(QString description READ getDescription CONSTANT FINAL)
 
     PlaylistItem(vlc_playlist_item_t *item = nullptr);
 
@@ -96,6 +97,8 @@ public:
 
     QString getGenre() const;
 
+    QString getDescription() const;
+
     void sync();
 
 private:
@@ -111,6 +114,7 @@ private:
         QUrl artwork;
         QString trackNumber;
         QString genre;
+        QString description;
 
         VLCDuration duration;
 

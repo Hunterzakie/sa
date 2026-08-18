@@ -296,7 +296,8 @@ PlaylistListModel::roleNames() const
         { ArtworkRole, QByteArrayLiteral("artwork") },
         { UrlRole, QByteArrayLiteral("url") },
         { TrackNumberRole, QByteArrayLiteral("trackNumber") },
-        { GenreRole, QByteArrayLiteral("genre") }
+        { GenreRole, QByteArrayLiteral("genre") },
+        { DescriptionRole, QByteArrayLiteral("description") }
     };
 }
 
@@ -513,6 +514,8 @@ PlaylistListModel::data(const QModelIndex &index, int role) const
         return d->m_items[row].getTrackNumber();
     case GenreRole:
         return d->m_items[row].getGenre();
+    case DescriptionRole:
+        return d->m_items[row].getDescription();
     default:
         return {};
     }

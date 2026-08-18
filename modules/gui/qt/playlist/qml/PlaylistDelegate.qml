@@ -64,6 +64,7 @@ T.Control {
     required property bool preparsed
     required property string trackNumber
     required property string genre
+    required property string description
 
     // Optional
     property var contextMenu
