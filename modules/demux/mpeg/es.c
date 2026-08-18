@@ -39,6 +39,7 @@
 #include <vlc_codec.h>
 #include <vlc_codecs.h>
 #include <vlc_input.h>
+#include <vlc_lyrics.h>
 #include <vlc_replay_gain.h>
 
 #include "../../packetizer/a52.h"
@@ -127,20 +128,14 @@ typedef struct
     seekpoint_t *p_seekpoint;
 } chap_entry_t;
 
+/* One subtitle ES per synchronized lyrics track, so that lyrics can be
+ * rendered like any other subtitle track when there is a video output. */
 typedef struct
 {
-    vlc_tick_t i_start;
-    char *psz_text;
-} sylt_entry_t;
-
-typedef struct
-{
-    char *psz_language;
-    size_t i_count;
-    size_t i_current; /* index of next lyric to send as SPU */
-    sylt_entry_t *p_entry;
+    size_t i_track;   /* index of the track in demux_sys_t.lyrics.p_lyrics */
+    size_t i_next;    /* index of the next line to send */
     es_out_id_t *p_es;
-} sylt_track_t;
+} lyrics_es_t;
 
 /* Mpga specific */
 #define XING_FIELD_STREAMFRAMES    (1 << 0)
@@ -390,13 +385,14 @@ typedef struct
         chap_entry_t *p_entry;
     } chapters;
 
-    /* Synchronized lyrics from ID3v2 SYLT, one track per language */
+    /* Lyrics from ID3v2 SYLT and USLT frames */
     struct
     {
+        vlc_lyrics_t *p_lyrics;
+        input_attachment_t *p_attachment; /* p_lyrics, for the interfaces */
         size_t i_count;
-        sylt_track_t *p_track;
-        bool b_meta_sent; /* true once sylt-data extra meta has been emitted */
-    } sylt;
+        lyrics_es_t *p_es;
+    } lyrics;
 
     vlc_meta_t *p_meta;
 } demux_sys_t;
@@ -466,7 +462,7 @@ static int OpenCommon( demux_t *p_demux,
     p_sys->xing.f_radio_replay_gain = NAN;
     p_sys->xing.f_audiophile_replay_gain = NAN;
     TAB_INIT(p_sys->chapters.i_count, p_sys->chapters.p_entry);
-    TAB_INIT(p_sys->sylt.i_count, p_sys->sylt.p_track);
+    TAB_INIT(p_sys->lyrics.i_count, p_sys->lyrics.p_es);
 
     if( vlc_stream_Seek( p_demux->s, p_sys->i_stream_offset ) )
     {
@@ -497,20 +493,49 @@ static int OpenCommon( demux_t *p_demux,
     es_format_t *p_fmt = &p_sys->p_packetizer->fmt_out;
     replay_gain_Merge( &p_fmt->audio_replay_gain, &p_sys->audio_replay_gain );
 
-    /* Register one SPU ES per SYLT language track */
-    for( size_t i = 0; i < p_sys->sylt.i_count; i++ )
+    if( p_sys->lyrics.p_lyrics != NULL
+     && !vlc_lyrics_Finish( p_sys->lyrics.p_lyrics ) )
     {
-        sylt_track_t *p_tk = &p_sys->sylt.p_track[i];
-        es_format_t spu_fmt;
-        es_format_Init( &spu_fmt, SPU_ES, VLC_CODEC_SUBT );
-        spu_fmt.psz_description = strdup( _("Lyrics") );
-        spu_fmt.psz_language = p_tk->psz_language
-                             ? strdup( p_tk->psz_language ) : NULL;
-        p_tk->p_es = es_out_Add( p_demux->out, &spu_fmt );
-        es_format_Clean( &spu_fmt );
-        msg_Dbg( p_demux, "registered %zu synchronized lyrics entries (lang: %s)",
-                 p_tk->i_count,
-                 p_tk->psz_language ? p_tk->psz_language : "und" );
+        vlc_lyrics_Release( p_sys->lyrics.p_lyrics );
+        p_sys->lyrics.p_lyrics = NULL;
+    }
+
+    if( p_sys->lyrics.p_lyrics != NULL )
+    {
+        p_sys->lyrics.p_attachment =
+            vlc_lyrics_ToAttachment( p_sys->lyrics.p_lyrics );
+
+        size_t i_tracks = vlc_lyrics_GetTrackCount( p_sys->lyrics.p_lyrics );
+        for( size_t i = 0; i < i_tracks; i++ )
+        {
+            const struct vlc_lyrics_track *p_tk =
+                vlc_lyrics_GetTrack( p_sys->lyrics.p_lyrics, i );
+
+            size_t i_timed_words = 0;
+            for( size_t j = 0; j < p_tk->count; j++ )
+                i_timed_words += p_tk->lines[j].word_count;
+
+            msg_Dbg( p_demux, "found %zu lyrics lines, %zu timed words "
+                     "(lang: %s, %s)", p_tk->count, i_timed_words,
+                     p_tk->language,
+                     p_tk->synchronized ? "synchronized" : "unsynchronized" );
+
+            if( !p_tk->synchronized )
+                continue;
+
+            es_format_t spu_fmt;
+            es_format_Init( &spu_fmt, SPU_ES, VLC_CODEC_SUBT );
+            spu_fmt.psz_description = strdup( p_tk->description
+                                            ? p_tk->description : _("Lyrics") );
+            spu_fmt.psz_language = strdup( p_tk->language );
+
+            lyrics_es_t es = { .i_track = i, .i_next = 0 };
+            es.p_es = es_out_Add( p_demux->out, &spu_fmt );
+            es_format_Clean( &spu_fmt );
+
+            if( es.p_es != NULL )
+                TAB_APPEND( p_sys->lyrics.i_count, p_sys->lyrics.p_es, es );
+        }
     }
 
     for( ;; )
@@ -527,15 +552,9 @@ error:
     for( size_t i = 0; i < p_sys->chapters.i_count; i++ )
         vlc_seekpoint_Delete( p_sys->chapters.p_entry[i].p_seekpoint );
     TAB_CLEAN( p_sys->chapters.i_count, p_sys->chapters.p_entry );
-    for( size_t i = 0; i < p_sys->sylt.i_count; i++ )
-    {
-        sylt_track_t *p_tk = &p_sys->sylt.p_track[i];
-        for( size_t j = 0; j < p_tk->i_count; j++ )
-            free( p_tk->p_entry[j].psz_text );
-        TAB_CLEAN( p_tk->i_count, p_tk->p_entry );
-        free( p_tk->psz_language );
-    }
-    TAB_CLEAN( p_sys->sylt.i_count, p_sys->sylt.p_track );
+    TAB_CLEAN( p_sys->lyrics.i_count, p_sys->lyrics.p_es );
+    if( p_sys->lyrics.p_lyrics )
+        vlc_lyrics_Release( p_sys->lyrics.p_lyrics );
     if( p_sys->p_meta )
         vlc_meta_Delete( p_sys->p_meta );
     free( p_sys->mllt.p_bits );
@@ -594,57 +613,6 @@ static void IncreaseChapter( demux_t *p_demux, vlc_tick_t i_time )
     }
 }
 
-/* Export all SYLT tracks as input item extra meta for the Qt display layer.
- * Called once on the first Demux invocation (deferred from Open) so that
- * the in-band metadata pass (InputSourceMeta / TagLib) has already run and
- * set title/artist/album before we call es_out_SetMeta, which sets the
- * ITEM_PREPARSED flag and would otherwise prevent those passes from running.
- *
- * Encoding: entries are packed as "ms\x1Ftext\x1E" (ASCII Unit Separator 0x1F
- * between timestamp and text; ASCII Record Separator 0x1E after each entry).
- * "sylt-data" carries the first (default) track for backward compatibility;
- * "sylt-data:xxx" carries each language for future language-aware UI. */
-static void SyltEmitMeta( demux_t *p_demux )
-{
-    demux_sys_t *p_sys = p_demux->p_sys;
-
-    for( size_t tk = 0; tk < p_sys->sylt.i_count; tk++ )
-    {
-        const sylt_track_t *p_tk = &p_sys->sylt.p_track[tk];
-
-        /* 20 bytes for PRId64 decimal digits + 2 ASCII separator bytes per entry */
-        size_t i_total = 1; /* null terminator */
-        for( size_t i = 0; i < p_tk->i_count; i++ )
-            i_total += 22 + strlen( p_tk->p_entry[i].psz_text );
-
-        char *psz_data = malloc( i_total );
-        if( !psz_data )
-            continue;
-
-        char *p = psz_data;
-        *p = '\0';
-        for( size_t i = 0; i < p_tk->i_count; i++ )
-            p += sprintf( p, "%" PRId64 "\x1F%s\x1E",
-                          MS_FROM_VLC_TICK( p_tk->p_entry[i].i_start ),
-                          p_tk->p_entry[i].psz_text );
-
-        vlc_meta_t *p_meta = vlc_meta_New();
-        if( p_meta )
-        {
-            char psz_key[32];
-            snprintf( psz_key, sizeof(psz_key), "sylt-data:%s",
-                      p_tk->psz_language ? p_tk->psz_language : "und" );
-            vlc_meta_SetExtra( p_meta, psz_key, psz_data );
-            if( tk == 0 ) /* default key for single-language backward compat */
-                vlc_meta_SetExtra( p_meta, "sylt-data", psz_data );
-            es_out_SetMeta( p_demux->out, p_meta );
-            vlc_meta_Delete( p_meta );
-        }
-        free( psz_data );
-    }
-    p_sys->sylt.b_meta_sent = true;
-}
-
 /*****************************************************************************
  * Demux: reads and demuxes data packets
  *****************************************************************************
@@ -654,12 +622,6 @@ static int Demux( demux_t *p_demux )
 {
     int ret = 1;
     demux_sys_t *p_sys = p_demux->p_sys;
-
-    /* Emit sylt-data meta on the first Demux call, after InputSourceMeta has
-     * already run and set title/artist/album. Doing this in Open would set the
-     * ITEM_PREPARSED flag prematurely and prevent those metadata passes. */
-    if( unlikely( !p_sys->sylt.b_meta_sent ) && p_sys->sylt.i_count > 0 )
-        SyltEmitMeta( p_demux );
 
     block_t *p_block_out = p_sys->p_packetized_data;
     if( p_block_out )
@@ -700,36 +662,39 @@ static int Demux( demux_t *p_demux )
             es_out_SetPCR( p_demux->out, p_block_out->i_dts );
         }
 
-        /* Send synchronized lyrics as subtitle blocks */
-        if( p_sys->sylt.i_count > 0 && p_block_out->i_dts != VLC_TICK_INVALID )
+        /* Send the lyrics lines as subtitles */
+        if( p_sys->lyrics.i_count > 0 && p_block_out->i_dts != VLC_TICK_INVALID )
         {
-            vlc_tick_t i_audio_time = p_block_out->i_dts; /* already offset-adjusted above */
-            for( size_t tk = 0; tk < p_sys->sylt.i_count; tk++ )
+            vlc_tick_t i_audio_time = p_block_out->i_dts;
+
+            for( size_t i = 0; i < p_sys->lyrics.i_count; i++ )
             {
-                sylt_track_t *p_tk = &p_sys->sylt.p_track[tk];
-                if( !p_tk->p_es )
-                    continue;
-                while( p_tk->i_current < p_tk->i_count )
+                lyrics_es_t *p_les = &p_sys->lyrics.p_es[i];
+                const struct vlc_lyrics_track *p_tk =
+                    vlc_lyrics_GetTrack( p_sys->lyrics.p_lyrics, p_les->i_track );
+
+                while( p_les->i_next < p_tk->count )
                 {
-                    const sylt_entry_t *e = &p_tk->p_entry[p_tk->i_current];
-                    if( VLC_TICK_0 + e->i_start > i_audio_time )
+                    const struct vlc_lyrics_line *p_line =
+                        &p_tk->lines[p_les->i_next];
+                    if( VLC_TICK_0 + p_line->time > i_audio_time )
                         break;
 
-                    size_t i_len = strlen( e->psz_text );
+                    size_t i_len = strlen( p_line->text );
                     block_t *p_spu = block_Alloc( i_len + 1 );
                     if( p_spu )
                     {
-                        memcpy( p_spu->p_buffer, e->psz_text, i_len + 1 );
+                        memcpy( p_spu->p_buffer, p_line->text, i_len + 1 );
                         p_spu->i_dts =
-                        p_spu->i_pts = VLC_TICK_0 + e->i_start;
-                        if( p_tk->i_current + 1 < p_tk->i_count )
-                            p_spu->i_length = p_tk->p_entry[p_tk->i_current + 1].i_start
-                                            - e->i_start;
+                        p_spu->i_pts = VLC_TICK_0 + p_line->time;
+                        if( p_les->i_next + 1 < p_tk->count )
+                            p_spu->i_length = p_tk->lines[p_les->i_next + 1].time
+                                            - p_line->time;
                         else
                             p_spu->i_length = VLC_TICK_FROM_SEC( 5 );
-                        es_out_Send( p_demux->out, p_tk->p_es, p_spu );
+                        es_out_Send( p_demux->out, p_les->p_es, p_spu );
                     }
-                    p_tk->i_current++;
+                    p_les->i_next++;
                 }
             }
         }
@@ -764,15 +729,11 @@ static void Close( vlc_object_t * p_this )
     for( size_t i=0; i< p_sys->chapters.i_count; i++ )
         vlc_seekpoint_Delete( p_sys->chapters.p_entry[i].p_seekpoint );
     TAB_CLEAN( p_sys->chapters.i_count, p_sys->chapters.p_entry );
-    for( size_t i = 0; i < p_sys->sylt.i_count; i++ )
-    {
-        sylt_track_t *p_tk = &p_sys->sylt.p_track[i];
-        for( size_t j = 0; j < p_tk->i_count; j++ )
-            free( p_tk->p_entry[j].psz_text );
-        TAB_CLEAN( p_tk->i_count, p_tk->p_entry );
-        free( p_tk->psz_language );
-    }
-    TAB_CLEAN( p_sys->sylt.i_count, p_sys->sylt.p_track );
+    TAB_CLEAN( p_sys->lyrics.i_count, p_sys->lyrics.p_es );
+    if( p_sys->lyrics.p_lyrics )
+        vlc_lyrics_Release( p_sys->lyrics.p_lyrics );
+    if( p_sys->lyrics.p_attachment )
+        vlc_input_attachment_Release( p_sys->lyrics.p_attachment );
     if( p_sys->mllt.p_bits )
         free( p_sys->mllt.p_bits );
     if( p_sys->p_meta )
@@ -796,20 +757,22 @@ static void PostSeekCleanup( demux_sys_t *p_sys, vlc_tick_t i_time )
     /* Reset chapter if any */
     p_sys->chapters.i_current = 0;
     p_sys->i_demux_flags |= INPUT_UPDATE_SEEKPOINT;
-    /* Reset synchronized lyrics position */
-    for( size_t tk = 0; tk < p_sys->sylt.i_count; tk++ )
+    /* Resume the lyrics at the line the seek landed on, so that it is sent
+     * again and the subtitle track is not left blank until the next one */
+    for( size_t i = 0; i < p_sys->lyrics.i_count; i++ )
     {
-        sylt_track_t *p_tk = &p_sys->sylt.p_track[tk];
-        p_tk->i_current = 0;
-        if( i_time >= 0 )
+        lyrics_es_t *p_les = &p_sys->lyrics.p_es[i];
+
+        if( i_time < 0 )
         {
-            for( size_t i = 0; i < p_tk->i_count; i++ )
-            {
-                if( VLC_TICK_0 + p_tk->p_entry[i].i_start > i_time )
-                    break;
-                p_tk->i_current = i;
-            }
+            p_les->i_next = 0;
+            continue;
         }
+
+        const struct vlc_lyrics_track *p_tk =
+            vlc_lyrics_GetTrack( p_sys->lyrics.p_lyrics, p_les->i_track );
+        ssize_t i_line = vlc_lyrics_track_FindLine( p_tk, i_time - VLC_TICK_0 );
+        p_les->i_next = i_line < 0 ? 0 : (size_t) i_line;
     }
 }
 
@@ -953,6 +916,24 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
 
             /* FIXME TODO: implement a high precision seek (with mp3 parsing)
              * needed for multi-input */
+            return VLC_SUCCESS;
+        }
+
+        case DEMUX_GET_ATTACHMENTS:
+        {
+            if( p_sys->lyrics.p_attachment == NULL )
+                return VLC_EGENERIC;
+
+            input_attachment_t ***ppp_attach =
+                va_arg( args, input_attachment_t *** );
+            int *pi_int = va_arg( args, int * );
+
+            *ppp_attach = vlc_alloc( 1, sizeof(input_attachment_t *) );
+            if( *ppp_attach == NULL )
+                return VLC_ENOMEM;
+            (*ppp_attach)[0] =
+                vlc_input_attachment_Hold( p_sys->lyrics.p_attachment );
+            *pi_int = 1;
             return VLC_SUCCESS;
         }
 
@@ -1412,6 +1393,264 @@ static int SeekByMlltTable( sync_table_t *mllt, vlc_tick_t *pi_time, uint64_t *p
     return 0;
 }
 
+static char * ID3ReadString( const uint8_t **pp, size_t *pi_remaining,
+                             uint8_t i_encoding, bool *pb_end )
+{
+    ssize_t i_len = ID3TextLength( *pp, *pi_remaining, i_encoding );
+    if( i_len < 0 )
+    {
+        *pb_end = true;
+        return NULL;
+    }
+
+    char *psz_allocated = NULL;
+    const char *psz = ID3TextConv( *pp, i_len, i_encoding, &psz_allocated );
+    if( psz_allocated == NULL && psz != NULL )
+        psz_allocated = strdup( psz );
+
+    const size_t i_skip = (size_t) i_len + ID3TextTerminatorSize( i_encoding );
+    *pp += i_skip;
+    *pi_remaining -= i_skip;
+    return psz_allocated;
+}
+
+/* One text, timestamp pair of a SYLT frame. Can be a line or syllabe */
+typedef struct
+{
+    char *psz_text;
+    vlc_tick_t i_time;
+} sylt_chunk_t;
+
+/* Appends a piece of text to the line being assembled, recording it as a timed
+ * word of that line. */
+static bool SyltAppend( char **ppsz_line, size_t *pi_len,
+                        struct vlc_lyrics_word **pp_words, size_t *pi_words,
+                        const char *psz, size_t i_len, vlc_tick_t i_time )
+{
+    if( i_len == 0 )
+        return true;
+
+    char *psz_line = realloc( *ppsz_line, *pi_len + i_len + 1 );
+    if( unlikely(psz_line == NULL) )
+        return false;
+    *ppsz_line = psz_line;
+
+    struct vlc_lyrics_word *p_words =
+        realloc( *pp_words, ( *pi_words + 1 ) * sizeof( *p_words ) );
+    if( unlikely(p_words == NULL) )
+        return false;
+    *pp_words = p_words;
+
+    p_words[*pi_words].time = i_time;
+    p_words[*pi_words].offset = *pi_len;
+    p_words[*pi_words].length = i_len;
+    ( *pi_words )++;
+
+    memcpy( &psz_line[*pi_len], psz, i_len );
+    *pi_len += i_len;
+    psz_line[*pi_len] = '\0';
+    return true;
+}
+
+/* Turns the fragments of a SYLT frame into lines and words. */
+static void SyltEmitChunks( demux_t *p_demux, ssize_t i_track,
+                            const sylt_chunk_t *p_chunks, size_t i_chunks )
+{
+    demux_sys_t *p_sys = p_demux->p_sys;
+    bool b_grouped = false;
+
+    for( size_t i = 0; i < i_chunks && !b_grouped; i++ )
+        b_grouped = strchr( p_chunks[i].psz_text, '\n' ) != NULL;
+
+    if( !b_grouped )
+    {
+        for( size_t i = 0; i < i_chunks; i++ )
+            vlc_lyrics_AddLine( p_sys->lyrics.p_lyrics, i_track,
+                                p_chunks[i].psz_text, p_chunks[i].i_time );
+        return;
+    }
+
+    char *psz_line = NULL;
+    size_t i_len = 0;
+    struct vlc_lyrics_word *p_words = NULL;
+    size_t i_words = 0;
+    vlc_tick_t i_line_time = VLC_TICK_INVALID;
+
+    for( size_t i = 0; i <= i_chunks; i++ )
+    {
+        /* One extra round to flush the line the last fragment left open */
+        const char *psz_seg = i < i_chunks ? p_chunks[i].psz_text : "\n";
+        const vlc_tick_t i_time = i < i_chunks ? p_chunks[i].i_time
+                                               : VLC_TICK_INVALID;
+        for( ;; )
+        {
+            const char *psz_nl = strchr( psz_seg, '\n' );
+            size_t i_seg = psz_nl != NULL ? (size_t)( psz_nl - psz_seg )
+                                          : strlen( psz_seg );
+
+            /* A carriage return belongs to the separator, not to the text */
+            while( i_seg > 0 && psz_seg[i_seg - 1] == '\r' )
+                i_seg--;
+
+            if( i_seg > 0 && i_len == 0 )
+                i_line_time = i_time;
+            if( !SyltAppend( &psz_line, &i_len, &p_words, &i_words,
+                             psz_seg, i_seg, i_time ) )
+                goto end;
+
+            if( psz_nl == NULL )
+                break;
+
+            if( i_len > 0 )
+            {
+                const bool b_words = i_words > 1;
+                int ret = vlc_lyrics_AddTimedLine( p_sys->lyrics.p_lyrics,
+                                                   i_track, psz_line,
+                                                   i_line_time,
+                                                   b_words ? p_words : NULL,
+                                                   b_words ? i_words : 0 );
+                /* Rather lose the word timing than the whole line */
+                if( ret == VLC_EINVAL && b_words )
+                    vlc_lyrics_AddLine( p_sys->lyrics.p_lyrics, i_track,
+                                        psz_line, i_line_time );
+            }
+            i_len = 0;
+            i_words = 0;
+            i_line_time = VLC_TICK_INVALID;
+            psz_seg = psz_nl + 1;
+        }
+    }
+
+end:
+    free( psz_line );
+    free( p_words );
+}
+
+static void ParseLyricsFrame( demux_t *p_demux, uint32_t i_tag,
+                              const uint8_t *p_payload, size_t i_payload )
+{
+    demux_sys_t *p_sys = p_demux->p_sys;
+    const bool b_timed = ( i_tag == VLC_FOURCC('S', 'Y', 'L', 'T') );
+
+    /* SYLT frame: encoding(1) + language(3) + timestamp_fmt(1) + content_type(1) + descriptor(null-term) + events */
+    const size_t i_header = b_timed ? 6 : 4;
+    if( i_payload < i_header )
+        return;
+
+    const uint8_t i_encoding = p_payload[0];
+
+    char psz_language[4];
+    memcpy( psz_language, &p_payload[1], 3 );
+    psz_language[3] = '\0';
+
+    if( b_timed )
+    {
+        if( p_payload[4] != 0x02 ) /* only millisecond timestamps */
+        {
+            msg_Warn( p_demux, "SYLT: unsupported timestamp format %u, skipping",
+                      (unsigned) p_payload[4] );
+            return;
+        }
+        /* skip other content types */
+        if( p_payload[5] > 0x02 )
+            return;
+    }
+
+    const uint8_t *p = &p_payload[i_header];
+    size_t i_remaining = i_payload - i_header;
+
+    bool b_end = false;
+    char *psz_description = ID3ReadString( &p, &i_remaining, i_encoding, &b_end );
+    if( b_end )
+        return;
+
+    if( p_sys->lyrics.p_lyrics == NULL )
+        p_sys->lyrics.p_lyrics = vlc_lyrics_New();
+
+    ssize_t i_track = -1;
+    if( p_sys->lyrics.p_lyrics != NULL )
+        i_track = vlc_lyrics_GetOrCreateTrack( p_sys->lyrics.p_lyrics,
+                                               psz_language, psz_description,
+                                               b_timed );
+    free( psz_description );
+    if( i_track < 0 )
+        return;
+
+    if( !b_timed )
+    {
+        char *psz_allocated = NULL;
+        const char *psz_text = ID3TextConv( p, i_remaining, i_encoding,
+                                            &psz_allocated );
+        if( psz_text != NULL && *psz_text != '\0' )
+        {
+            vlc_lyrics_AddLine( p_sys->lyrics.p_lyrics, i_track, psz_text,
+                                VLC_TICK_INVALID );
+
+            if( p_sys->p_meta == NULL )
+                p_sys->p_meta = vlc_meta_New();
+            if( p_sys->p_meta != NULL )
+            {
+                char psz_key[32];
+                snprintf( psz_key, sizeof(psz_key), "Lyrics:%s", psz_language );
+                vlc_meta_SetExtra( p_sys->p_meta, psz_key, psz_text );
+            }
+        }
+        free( psz_allocated );
+        return;
+    }
+
+    sylt_chunk_t *p_chunks = NULL;
+    size_t i_chunks = 0;
+
+    for( ;; )
+    {
+        ssize_t i_len = ID3TextLength( p, i_remaining, i_encoding );
+        if( i_len < 0 )
+            break;
+
+        const size_t i_skip = (size_t) i_len + ID3TextTerminatorSize( i_encoding );
+        if( i_remaining - i_skip < 4 )
+            break;
+
+        char *psz_allocated = NULL;
+        const char *psz_text = ID3TextConv( p, i_len, i_encoding,
+                                            &psz_allocated );
+        p += i_skip;
+        i_remaining -= i_skip;
+
+        const uint32_t i_ms = GetDWBE( p );
+        p += 4;
+        i_remaining -= 4;
+
+        if( psz_text != NULL )
+        {
+            /* Whether a fragment is a line or a word is only known once the
+             * whole frame has been read, so gather them all first. */
+            sylt_chunk_t *p_new =
+                realloc( p_chunks, ( i_chunks + 1 ) * sizeof( *p_new ) );
+            char *psz_copy = psz_allocated != NULL ? psz_allocated
+                                                   : strdup( psz_text );
+            if( p_new != NULL )
+                p_chunks = p_new;
+            if( p_new == NULL || psz_copy == NULL )
+            {
+                free( psz_copy );
+                break;
+            }
+            p_chunks[i_chunks].psz_text = psz_copy;
+            p_chunks[i_chunks].i_time = VLC_TICK_FROM_MS( i_ms );
+            i_chunks++;
+            psz_allocated = NULL;
+        }
+    }
+
+    SyltEmitChunks( p_demux, i_track, p_chunks, i_chunks );
+
+    for( size_t i = 0; i < i_chunks; i++ )
+        free( p_chunks[i].psz_text );
+    free( p_chunks );
+}
+
 static int ID3TAG_Parse_Handler( uint32_t i_tag, const uint8_t *p_payload, size_t i_payload, void *p_priv )
 {
     demux_t *p_demux = (demux_t *) p_priv;
@@ -1482,201 +1721,10 @@ static int ID3TAG_Parse_Handler( uint32_t i_tag, const uint8_t *p_payload, size_
             TAB_APPEND(p_sys->chapters.i_count, p_sys->chapters.p_entry, e);
         } else free( psz_title );
     }
-    else if( i_tag == VLC_FOURCC('S', 'Y', 'L', 'T') )
+    else if( i_tag == VLC_FOURCC('S', 'Y', 'L', 'T') ||
+             i_tag == VLC_FOURCC('U', 'S', 'L', 'T') )
     {
-        /* SYLT frame: encoding(1) + language(3) + timestamp_fmt(1) + content_type(1) + descriptor(null-term) + events */
-        if( i_payload < 6 )
-            return VLC_SUCCESS;
-
-        const uint8_t i_encoding = p_payload[0];
-        const uint8_t i_timestamp_fmt = p_payload[4];
-        if( i_timestamp_fmt != 0x02 ) /* only millisecond timestamps are supported */
-        {
-            msg_Warn( p_demux, "SYLT: unsupported timestamp format %u, skipping",
-                      (unsigned) i_timestamp_fmt );
-            return VLC_SUCCESS;
-        }
-
-        /* Parse language (3-byte ISO 639-2 code, may not be null-terminated) */
-        char psz_language[4];
-        memcpy( psz_language, p_payload + 1, 3 );
-        psz_language[3] = '\0';
-
-        /* Find or create a track entry for this language */
-        sylt_track_t *p_tk = NULL;
-        for( size_t i = 0; i < p_sys->sylt.i_count; i++ )
-        {
-            if( strcmp( p_sys->sylt.p_track[i].psz_language
-                            ? p_sys->sylt.p_track[i].psz_language : "",
-                        psz_language ) == 0 )
-            {
-                p_tk = &p_sys->sylt.p_track[i];
-                break;
-            }
-        }
-        if( !p_tk )
-        {
-            sylt_track_t new_tk;
-            new_tk.psz_language = strdup( psz_language );
-            new_tk.i_count   = 0;
-            new_tk.i_current = 0;
-            new_tk.p_entry   = NULL;
-            new_tk.p_es      = NULL;
-            TAB_APPEND( p_sys->sylt.i_count, p_sys->sylt.p_track, new_tk );
-            p_tk = &p_sys->sylt.p_track[p_sys->sylt.i_count - 1];
-        }
-
-        /* skip fixed header: language(3) + timestamp_fmt(1) + content_type(1) = 5 bytes after encoding */
-        const uint8_t *p = p_payload + 6;
-        size_t i_remaining = i_payload - 6;
-
-        bool b_utf16 = (i_encoding == 0x01 || i_encoding == 0x02);
-
-        /* Skip content descriptor (null-terminated string) */
-        if( b_utf16 ) /* UTF-16 */
-        {
-            while( i_remaining >= 2 && (p[0] != 0 || p[1] != 0) )
-            {
-                p += 2;
-                i_remaining -= 2;
-            }
-            if( i_remaining < 2 )
-                return VLC_SUCCESS;
-            p += 2;
-            i_remaining -= 2;
-        }
-        else /* ISO-8859-1 or UTF-8 */
-        {
-            while( i_remaining > 0 && *p != 0 )
-            {
-                p++;
-                i_remaining--;
-            }
-            if( i_remaining == 0 )
-                return VLC_SUCCESS;
-            p++;
-            i_remaining--;
-        }
-
-        /* Parse repeated [text (null-terminated)] [timestamp (4 bytes BE ms)] */
-        while( i_remaining > 4 )
-        {
-            const uint8_t *p_text_start = p;
-            size_t i_text_len = 0;
-
-            if( b_utf16 ) /* UTF-16 */
-            {
-                while( i_remaining - i_text_len >= 2 + 4 &&
-                       (p_text_start[i_text_len] != 0 || p_text_start[i_text_len + 1] != 0) )
-                    i_text_len += 2;
-
-                if( i_remaining - i_text_len < 2 + 4 )
-                    break;
-                i_text_len += 2; /* include null terminator */
-            }
-            else /* ISO-8859-1 or UTF-8 */
-            {
-                while( i_text_len < i_remaining - 4 && p_text_start[i_text_len] != 0 )
-                    i_text_len++;
-
-                if( i_text_len >= i_remaining - 4 )
-                    break;
-                i_text_len++; /* include null terminator */
-            }
-
-            /* Convert text to UTF-8 */
-            char *psz_allocated = NULL;
-            size_t i_null_size = b_utf16 ? 2 : 1;
-            const char *psz_text = ID3TextConv( p_text_start, i_text_len - i_null_size,
-                                                i_encoding, &psz_allocated );
-
-            p += i_text_len;
-            i_remaining -= i_text_len;
-
-            uint32_t i_timestamp_ms = GetDWBE( p );
-            p += 4;
-            i_remaining -= 4;
-
-            if( psz_text && *psz_text )
-            {
-                sylt_entry_t entry;
-                entry.i_start = VLC_TICK_FROM_MS( i_timestamp_ms );
-                entry.psz_text = psz_allocated ? psz_allocated : strdup( psz_text );
-                if( entry.psz_text )
-                    TAB_APPEND( p_tk->i_count, p_tk->p_entry, entry );
-                else
-                    free( psz_allocated );
-            }
-            else
-            {
-                free( psz_allocated );
-            }
-        }
-    }
-    else if( i_tag == VLC_FOURCC('U', 'S', 'L', 'T') )
-    {
-        /* USLT frame: encoding(1) + language(3) + content descriptor + lyrics/text */
-        if( i_payload < 4 )
-            return VLC_SUCCESS;
-
-        const uint8_t i_encoding = p_payload[0];
-        char psz_language[4];
-        memcpy( psz_language, p_payload + 1, 3 );
-        psz_language[3] = '\0';
-
-        const uint8_t *p = p_payload + 4;
-        size_t i_remaining = i_payload - 4;
-
-        bool b_utf16 = (i_encoding == 0x01 || i_encoding == 0x02);
-
-        if( b_utf16 )
-        {
-            while( i_remaining >= 2 && (p[0] != 0 || p[1] != 0) )
-            {
-                p += 2;
-                i_remaining -= 2;
-            }
-            if( i_remaining < 2 )
-                return VLC_SUCCESS;
-            p += 2;
-            i_remaining -= 2;
-        }
-        else
-        {
-            while( i_remaining > 0 && *p != 0 )
-            {
-                p++;
-                i_remaining--;
-            }
-            if( i_remaining == 0 )
-                return VLC_SUCCESS;
-            p++;
-            i_remaining--;
-        }
-
-        char *psz_allocated = NULL;
-        const char *psz_text = ID3TextConv( p, i_remaining, i_encoding, &psz_allocated );
-        if( psz_text && *psz_text )
-        {
-            if( p_sys->p_meta == NULL )
-                p_sys->p_meta = vlc_meta_New();
-            if( p_sys->p_meta != NULL )
-            {
-                char psz_key[32];
-                snprintf( psz_key, sizeof(psz_key), "Lyrics:%s", psz_language );
-                vlc_meta_SetExtra( p_sys->p_meta, psz_key, psz_text );
-
-                /* Provide a synthetic uslt-data entry at t=0 so the Qt lyrics
-                 * panel can display USLT text using the same timed-lyrics path. */
-                char *psz_sylt;
-                if( asprintf( &psz_sylt, "0\x1F%s\x1E", psz_text ) >= 0 )
-                {
-                    vlc_meta_SetExtra( p_sys->p_meta, "uslt-data", psz_sylt );
-                    free( psz_sylt );
-                }
-            }
-        }
-        free( psz_allocated );
+        ParseLyricsFrame( p_demux, i_tag, p_payload, i_payload );
     }
 
     return VLC_SUCCESS;
