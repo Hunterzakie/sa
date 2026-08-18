@@ -101,14 +101,13 @@ T.Control {
 
     ListView.delayRemove: dragHandler.active
 
-    T.ToolTip.visible: ( visible && (visualFocus || hovered) &&
-                         (textInfoColumn.implicitWidth > textInfoColumn.width) )
+    T.ToolTip.visible: ( visible && (visualFocus || hovered) && !(contentItem?.inhibitToolTip) )
 
     // NOTE: This is useful for keyboard navigation on a column, to avoid blocking visibility on
     //       the surrounding items.
     T.ToolTip.timeout: (visualFocus) ? VLCStyle.duration_humanMoment : 0
 
-    T.ToolTip.text: (textInfo.text + '\n' + textArtist.text)
+    T.ToolTip.text: contentItem?.toolTipText ?? ""
 
     T.ToolTip.delay: VLCStyle.delayToolTipAppear
 
@@ -173,6 +172,9 @@ T.Control {
         spacing: 0
 
         property alias artworkTextureProvider: artwork.effectiveTextureProviderItem
+
+        property string toolTipText: (textInfo.text + '\n' + textArtist.text)
+        property bool inhibitToolTip: (textInfoColumn.implicitWidth <= textInfoColumn.width)
 
         Item {
             id: artworkItem
