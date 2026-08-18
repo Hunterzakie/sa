@@ -381,6 +381,13 @@ vlc_tests += {
 }
 
 vlc_tests += {
+    'name' : 'test_src_misc_lyrics',
+    'sources' : files('misc/lyrics.c'),
+    'suite' : ['src', 'test_src'],
+    'link_with' : [libvlc, libvlccore],
+}
+
+vlc_tests += {
     'name' : 'test_src_misc_keystore',
     'sources' : files('misc/keystore.c'),
     'suite' : ['src', 'test_src'],

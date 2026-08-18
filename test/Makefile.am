@@ -66,6 +66,7 @@ check_PROGRAMS = \
 	test_src_misc_chroma_probe \
 	test_src_misc_epg \
 	test_src_misc_keystore \
+	test_src_misc_lyrics \
 	test_src_misc_image \
 	test_src_misc_viewpoint \
 	test_src_video_output \
@@ -312,6 +313,8 @@ test_src_misc_epg_SOURCES = src/misc/epg.c
 test_src_misc_epg_LDADD = $(LIBVLCCORE) $(LIBVLC)
 test_src_misc_keystore_SOURCES = src/misc/keystore.c
 test_src_misc_keystore_LDADD = $(LIBVLCCORE) $(LIBVLC)
+test_src_misc_lyrics_SOURCES = src/misc/lyrics.c
+test_src_misc_lyrics_LDADD = $(LIBVLCCORE) $(LIBVLC)
 test_src_misc_image_cvpx_SOURCES = src/misc/image_cvpx.c
 test_src_misc_image_cvpx_LDADD = $(LIBVLCCORE) $(LIBVLC) ../modules/libvlc_vtutils.la
 test_src_misc_image_cvpx_LDFLAGS = $(AM_LDFLAGS) -Wl,-framework,CoreVideo
