@@ -36,6 +36,7 @@
 #include <vlc_picture.h>
 
 #include <math.h>                                          /* exp(), sqrt() */
+#include <stdckdint.h>
 
 /*****************************************************************************
  * Module descriptor
@@ -98,11 +99,13 @@ typedef struct
     type_t *pt_scale;
 } filter_sys_t;
 
-static void gaussianblur_InitDistribution( filter_sys_t *p_sys )
+static int gaussianblur_InitDistribution( filter_sys_t *p_sys )
 {
     double f_sigma = p_sys->f_sigma;
     int i_dim = (int)(3.*f_sigma);
-    type_t *pt_distribution = xmalloc( (2*i_dim+1) * sizeof( type_t ) );
+    type_t *pt_distribution = vlc_alloc( 2*i_dim+1, sizeof( type_t ) );
+    if( pt_distribution == NULL )
+        return VLC_ENOMEM;
 
     for( int x = -i_dim; x <= i_dim; x++ )
     {
@@ -118,6 +121,8 @@ static void gaussianblur_InitDistribution( filter_sys_t *p_sys )
     }
     p_sys->i_dim = i_dim;
     p_sys->pt_distribution = pt_distribution;
+
+    return VLC_SUCCESS;
 }
 
 static int Create( filter_t *p_filter )
@@ -158,7 +163,11 @@ static int Create( filter_t *p_filter )
         msg_Err( p_filter, "sigma must be greater than zero" );
         return VLC_EGENERIC;
     }
-    gaussianblur_InitDistribution( p_sys );
+    if( gaussianblur_InitDistribution( p_sys ) != VLC_SUCCESS )
+    {
+        free( p_sys );
+        return VLC_ENOMEM;
+    }
     msg_Dbg( p_filter, "gaussian distribution is %d pixels wide",
              p_sys->i_dim*2+1 );
 
@@ -187,22 +196,29 @@ static void Filter( filter_t *p_filter, picture_t *p_pic, picture_t *p_outpic )
     type_t *pt_scale;
     const type_t *pt_distribution = p_sys->pt_distribution;
 
+    size_t i_y_plane_bytes;
+    if( ckd_mul( &i_y_plane_bytes, p_pic->p[Y_PLANE].i_visible_lines, p_pic->p[Y_PLANE].i_pitch ) ||
+        ckd_mul( &i_y_plane_bytes, i_y_plane_bytes, sizeof( type_t ) ) )
+        return; // FIXME: nullify output ?
+
     if( !p_sys->pt_buffer )
     {
-        p_sys->pt_buffer = realloc_or_free( p_sys->pt_buffer,
-                               p_pic->p[Y_PLANE].i_visible_lines *
-                               p_pic->p[Y_PLANE].i_pitch * sizeof( type_t ) );
+        p_sys->pt_buffer = realloc_or_free( p_sys->pt_buffer, i_y_plane_bytes );
+        if( !p_sys->pt_buffer )
+            return;
     }
 
     pt_buffer = p_sys->pt_buffer;
     if( !p_sys->pt_scale )
     {
+        p_sys->pt_scale = realloc_or_free( p_sys->pt_scale, i_y_plane_bytes );
+        if( !p_sys->pt_scale )
+            return;
+        pt_scale = p_sys->pt_scale;
+
         const int i_visible_lines = p_pic->p[Y_PLANE].i_visible_lines;
         const int i_visible_pitch = p_pic->p[Y_PLANE].i_visible_pitch;
         const int i_pitch = p_pic->p[Y_PLANE].i_pitch;
-
-        p_sys->pt_scale = xmalloc( i_visible_lines * i_pitch * sizeof( type_t ) );
-        pt_scale = p_sys->pt_scale;
 
         for( int i_line = 0; i_line < i_visible_lines; i_line++ )
         {
