@@ -102,6 +102,11 @@ QString PlaylistItem::getDiscNumber() const
     return d->discNumber;
 }
 
+QString PlaylistItem::getDate() const
+{
+    return d->date;
+}
+
 void PlaylistItem::sync() {
     input_item_t *media = inputItem();
     assert(media);
@@ -124,6 +129,7 @@ void PlaylistItem::sync() {
         d->trackId = vlc_meta_Get(media->p_meta, vlc_meta_TrackID);
         d->rating = vlc_meta_Get(media->p_meta, vlc_meta_Rating);
         d->discNumber = vlc_meta_Get(media->p_meta, vlc_meta_DiscNumber);
+        d->date = vlc_meta_Get(media->p_meta, vlc_meta_Date);
     }
 
     if (d->title.isNull())

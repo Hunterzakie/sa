@@ -68,6 +68,7 @@ T.Control {
     required property string trackId
     required property string rating
     required property string discNumber
+    required property string date
 
     // Optional
     property var contextMenu
