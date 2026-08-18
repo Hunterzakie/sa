@@ -77,6 +77,11 @@ QString PlaylistItem::getTrackNumber() const
     return d->trackNumber;
 }
 
+QString PlaylistItem::getGenre() const
+{
+    return d->genre;
+}
+
 void PlaylistItem::sync() {
     input_item_t *media = inputItem();
     assert(media);
@@ -94,6 +99,7 @@ void PlaylistItem::sync() {
         d->album   = vlc_meta_Get(media->p_meta, vlc_meta_Album);
         d->artwork = vlc_meta_Get(media->p_meta, vlc_meta_ArtworkURL);
         d->trackNumber = vlc_meta_Get(media->p_meta, vlc_meta_TrackNumber);
+        d->genre   = vlc_meta_Get(media->p_meta, vlc_meta_Genre);
     }
 
     if (d->title.isNull())

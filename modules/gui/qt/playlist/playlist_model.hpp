@@ -53,7 +53,8 @@ public:
         ArtworkRole,
         UrlRole,
         PreparsedRole,
-        TrackNumberRole
+        TrackNumberRole,
+        GenreRole
     };
     Q_ENUM(Roles);
 

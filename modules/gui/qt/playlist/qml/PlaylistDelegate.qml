@@ -63,6 +63,7 @@ T.Control {
     required property var duration // TODO: Qt 6.2 can not use value type vlcTick
     required property bool preparsed
     required property string trackNumber
+    required property string genre
 
     // Optional
     property var contextMenu
