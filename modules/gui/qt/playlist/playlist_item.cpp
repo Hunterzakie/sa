@@ -72,6 +72,11 @@ QUrl PlaylistItem::getUrl() const
     return d->url;
 }
 
+QString PlaylistItem::getTrackNumber() const
+{
+    return d->trackNumber;
+}
+
 void PlaylistItem::sync() {
     input_item_t *media = inputItem();
     assert(media);
@@ -88,6 +93,7 @@ void PlaylistItem::sync() {
         d->artist  = vlc_meta_Get(media->p_meta, vlc_meta_Artist);
         d->album   = vlc_meta_Get(media->p_meta, vlc_meta_Album);
         d->artwork = vlc_meta_Get(media->p_meta, vlc_meta_ArtworkURL);
+        d->trackNumber = vlc_meta_Get(media->p_meta, vlc_meta_TrackNumber);
     }
 
     if (d->title.isNull())

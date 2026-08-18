@@ -294,7 +294,8 @@ PlaylistListModel::roleNames() const
         { ArtistRole , QByteArrayLiteral("artist") },
         { AlbumRole  , QByteArrayLiteral("album") },
         { ArtworkRole, QByteArrayLiteral("artwork") },
-        { UrlRole, QByteArrayLiteral("url") }
+        { UrlRole, QByteArrayLiteral("url") },
+        { TrackNumberRole, QByteArrayLiteral("trackNumber") }
     };
 }
 
@@ -507,6 +508,8 @@ PlaylistListModel::data(const QModelIndex &index, int role) const
         return d->m_items[row].getUrl();
     case PlaylistListModel::PreparsedRole:
         return d->m_items[row].preparsed();
+    case TrackNumberRole:
+        return d->m_items[row].getTrackNumber();
     default:
         return {};
     }
