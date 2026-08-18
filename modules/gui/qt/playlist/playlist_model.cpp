@@ -298,7 +298,8 @@ PlaylistListModel::roleNames() const
         { TrackNumberRole, QByteArrayLiteral("trackNumber") },
         { GenreRole, QByteArrayLiteral("genre") },
         { DescriptionRole, QByteArrayLiteral("description") },
-        { TrackIdRole, QByteArrayLiteral("trackId")}
+        { TrackIdRole, QByteArrayLiteral("trackId")},
+        { RatingRole, QByteArrayLiteral("rating") }
     };
 }
 
@@ -519,6 +520,8 @@ PlaylistListModel::data(const QModelIndex &index, int role) const
         return d->m_items[row].getDescription();
     case TrackIdRole:
         return d->m_items[row].getTrackId();
+    case RatingRole:
+        return d->m_items[row].getRating();
     default:
         return {};
     }

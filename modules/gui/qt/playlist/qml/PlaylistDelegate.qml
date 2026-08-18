@@ -66,6 +66,7 @@ T.Control {
     required property string genre
     required property string description
     required property string trackId
+    required property string rating
 
     // Optional
     property var contextMenu
