@@ -87,6 +87,11 @@ QString PlaylistItem::getDescription() const
     return d->description;
 }
 
+QString PlaylistItem::getTrackId() const
+{
+    return d->trackId;
+}
+
 void PlaylistItem::sync() {
     input_item_t *media = inputItem();
     assert(media);
@@ -106,6 +111,7 @@ void PlaylistItem::sync() {
         d->trackNumber = vlc_meta_Get(media->p_meta, vlc_meta_TrackNumber);
         d->genre   = vlc_meta_Get(media->p_meta, vlc_meta_Genre);
         d->description = vlc_meta_Get(media->p_meta, vlc_meta_Description);
+        d->trackId = vlc_meta_Get(media->p_meta, vlc_meta_TrackID);
     }
 
     if (d->title.isNull())

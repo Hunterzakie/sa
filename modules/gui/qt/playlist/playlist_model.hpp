@@ -55,7 +55,8 @@ public:
         PreparsedRole,
         TrackNumberRole,
         GenreRole,
-        DescriptionRole
+        DescriptionRole,
+        TrackIdRole
     };
     Q_ENUM(Roles);
 
