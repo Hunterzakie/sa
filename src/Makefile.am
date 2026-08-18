@@ -69,6 +69,7 @@ pluginsinclude_HEADERS.h = \
 	../include/vlc_interrupt.h \
 	../include/vlc_keystore.h \
 	../include/vlc_list.h \
+	../include/vlc_lyrics.h \
 	../include/vlc_media_library.h \
 	../include/vlc_media_source.h \
 	../include/vlc_memstream.h \
@@ -411,6 +412,7 @@ libvlccore_la_SOURCES = \
 	misc/interrupt.h \
 	misc/interrupt.c \
 	misc/keystore.c \
+	misc/lyrics.c \
 	misc/rcu.h \
 	misc/rcu.c \
 	misc/renderer_discovery.c \

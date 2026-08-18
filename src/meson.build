@@ -275,6 +275,7 @@ libvlccore_sources_base = files(
     'misc/interrupt.h',
     'misc/interrupt.c',
     'misc/keystore.c',
+    'misc/lyrics.c',
     'misc/renderer_discovery.c',
     'misc/threads.c',
     'misc/cpu.c',

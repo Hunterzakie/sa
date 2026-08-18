@@ -67,6 +67,7 @@ install_headers(
     'vlc_keystore.h',
     'vlc_list.h',
     'vlc_list.hpp',
+    'vlc_lyrics.h',
     'vlc_hash.h',
     'vlc_media_library.h',
     'vlc_media_source.h',
