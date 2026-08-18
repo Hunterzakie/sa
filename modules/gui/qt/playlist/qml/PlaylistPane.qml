@@ -55,6 +55,9 @@ T.Pane {
 
     property alias view: listView
 
+    // Detailed mode, akin to VLC 3.0's "Detailed List":
+    property bool detailed: MainCtx.playlistDetailed
+
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
                             implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
@@ -150,6 +153,19 @@ T.Pane {
                     color: theme.fg.primary
                     font.weight: Font.Bold
                     font.pixelSize: VLCStyle.dp(24, VLCStyle.scale)
+                }
+
+                Widgets.IconToolButton {
+                    text: root.detailed ? VLCIcons.list
+                                        : VLCIcons.ic_fluent_apps_list_detail_24_regular
+
+                    description: qsTr("Detailed list")
+
+                    font.pixelSize: VLCStyle.icon_banner
+
+                    onClicked: {
+                        MainCtx.playlistDetailed = !MainCtx.playlistDetailed
+                    }
                 }
 
                 Widgets.SortControl {
@@ -261,66 +277,377 @@ T.Pane {
             implicitHeight: VLCStyle.margin_xsmall
         }
 
-        RowLayout {
-            visible: listView.count !== 0
+        Loader {
+            id: headerLoader
 
+            z: 1
+
+            active: listView.count !== 0
+            visible: active
+
+            Layout.fillWidth: true
             Layout.fillHeight: false
             Layout.leftMargin: VLCStyle.margin_normal
             Layout.rightMargin: Math.max(listView.ScrollBar.vertical.width, VLCStyle.margin_normal)
 
-            spacing: VLCStyle.margin_large
+            sourceComponent: root.detailed ? detailedHeaderComponent : normalHeaderComponent
 
-            Widgets.IconLabel {
-                // play queue cover column
-                Layout.preferredWidth: VLCStyle.icon_playlistArt
+            Component {
+                id: normalHeaderComponent
 
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                text: VLCIcons.album_cover
-                font.pixelSize: VLCStyle.icon_playlistHeader
+                RowLayout {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
 
-                color: theme.fg.secondary
+                    spacing: VLCStyle.margin_large
 
-                Accessible.role: Accessible.ColumnHeader
-                Accessible.name: qsTr("Cover")
-                Accessible.ignored: false
+                    Widgets.IconLabel {
+                        // play queue cover column
+                        Layout.preferredWidth: VLCStyle.icon_playlistArt
+
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        text: VLCIcons.album_cover
+                        font.pixelSize: VLCStyle.icon_playlistHeader
+
+                        color: theme.fg.secondary
+
+                        Accessible.role: Accessible.ColumnHeader
+                        Accessible.name: qsTr("Cover")
+                        Accessible.ignored: false
+                    }
+
+                    //Use Text here as we're redefining its Accessible.role
+                    Text {
+                        Layout.fillWidth: true
+
+                        elide: Text.ElideRight
+                        font.pixelSize: VLCStyle.fontSize_normal
+                        textFormat: Text.PlainText
+
+                        verticalAlignment: Text.AlignVCenter
+                        text: qsTr("Title")
+                        color: theme.fg.secondary
+
+                        Accessible.role: Accessible.ColumnHeader
+                        Accessible.name: text
+                    }
+
+                    Widgets.IconLabel {
+                        Layout.preferredWidth: durationMetric.width
+
+                        text: VLCIcons.time
+                        color: theme.fg.secondary
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: VLCStyle.icon_playlistHeader
+
+                        Accessible.role: Accessible.ColumnHeader
+                        Accessible.name: qsTr("Duration")
+                        Accessible.ignored: false
+
+                        TextMetrics {
+                            id: durationMetric
+
+                            font.weight: Font.DemiBold
+                            font.pixelSize: VLCStyle.fontSize_normal
+                            text: "00:00"
+                        }
+                    }
+                }
             }
 
-            //Use Text here as we're redefining its Accessible.role
-            Text {
-                Layout.fillWidth: true
+            Component {
+                id: detailedHeaderComponent
 
-                elide: Text.ElideRight
-                font.pixelSize: VLCStyle.fontSize_normal
-                textFormat: Text.PlainText
+                T.SplitView {
+                    id: splitView
 
-                verticalAlignment: Text.AlignVCenter
-                text: qsTr("Title")
-                color: theme.fg.secondary
+                    anchors.left: parent.left
+                    anchors.right: parent.right
 
-                Accessible.role: Accessible.ColumnHeader
-                Accessible.name: text
-            }
+                    // FIXME: We should not need this normally, but `SplitView` does not calculate
+                    //        implicit height at the moment (horizontal mode):
+                    height: VLCStyle.fontSize_normal + (2 * VLCStyle.margin_xxsmall)
 
-            Widgets.IconLabel {
-                Layout.preferredWidth: durationMetric.width
+                    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
+                                            implicitContentWidth + leftPadding + rightPadding)
+                    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
+                                             implicitContentHeight + topPadding + bottomPadding)
 
-                text: VLCIcons.time
-                color: theme.fg.secondary
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                font.pixelSize: VLCStyle.icon_playlistHeader
+                    property real contentTextHorizontalPadding: VLCStyle.margin_xxsmall
+                    property real handleWidth: MainCtx.usingTouch ? VLCStyle.dp(6, VLCStyle.scale)
+                                                                  : VLCStyle.dp(3, VLCStyle.scale)
 
-                Accessible.role: Accessible.ColumnHeader
-                Accessible.name: qsTr("Duration")
-                Accessible.ignored: false
+                    readonly property string columnsSettingKey: "Playlist/DetailedHeader/Columns"
+                    readonly property string stateSettingKey: "Playlist/DetailedHeader/State"
 
-                TextMetrics {
-                    id: durationMetric
+                    property alias titleItem: titleItem
 
-                    font.weight: Font.DemiBold
-                    font.pixelSize: VLCStyle.fontSize_normal
-                    text: "00:00"
+                    // You can access the items inside split view through this (cached) property,
+                    // which is useful to get the width to match in the delegate:
+                    readonly property var headerItemMap: {
+                        let ret = {}
+
+                        for (let i in contentChildren) { // for .. of is broken in Qt 6.2
+                            const item = contentChildren[i]
+                            if (item) {
+                                ret[item.objectName] = item
+                            }
+                        }
+
+                        return ret
+                    }
+
+                    SelectableQmlPropertyMap {
+                        id: headerMap
+
+                        Component.onCompleted: {
+                            // The order should match with the detailed delegate for proper x alignment (`PlaylistDetailedDelegate`):
+                            headerMap.duration = { role: PlaylistListModel.DurationRole,
+                                                   actionText: qsTr("Duration"),
+                                                   sortKey: PlaylistController.SORT_KEY_DURATION }
+                            headerMap.artist = { role: PlaylistListModel.ArtistRole,
+                                                 actionText: qsTr("Artist"),
+                                                 sortKey: PlaylistController.SORT_KEY_ARTIST }
+                            headerMap.genre = { role: PlaylistListModel.GenreRole,
+                                                actionText: qsTr("Genre"),
+                                                sortKey: PlaylistController.SORT_KEY_GENRE }
+                            headerMap.album = { role: PlaylistListModel.AlbumRole,
+                                                actionText: qsTr("Album"),
+                                                sortKey: PlaylistController.SORT_KEY_ALBUM }
+                            headerMap.trackNumber = { role: PlaylistListModel.TrackNumberRole,
+                                                      actionText: qsTr("Track number"),
+                                                      sortKey: PlaylistController.SORT_KEY_TRACK_NUMBER }
+                            headerMap.description = { role: PlaylistListModel.DescriptionRole,
+                                                      actionText: qsTr("Description"),
+                                                      /* sortKey: PlaylistController.SORT_KEY_DESCRIPTION */ }
+                            headerMap.url = { role: PlaylistListModel.UrlRole,
+                                              actionText: qsTr("URL"),
+                                              sortKey: PlaylistController.SORT_KEY_URL }
+                            headerMap.trackId = { role: PlaylistListModel.TrackIdRole,
+                                                  actionText: qsTr("Track ID"),
+                                                  /* sortKey: PlaylistController.SORT_KEY_TRACK_ID */ }
+                            headerMap.rating = { role: PlaylistListModel.RatingRole,
+                                                 actionText: qsTr("Rating"),
+                                                 sortKey: PlaylistController.SORT_KEY_RATING }
+                            headerMap.discNumber = { role: PlaylistListModel.DiscNumberRole,
+                                                     actionText: qsTr("Disc number"),
+                                                     sortKey: PlaylistController.SORT_KEY_DISC_NUMBER }
+                            headerMap.date = { role: PlaylistListModel.DateRole,
+                                               actionText: qsTr("Date"),
+                                               sortKey: PlaylistController.SORT_KEY_DATE }
+
+                            headerMap.freeze() // Only for optimization
+
+                            const columns = MainCtx.settingValue(splitView.columnsSettingKey, undefined)
+                            if (columns) {
+                                headerMap.select(columns, SelectableQmlPropertyMap.Select)
+                            } else {
+                                // VLC 3.0 has duration and album by default:
+                                headerMap.select(["duration", "album"], SelectableQmlPropertyMap.Select)
+                            }
+
+                            const state = MainCtx.settingValue(splitView.stateSettingKey, undefined)
+                            if (state) {
+                                splitView.restoreState(state)
+                            }
+                        }
+
+                        Component.onDestruction: {
+                            const state = splitView.saveState()
+                            if (state) {
+                                MainCtx.setSettingValue(splitView.stateSettingKey, state)
+                            }
+
+                            MainCtx.setSettingValue(splitView.columnsSettingKey, headerMap.selectedItems)
+                        }
+                    }
+
+                    background: Item {
+
+                        // TODO: Qt bug 6.2: QTBUG-103604
+                        DoubleClickIgnoringItem {
+                            id: tapArea
+
+                            parent: splitView
+                            anchors.fill: parent
+
+                            z: 1
+
+                            TapHandler {
+                                target: splitView
+
+                                acceptedDevices: PointerDevice.AllDevices & ~(PointerDevice.TouchScreen)
+
+                                acceptedButtons: Qt.RightButton
+
+                                gesturePolicy: TapHandler.ReleaseWithinBounds // TODO: Qt 6.2 bug: Use TapHandler.DragThreshold
+
+                                grabPermissions: TapHandler.CanTakeOverFromHandlersOfDifferentType | TapHandler.ApprovesTakeOverByAnything
+
+                                onSingleTapped: (eventPoint, button) => {
+                                    initialAction()
+
+                                    if (button === Qt.RightButton)
+                                        headerMap.popupCheckableMenu(eventPoint.globalPosition, MainCtx)
+                                }
+
+                                Component.onCompleted: {
+                                    canceled.connect(initialAction)
+                                }
+
+                                function initialAction() {
+                                    splitView.forceActiveFocus(Qt.MouseFocusReason)
+                                }
+                            }
+
+                            TapHandler {
+                                id: touchTapHandler
+
+                                target: splitView
+
+                                acceptedDevices: PointerDevice.TouchScreen
+
+                                grabPermissions: TapHandler.CanTakeOverFromHandlersOfDifferentType | TapHandler.ApprovesTakeOverByAnything
+
+                                property bool pendingContextMenu: false
+
+                                onSingleTapped: (eventPoint, button) => {
+                                    initialAction()
+                                }
+
+                                onLongPressed: {
+                                    initialAction()
+                                    pendingContextMenu = true
+                                }
+
+                                function invokeContextMenu(point : point) : bool {
+                                    if (touchTapHandler?.pendingContextMenu) {
+                                        headerMap.popupCheckableMenu(point, MainCtx)
+                                    }
+                                }
+
+                                onPressedChanged: {
+                                    if (!pressed) {
+                                        // We need to do it asynchronously, because if tapping is canceled we need to acknowledge it:
+                                        Qt.callLater(touchTapHandler.invokeContextMenu, parent.mapToGlobal(point.position.x,
+                                                                                                           point.position.y))
+                                    }
+                                }
+
+                                onCanceled: {
+                                    pendingContextMenu = false
+                                }
+
+                                function initialAction() {
+                                    splitView.forceActiveFocus(Qt.MouseFocusReason)
+                                }
+                            }
+                        }
+                    }
+
+                    handle: Rectangle {
+                        implicitWidth: splitView.handleWidth
+                        color: "transparent" // theme.border
+                    }
+
+                    component SplitViewDelegate : RowLayout {
+                        id: delegate
+
+                        T.SplitView.minimumWidth: VLCStyle.margin_xlarge
+
+                        property alias text: textItem.text
+
+                        property int sortKey: -1
+
+                        Text {
+                            id: textItem
+
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+
+                            leftPadding: splitView.contentTextHorizontalPadding
+                            rightPadding: !sortIndicator.visible ? splitView.contentTextHorizontalPadding : 0.0
+
+                            elide: Text.ElideRight
+                            font.pixelSize: VLCStyle.fontSize_normal
+                            textFormat: Text.PlainText
+
+                            verticalAlignment: Text.AlignVCenter
+
+                            color: theme.fg.secondary
+
+                            Accessible.role: Accessible.ColumnHeader
+                            Accessible.name: text
+
+                            T.ToolTip.visible: (elide !== Text.ElideNone) && (width < implicitWidth) && hoverHandler.hovered
+                            T.ToolTip.delay: VLCStyle.delayToolTipAppear
+                            T.ToolTip.text: text
+
+                            property alias hovered: hoverHandler.hovered
+
+                            HoverHandler {
+                                id: hoverHandler
+                            }
+                        }
+
+                        // Akin to how it is shown in media library table views:
+                        Text {
+                            id: sortIndicator
+
+                            Layout.fillHeight: true
+
+                            text: (MainPlaylistController.sortOrder === Qt.AscendingOrder) ? "▼" : "▲"
+                            visible: (MainPlaylistController.sortKey === ((delegate.sortKey >= 0) ? delegate.sortKey : headerMap[delegate.objectName]?.sortKey))
+                            font.pixelSize: VLCStyle.fontSize_normal
+                            color: theme.accent
+
+                            rightPadding: splitView.contentTextHorizontalPadding
+                        }
+
+                        TapHandler {
+                            onTapped: (eventPoint, button) => {
+                                const sortKey = (delegate.sortKey >= 0) ? delegate.sortKey : headerMap[delegate.objectName]?.sortKey
+                                if (sortKey !== undefined) {
+                                    if ((MainPlaylistController.sortKey !== sortKey))
+                                        MainPlaylistController.sortKey = sortKey
+                                    else if (MainPlaylistController.sortOrder === PlaylistController.SORT_ORDER_ASC)
+                                        MainPlaylistController.sortOrder = PlaylistController.SORT_ORDER_DESC
+                                    else if (MainPlaylistController.sortOrder === PlaylistController.SORT_ORDER_DESC)
+                                        MainPlaylistController.sortOrder = PlaylistController.SORT_ORDER_ASC
+
+                                    MainPlaylistController.sort()
+                                }
+                            }
+                        }
+                    }
+
+                    // Title is special and is always shown
+                    SplitViewDelegate {
+                        id: titleItem
+
+                        objectName: "title"
+                        text: qsTr("Title")
+                        sortKey: PlaylistController.SORT_KEY_TITLE
+
+                        T.SplitView.preferredWidth: VLCStyle.dp(256, VLCStyle.scale) // Default
+                        T.SplitView.fillWidth: (headerRepeater.count === 0)
+                    }
+
+                    Repeater {
+                        id: headerRepeater
+
+                        model: headerMap.selectedItems
+
+                        SplitViewDelegate {
+                            objectName: modelData
+
+                            required property string modelData
+
+                            text: headerMap[modelData].actionText
+                        }
+                    }
                 }
             }
         }
@@ -346,6 +673,13 @@ T.Pane {
                     if (width < searchBox.textField.width)
                         searchBox.retract()
                 }
+            }
+
+            // Disable the add transition in detailed case, Qt transitions
+            // are bugged and with the detailed delegate the bugs are exposed:
+            Binding on add {
+                when: root.detailed
+                value: null
             }
 
             property QtSortFilterProxyModel proxyModel
@@ -498,26 +832,80 @@ T.Pane {
                 }
             }
 
-            delegate: PlaylistDelegate {
-                id: delegate
+            delegate: root.detailed ? detailedDelegateComponent : normalDelegateComponent
 
-                width: listView.contentWidth
-                rightPadding: Math.max(listView.ScrollBar.vertical.width, VLCStyle.margin_normal)
+            Component {
+                id: normalDelegateComponent
 
-                contextMenu: root.contextMenu
+                PlaylistDelegate {
+                    id: delegate
 
-                dragItem: root.dragItem
+                    width: listView.contentWidth
+                    rightPadding: Math.max(listView.ScrollBar.vertical.width, VLCStyle.margin_normal)
 
-                isDropAcceptable: listView.isDropAcceptableFunc
-                acceptDrop: listView.acceptDropFunc
+                    contextMenu: root.contextMenu
 
-                onContainsDragChanged: listView.updateItemContainsDrag(this, containsDrag)
+                    dragItem: root.dragItem
 
-                onIsCurrentChanged: {
-                    if (isCurrent)
-                        listView.fadingEdge.excludeItem = delegate
-                    else if (listView.fadingEdge.excludeItem === delegate)
-                        listView.fadingEdge.excludeItem = null
+                    isDropAcceptable: listView.isDropAcceptableFunc
+                    acceptDrop: listView.acceptDropFunc
+
+                    onContainsDragChanged: listView.updateItemContainsDrag(this, containsDrag)
+
+                    onIsCurrentChanged: {
+                        if (isCurrent)
+                            listView.fadingEdge.excludeItem = delegate
+                        else if (listView.fadingEdge.excludeItem === delegate)
+                            listView.fadingEdge.excludeItem = null
+                    }
+                }
+            }
+
+            Component {
+                id: detailedDelegateComponent
+
+                PlaylistDetailedDelegate {
+                    id: delegate
+
+                    width: listView.contentWidth
+                    rightPadding: Math.max(listView.ScrollBar.vertical.width, VLCStyle.margin_normal)
+
+                    verticalPadding: VLCStyle.margin_xxsmall
+
+                    contextMenu: root.contextMenu
+
+                    dragItem: root.dragItem
+
+                    isDropAcceptable: listView.isDropAcceptableFunc
+                    acceptDrop: listView.acceptDropFunc
+
+                    readonly property T.Container header: (headerLoader.item instanceof T.Container) ? headerLoader.item : null
+                    // FIXME: Qt 6.2.13 can not use `list<Item>` here:
+                    readonly property var /*list<Item>*/ headerItemMap: header?.headerItemMap ?? null
+
+                    contentTextHorizontalPadding: header?.contentTextHorizontalPadding ?? 0.0
+
+                    titleWidth: (header?.titleItem?.width + (header?.handleWidth ?? 0.0)) ?? VLCStyle.dp(256, VLCStyle.scale) // Title is always visible
+                    durationWidth: headerItemMap?.duration?.width ? (headerItemMap.duration.width + header?.handleWidth ?? 0.0) : 0.0
+                    artistWidth: headerItemMap?.artist?.width ? (headerItemMap.artist.width + header?.handleWidth ?? 0.0) : 0.0
+                    genreWidth: headerItemMap?.genre?.width ? (headerItemMap.genre.width + header?.handleWidth ?? 0.0) : 0.0
+                    albumWidth: headerItemMap?.album?.width ? (headerItemMap.album.width + header?.handleWidth ?? 0.0) : 0.0
+                    urlWidth: headerItemMap?.url?.width ? (headerItemMap.url.width + header?.handleWidth ?? 0.0) : 0.0
+                    trackNumberWidth: headerItemMap?.trackNumber?.width ? (headerItemMap.trackNumber.width + header?.handleWidth ?? 0.0) : 0.0
+                    descriptionWidth: headerItemMap?.description?.width ? (headerItemMap.description.width + header?.handleWidth ?? 0.0) : 0.0
+                    trackIdWidth: headerItemMap?.trackId?.width ? (headerItemMap.trackId.width + header?.handleWidth ?? 0.0) : 0.0
+                    ratingWidth: headerItemMap?.rating?.width ? (headerItemMap.rating.width + header?.handleWidth ?? 0.0) : 0.0
+                    discNumberWidth: headerItemMap?.discNumber?.width ? (headerItemMap.discNumber.width + header?.handleWidth ?? 0.0) : 0.0
+                    dateWidth: headerItemMap?.date?.width ? (headerItemMap.date.width + header?.handleWidth ?? 0.0) : 0.0
+
+                    onContainsDragChanged: listView.updateItemContainsDrag(this, containsDrag)
+
+                    onIsCurrentChanged: {
+                        if (isCurrent)
+                            listView.fadingEdge.excludeItem = delegate
+                        else if (listView.fadingEdge.excludeItem === delegate)
+                            listView.fadingEdge.excludeItem = null
+                    }
                 }
             }
 
