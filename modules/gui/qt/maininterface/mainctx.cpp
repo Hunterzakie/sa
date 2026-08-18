@@ -339,6 +339,8 @@ MainCtx::~MainCtx()
 
         settings->setValue( "lyrics-mode", m_lyricsMode );
 
+        settings->setValue( "playlist-detailed", m_playlistDetailed );
+
         /* Save the stackCentralW sizes */
         settings->endGroup();
     }
@@ -493,6 +495,8 @@ void MainCtx::loadFromSettingsImpl(const bool callSignals)
     loadFromSettings(m_albumSections, "MainWindow/album-sections", true, this, &MainCtx::albumSectionsChanged);
 
     loadFromSettings(m_lyricsMode, "MainWindow/lyrics-mode", true, this, &MainCtx::lyricsModeChanged);
+
+    loadFromSettings(m_playlistDetailed, "MainWindow/playlist-detailed", false, this, &MainCtx::playlistDetailedChanged);
 
     const auto colorSchemeIndex = getSettings()->value( "MainWindow/color-scheme-index", 0 ).toInt();
     m_colorScheme->setCurrentIndex(colorSchemeIndex);
@@ -753,6 +757,15 @@ void MainCtx::setLyricsMode(bool enabled)
 
     m_lyricsMode = enabled;
     emit lyricsModeChanged(enabled);
+}
+
+void MainCtx::setPlaylistDetailed(bool detailed)
+{
+    if (m_playlistDetailed == detailed)
+        return;
+
+    m_playlistDetailed = detailed;
+    emit playlistDetailedChanged(detailed);
 }
 
 void MainCtx::setInterfaceAlwaysOnTop( bool on_top )

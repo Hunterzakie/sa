@@ -99,6 +99,7 @@ class MainCtx : public QObject
     Q_OBJECT
 
     Q_PROPERTY(double playerPlaylistWidth READ getPlayerPlaylistWidth WRITE setPlayerPlaylistWidth NOTIFY playerPlaylistWidthChanged FINAL)
+    Q_PROPERTY(bool playlistDetailed READ playlistDetailed WRITE setPlaylistDetailed NOTIFY playlistDetailedChanged FINAL)
     Q_PROPERTY(SidePanelCtx* playqueuePanel READ getPlayqueuePanel CONSTANT FINAL)
     Q_PROPERTY(SidePanelCtx* navigationPanel READ getNavigationPanel CONSTANT FINAL)
     Q_PROPERTY(double artistAlbumsWidth READ artistAlbumsWidth WRITE setArtistAlbumsWidth NOTIFY artistAlbumsWidthChanged FINAL)
@@ -239,6 +240,7 @@ public:
     inline Grouping grouping() const { return m_grouping; }
     inline bool albumSections() const { return m_albumSections; }
     inline bool lyricsMode() const { return m_lyricsMode; }
+    inline bool playlistDetailed() const { return m_playlistDetailed; }
     inline ColorSchemeModel* getColorScheme() const { return m_colorScheme; }
     bool hasVLM() const;
     bool useClientSideDecoration() const;
@@ -491,6 +493,8 @@ protected:
 
     bool m_lyricsMode = true;
 
+    bool m_playlistDetailed = false;
+
     bool m_usingTouch = false;
 
     OsType m_osName;
@@ -522,6 +526,7 @@ public slots:
     void setGrouping( Grouping );
     void setAlbumSections( bool );
     void setLyricsMode( bool );
+    void setPlaylistDetailed( bool );
     void incrementIntfUserScaleFactor( bool increment);
     void setIntfUserScaleFactor( double );
     void setHasToolbarMenu( bool );
@@ -573,6 +578,7 @@ signals:
     void groupingChanged( Grouping );
     void albumSectionsChanged( bool );
     void lyricsModeChanged( bool );
+    void playlistDetailedChanged( bool );
     void colorSchemeChanged( QString );
     void useClientSideDecorationChanged();
     void hasToolbarMenuChanged();
