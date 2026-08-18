@@ -26,6 +26,8 @@
 #include "util/shared_input_item.hpp"
 #include "util/renderer_manager.hpp"
 
+#include <vlc_lyrics.h>
+
 #include <QTimer>
 #include <QUrl>
 #include <QByteArray>
@@ -63,10 +65,13 @@ public:
     int interpolateTime(vlc_tick_t system_now);
     bool isCurrentItemSynced();
 
-    // Lazily reads m_syltRaw (the raw sylt-data buffer captured during
-    // UpdateMeta) into a list of TimedText entries. The cache is
-    // invalidated when m_syltRaw changes.
-    QList<TimedText> syltLyrics() const;
+    QList<TimedText> lyricsLines() const;
+    // Track of m_lyricsTracks the interface displays: the first synchronized one,
+    // falling back to the first unsynchronized one.
+    const vlc_lyrics_track *selectedLyricsTrack() const;
+    void resetLyrics();
+    // Recomputes which line is current and how much of it is sung.
+    void updateCurrentLyric();
     void onArtFetchEnded(input_item_t *, bool fetched);
 
     // SMPTE Timer
@@ -205,9 +210,13 @@ public:
     QUrl m_artwork;
     QUrl m_url;
 
-    mutable std::optional<QPair<QByteArray, size_t>> m_syltRaw;
-    mutable std::optional<QList<TimedText>> m_syltLyrics;
+    QList<::vlc::vlc_shared_data_ptr<vlc_lyrics_t, &vlc_lyrics_Hold,
+                                     &vlc_lyrics_Release>> m_lyrics;
+    QList<const vlc_lyrics_track *> m_lyricsTracks;
+    mutable std::optional<QList<TimedText>> m_lyricsLines;
     int m_currentLyricIndex = -1;
+    int m_currentLyricSungChars = -1;
+    QTimer m_lyricsTimer;
 };
 
 #endif /* QVLC_INPUT_MANAGER_P_H_ */

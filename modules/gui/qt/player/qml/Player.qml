@@ -751,7 +751,25 @@ FocusScope {
 
                             elide: Text.ElideRight
 
-                            text: Player.currentLyric.text
+                            // A line with no text times an instrumental break,
+                            // like in the full lyrics pane
+                            readonly property bool instrumental:
+                                Player.hasLyrics && Player.currentLyricIndex >= 0
+                                && Player.currentLyric.text.length === 0
+
+                            // Highlighted as it is sung when the media times
+                            // individual words, like the full lyrics pane
+                            readonly property bool karaoke: !instrumental
+                                && Player.currentLyricSungChars >= 0
+
+                            textFormat: karaoke ? Text.StyledText : Text.PlainText
+                            text: instrumental
+                                  ? "♪"
+                                  : (karaoke
+                                     ? Player.colorizePrefix(Player.currentLyric.text,
+                                                             Player.currentLyricSungChars,
+                                                             centerTheme.accent)
+                                     : Player.currentLyric.text)
                             font.pixelSize: VLCStyle.fontSize_xlarge
                             font.weight: Font.DemiBold
                             horizontalAlignment: Text.AlignHCenter

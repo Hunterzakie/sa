@@ -26,6 +26,7 @@
 #include "../qt.hpp"
 #include <vlc_cxx_helpers.hpp>
 #include <QObject>
+#include <QColor>
 #include <QEvent>
 #include <QScopedPointer>
 #include <QUrl>
@@ -172,8 +173,9 @@ public:
     Q_PROPERTY(float subtitleFPS READ getSubtitleFPS WRITE setSubtitleFPS NOTIFY subtitleFPSChanged FINAL)
     Q_PROPERTY(TimedText currentLyric READ getCurrentLyric NOTIFY currentLyricChanged FINAL)
     Q_PROPERTY(bool hasLyrics READ hasLyrics NOTIFY hasLyricsChanged FINAL)
-    Q_PROPERTY(QList<TimedText> syltLyrics READ getSyltLyrics NOTIFY syltLyricsChanged FINAL)
+    Q_PROPERTY(QList<TimedText> lyrics READ getLyrics NOTIFY lyricsChanged FINAL)
     Q_PROPERTY(int currentLyricIndex READ getCurrentLyricIndex NOTIFY currentLyricIndexChanged FINAL)
+    Q_PROPERTY(int currentLyricSungChars READ getCurrentLyricSungChars NOTIFY currentLyricSungCharsChanged FINAL)
 
     //title/chapters/menu
     Q_PROPERTY(TitleListModel* titles READ getTitles CONSTANT FINAL)
@@ -305,6 +307,10 @@ public:
     void setArt( input_item_t *p_item, QString fileUrl );
     void refreshMediaMeta( input_item_t *p_item );
     static const QString decodeArtURL( input_item_t *p_item );
+    /// `Text.StyledText` markup of `text` with its first `count` characters,
+    /// as given by currentLyricSungChars, drawn in `color`
+    Q_INVOKABLE static QString colorizePrefix( const QString &text, int count,
+                                               const QColor &color );
     void updatePosition();
     void updateTime(vlc_tick_t system_now, bool forceTimer);
 
@@ -432,8 +438,9 @@ public slots:
     QUrl getArtwork() const;
     TimedText getCurrentLyric() const;
     bool hasLyrics() const;
-    QList<TimedText> getSyltLyrics() const;
+    QList<TimedText> getLyrics() const;
     int getCurrentLyricIndex() const;
+    int getCurrentLyricSungChars() const;
 
     //Renderer
     RendererManager* getRendererManager();
@@ -515,8 +522,9 @@ signals:
     void currentMetaChanged( input_item_t* );
     void currentLyricChanged();
     void hasLyricsChanged( bool );
-    void syltLyricsChanged();
+    void lyricsChanged();
     void currentLyricIndexChanged( int );
+    void currentLyricSungCharsChanged( int );
     void metaChanged( input_item_t *);
     void artChanged( QString ); /* current item art ( same as item == NULL ) */
     void artChanged( input_item_t * );
