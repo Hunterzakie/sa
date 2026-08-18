@@ -100,6 +100,7 @@
         {"key":"medialibrary_add", "path": "./icons/ic_medialibrary_add.svg"},
         {"key":"medialibrary_remove", "path": "./icons/ic_medialibrary_remove.svg"},
         {"key":"regex", "path": "./icons/regex.svg"},
-        {"key":"ic_fluent_text_change_case_24_regular", "path": "./icons/ic_fluent_text_change_case_24_regular.svg"}
+        {"key":"ic_fluent_text_change_case_24_regular", "path": "./icons/ic_fluent_text_change_case_24_regular.svg"},
+        {"key":"ic_fluent_apps_list_detail_24_regular", "path": "./icons/ic_fluent_apps_list_detail_24_regular.svg"}
     ]
 }
