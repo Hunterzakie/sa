@@ -283,6 +283,9 @@ static void ShowDialog   ( intf_thread_t *, int, int, intf_dialog_args_t * );
 #define ACCENT_COLOR_TEXT N_( "Accent color" )
 #define ACCENT_COLOR_LONGTEXT N_( "Adjusts the accent color, special values are 'default' and 'system' (requires Qt 6.6) ." )
 
+#define QT_MODEL_RECOVERY_TEXT N_( "Engage model recovery on crash" )
+#define QT_MODEL_RECOVERY_LONGTEXT N_( "Attempt to recover non-persistent models if the application crashes or closes abruptly." )
+
 static const int initial_prefs_view_list[] = { 0, 1, 2 };
 static const char *const initial_prefs_view_list_texts[] =
     { N_("Simple"), N_("Advanced"), N_("Expert") };
@@ -373,6 +376,8 @@ vlc_module_begin ()
               TITLE_LONGTEXT )
     add_bool( "qt-fs-controller", true, QT_FULLSCREEN_TEXT,
               nullptr )
+
+    add_bool( "qt-model-recovery", true, QT_MODEL_RECOVERY_TEXT, QT_MODEL_RECOVERY_LONGTEXT )
 
     add_string("qt-compositor", "auto", QT_COMPOSITOR_TEXT, QT_COMPOSITOR_LONGTEXT)
             change_string_list(compositor_vlc, compositor_user)
@@ -1142,17 +1147,21 @@ static void *Thread( void *obj )
     p_intf->p_mainPlaylistController = new vlc::playlist::PlaylistController(p_intf->p_playlist);
 
     std::optional playlistModelRecoveryAgent = std::unique_ptr<ModelRecoveryAgent>();
-    QMetaObject::invokeMethod(&app, [&playlistModelRecoveryAgent, settings = QPointer(p_intf->mainSettings), mpc = QPointer(p_intf->p_mainPlaylistController)]() {
-        if (Q_UNLIKELY(!playlistModelRecoveryAgent)) // std::optional is nullopt, reset() was already called
-            return;
-        if (Q_UNLIKELY(!settings || !mpc))
-            return;
-        try {
-            playlistModelRecoveryAgent = std::make_unique<ModelRecoveryAgent>(settings.get(),
-                                                                              QStringLiteral("Playlist"),
-                                                                              mpc.get());
-        } catch (...){ }
-    }, Qt::QueuedConnection);
+    if (var_InheritBool(p_intf, "qt-model-recovery"))
+    {
+        QMetaObject::invokeMethod(&app, [&playlistModelRecoveryAgent, settings = QPointer(p_intf->mainSettings), mpc = QPointer(p_intf->p_mainPlaylistController)]() {
+            if (Q_UNLIKELY(!playlistModelRecoveryAgent)) // std::optional is nullopt, reset() was already called
+                return;
+            if (Q_UNLIKELY(!settings || !mpc))
+                return;
+            try {
+                playlistModelRecoveryAgent = std::make_unique<ModelRecoveryAgent>(settings.get(),
+                                                                                  QStringLiteral("playqueue"),
+                                                                                  mpc.get(),
+                                                                                  QStringLiteral("play queue"));
+            } catch (...){ }
+        }, Qt::QueuedConnection);
+    }
 
     /* Create the normal interface in non-DP mode */
 #ifdef _WIN32
