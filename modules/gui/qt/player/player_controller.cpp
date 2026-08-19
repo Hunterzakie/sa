@@ -30,6 +30,7 @@
 #include <vlc_strings.h>        /* vlc_strfplayer */
 #include <vlc_aout.h>           /* audio_output_t */
 #include <vlc_es.h>
+#include <vlc_iso_lang.h>
 #include <vlc_cxx_helpers.hpp>
 #include <vlc_vout.h>
 #include <vlc_preparser.h>
@@ -211,19 +212,55 @@ void PlayerControllerPrivate::UpdateMeta( input_item_t *p_item )
     emit q->currentMetaChanged( p_item  );
 }
 
+ssize_t
+PlayerControllerPrivate::selectedLyricsTrackIdx() const
+{
+    const qsizetype count = m_lyricsTracks.size();
+
+    if (m_lyricsTrack >= 0 && m_lyricsTrack < count)
+        return m_lyricsTrack;
+
+    ssize_t fallback = -1;
+
+    for (qsizetype i = 0; i < count; ++i)
+    {
+        if (m_lyricsTracks[i]->synchronized)
+            return i;
+        if (fallback < 0)
+            fallback = i;
+    }
+    return fallback;
+}
+
 const vlc_lyrics_track *
 PlayerControllerPrivate::selectedLyricsTrack() const
 {
-    const vlc_lyrics_track *fallback = nullptr;
+    const ssize_t idx = selectedLyricsTrackIdx();
+    return idx < 0 ? nullptr : m_lyricsTracks[idx];
+}
+
+QStringList
+PlayerControllerPrivate::lyricsTrackNames() const
+{
+    QStringList names;
+    names.reserve( m_lyricsTracks.size() );
 
     for (const vlc_lyrics_track *track : m_lyricsTracks)
     {
-        if (track->synchronized)
-            return track;
-        if (fallback == nullptr)
-            fallback = track;
+        QString name = (track->description && *track->description)
+                     ? qfu( track->description ) : qtr( "Lyrics" );
+
+        if (strcmp( track->language, VLC_LYRICS_LANGUAGE_UNKNOWN ) != 0)
+        {
+            const iso639_lang_t * const lang =
+                vlc_find_iso639( track->language, false );
+            const QString language = lang ? qfut( lang->psz_eng_name )
+                                          : qfu( track->language );
+            name = QStringLiteral( "%1 - %2" ).arg( language, name );
+        }
+        names.push_back( name );
     }
-    return fallback;
+    return names;
 }
 
 QList<TimedText>
@@ -339,8 +376,10 @@ void PlayerControllerPrivate::resetLyrics()
     m_lyricsLines.reset();
     m_currentLyricIndex = -1;
     m_currentLyricSungChars = -1;
+    m_lyricsTrack = -1;
     emit q->hasLyricsChanged( false );
     emit q->lyricsChanged();
+    emit q->lyricsTrackChanged( -1 );
     emit q->currentLyricIndexChanged( -1 );
     emit q->currentLyricSungCharsChanged( -1 );
     emit q->currentLyricChanged();
@@ -729,6 +768,7 @@ static void on_player_media_attachments_added(vlc_player_t *, input_item_t *medi
 
         emit q->hasLyricsChanged( true );
         emit q->lyricsChanged();
+        emit q->lyricsTrackChanged( q->getLyricsTrack() );
         emit q->currentLyricIndexChanged( -1 );
         emit q->currentLyricSungCharsChanged( -1 );
         emit q->currentLyricChanged();
@@ -2449,6 +2489,46 @@ QList<TimedText> PlayerController::getLyrics() const
 {
     Q_D(const PlayerController);
     return d->lyricsLines();
+}
+
+QStringList PlayerController::getLyricsTracks() const
+{
+    Q_D(const PlayerController);
+    return d->lyricsTrackNames();
+}
+
+int PlayerController::getLyricsTrack() const
+{
+    Q_D(const PlayerController);
+    return static_cast<int>( d->selectedLyricsTrackIdx() );
+}
+
+void PlayerController::setLyricsTrack( int index )
+{
+    Q_D(PlayerController);
+
+    const int count = static_cast<int>( d->m_lyricsTracks.size() );
+    if (index < -1 || index >= count)
+        return;
+
+    const int previous = getLyricsTrack();
+    d->m_lyricsTrack = index;
+    if (getLyricsTrack() == previous)
+        return;
+
+    d->m_lyricsLines.reset();
+    d->m_currentLyricIndex = -1;
+    d->m_currentLyricSungChars = -1;
+
+    emit lyricsTrackChanged( getLyricsTrack() );
+    emit lyricsChanged();
+    emit currentLyricIndexChanged( -1 );
+    emit currentLyricSungCharsChanged( -1 );
+    emit currentLyricChanged();
+
+    if (d->m_player_time.system_date != VLC_TICK_MAX)
+        d->interpolateTime( vlc_tick_now() );
+    d->updateCurrentLyric();
 }
 
 int PlayerController::getCurrentLyricIndex() const

@@ -903,6 +903,43 @@ FocusScope {
 
                             Navigation.parentItem: rootPlayer
                             Navigation.upItem: audioControls
+                            Navigation.downItem: lyricsTrackSelector.visible
+                                                 ? lyricsTrackSelector
+                                                 : (Player.isInteractive ? toggleControlBarButton : controlBar)
+                        }
+
+                        // Sits under the sync checkbox rather than over the
+                        // lyrics themselves, which are meant to be read
+                        LyricsTrackSelector {
+                            id: lyricsTrackSelector
+
+                            Layout.alignment: Qt.AlignHCenter
+                            Layout.topMargin: VLCStyle.margin_small
+
+                            visible: false
+
+                            Binding on visible {
+                                delayed: true
+                                when: lyricsTrackSelector.componentCompleted
+                                value: audioFocusScope.lyricsLayoutActive &&
+                                       lyricsTrackSelector.available &&
+                                       centerContent.height > (lyricsTrackSelector.y + lyricsTrackSelector.height)
+                            }
+
+                            property bool componentCompleted: false
+
+                            Component.onCompleted: {
+                                componentCompleted = true
+                            }
+
+                            // Keep the interface up for as long as the popup is
+                            // open, it would otherwise fade out under the mouse
+                            onRequestLockUnlockAutoHide: (lock) => {
+                                rootPlayer.lockUnlockAutoHide(lock)
+                            }
+
+                            Navigation.parentItem: rootPlayer
+                            Navigation.upItem: syncToPlaybackCheckBox
                             Navigation.downItem: Player.isInteractive ? toggleControlBarButton : controlBar
                         }
                     }

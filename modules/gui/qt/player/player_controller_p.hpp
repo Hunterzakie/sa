@@ -66,8 +66,11 @@ public:
     bool isCurrentItemSynced();
 
     QList<TimedText> lyricsLines() const;
-    // Track of m_lyricsTracks the interface displays: the first synchronized one,
-    // falling back to the first unsynchronized one.
+    // Human readable label of each track of m_lyricsTracks, for the track picker.
+    QStringList lyricsTrackNames() const;
+    // Index in m_lyricsTracks of selected track: the one the user picked if they did,
+    // else the first synchronized one, else the first unsynchronized one
+    ssize_t selectedLyricsTrackIdx() const;
     const vlc_lyrics_track *selectedLyricsTrack() const;
     void resetLyrics();
     // Recomputes which line is current and how much of it is sung.
@@ -216,6 +219,7 @@ public:
     mutable std::optional<QList<TimedText>> m_lyricsLines;
     int m_currentLyricIndex = -1;
     int m_currentLyricSungChars = -1;
+    int m_lyricsTrack = -1;
     QTimer m_lyricsTimer;
 };
 

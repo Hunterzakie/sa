@@ -174,6 +174,8 @@ public:
     Q_PROPERTY(TimedText currentLyric READ getCurrentLyric NOTIFY currentLyricChanged FINAL)
     Q_PROPERTY(bool hasLyrics READ hasLyrics NOTIFY hasLyricsChanged FINAL)
     Q_PROPERTY(QList<TimedText> lyrics READ getLyrics NOTIFY lyricsChanged FINAL)
+    Q_PROPERTY(QStringList lyricsTracks READ getLyricsTracks NOTIFY lyricsChanged FINAL)
+    Q_PROPERTY(int lyricsTrack READ getLyricsTrack WRITE setLyricsTrack NOTIFY lyricsTrackChanged FINAL)
     Q_PROPERTY(int currentLyricIndex READ getCurrentLyricIndex NOTIFY currentLyricIndexChanged FINAL)
     Q_PROPERTY(int currentLyricSungChars READ getCurrentLyricSungChars NOTIFY currentLyricSungCharsChanged FINAL)
 
@@ -439,6 +441,11 @@ public slots:
     TimedText getCurrentLyric() const;
     bool hasLyrics() const;
     QList<TimedText> getLyrics() const;
+    QStringList getLyricsTracks() const;
+    /// Index of the displayed track, -1 when the media carries no lyrics
+    int getLyricsTrack() const;
+    /// Display another track; -1 goes back to picking one automatically
+    void setLyricsTrack( int index );
     int getCurrentLyricIndex() const;
     int getCurrentLyricSungChars() const;
 
@@ -523,6 +530,7 @@ signals:
     void currentLyricChanged();
     void hasLyricsChanged( bool );
     void lyricsChanged();
+    void lyricsTrackChanged( int index );
     void currentLyricIndexChanged( int );
     void currentLyricSungCharsChanged( int );
     void metaChanged( input_item_t *);
