@@ -154,7 +154,7 @@ MainViewLoader {
 
             selectionModel: root.selectionModel
 
-            headerDelegate: root.header
+            header: root.header
 
             dragItem: root.dragItem
 

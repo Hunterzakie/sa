@@ -26,12 +26,14 @@ import VLC.Widgets as Widgets
 import VLC.Util
 import VLC.Style
 
-T.ItemDelegate {
+T.Control {
     id: root
 
     // Properties
 
-    required property Item view
+    readonly property GridView view: GridView.view
+
+    required property int index
 
     property real pictureWidth: VLCStyle.colWidth(1)
     property real pictureHeight: pictureWidth
@@ -47,7 +49,13 @@ T.ItemDelegate {
     property bool textAlignHCenter: false
 
     // if the item is selected
-    property bool selected: false
+    readonly property bool selected: view.selectionModel.selectedIndexesFlat.includes(index)
+
+    hoverEnabled: false // We handle through the hover handler which considers the view spacing
+
+    readonly property bool effectiveHovered: contentItem?.hovered || (hoverEnabled && hovered)
+
+    GridView.delayRemove: dragHandler.active
 
     // Aliases
 
@@ -84,13 +92,36 @@ T.ItemDelegate {
 
     // Settings
 
-    implicitWidth: layout.implicitWidth
-    implicitHeight: layout.implicitHeight
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
+                            implicitContentWidth + leftPadding + rightPadding)
+    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
+                             implicitContentHeight + topPadding + bottomPadding)
+
+
+    property real preferredLeftInset
+    property real preferredRightInset
+    property real preferredTopInset
+    property real preferredBottomInset
+
+    property real preferredLeftPadding: VLCStyle.margin_xsmall
+    property real preferredRightPadding: VLCStyle.margin_xsmall
+    property real preferredTopPadding: VLCStyle.margin_xsmall
+    property real preferredBottomPadding: VLCStyle.margin_xsmall
+
+    leftInset: preferredLeftInset + ((view?.horizontalSpacing / 2) ?? 0.0)
+    rightInset: preferredRightInset + ((view?.horizontalSpacing / 2) ?? 0.0)
+    topInset: preferredTopInset + ((view?.verticalSpacing / 2) ?? 0.0)
+    bottomInset: preferredBottomInset + ((view?.verticalSpacing / 2) ?? 0.0)
+
+    leftPadding: preferredLeftPadding + ((view?.horizontalSpacing / 2) ?? 0.0)
+    rightPadding: preferredRightPadding + ((view?.horizontalSpacing / 2) ?? 0.0)
+    topPadding: preferredTopPadding + ((view?.verticalSpacing / 2) ?? 0.0)
+    bottomPadding: preferredBottomPadding + ((view?.verticalSpacing / 2) ?? 0.0)
 
     width: Math.round(implicitWidth)
     height: Math.round(implicitHeight)
 
-    highlighted: (hovered || visualFocus)
+    property bool highlighted: (effectiveHovered || visualFocus)
 
     Accessible.role: Accessible.Cell
     Accessible.name: title
@@ -103,6 +134,10 @@ T.ItemDelegate {
         // Qt Quick AbstractButton sets a cursor for itself, unset it so that if the view has
         // busy cursor, it is visible over the delegate:
         MainCtx.unsetCursor(this)
+
+        console.assert(root.view)
+        if (root.view.delegateInstantiated)
+            root.view.delegateInstantiated(root)
     }
 
     // States
@@ -176,12 +211,18 @@ T.ItemDelegate {
         colorSet: ColorContext.Item
 
         focused: root.visualFocus
-        hovered: root.hovered
+        hovered: root.effectiveHovered
     }
 
     // TODO: Qt bug 6.2: QTBUG-103604
     DoubleClickIgnoringItem {
+        id: handlerParent
+
         anchors.fill: parent
+        anchors.leftMargin: (root.view?.horizontalSpacing / 2)
+        anchors.rightMargin: (root.view?.horizontalSpacing / 2)
+        anchors.topMargin: (root.view?.verticalSpacing / 2)
+        anchors.bottomMargin: (root.view?.verticalSpacing / 2)
 
         DragHandler {
             id: dragHandler
@@ -262,12 +303,6 @@ T.ItemDelegate {
     }
 
     background: AnimatedBackground {
-        width: root.width + (selectedBorderWidth * 2)
-        height: root.height + (selectedBorderWidth * 2)
-
-        x: - selectedBorderWidth
-        y: - selectedBorderWidth
-
         enabled: theme.initialized
 
         //don't show the backgroud unless selected
@@ -287,6 +322,15 @@ T.ItemDelegate {
 
         spacing: 0
 
+        // We can not have this handler in the handler parent
+        // like the rest of the handlers because of QTBUG-135886.
+        // We also can not have it in the background item.
+        readonly property bool hovered: hoverHandler.hovered
+
+        HoverHandler {
+            id: hoverHandler
+        }
+
         Widgets.MediaCover {
             id: picture
 
@@ -294,8 +338,8 @@ T.ItemDelegate {
             radius: VLCStyle.gridCover_radius
             color: theme.bg.secondary
 
-            Layout.preferredWidth: root.width
-            Layout.preferredHeight: (root.pictureHeight / root.pictureWidth) * root.width
+            Layout.fillWidth: true
+            Layout.preferredHeight: (root.pictureHeight / root.pictureWidth) * width
             Layout.alignment: Qt.AlignCenter
 
             pictureWidth: root.pictureWidth
@@ -349,7 +393,7 @@ T.ItemDelegate {
             visible: root.title !== ""
             clip: scrolling
 
-            Layout.preferredWidth: Math.min(titleLabel.implicitWidth, root.width)
+            Layout.preferredWidth: Math.min(titleLabel.implicitWidth, parent.width)
             Layout.preferredHeight: titleLabel.height
             Layout.topMargin: root.titleTopMargin
             Layout.alignment: root.textAlignHCenter ? Qt.AlignCenter : Qt.AlignLeft
@@ -374,7 +418,7 @@ T.ItemDelegate {
                 ? theme.fg.highlight
                 : theme.fg.secondary
 
-            Layout.preferredWidth: Math.min(root.width, implicitWidth)
+            Layout.preferredWidth: Math.min(parent.width, implicitWidth)
             Layout.alignment: root.textAlignHCenter ? Qt.AlignCenter : Qt.AlignLeft
             Layout.topMargin: root.subtitleTopMargin
 

@@ -51,11 +51,6 @@ T.Pane {
     topPadding: VLCStyle.layoutTitle_top_padding
     bottomPadding: VLCStyle.layoutTitle_bottom_padding
 
-    // FIXME: `GridItem`'s background extends beyond its
-    //        bounding rect, violating the hypothetical
-    //        clip test (see 7e6b23db).
-    bottomInset: MainCtx.gridView ? VLCStyle.gridItemSelectedBorder : undefined
-
     height: implicitHeight
     implicitHeight: layout.implicitHeight + topPadding + bottomPadding
     implicitWidth: layout.implicitWidth + leftPadding + rightPadding

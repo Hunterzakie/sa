@@ -123,18 +123,22 @@ MainViewLoader {
     /* Grid View */
     Component {
         id: gridComponent
-        Widgets.ExpandGridItemView {
+        Widgets.GridViewExt {
             id: gridView_id
 
-            basePictureWidth: VLCStyle.gridCover_video_width
-            basePictureHeight: VLCStyle.gridCover_video_width / 2
+            gridSizeHelper: GridSizeHelper {
+                basePictureWidth: VLCStyle.gridCover_video_width
+                basePictureHeight: VLCStyle.gridCover_video_width / 2
+                availableWidth: gridView_id.contentWidth
+            }
+
             titleHeight: 0
             subtitleHeight: 0
 
             selectionModel: root.selectionModel
             model: genreModel
 
-            headerDelegate: root.header
+            header: root.header
 
             displayMarginBeginning: root.displayMarginBeginning
             displayMarginEnd: root.displayMarginEnd
@@ -142,8 +146,7 @@ MainViewLoader {
             delegate: Widgets.GridItem {
                 id: genreGridDelegate
 
-                property var model: ({})
-                property int index: -1
+                required property var model
 
                 width: gridView_id.cellWidth
                 height: gridView_id.cellHeight

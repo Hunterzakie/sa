@@ -1325,7 +1325,6 @@ libqml_module_widgets_a_QML = \
 	widgets/qml/DragItem.qml \
 	widgets/qml/DrawerExt.qml \
 	widgets/qml/ExpandGridView.qml \
-	widgets/qml/ExpandGridItemView.qml \
 	widgets/qml/EmptyLabel.qml \
 	widgets/qml/EmptyLabelButton.qml \
 	widgets/qml/EmptyLabelHint.qml \
@@ -1338,6 +1337,7 @@ libqml_module_widgets_a_QML = \
 	widgets/qml/IconTrackButton.qml \
 	widgets/qml/ImageToolButton.qml \
 	widgets/qml/ListViewExt.qml \
+	widgets/qml/GridViewExt.qml \
 	widgets/qml/TableViewExt.qml \
 	widgets/qml/TableViewDelegateExt.qml \
 	widgets/qml/TableRowDelegate.qml \

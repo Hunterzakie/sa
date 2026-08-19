@@ -188,7 +188,7 @@ Widgets.PageExt {
             Widgets.ViewHeader {
                 visible: continueWatchingRow.visible
                 text: qsTr("Continue Watching")
-                view: continueWatchingRow
+                view: continueWatchingRow.currentItem
                 seeAllButton.visible: continueWatchingRow.model.maximumCount > continueWatchingRow.model.count
 
                 onSeeAllButtonClicked: function (reason) {
@@ -217,10 +217,6 @@ Widgets.PageExt {
 
                 emptyLabel: null
 
-                // FIXME: `ExpandGridView` causes extreme performance degradation when `reuseItems`
-                //        is true and items provided by the model change (#29084).
-                reuseItems: !MainCtx.gridView
-
                 listCoverWidth: root.listCoverWidth
                 listCoverHeight: root.listCoverHeight
                 listCoverRadius: root.listCoverRadius
@@ -246,7 +242,7 @@ Widgets.PageExt {
 
                 onActiveFocusChanged: {
                     if (activeFocus) {
-                        const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
+                        const item = currentItem?.currentItem
                         contentYBehavior.enabled = true
                         Helpers.positionFlickableToContainItem(flickable, item ?? this)
                         contentYBehavior.enabled = false
@@ -255,7 +251,7 @@ Widgets.PageExt {
 
                 onCurrentIndexChanged: {
                     if (activeFocus) {
-                        const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
+                        const item = currentItem?.currentItem
                         if (item) {
                             contentYBehavior.enabled = true
                             Helpers.positionFlickableToContainItem(flickable, item)
@@ -268,8 +264,13 @@ Widgets.PageExt {
             Widgets.ViewHeader {
                 visible: favoritesRow.visible
                 text: qsTr("Favorites")
-                view: favoritesRow
+                view: favoritesRow.currentItem
                 seeAllButton.visible: favoritesRow.model.maximumCount > favoritesRow.model.count
+
+                // FIXME: The delegate of upper sub-view provide the padding instead:
+                topPadding: VLCStyle.layoutTitle_top_padding +
+                            ((continueWatchingRow.visible && ((continueWatchingRow.currentItem instanceof Widgets.GridViewExt)) ? (-continueWatchingRow.currentItem.verticalSpacing / 2)
+                                                                                                                                : 0.0))
 
                 onSeeAllButtonClicked: function (reason) {
                     root.seeAllButtonClicked("favorites", reason)
@@ -297,10 +298,6 @@ Widgets.PageExt {
 
                 emptyLabel: null
 
-                // FIXME: `ExpandGridView` causes extreme performance degradation when `reuseItems`
-                //        is true and items provided by the model change (#29084).
-                reuseItems: !MainCtx.gridView
-
                 listCoverWidth: root.listCoverWidth
                 listCoverHeight: root.listCoverHeight
                 listCoverRadius: root.listCoverRadius
@@ -322,7 +319,7 @@ Widgets.PageExt {
 
                 onActiveFocusChanged: {
                     if (activeFocus) {
-                        const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
+                        const item = currentItem?.currentItem
                         contentYBehavior.enabled = true
                         Helpers.positionFlickableToContainItem(flickable, item ?? this)
                         contentYBehavior.enabled = false
@@ -331,7 +328,7 @@ Widgets.PageExt {
 
                 onCurrentIndexChanged: {
                     if (activeFocus) {
-                        const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
+                        const item = currentItem?.currentItem
                         if (item) {
                             contentYBehavior.enabled = true
                             Helpers.positionFlickableToContainItem(flickable, item)
@@ -344,8 +341,13 @@ Widgets.PageExt {
             Widgets.ViewHeader {
                 text: qsTr("New Videos")
                 visible: newVideoRow.visible
-                view: newVideoRow
+                view: newVideoRow.currentItem
                 seeAllButton.visible: newVideoRow.model.maximumCount > newVideoRow.model.count
+
+                // FIXME: The delegate of upper sub-view provide the padding instead:
+                topPadding: VLCStyle.layoutTitle_top_padding +
+                            ((favoritesRow.visible && ((favoritesRow.currentItem instanceof Widgets.GridViewExt)) ? (-favoritesRow.currentItem.verticalSpacing / 2)
+                                                                                                                  : 0.0))
 
                 onSeeAllButtonClicked: function (reason) {
                     root.seeAllButtonClicked("newVideo", reason)
@@ -424,7 +426,7 @@ Widgets.PageExt {
             Widgets.ViewHeader {
                 text: qsTr("New Music")
                 visible: newMusicRow.visible
-                view: newMusicRow
+                view: newMusicRow.currentItem
                 seeAllButton.visible: newMusicRow.model.maximumCount > newMusicRow.model.count
 
                 onSeeAllButtonClicked: function (reason) {
@@ -453,10 +455,6 @@ Widgets.PageExt {
 
                 emptyLabel: null
 
-                // FIXME: `ExpandGridView` causes extreme performance degradation when `reuseItems`
-                //        is true and items provided by the model change (#29084).
-                reuseItems: !MainCtx.gridView
-
                 listCoverWidth: root.listCoverWidth
                 listCoverHeight: root.listCoverHeight
                 listCoverRadius: root.listCoverRadius
@@ -476,7 +474,7 @@ Widgets.PageExt {
 
                 onActiveFocusChanged: {
                     if (activeFocus) {
-                        const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
+                        const item = currentItem?.currentItem
                         contentYBehavior.enabled = true
                         Helpers.positionFlickableToContainItem(flickable, item ?? this)
                         contentYBehavior.enabled = false
@@ -485,7 +483,7 @@ Widgets.PageExt {
 
                 onCurrentIndexChanged: {
                     if (activeFocus) {
-                        const item = currentItem?.currentItem ?? currentItem?._getItem(currentIndex) // FIXME: `ExpandGridView` does not have `currentItem`.
+                        const item = currentItem?.currentItem
                         if (item) {
                             contentYBehavior.enabled = true
                             Helpers.positionFlickableToContainItem(flickable, item)

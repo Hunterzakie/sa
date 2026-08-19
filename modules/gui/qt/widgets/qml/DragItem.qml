@@ -54,7 +54,7 @@ Item {
 
     // Optional, for now used by the default `getTextureProvider()`.
     // Mandatory for `MLDragItem`, as `MLDragItem` retrieves the model through the view.
-    property Item view // can not use `ItemView` because of `ExpandGridView`
+    property ItemView view
 
     // Optional, function that takes index and returns the texture provider:
     property var getTextureProvider: function(index) {

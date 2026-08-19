@@ -570,11 +570,14 @@ FocusScope {
     Component {
         id: gridComponent
 
-        Widgets.ExpandGridItemView {
+        Widgets.ExpandGridView {
             id: gridView_id
 
-            basePictureWidth: VLCStyle.gridCover_music_width
-            basePictureHeight: VLCStyle.gridCover_music_height
+            gridSizeHelper: GridSizeHelper {
+                basePictureWidth: VLCStyle.gridCover_music_width
+                basePictureHeight: VLCStyle.gridCover_music_height
+                availableWidth: gridView_id.contentWidth
+            }
 
             focus: true
             activeFocusOnTab:true
@@ -624,24 +627,9 @@ FocusScope {
                 }
             }
 
-            expandDelegate: MusicAlbumsGridExpandDelegate {
-                id: expandDelegateId
-
-                x: 0
-                width: gridView_id.width
-                onRetract: gridView_id.retract()
-                Navigation.parentItem: root
-
-                Navigation.cancelAction: function() {
-                    gridView_id.setCurrentItemFocus(Qt.TabFocusReason);
-                }
-
-                Navigation.upAction: function() {
-                    gridView_id.setCurrentItemFocus(Qt.TabFocusReason);
-                }
-
-                Navigation.downAction: function() {}
-            }
+            // NOTE: We provide the url here so that initial properties can be set by the `Loader`.
+            // TODO: Use modularization overload:
+            expandDelegate: Qt.createComponent("qrc:///qt/qml/VLC/MediaLibrary/MusicAlbumsGridExpandDelegate.qml")
 
             onActionAtIndex: (index) => {
                 if (albumSelectionModel.selectedIndexes.length === 1) {

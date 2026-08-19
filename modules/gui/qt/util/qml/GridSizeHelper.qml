@@ -46,12 +46,12 @@ QtObject{
 
     readonly property int _defaultHorizontalSpacing: VLCStyle.column_spacing
 
-    property var maxNbItemPerRow
+    property int maxNbItemPerRow: basePictureWidth === basePictureHeight ? 10 : 6
     readonly property int nbItemPerRow: {
         const _nbItemPerRow = Math.max(
             Math.floor(
-                (availableWidth + _defaultHorizontalSpacing) /
-                (basePictureWidth + _defaultHorizontalSpacing)
+                (availableWidth + _defaultHorizontalSpacing * 2) /
+                (basePictureWidth + _defaultHorizontalSpacing * 2)
             ), 1
         )
 
@@ -59,7 +59,7 @@ QtObject{
     }
 
     // NOTE: Responsive cell sizing based on available width
-    readonly property int cellWidth: (availableWidth + horizontalSpacing) / nbItemPerRow - horizontalSpacing
+    readonly property int cellWidth: (availableWidth) / nbItemPerRow - horizontalSpacing * 2
     readonly property int cellHeight: (basePictureHeight / basePictureWidth) * cellWidth + textHeight
 
     // NOTE: Find the maximum picture size for nbItemPerRow == 1, so that we downscale in most of the cases
