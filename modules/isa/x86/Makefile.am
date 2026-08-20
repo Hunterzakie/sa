@@ -15,3 +15,11 @@ if HAVE_SSE2
 x86_PLUGINS += \
     libdeinterlace_x86_plugin.la 
 endif
+
+libyadif_x86_plugin_la_SOURCES = \
+    isa/x86/yadif.c  isa/x86/yadif_x86.asm
+
+if HAVE_X86ASM
+x86_PLUGINS += \
+    libyadif_x86_plugin.la 
+endif

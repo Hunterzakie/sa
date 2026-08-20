@@ -26,6 +26,7 @@
 #endif
 
 #include <stdint.h>
+#include <stdbit.h>
 #include <assert.h>
 
 #include <vlc_common.h>
@@ -45,6 +46,12 @@
 /* yadif.h comes from yadif.c of FFmpeg project.
    Necessary preprocessor macros are defined in common.h. */
 #include "yadif.h"
+#include "yadif_filter.h"  /* SIMD dispatch struct/typedef */
+
+
+static struct yadif_filter_functions funcs = {
+    .filter = { yadif_filter_line_c, yadif_filter_line_c_16bit }
+};
 
 int RenderYadifSingle( filter_t *p_filter, picture_t *p_dst, picture_t *p_src )
 {
@@ -108,22 +115,10 @@ int RenderYadif( filter_t *p_filter, picture_t *p_dst, picture_t *p_src,
     /* Filter if we have all the pictures we need */
     if( p_prev && p_cur && p_next )
     {
-        /* */
-        void (*filter)(uint8_t *dst, uint8_t *prev, uint8_t *cur, uint8_t *next,
-                       int w, int prefs, int mrefs, int parity, int mode);
+        yadif_filter_cb filter;
 
-#if defined(HAVE_X86ASM)
-        if( vlc_CPU_SSSE3() )
-            filter = vlcpriv_yadif_filter_line_ssse3;
-        else
-        if( vlc_CPU_SSE2() )
-            filter = vlcpriv_yadif_filter_line_sse2;
-        else
-#endif
-            filter = yadif_filter_line_c;
-
-        if( p_sys->chroma->pixel_size == 2 )
-            filter = yadif_filter_line_c_16bit;
+        vlc_CPU_functions_init_once("yadif filter functions", &funcs);
+        filter =  funcs.filter[stdc_trailing_zeros(p_sys->chroma->pixel_size)];
 
         for( int n = 0; n < p_dst->i_planes; n++ )
         {

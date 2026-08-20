@@ -169,12 +169,11 @@ libdeinterlace_plugin_la_SOURCES = \
 	video_filter/deinterlace/algo_yadif.c video_filter/deinterlace/algo_yadif.h \
 	video_filter/deinterlace/yadif.h \
 	video_filter/deinterlace/algo_phosphor.c video_filter/deinterlace/algo_phosphor.h \
-	video_filter/deinterlace/algo_ivtc.c video_filter/deinterlace/algo_ivtc.h
+	video_filter/deinterlace/algo_ivtc.c video_filter/deinterlace/algo_ivtc.h \
+	video_filter/deinterlace/yadif_filter.h
+
 libdeinterlace_plugin_la_CPPFLAGS = $(AM_CPPFLAGS)
 libdeinterlace_plugin_la_CFLAGS = $(AM_CFLAGS)
-if HAVE_X86ASM
-libdeinterlace_plugin_la_SOURCES += video_filter/deinterlace/yadif_x86.asm
-endif
 if HAVE_ALTIVEC
 libdeinterlace_plugin_la_CPPFLAGS += -DCAN_COMPILE_C_ALTIVEC
 endif

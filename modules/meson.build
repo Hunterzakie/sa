@@ -369,7 +369,7 @@ subdir('visualization')
 # lua module
 subdir('lua')
 
-#x86 modules
+# yadif x86 module
 subdir('isa/x86')
 
 # muxer modules
