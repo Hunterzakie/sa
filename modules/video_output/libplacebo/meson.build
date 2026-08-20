@@ -52,6 +52,15 @@ if vulkan_dep.found()
         'dependencies' : [libplacebo_dep],
     }
 
+    # VA-API hardware interop
+    vlc_modules += {
+        'name' : 'placebo_vaapi',
+        'sources' : files('interop/vaapi.c', '../../hw/vaapi/vlc_vaapi.c'),
+        'link_with' : [libplacebo_vkinterop],
+        'dependencies' : [libplacebo_dep, libva_dep],
+        'enabled' : libva_dep.found(),
+    }
+
     # NVDEC hardware interop (CUDA <-> Vulkan external memory)
     placebo_nvdec_dep = dependency('ffnvcodec', required: false)
     if placebo_nvdec_dep.found()

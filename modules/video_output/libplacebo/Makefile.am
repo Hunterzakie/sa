@@ -59,6 +59,23 @@ vout_PLUGINS += libplacebo_nvdec_plugin.la
 endif
 endif
 
+### VA-API interop
+libplacebo_vaapi_plugin_la_SOURCES = \
+	video_output/libplacebo/interop/vaapi.c \
+	hw/vaapi/vlc_vaapi.c \
+	hw/vaapi/vlc_vaapi.h
+libplacebo_vaapi_plugin_la_CFLAGS = $(AM_CFLAGS) $(LIBPLACEBO_CFLAGS) \
+				  $(VULKAN_CFLAGS) $(LIBVA_CFLAGS)
+libplacebo_vaapi_plugin_la_LIBADD = $(LIBPLACEBO_LIBS) $(LIBVA_LIBS) \
+				  libplacebo_vkinterop.la
+libplacebo_vaapi_plugin_la_LDFLAGS = $(AM_LDFLAGS) $(vout_RPATH)
+
+if HAVE_VULKAN
+if HAVE_VAAPI
+vout_PLUGINS += libplacebo_vaapi_plugin.la
+endif
+endif
+
 ### Software interop
 libplacebo_sw_plugin_la_SOURCES = $(LIBPLACEBO_COMMONSOURCES) \
 				  video_output/libplacebo/interop/sw.c
