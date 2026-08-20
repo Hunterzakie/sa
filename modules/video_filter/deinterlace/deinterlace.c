@@ -306,7 +306,7 @@ vlc_module_begin ()
                 PHOSPHOR_DIMMER_LONGTEXT )
         change_integer_list( phosphor_dimmer_list, phosphor_dimmer_list_text )
         change_safe ()
-    set_deinterlace_callback( Open )
+    set_deinterlace_callback( Open, 0 )
 vlc_module_end ()
 
 /*****************************************************************************

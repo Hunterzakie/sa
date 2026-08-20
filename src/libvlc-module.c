@@ -443,6 +443,10 @@ static const char *const screensaver_texts[] = {
     "picture quality, for instance deinterlacing, or distort " \
     "the video.")
 
+#define VIDEO_FILTER_GL_TEXT N_("Prefer video filters via OpenGL/ES")
+#define VIDEO_FILTER_GL_LONGTEXT N_( \
+    "Use OpenGL video filters in priority.")
+
 #define SNAP_PATH_TEXT N_("Video snapshot directory (or filename)")
 #define SNAP_PATH_LONGTEXT N_( \
     "Directory where the video snapshots will be stored.")
@@ -1777,6 +1781,8 @@ vlc_module_begin ()
     set_subcategory( SUBCAT_VIDEO_VFILTER )
     add_module_list("video-filter", "video filter", NULL,
                     VIDEO_FILTER_TEXT, VIDEO_FILTER_LONGTEXT)
+    add_bool("video-filter-gl", false, VIDEO_FILTER_GL_TEXT,
+             VIDEO_FILTER_GL_LONGTEXT)
 
 #if 0
     add_string( "pixel-ratio", "1", PIXEL_RATIO_TEXT, PIXEL_RATIO_TEXT )

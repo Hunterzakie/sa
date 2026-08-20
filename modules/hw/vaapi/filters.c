@@ -1144,7 +1144,7 @@ vlc_module_begin()
     add_shortcut("adjust")
 
     add_submodule()
-    set_deinterlace_callback(OpenDeinterlace)
+    set_deinterlace_callback(OpenDeinterlace, 2)
 
     add_submodule()
     set_callback_video_filter_priority(OpenDenoiseFilter, 2)

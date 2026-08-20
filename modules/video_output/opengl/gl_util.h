@@ -148,4 +148,13 @@ vlc_gl_HasExtension(
     return false;
 }
 
+static inline bool
+vlc_gl_IsFilterEnabled(vlc_object_t *obj, vlc_fourcc_t chroma)
+{
+    bool enabled = var_InheritBool(obj, "video-filter-gl");
+    if (enabled) /* Only use this filter for CPU chromas */
+        return vlc_fourcc_GetChromaBPP(chroma) != 0;
+    return false;
+}
+
 #endif

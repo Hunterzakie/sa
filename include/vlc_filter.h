@@ -146,13 +146,13 @@ struct vlc_filter_operations
 typedef int (*vlc_filter_open)(filter_t *);
 
 
-#define set_deinterlace_callback( activate )     \
+#define set_deinterlace_callback( activate, priority ) \
     {                                            \
         vlc_filter_open open__ = activate;       \
         (void) open__;                           \
         set_callback(activate)                   \
     }                                            \
-    set_capability( "video filter", 0 )          \
+    set_capability( "video filter", priority )   \
     add_shortcut( "deinterlace" )
 
 #define set_callback_video_filter( activate )              \

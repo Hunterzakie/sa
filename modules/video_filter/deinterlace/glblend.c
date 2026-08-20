@@ -231,6 +231,10 @@ error:
 
 static int OpenVideoFilter(filter_t *filter)
 {
+    if (!vlc_gl_IsFilterEnabled(VLC_OBJECT(filter),
+                                filter->fmt_out.video.i_chroma))
+        return VLC_EGENERIC;
+
     char *mode = var_InheritString(filter, "deinterlace-mode");
     bool is_supported = !mode
         || !strcmp(mode, "auto")
@@ -252,8 +256,7 @@ vlc_module_begin()
     set_description("OpenGL blend deinterlace filter")
     set_subcategory(SUBCAT_VIDEO_VFILTER)
 
-    set_callback_video_filter(OpenVideoFilter)
-    add_shortcut("glblend")
+    set_deinterlace_callback(OpenVideoFilter, 1)
 
     add_submodule()
         set_capability("opengl filter", 0)
