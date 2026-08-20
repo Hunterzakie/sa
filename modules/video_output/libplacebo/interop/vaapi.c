@@ -24,7 +24,6 @@
 
 #include <assert.h>
 #include <unistd.h>
-#include <sys/ioctl.h>
 #include <sys/stat.h>
 
 #include <va/va_drmcommon.h>
@@ -39,18 +38,6 @@
 
 #define VK_DEV dev
 #include "../../vulkan/vk_funcs.h"
-
-/* DMA-BUF sync file support for explicit synchronization (kernel 5.20+) */
-#ifndef DMA_BUF_IOCTL_EXPORT_SYNC_FILE
-struct dma_buf_export_sync_file {
-    uint32_t flags;
-    int32_t fd;
-};
-#define DMA_BUF_SYNC_READ  (1 << 0)
-#define DMA_BUF_SYNC_WRITE (2 << 0)
-#define DMA_BUF_BASE 'b'
-#define DMA_BUF_IOCTL_EXPORT_SYNC_FILE _IOWR(DMA_BUF_BASE, 2, struct dma_buf_export_sync_file)
-#endif
 
 struct vaapi_image_slot
 {
@@ -77,8 +64,6 @@ struct priv
 
     struct vaapi_image_slot image_cache[POOL_SIZE];
     uint64_t frame_counter;
-
-    PFN_vkImportSemaphoreFdKHR vkImportSemaphoreFd;
 
     unsigned width;
     unsigned height;
@@ -127,7 +112,6 @@ ImportImages(const struct vlc_vk_interop *interop,
             uint32_t image_index)
 {
     (void)image_index;
-    VkSemaphore acquire_sem = sync->sem;
     sync->signal_value = 0;
 
     const struct vlc_vk_device *dev = interop->dev;
@@ -176,56 +160,10 @@ ImportImages(const struct vlc_vk_interop *interop,
         return VLC_EGENERIC;
     }
 
-    /* Must be done BEFORE cache lookup so both cache hits and misses get proper sync */
-    {
-        int sync_fd = -1;
-        struct dma_buf_export_sync_file sync_file_export =
-        {
-            .flags = DMA_BUF_SYNC_READ,
-            .fd = -1,
-        };
-
-        if (ioctl(surface_desc.objects[0].fd, DMA_BUF_IOCTL_EXPORT_SYNC_FILE,
-                  &sync_file_export) == 0)
-        {
-            sync_fd = sync_file_export.fd;
-        }
-        else
-        {
-            VK_LOG_DBG(interop->dev, "DMA_BUF_IOCTL_EXPORT_SYNC_FILE not supported, CPU sync fallback");
-            va_status = vaSyncSurface(priv->va_dpy, surface);
-            if (va_status != VA_STATUS_SUCCESS)
-                VK_LOG_WARN(interop->dev, "vaSyncSurface failed: 0x%x %s", va_status, vaErrorStr(va_status));
-            /* sync_fd stays -1: immediately signaled per SYNC_FD spec */
-        }
-
-        if (acquire_sem != VK_NULL_HANDLE && priv->vkImportSemaphoreFd != NULL)
-        {
-            /* fd=-1 is valid for SYNC_FD import: means immediately signaled per spec */
-            VkImportSemaphoreFdInfoKHR import_info =
-            {
-                .sType = VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR,
-                .semaphore = acquire_sem,
-                .flags = VK_SEMAPHORE_IMPORT_TEMPORARY_BIT,
-                .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT,
-                .fd = sync_fd,
-            };
-
-            VkResult vk_res = priv->vkImportSemaphoreFd(dev->device, &import_info);
-            if (vk_res != VK_SUCCESS)
-            {
-                VK_LOG_WARN(interop->dev, "Failed to import sync FD into semaphore: %d", vk_res);
-                if (sync_fd >= 0)
-                    close(sync_fd);
-            }
-            /* else: FD consumed by import */
-        }
-        else
-        {
-            if (sync_fd >= 0)
-                close(sync_fd);
-        }
-    }
+    /* TODO: I will just make the CPU wait for the GPU to finish rendering the surface for now */
+    va_status = vaSyncSurface(priv->va_dpy, surface);
+    if (va_status != VA_STATUS_SUCCESS)
+        VK_LOG_WARN(interop->dev, "vaSyncSurface failed: 0x%x %s", va_status, vaErrorStr(va_status));
 
     for (unsigned i = 0; i < POOL_SIZE; i++)
     {
@@ -426,6 +364,13 @@ error:
 #endif
 }
 
+static int
+SetupAcquireSem(struct vlc_vk_interop *interop, VkSemaphore sem, uint32_t image_index)
+{
+    (void)interop; (void)sem; (void)image_index;
+    return VLC_SUCCESS;
+}
+
 static void
 Close(struct vlc_vk_interop *interop)
 {
@@ -519,7 +464,6 @@ Load(struct vlc_vk_interop *interop)
     }
 
     priv->frame_counter = 0;
-    priv->vkImportSemaphoreFd = NULL;
     priv->width = interop->format_probe.fmt_in.i_visible_width;
     priv->height = interop->format_probe.fmt_in.i_visible_height;
     priv->chroma = interop->format_probe.fmt_in.i_chroma;
@@ -536,14 +480,6 @@ Load(struct vlc_vk_interop *interop)
         priv->image_cache[i].backing_dev = 0;
         priv->image_cache[i].backing_ino = 0;
         priv->image_cache[i].last_used = 0;
-    }
-
-    priv->vkImportSemaphoreFd = (PFN_vkImportSemaphoreFdKHR)
-        vkGetDeviceProcAddr(dev->device, "vkImportSemaphoreFdKHR");
-    if (!priv->vkImportSemaphoreFd)
-    {
-        VK_LOG_WARN(interop->dev, "vkImportSemaphoreFdKHR not available, "
-                                  "will use implicit sync (may cause corruption)");
     }
 
     interop->format_probe.fmt_out.space = interop->format_probe.fmt_in.space;
@@ -644,10 +580,11 @@ Open(struct vlc_vk_interop_probe *probe)
         .probe_format = ProbeFormat,
         .load = Load,
         .import_images = ImportImages,
+        .setup_acquire_sem = SetupAcquireSem,
         .close = Close,
     };
     probe->ops = &ops;
-    probe->acquire_sem_handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
+    probe->acquire_sem_handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
 
     msg_Dbg(probe->obj, "VAAPI interop probe: %u instance exts, %u device exts",
             probe->required_instance_extension_count,
