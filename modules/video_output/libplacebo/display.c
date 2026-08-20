@@ -93,6 +93,7 @@ typedef struct vout_display_sys_t
     /* Keep a cached pl_tex for each plane of each interop slot,
     so that we can reuse it across frames */
     pl_tex interop_slot_tex[INTEROP_MAX_SLOTS][PICTURE_PLANE_MAX];
+    VkImage interop_slot_img[INTEROP_MAX_SLOTS][PICTURE_PLANE_MAX];
     uint32_t interop_next_slot;
 
     /* One timeline shared by every slot and plane */
@@ -480,6 +481,8 @@ static int RenderInteropUpload(vout_display_t *vd, struct pl_frame *img,
 /* One single-plane image per plane, each wrapped once into a cached pl_tex and
  * reused across frames. The interop copies the new frame into the same images
  * each time, so the wrap stays valid. */
+
+/* TODO: I changed it to rebuild when the VkImage changes just to get VA API working first. But that needs a redesign */
 static int RenderInteropImport(vout_display_t *vd, struct pl_frame *img,
                                picture_t *pic, const video_format_t *cfmt)
 {
@@ -524,12 +527,41 @@ static int RenderInteropImport(vout_display_t *vd, struct pl_frame *img,
         goto done;
     }
 
+    bool rewrap = !wrapped;
+    for (unsigned i = 0; i < planes && !rewrap; i++)
+        rewrap = sys->interop_slot_img[slot][i] != images[i];
+
+    if (rewrap && wrapped) {
+        ReleasePlanes(gpu, slot_tex, held);
+        held = 0;
+        for (unsigned i = 0; i < planes; i++)
+            pl_tex_destroy(gpu, &slot_tex[i]);
+    }
+
+    // It rewraps if it was never wrapped, or if the VkImage changed since last frame
+    if (rewrap) {
+        for (uint32_t o = 0; o < INTEROP_MAX_SLOTS; o++) {
+            if (o == slot || sys->interop_slot_tex[o][0] == NULL)
+                continue;
+
+            bool collides = false;
+            for (unsigned i = 0; i < planes && !collides; i++)
+                collides = sys->interop_slot_img[o][i] == images[i];
+
+            if (collides) {
+                for (unsigned i = 0; i < planes; i++) {
+                    pl_tex_destroy(gpu, &sys->interop_slot_tex[o][i]);
+                    sys->interop_slot_img[o][i] = VK_NULL_HANDLE;
+                }
+            }
+        }
+    }
+
     img->num_planes = planes;
     for (unsigned i = 0; i < planes; i++) {
         const struct vlc_vk_plane_info *info = &interop->plane_info[i];
 
-        // Wrap the VkImage into a pl_tex if it hasn't been wrapped yet. The wrap is cached and reused across frames.
-        if (!wrapped) {
+        if (rewrap) {
             slot_tex[i] = pl_vulkan_wrap(gpu, pl_vulkan_wrap_params(
                 .image  = images[i],
                 .width  = vd->source->i_width * info->w.num / info->w.den,
@@ -544,6 +576,8 @@ static int RenderInteropImport(vout_display_t *vd, struct pl_frame *img,
                     pl_tex_destroy(gpu, &slot_tex[j]);
                 goto done;
             }
+
+            sys->interop_slot_img[slot][i] = images[i];
         }
 
         img->planes[i] = (struct pl_plane){ .texture = slot_tex[i] };
@@ -551,10 +585,8 @@ static int RenderInteropImport(vout_display_t *vd, struct pl_frame *img,
 
     vlc_placebo_PlaneComponents(cfmt, img->planes);
 
-    /* First frame the image is still UNDEFINED for Vulkan, so we declare
-     * UNDEFINED, later frames are held and released in GENERAL */
-    const VkImageLayout layout = wrapped ? VK_IMAGE_LAYOUT_GENERAL
-                                         : VK_IMAGE_LAYOUT_UNDEFINED;
+    const VkImageLayout layout = rewrap ? VK_IMAGE_LAYOUT_UNDEFINED
+                                        : VK_IMAGE_LAYOUT_GENERAL;
 
     const pl_vulkan_sem release_sem = sync.signal_value
         ? (pl_vulkan_sem) { sync.sem, sync.signal_value }
