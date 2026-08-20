@@ -1,5 +1,5 @@
 /*****************************************************************************
- * interop_vaapi.c: Vulkan VAAPI opaque converter
+ * vaapi.c: Vulkan VAAPI opaque converter
  *****************************************************************************
  * Copyright (C) 2025-2026 VideoLabs
  *
@@ -33,12 +33,12 @@
 #include <vlc_plugin.h>
 #include <vlc_codec.h>
 
-#include "interop.h"
-#include "device_utils.h"
-#include "../../hw/vaapi/vlc_vaapi.h"
+#include "hw/vaapi/vlc_vaapi.h"
+#include "../vk_interop.h"
+#include "../../vulkan/device_utils.h"
 
 #define VK_DEV dev
-#include "vk_funcs.h"
+#include "../../vulkan/vk_funcs.h"
 
 /* DMA-BUF sync file support for explicit synchronization (kernel 5.20+) */
 #ifndef DMA_BUF_IOCTL_EXPORT_SYNC_FILE
@@ -54,9 +54,9 @@ struct dma_buf_export_sync_file {
 
 struct vaapi_image_slot
 {
-    VkImage image;
-    VkDeviceMemory memory;
-    VkImageView image_view;
+    VkImage images[PICTURE_PLANE_MAX];
+    VkDeviceMemory memories[PICTURE_PLANE_MAX];
+    unsigned plane_count;
 
     VASurfaceID surface_id;
 
@@ -85,44 +85,50 @@ struct priv
     vlc_fourcc_t chroma;
 };
 
+static VkFormat
+PlaneVkFormat(unsigned pixel_size, bool interleaved)
+{
+    if (pixel_size == 1)
+        return interleaved ? VK_FORMAT_R8G8_UNORM : VK_FORMAT_R8_UNORM;
+    return interleaved ? VK_FORMAT_R16G16_UNORM : VK_FORMAT_R16_UNORM;
+}
+
 static void
 DestroySlotResources(struct vaapi_image_slot *slot, const struct vlc_vk_device *dev)
 {
     VkDevice device = dev->device;
 
-    if (slot->image_view != VK_NULL_HANDLE)
+    for (unsigned i = 0; i < slot->plane_count; i++)
     {
-        vkDestroyImageView(device, slot->image_view, NULL);
-        slot->image_view = VK_NULL_HANDLE;
+        if (slot->images[i] != VK_NULL_HANDLE)
+        {
+            vkDestroyImage(device, slot->images[i], NULL);
+            slot->images[i] = VK_NULL_HANDLE;
+        }
+
+        if (slot->memories[i] != VK_NULL_HANDLE)
+        {
+            /* This will also close the imported DMA-BUF FD */
+            vkFreeMemory(device, slot->memories[i], NULL);
+            slot->memories[i] = VK_NULL_HANDLE;
+        }
     }
 
-    if (slot->image != VK_NULL_HANDLE)
-    {
-        vkDestroyImage(device, slot->image, NULL);
-        slot->image = VK_NULL_HANDLE;
-    }
-
-    if (slot->memory != VK_NULL_HANDLE)
-    {
-        /* This will also close the imported DMA-BUF FD */
-        vkFreeMemory(device, slot->memory, NULL);
-        slot->memory = VK_NULL_HANDLE;
-    }
-
+    slot->plane_count = 0;
     slot->surface_id = VA_INVALID_ID;
 }
 
 
 static int
 ImportImages(const struct vlc_vk_interop *interop,
-            VkImageView *image_view,
-            VkSemaphore acquire_sem,
-            uint64_t *acquire_sem_value,
+            VkImage *out_images,
+            struct vlc_vk_interop_sync *sync,
             picture_t *pic,
             uint32_t image_index)
 {
     (void)image_index;
-    *acquire_sem_value = 0;
+    VkSemaphore acquire_sem = sync->sem;
+    sync->signal_value = 0;
 
     const struct vlc_vk_device *dev = interop->dev;
     struct priv *priv = interop->priv;
@@ -151,10 +157,11 @@ ImportImages(const struct vlc_vk_interop *interop,
         return VLC_EGENERIC;
     }
 
-    /* Expecting single memory object for NV12/P010/P012 (2-plane formats) */
-    if (surface_desc.num_objects != 1)
+    /* Plane count doesn't always match the number of layers */
+    if (surface_desc.num_layers != interop->plane_count)
     {
-        VK_LOG_ERR(interop->dev, "Expected 1 memory object, got %u", surface_desc.num_objects);
+        VK_LOG_ERR(interop->dev, "Expected %u layers, got %u",
+                   interop->plane_count, surface_desc.num_layers);
         for (unsigned i = 0; i < surface_desc.num_objects; ++i)
             close(surface_desc.objects[i].fd);
         return VLC_EGENERIC;
@@ -226,7 +233,7 @@ ImportImages(const struct vlc_vk_interop *interop,
         {
             free_slot = &priv->image_cache[i];
         }
-        else if (priv->image_cache[i].surface_id == surface && priv->image_cache[i].image != VK_NULL_HANDLE)
+        else if (priv->image_cache[i].surface_id == surface && priv->image_cache[i].images[0] != VK_NULL_HANDLE)
         {
             if (priv->image_cache[i].backing_dev == st.st_dev &&
                 priv->image_cache[i].backing_ino == st.st_ino)
@@ -237,7 +244,8 @@ ImportImages(const struct vlc_vk_interop *interop,
                 for (unsigned j = 0; j < surface_desc.num_objects; ++j)
                     close(surface_desc.objects[j].fd);
 
-                *image_view = slot->image_view;
+                for (unsigned j = 0; j < slot->plane_count; j++)
+                    out_images[j] = slot->images[j];
                 return VLC_SUCCESS;
             }
             else
@@ -258,7 +266,7 @@ ImportImages(const struct vlc_vk_interop *interop,
 
         for (unsigned i = 0; i < POOL_SIZE; i++)
         {
-            if (priv->image_cache[i].image != VK_NULL_HANDLE)
+            if (priv->image_cache[i].images[0] != VK_NULL_HANDLE)
             {
                 DestroySlotResources(&priv->image_cache[i], dev);
             }
@@ -271,175 +279,150 @@ ImportImages(const struct vlc_vk_interop *interop,
         slot = free_slot;
     }
 
-    VkSubresourceLayout plane_layouts[2];
+    slot->plane_count = surface_desc.num_layers;
+
     for (unsigned i = 0; i < surface_desc.num_layers; i++)
     {
-        plane_layouts[i].offset = surface_desc.layers[i].offset[0];
-        plane_layouts[i].size = 0;  /* Unknown, driver will determine */
-        plane_layouts[i].rowPitch = surface_desc.layers[i].pitch[0];
-        plane_layouts[i].arrayPitch = 0;
-        plane_layouts[i].depthPitch = 0;
-    }
+        const uint32_t obj_idx = surface_desc.layers[i].object_index[0];
+        const struct vlc_vk_plane_info *info = &interop->plane_info[i];
 
-    VkImageDrmFormatModifierExplicitCreateInfoEXT drm_mod_info =
-    {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT,
-        .pNext = NULL,
-        .drmFormatModifier = surface_desc.objects[0].drm_format_modifier,
-        .drmFormatModifierPlaneCount = surface_desc.num_layers,
-        .pPlaneLayouts = plane_layouts,
-    };
-
-    VkExternalMemoryImageCreateInfo ext_mem_img_info =
-    {
-        .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
-        .pNext = &drm_mod_info,
-        .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT,
-    };
-
-    VkImageCreateInfo img_info =
-    {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        .pNext = &ext_mem_img_info,
-        .imageType = VK_IMAGE_TYPE_2D,
-        .format = interop->format_probe.vk_format,
-        .extent = { priv->width, priv->height, 1 },
-        .mipLevels = 1,
-        .arrayLayers = 1,
-        .samples = VK_SAMPLE_COUNT_1_BIT,
-        .tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT,
-        .usage = VK_IMAGE_USAGE_SAMPLED_BIT,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-    };
-
-    VkResult res = vkCreateImage(dev->device, &img_info, NULL, &slot->image);
-    if (res != VK_SUCCESS)
-    {
-        VK_LOG_ERR(interop->dev, "Failed to create Vulkan image from DMA-BUF: %d", res);
-        for (unsigned i = 0; i < surface_desc.num_objects; ++i)
-            close(surface_desc.objects[i].fd);
-        return VLC_EGENERIC;
-    }
-
-    unsigned slot_idx = (unsigned)(slot - priv->image_cache);
-    char name[64];
-    snprintf(name, sizeof(name), "VLC VAAPI Image %u", slot_idx);
-    vlc_vk_device_SetObjectName(interop->dev, VK_OBJECT_TYPE_IMAGE,
-                                (uint64_t)slot->image, name);
-
-    VkMemoryRequirements mem_req;
-    vkGetImageMemoryRequirements(dev->device, slot->image, &mem_req);
-
-    VkMemoryDedicatedAllocateInfo dedicated_info =
-    {
-        .sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
-        .image = slot->image,
-    };
-
-    VkImportMemoryFdInfoKHR import_fd_info =
-    {
-        .sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR,
-        .pNext = &dedicated_info,
-        .handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT,
-        .fd = surface_desc.objects[0].fd,
-    };
-
-    VkMemoryAllocateInfo alloc_info =
-    {
-        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        .pNext = &import_fd_info,
-        .allocationSize = mem_req.size,
-    };
-
-    if (!vlc_vk_device_MapMemoryTypeToIndex(interop->dev, mem_req.memoryTypeBits,
-                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                             &alloc_info.memoryTypeIndex))
-    {
-        VK_LOG_ERR(interop->dev, "Failed to find suitable memory type");
-        vkDestroyImage(dev->device, slot->image, NULL);
-        slot->image = VK_NULL_HANDLE;
-        for (unsigned i = 0; i < surface_desc.num_objects; ++i)
-            close(surface_desc.objects[i].fd);
-        return VLC_EGENERIC;
-    }
-
-    res = vkAllocateMemory(dev->device, &alloc_info, NULL, &slot->memory);
-    if (res != VK_SUCCESS)
-    {
-        VK_LOG_ERR(interop->dev, "Failed to allocate Vulkan memory: %d", res);
-        vkDestroyImage(dev->device, slot->image, NULL);
-        slot->image = VK_NULL_HANDLE;
-        for (unsigned i = 0; i < surface_desc.num_objects; ++i)
-            close(surface_desc.objects[i].fd);
-        return VLC_EGENERIC;
-    }
-
-    snprintf(name, sizeof(name), "VLC VAAPI Memory %u", slot_idx);
-    vlc_vk_device_SetObjectName(interop->dev, VK_OBJECT_TYPE_DEVICE_MEMORY,
-                                (uint64_t)slot->memory, name);
-
-    res = vkBindImageMemory(dev->device, slot->image, slot->memory, 0);
-    if (res != VK_SUCCESS)
-    {
-        VK_LOG_ERR(interop->dev, "Failed to bind Vulkan image memory: %d", res);
-        vkFreeMemory(dev->device, slot->memory, NULL);
-        slot->memory = VK_NULL_HANDLE;
-        vkDestroyImage(dev->device, slot->image, NULL);
-        slot->image = VK_NULL_HANDLE;
-        for (unsigned i = 0; i < surface_desc.num_objects; ++i)
-            close(surface_desc.objects[i].fd);
-        return VLC_EGENERIC;
-    }
-
-    VkSamplerYcbcrConversionInfo ycbcr_info =
-    {
-        .sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO,
-        .conversion = interop->ycbcr_conversion,
-    };
-
-    VkImageViewCreateInfo view_info =
-    {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .pNext = &ycbcr_info,
-        .image = slot->image,
-        .viewType = VK_IMAGE_VIEW_TYPE_2D,
-        .format = interop->format_probe.vk_format,
-        .subresourceRange =
+        VkSubresourceLayout plane_layout =
         {
-            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .baseMipLevel = 0,
-            .levelCount = 1,
-            .baseArrayLayer = 0,
-            .layerCount = 1,
-        },
-    };
+            .offset = surface_desc.layers[i].offset[0],
+            .size = 0,  /* Unknown, driver will determine */
+            .rowPitch = surface_desc.layers[i].pitch[0],
+            .arrayPitch = 0,
+            .depthPitch = 0,
+        };
 
-    res = vkCreateImageView(dev->device, &view_info, NULL, &slot->image_view);
-    if (res != VK_SUCCESS)
-    {
-        VK_LOG_ERR(interop->dev, "Failed to create Vulkan image view: %d", res);
-        vkFreeMemory(dev->device, slot->memory, NULL);
-        slot->memory = VK_NULL_HANDLE;
-        vkDestroyImage(dev->device, slot->image, NULL);
-        slot->image = VK_NULL_HANDLE;
-        for (unsigned i = 0; i < surface_desc.num_objects; ++i)
-            close(surface_desc.objects[i].fd);
-        return VLC_EGENERIC;
+        VkImageDrmFormatModifierExplicitCreateInfoEXT drm_mod_info =
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT,
+            .pNext = NULL,
+            .drmFormatModifier = surface_desc.objects[obj_idx].drm_format_modifier,
+            .drmFormatModifierPlaneCount = 1,
+            .pPlaneLayouts = &plane_layout,
+        };
+
+        VkExternalMemoryImageCreateInfo ext_mem_img_info =
+        {
+            .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
+            .pNext = &drm_mod_info,
+            .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT,
+        };
+
+        VkImageCreateInfo img_info =
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            .pNext = &ext_mem_img_info,
+            .imageType = VK_IMAGE_TYPE_2D,
+            .format = info->format,
+            .extent = {
+                priv->width * info->w.num / info->w.den,
+                priv->height * info->h.num / info->h.den,
+                1,
+            },
+            .mipLevels = 1,
+            .arrayLayers = 1,
+            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT,
+            .usage = info->usage,
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        };
+
+        VkResult res = vkCreateImage(dev->device, &img_info, NULL, &slot->images[i]);
+        if (res != VK_SUCCESS)
+        {
+            VK_LOG_ERR(interop->dev, "Failed to create Vulkan image from DMA-BUF: %d", res);
+            goto error;
+        }
+
+        unsigned slot_idx = (unsigned)(slot - priv->image_cache);
+        char name[64];
+        snprintf(name, sizeof(name), "VLC VAAPI Image %u plane %u", slot_idx, i);
+        vlc_vk_device_SetObjectName(interop->dev, VK_OBJECT_TYPE_IMAGE,
+                                    (uint64_t)slot->images[i], name);
+
+        VkMemoryRequirements mem_req;
+        vkGetImageMemoryRequirements(dev->device, slot->images[i], &mem_req);
+
+        VkMemoryDedicatedAllocateInfo dedicated_info =
+        {
+            .sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
+            .image = slot->images[i],
+        };
+
+        /* The driver may have already allocated the memory for the image */
+        int import_fd = dup(surface_desc.objects[obj_idx].fd);
+        if (import_fd < 0)
+        {
+            VK_LOG_ERR(interop->dev, "Failed to duplicate DMA-BUF FD: %m");
+            goto error;
+        }
+
+        VkImportMemoryFdInfoKHR import_fd_info =
+        {
+            .sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR,
+            .pNext = &dedicated_info,
+            .handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT,
+            .fd = import_fd,
+        };
+
+        VkMemoryAllocateInfo alloc_info =
+        {
+            .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+            .pNext = &import_fd_info,
+            .allocationSize = mem_req.size,
+        };
+
+        if (!vlc_vk_device_MapMemoryTypeToIndex(interop->dev, mem_req.memoryTypeBits,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                 &alloc_info.memoryTypeIndex))
+        {
+            VK_LOG_ERR(interop->dev, "Failed to find suitable memory type");
+            close(import_fd);
+            goto error;
+        }
+
+        res = vkAllocateMemory(dev->device, &alloc_info, NULL, &slot->memories[i]);
+        if (res != VK_SUCCESS)
+        {
+            VK_LOG_ERR(interop->dev, "Failed to allocate Vulkan memory: %d", res);
+            close(import_fd);
+            goto error;
+        }
+
+        snprintf(name, sizeof(name), "VLC VAAPI Memory %u plane %u", slot_idx, i);
+        vlc_vk_device_SetObjectName(interop->dev, VK_OBJECT_TYPE_DEVICE_MEMORY,
+                                    (uint64_t)slot->memories[i], name);
+
+        res = vkBindImageMemory(dev->device, slot->images[i], slot->memories[i], 0);
+        if (res != VK_SUCCESS)
+        {
+            VK_LOG_ERR(interop->dev, "Failed to bind Vulkan image memory: %d", res);
+            goto error;
+        }
     }
 
-    snprintf(name, sizeof(name), "VLC VAAPI View %u", slot_idx);
-    vlc_vk_device_SetObjectName(interop->dev, VK_OBJECT_TYPE_IMAGE_VIEW,
-                                (uint64_t)slot->image_view, name);
+    for (unsigned i = 0; i < surface_desc.num_objects; ++i)
+        close(surface_desc.objects[i].fd);
 
     slot->surface_id = surface;
     slot->backing_dev = st.st_dev;
     slot->backing_ino = st.st_ino;
     slot->last_used = priv->frame_counter;
 
-    *image_view = slot->image_view;
+    for (unsigned i = 0; i < slot->plane_count; i++)
+        out_images[i] = slot->images[i];
 
     return VLC_SUCCESS;
+
+error:
+    DestroySlotResources(slot, dev);
+    for (unsigned i = 0; i < surface_desc.num_objects; ++i)
+        close(surface_desc.objects[i].fd);
+    return VLC_EGENERIC;
 #endif
 }
 
@@ -501,6 +484,8 @@ ProbeFormat(struct vlc_vk_interop_format_probe *format_probe)
         return VLC_EGENERIC;
     }
 
+    format_probe->sw_chroma = sw_chroma;
+
     msg_Dbg(format_probe->obj, "VAAPI format: %.4s → %.4s (VkFormat 0x%x), tiling=DRM_MODIFIER",
             (char*)&format_probe->fmt_in.i_chroma, (char*)&sw_chroma, format_probe->vk_format);
 
@@ -510,7 +495,6 @@ ProbeFormat(struct vlc_vk_interop_format_probe *format_probe)
 static int
 Load(struct vlc_vk_interop *interop)
 {
-    const struct vlc_vk_device *dev = interop->dev;
     vlc_decoder_device *dec_device = vlc_video_context_HoldDevice(interop->format_probe.vctx);
     if (dec_device == NULL)
     {
@@ -542,9 +526,12 @@ Load(struct vlc_vk_interop *interop)
 
     for (unsigned i = 0; i < POOL_SIZE; i++)
     {
-        priv->image_cache[i].image = VK_NULL_HANDLE;
-        priv->image_cache[i].memory = VK_NULL_HANDLE;
-        priv->image_cache[i].image_view = VK_NULL_HANDLE;
+        for (unsigned j = 0; j < PICTURE_PLANE_MAX; j++)
+        {
+            priv->image_cache[i].images[j] = VK_NULL_HANDLE;
+            priv->image_cache[i].memories[j] = VK_NULL_HANDLE;
+        }
+        priv->image_cache[i].plane_count = 0;
         priv->image_cache[i].surface_id = VA_INVALID_ID;
         priv->image_cache[i].backing_dev = 0;
         priv->image_cache[i].backing_ino = 0;
@@ -576,16 +563,36 @@ Load(struct vlc_vk_interop *interop)
                    interop->format_probe.fmt_in.lighting.MaxCLL, interop->format_probe.fmt_in.lighting.MaxFALL);
     }
 
-    /* Single multi-planar image: YCbCr sampler handles plane separation */
-    interop->plane_count = 1;
-    interop->plane_info[0] = (struct vlc_vk_plane_info)
+    const vlc_chroma_description_t *desc =
+        vlc_fourcc_GetChromaDescription(interop->format_probe.sw_chroma);
+    if (desc == NULL || desc->plane_count == 0)
     {
-        .w = { 1, 1 },
-        .h = { 1, 1 },
-        .format = interop->format_probe.vk_format,
-        .usage = VK_IMAGE_USAGE_SAMPLED_BIT,
-        .tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT,
-    };
+        VK_LOG_ERR(interop->dev, "No chroma description for %.4s",
+                   (char*)&interop->format_probe.sw_chroma);
+        vlc_decoder_device_Release(dec_device);
+        free(priv);
+        return VLC_EGENERIC;
+    }
+
+    assert(desc->plane_count <= PICTURE_PLANE_MAX);
+    interop->plane_count = desc->plane_count;
+    for (unsigned i = 0; i < desc->plane_count; i++)
+    {
+        bool interleaved = (desc->plane_count == 2 && i > 0);
+        unsigned plane_w = priv->width * desc->p[i].w.num / desc->p[i].w.den;
+        unsigned plane_h = priv->height * desc->p[i].h.num / desc->p[i].h.den;
+        if (interleaved)
+            plane_w /= 2;
+
+        interop->plane_info[i] = (struct vlc_vk_plane_info)
+        {
+            .w = { plane_w, priv->width },
+            .h = { plane_h, priv->height },
+            .format = PlaneVkFormat(desc->pixel_size, interleaved),
+            .usage = VK_IMAGE_USAGE_SAMPLED_BIT,
+            .tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT,
+        };
+    }
 
     interop->priv = priv;
 
