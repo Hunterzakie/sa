@@ -17,7 +17,7 @@ PKGS_ALL += qt-tools
 
 DEPS_qt = qt-tools harfbuzz $(DEPS_harfbuzz) jpeg $(DEPS_jpeg) png $(DEPS_png) zlib $(DEPS_zlib) vulkan-headers $(DEPS_vulkan-headers)
 ifdef HAVE_WIN32
-DEPS_qt += d3d12 $(DEPS_d3d12) dcomp $(DEPS_dcomp) uiautomationcore $(DEPS_uiautomationcore)
+DEPS_qt += d3d12 $(DEPS_d3d12) dcomp $(DEPS_dcomp) uiautomationcore $(DEPS_uiautomationcore) ioringapi $(DEPS_ioringapi)
 else
 DEPS_qt += freetype2 $(DEPS_freetype2)
 endif
@@ -60,6 +60,7 @@ qt: qtbase-everywhere-src-$(QTBASE_VERSION_FULL).tar.xz .sum-qt
 	$(APPLY) $(SRC)/qt/0001-rhi-d3d11-fix-availability-on-Windows-7-with-the-pla.patch
 	$(APPLY) $(SRC)/qt/0001-rhi-d3d11-emulate-constant-buffer-offsetting-if-ther.patch
 	$(APPLY) $(SRC)/qt/0001-rhi-make-QDxgiVSyncService-opt-in-on-Windows-7.patch
+	$(APPLY) $(SRC)/qt/0001-QIORing-win-fix-availability-with-old-MinGW.patch
 	$(MOVE)
 
 ifdef HAVE_WIN32
