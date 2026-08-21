@@ -174,7 +174,7 @@ void MLPlaylistModel::moveImpl(int64_t playlistId, HighLowRanges&& ranges)
  *    reason. Having the data split in before/after the destination point, allows to
  *    do it sequentially without having to guess what is the next segment to move
  */
-/* Q_INVOKABLE */ void MLPlaylistModel::move(const QModelIndexList & indexes, int to)
+/* Q_INVOKABLE */ void MLPlaylistModel::move(const QVector<int>& indexes, int to)
 {
     assert(m_mediaLib);
 
@@ -218,6 +218,36 @@ void MLPlaylistModel::moveImpl(int64_t playlistId, HighLowRanges&& ranges)
     moveImpl(id, std::move(highLowRanges));
 }
 
+void MLPlaylistModel::move(const QModelIndexList& indexes, int to)
+{
+    QVector<int> rows;
+    rows.reserve(indexes.size());
+    for (/*size_t*/ int i = 0; i < indexes.size(); ++i)
+        rows.append(indexes[i].row());
+    move(rows, to);
+}
+
+bool MLPlaylistModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int count, const QModelIndex &destinationParent, int destinationChild)
+{
+    // MLPlaylistModel model is a linear model, parent is useless but if provided it must be conforming:
+    assert(!sourceParent.isValid() || index(sourceRow, 0).parent() == sourceParent);
+    assert(!destinationParent.isValid() || index(destinationChild, 0).parent() == destinationParent);
+
+    if (count <= 0)
+        return false;
+
+    QVector<int> items;
+    items.reserve(count);
+
+    for (/*size_t*/ int i = 0; i < count; ++i)
+    {
+        items.push_back(sourceRow + i);
+    }
+
+    move(items, destinationChild);
+
+    return true; // ###
+}
 
 void MLPlaylistModel::removeImpl(int64_t playlistId, const std::vector<std::pair<int, int> >&& rangeList, size_t index)
 {
@@ -431,11 +461,18 @@ void MLPlaylistModel::thumbnailUpdated(const QModelIndex& idx, MLItem* mlitem, c
 
 std::vector<std::pair<int, int>> MLPlaylistModel::getSortedRowsRanges(const QModelIndexList & indexes, bool asc) const
 {
-    assert (indexes.size() > 0);
-
-    QList<int> rows;
+    QVector<int> rows;
+    rows.reserve(indexes.size());
     for (const QModelIndex & index : indexes)
         rows.append(index.row());
+    return getSortedRowsRanges(rows, asc);
+}
+
+std::vector<std::pair<int, int> > MLPlaylistModel::getSortedRowsRanges(const QVector<int> &indexes, bool asc) const
+{
+    assert (indexes.size() > 0);
+
+    auto rows = indexes;
 
     std::sort(rows.begin(), rows.end());
 

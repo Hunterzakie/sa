@@ -79,6 +79,26 @@ ListView {
     keyNavigationEnabled: false
     keyNavigationWraps: false
 
+    property int mode: ListViewExt.Mode.Normal
+
+    enum Mode {
+        Normal,
+        Select, // Item selection mode
+        Move // Item move mode
+    }
+
+    Navigation.cancelAction: () => {
+        if (mode === ListViewExt.Mode.Normal) {
+            Navigation.defaultNavigationCancel()
+        } else {
+            mode = ListViewExt.Mode.Normal
+        }
+    }
+    
+    Keys.onCancelPressed: {
+        mode = ListViewExt.Mode.Normal
+    }
+    
     ScrollBar.vertical: {
         // By default vertical scroll bar is only used when the orientation is vertical.
         if (root.defaultScrollBar && (root.orientation === ListView.Vertical))
@@ -514,8 +534,54 @@ ListView {
     // might be necessary as in Playqueue.
     // Derived views may override this function.
     function updateSelection(modifiers, oldIndex, newIndex) {
-        if (selectionModel)
+        if (!selectionModel)
+            return false
+
+        if (root.mode === ListViewExt.Mode.Normal) {
             selectionModel.updateSelection(modifiers, oldIndex, newIndex)
+            return true
+        } else if (root.mode === ListViewExt.Mode.Move) {
+            const selectedIndexes = root.selectionModel.sortedSelectedIndexesFlat
+            if (selectedIndexes.length === 0)
+                return false
+            /* always move relative to the first item of the selection */
+            const firstItemIndex = selectedIndexes[0]
+            let target = firstItemIndex
+            if (newIndex > oldIndex) {
+                /* move down */
+                target += selectedIndexes.length + 1
+            } else if (newIndex < oldIndex && target > 0) {
+                /* move up */
+                target -= 1
+            }
+
+            target = Math.min(target, root.model.rowCount())
+
+            root.currentIndex = firstItemIndex
+
+            let ret = false
+
+            if (root.model.move) {
+                /* ret = */ root.model.move(selectedIndexes, target)
+            } else {
+                if (Helpers.isSortedIntegerArrayConsecutive(selectedIndexes)) {
+                    // We can use `QAbstractItemModel` api in this case:
+                    ret = root.model.moveRows(root.model.parent(root.model.index(firstItemIndex, 0)),
+                                              firstItemIndex,
+                                              selectedIndexes.length,
+                                              root.model.parent(root.model.index(target, 0)),
+                                              target)
+                } else {
+                    console.error(root, "selection is not consecutive and model does not implement `move(sortedSelectedIndexes, toIndex)`!")
+                    root.mode = ListViewExt.Mode.Normal
+                    // For now we require the model to implement `move()` in this case
+                }
+            }
+
+            return ret
+        }
+
+        return true // ###
     }
 
     function updateItemContainsDrag(item, set) {
@@ -643,7 +709,14 @@ ListView {
 
         if (KeyHelper.matchOk(event)) { //enter/return/space
             event.accepted = true
-            actionAtIndex(currentIndex)
+
+            if (root.mode === ListViewExt.Mode.Select) {
+                if (root.selectionModel) {
+                    root.selectionModel.select(root.model.index(currentIndex, 0), ItemSelectionModel.Toggle)
+                }
+            } else if (root.mode === ListViewExt.Mode.Normal) {
+                actionAtIndex(currentIndex)
+            }
         }
     }
 

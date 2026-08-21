@@ -54,6 +54,13 @@ public: // Interface
     Q_INVOKABLE void insert(const QVariantList & items, int at);
 
     Q_INVOKABLE void move(const QModelIndexList & indexes, int to);
+    Q_INVOKABLE void move(const QVector<int>& indexes, int to);
+
+    Q_INVOKABLE bool moveRows(const QModelIndex &sourceParent,
+                              int sourceRow,
+                              int count,
+                              const QModelIndex &destinationParent,
+                              int destinationChild) override;
 
     Q_INVOKABLE void remove(const QModelIndexList & indexes);
 
@@ -91,6 +98,7 @@ private: // Functions
      * returns list of row indexes in decreasing order
      */
     std::vector<std::pair<int, int>> getSortedRowsRanges(const QModelIndexList & indexes, bool asc) const;
+    std::vector<std::pair<int, int>> getSortedRowsRanges(const QVector<int> & indexes, bool asc) const;
 
     void removeImpl(int64_t playlistId, const std::vector<std::pair<int, int> >&& rangeList, size_t index);
 

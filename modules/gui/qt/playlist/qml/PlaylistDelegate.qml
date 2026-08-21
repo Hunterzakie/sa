@@ -64,7 +64,7 @@ T.Control {
     required property bool preparsed
 
     // Optional
-    property var contextMenu
+    property PlaylistContextMenu contextMenu
 
     // Optional, an item to show as drag target
     property Item dragItem
@@ -109,7 +109,9 @@ T.Control {
 
     Keys.onMenuPressed: {
         if (contextMenu) {
+            contextMenu.displayKeyboardModeActions = true
             contextMenu.popup(delegate.mappedIndex(), delegate.mapToGlobal(0, delegate.height))
+            contextMenu.displayKeyboardModeActions = false
         }
     }
 
@@ -325,9 +327,15 @@ T.Control {
             onSingleTapped: (eventPoint, button) => {
                 initialAction()
 
-                if (!(delegate.selected && button === Qt.RightButton)) {
-                    view.selectionModel.updateSelection(point.modifiers, view.currentIndex, index)
-                    view.currentIndex = index
+                if (view.mode === Widgets.ListViewExt.Normal) {
+                    if (!(delegate.selected && button === Qt.RightButton)) {
+                        view.selectionModel.updateSelection(point.modifiers, view.currentIndex, index)
+                        view.currentIndex = index
+                    }
+                } else {
+                    if (button === Qt.LeftButton && view.mode === Widgets.ListViewExt.Select) {
+                        view.selectionModel.select(view.model.index(index, 0), ItemSelectionModel.Toggle)
+                    }
                 }
 
                 if (contextMenu && button === Qt.RightButton)
@@ -361,7 +369,7 @@ T.Control {
             onActiveChanged: {
                 if (dragItem) {
                     if (active) {
-                        if (!selected) {
+                        if (!selected && view.mode === Widgets.ListViewExt.Normal) {
                             /* the dragged item is not in the selection, replace the selection */
                             view.selectionModel.select(index, ItemSelectionModel.ClearAndSelect)
                         }

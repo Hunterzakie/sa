@@ -72,6 +72,16 @@ public:
     Q_INVOKABLE virtual void removeItems(const QVector<int> &indexes);
     Q_INVOKABLE virtual void moveItemsPre(const QVector<int> &indexes, int preTarget);
     Q_INVOKABLE virtual void moveItemsPost(const QVector<int> &indexes, int postTarget);
+    Q_INVOKABLE void move(const QVector<int>& indexes, int to) // alias for `moveItemsPre()`
+    {
+        moveItemsPre(indexes, to);
+    }
+
+    Q_INVOKABLE bool moveRows(const QModelIndex &sourceParent,
+                              int sourceRow,
+                              int count,
+                              const QModelIndex &destinationParent,
+                              int destinationChild) override;
 
     int getCurrentIndex() const;
 

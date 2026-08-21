@@ -22,5 +22,4 @@ LabelExt {
     elide: Text.ElideRight
     font.pixelSize: VLCStyle.fontSize_xxxlarge
     font.weight: Font.Bold
-    textFormat: Text.PlainText
 }

@@ -51,6 +51,24 @@ Widgets.PageExt {
     hasGridListMode: false
     isSearchable: true
 
+    property string modelTitle
+
+    title: {
+        switch (view?.mode) {
+            case Widgets.ListViewExt.Mode.Select:
+                return qsTr("%1 <font color=\"%3\">(Selecting items: %2)</font>").arg(modelTitle)
+                                                                                 .arg(view.selectionModel.selectedIndexesFlat.length)
+                                                                                 .arg(header.colorContext.accent)
+            case Widgets.ListViewExt.Mode.Move:
+                return qsTr("%1 <font color=\"%3\">(Moving items: %2)</font>").arg(modelTitle)
+                                                                              .arg(view.selectionModel.selectedIndexesFlat.length)
+                                                                              .arg(header.colorContext.accent)
+            case Widgets.ListViewExt.Mode.Normal:
+            default:
+                return modelTitle
+        }
+    }
+
     // Events
 
     onModelChanged: resetFocus()
@@ -71,8 +89,6 @@ Widgets.PageExt {
             index = initialIndex
         else
             index = 0
-
-        view.selectionModel.select(model.index(index, 0), ItemSelectionModel.ClearAndSelect);
 
         view.positionViewAtIndex(index, ItemView.Contain)
 
@@ -168,6 +184,22 @@ Widgets.PageExt {
             model: root.model
             ctx: MainCtx
 
+            displayActionKeyboardSelectionMode: (view.mode !== Widgets.ListViewExt.Mode.Select)
+            displayActionKeyboardMoveMode: (view.mode !== Widgets.ListViewExt.Mode.Move)
+            displayActionKeyboardResetMode: (view.mode !== Widgets.ListViewExt.Mode.Normal)
+
+            onKeyboardSelectionModeRequested: {
+                view.mode = Widgets.ListViewExt.Mode.Select
+            }
+
+            onKeyboardMoveModeRequested: {
+                view.mode = Widgets.ListViewExt.Mode.Move
+            }
+
+            onKeyboardResetModeRequested: {
+                view.mode = Widgets.ListViewExt.Mode.Normal
+            }
+
            function tableView_popup(index, selectedIndexes, globalPos) {
                popup(selectedIndexes, globalPos)
            }
@@ -201,6 +233,11 @@ Widgets.PageExt {
             Navigation.upItem: root.header
 
             Navigation.cancelAction: function () {
+                if (view.mode !== Widgets.ListViewExt.Normal) {
+                    view.mode = Widgets.ListViewExt.Normal
+                    return
+                }
+
                 if (view.currentIndex <= 0) {
                     root.Navigation.defaultNavigationCancel()
                 } else {
