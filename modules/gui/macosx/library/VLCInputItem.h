@@ -93,6 +93,9 @@ extern NSString * const VLCInputItemCommonDataDifferingFlagString;
 
 @end
 
+FOUNDATION_EXPORT NSString * _Nullable VLCPreferredDisplayTitle(VLCInputItem *inputItem,
+                                                                VLCMediaLibraryMediaItem * _Nullable libraryItem);
+
 NSDictionary<NSString *, id> *commonInputItemData(NSArray<VLCInputItem*> * const inputItems);
 
 @interface VLCInputNode : NSObject

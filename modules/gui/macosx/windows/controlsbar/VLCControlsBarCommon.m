@@ -542,10 +542,9 @@
 - (void)updateCurrentItemDisplayControls:(NSNotification *)notification
 {
     VLCInputItem * const inputItem = _playerController.currentMedia;
-    VLCMediaLibraryMediaItem * const mediaItem =
-        [VLCMediaLibraryMediaItem mediaItemForURL:_playerController.URLOfCurrentMediaItem];
+    VLCMediaLibraryMediaItem * const mediaItem = _playerController.currentMediaLibraryItem;
 
-    NSString * const displayTitle = mediaItem.title.length > 0 ? mediaItem.title : inputItem.name;
+    NSString * const displayTitle = VLCPreferredDisplayTitle(inputItem, mediaItem);
     self.playingItemDisplayField.stringValue = displayTitle ?: _NS("No current item");
     self.detailLabel.hidden =
         mediaItem == nil ||

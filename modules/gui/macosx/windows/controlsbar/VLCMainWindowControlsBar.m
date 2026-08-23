@@ -212,7 +212,7 @@
     NSDictionary<NSString *, id> * const boldAttribute = @{NSFontAttributeName: boldSystemFont};
 
     VLCMediaLibraryMediaItem * const mediaItem = _playerController.currentMediaLibraryItem;
-    NSString * const displayTitle = mediaItem.title.length > 0 ? mediaItem.title : inputItem.name;
+    NSString * const displayTitle = VLCPreferredDisplayTitle(inputItem, mediaItem);
     NSMutableAttributedString * const displayString = [[NSMutableAttributedString alloc] initWithString:displayTitle attributes:boldAttribute];
 
     if (inputItem.artist.length != 0) {

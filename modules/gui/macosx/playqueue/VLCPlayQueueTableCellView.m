@@ -123,11 +123,8 @@ NSString * const VLCDisplayTrackNumberPlayQueueSettingChanged = @"VLCDisplayTrac
     const BOOL validAlbumString = item.albumName && item.albumName.length > 0;
     VLCInputItem * const inputItem = item.inputItem;
     VLCMediaLibraryMediaItem * const mediaItem = item.mediaLibraryItem;
-    NSString * const libraryTitle = mediaItem.title;
-    NSString * const inputTitle = inputItem.title;
-    const BOOL validTitleString = libraryTitle.length > 0 || inputTitle.length > 0;
-
-    NSString *playTitle = libraryTitle.length > 0 ? libraryTitle : inputTitle ?: item.title;
+    NSString *playTitle = VLCPreferredDisplayTitle(inputItem, mediaItem) ?: item.title;
+    const BOOL validTitleString = playTitle.length > 0;
     if (validTitleString) {
         NSString * const trackNumberString = inputItem.trackNumber;
         if ([NSUserDefaults.standardUserDefaults boolForKey:VLCDisplayTrackNumberPlayQueueKey] && trackNumberString && trackNumberString.length > 0 && ![trackNumberString isEqualToString:@"0"]) {
