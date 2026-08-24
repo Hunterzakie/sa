@@ -5102,6 +5102,11 @@ PKG_ENABLE_MODULES_VLC([NOTIFY], [], [libnotify], [libnotify notification], [aut
 PKG_ENABLE_MODULES_VLC([MEDIALIBRARY], [medialibrary], [medialibrary >= 0.13.0], (medialibrary support), [auto])
 
 dnl
+dnl  Cloud storage (libcloudstorage)
+dnl
+PKG_ENABLE_MODULES_VLC([CLOUDSTORAGE], [access_cloudstorage], [libcloudstorage], [cloud storage support], [auto])
+
+dnl
 dnl  Endianness check
 dnl
 AC_C_BIGENDIAN
