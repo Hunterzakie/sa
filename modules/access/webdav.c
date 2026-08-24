@@ -218,7 +218,7 @@ static struct vlc_http_msg *DoPropfind(stream_t *access, const char *user,
 
     struct vlc_http_msg *resp = vlc_http_mgr_request(sys->manager, sys->secure,
                                                      sys->host, sys->port,
-                                                     req, true, false);
+                                                     req, true, NULL, true);
     vlc_http_msg_destroy(req);
 
     resp = vlc_http_msg_get_final(resp);

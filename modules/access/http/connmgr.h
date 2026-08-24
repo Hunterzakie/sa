@@ -32,6 +32,7 @@
 struct vlc_http_mgr;
 struct vlc_http_msg;
 struct vlc_http_cookie_jar_t;
+typedef struct vlc_frame_t block_t;
 
 /**
  * Sends an HTTP request
@@ -46,14 +47,17 @@ struct vlc_http_cookie_jar_t;
  * @param port TCP server port number, or 0 for the default port number
  * @param req HTTP request header to send
  * @param idempotent whether the request is idempotent
- * @param payload whether the request will carry a payload
+ * @param initial_payload data to be passed in the request body
+ * @param eos wether to keep the connection open or not
  *
  * @return The initial HTTP response header, or NULL in case of failure.
  */
 struct vlc_http_msg *vlc_http_mgr_request(struct vlc_http_mgr *mgr, bool https,
                                           const char *host, unsigned port,
                                           const struct vlc_http_msg *req,
-                                          bool idempotent, bool payload);
+                                          bool idempotent,
+                                          block_t* initial_payload,
+                                          bool eos);
 
 struct vlc_http_cookie_jar_t *vlc_http_mgr_get_jar(struct vlc_http_mgr *);
 

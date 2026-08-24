@@ -89,7 +89,7 @@ struct vlc_http_outfile *vlc_http_outfile_create(struct vlc_http_mgr *mgr,
     vlc_http_msg_add_cookies(req, vlc_http_mgr_get_jar(mgr));
 
     resp = vlc_http_mgr_request(mgr, secure, url.psz_host, url.i_port, req,
-                                false, true);
+                                false, NULL, false);
     vlc_http_msg_destroy(req);
     if (resp == NULL)
         goto error;
