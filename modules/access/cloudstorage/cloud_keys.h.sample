@@ -1,0 +1,28 @@
+#ifndef VLC_CLOUDSTORAGE_KEYS_H
+#define VLC_CLOUDSTORAGE_KEYS_H
+
+/* Sample template for cloud storage OAuth application credentials.
+ * Copy this file to cloud_keys.h and fill in your app credentials.
+ * The keys are statically compiled into the VLC binary. */
+
+#define HAS_GOOGLE_DRIVE_KEY
+static const char* GOOGLE_DRIVE_APP_ID = "YOUR_GOOGLE_CLIENT_ID";
+static const char* GOOGLE_DRIVE_APP_SECRET = "YOUR_GOOGLE_CLIENT_SECRET";
+
+#define HAS_DROPBOX_KEY
+static const char* DROPBOX_APP_ID = "YOUR_DROPBOX_CLIENT_ID";
+static const char* DROPBOX_APP_SECRET = "YOUR_DROPBOX_CLIENT_SECRET";
+
+#define HAS_ONEDRIVE_KEY
+static const char* ONEDRIVE_APP_ID = "YOUR_ONEDRIVE_CLIENT_ID";
+static const char* ONEDRIVE_APP_SECRET = "YOUR_ONEDRIVE_CLIENT_SECRET";
+
+#define HAS_BOX_KEY
+static const char* BOX_APP_ID = "YOUR_BOX_CLIENT_ID";
+static const char* BOX_APP_SECRET = "YOUR_BOX_CLIENT_SECRET";
+
+#define HAS_PCLOUD_KEY
+static const char* PCLOUD_APP_ID = "YOUR_PCLOUD_CLIENT_ID";
+static const char* PCLOUD_APP_SECRET = "YOUR_PCLOUD_CLIENT_SECRET";
+
+#endif /* VLC_CLOUDSTORAGE_KEYS_H */
