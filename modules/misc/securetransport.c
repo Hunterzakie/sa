@@ -742,7 +742,7 @@ static vlc_tls_t *st_ServerSessionOpen (vlc_tls_creds_t *crd, vlc_tls_t *sock,
     msg_Dbg(crd, "open TLS server session");
 
     vlc_tls_t *tls = st_SessionOpenCommon(crd, sock, true);
-    if (tls != NULL)
+    if (tls == NULL)
         return NULL;
 
     vlc_tls_st_t *sys = (vlc_tls_st_t *)tls;
