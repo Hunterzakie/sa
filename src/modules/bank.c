@@ -836,7 +836,10 @@ module_t **module_list_get (size_t *n)
 
     module_t **tab = malloc(modules.count * sizeof(*tab));
     if (unlikely(tab == NULL))
+    {
+        *n = 0;
         return NULL;
+    }
 
     size_t i = 0;
     for (vlc_plugin_t *lib = vlc_plugins; lib != NULL; lib = lib->next)
