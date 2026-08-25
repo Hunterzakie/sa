@@ -9,6 +9,7 @@ Platform support changes:
      - Android 6 or later (API-23)                       - 4.0.x and 5.0.x dropped
      - GCC 8.0 or Clang 8 (or equivalent)
      - MetalToolchain XCode component for macOS
+     - Python 3.10 or later for meson build and contribs
  * Windows on ARM is now supported
  * Universal Windows is only supported for Windows 10 (not Windows 8 anymore)
  * RISC-V support, including RISC-V Vector optimizations on platforms that support it
