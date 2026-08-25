@@ -43,6 +43,9 @@
 
 #include <vlc_demux.h>
 #include <vlc_charset.h>
+#include <vlc_lyrics.h>
+#include <vlc_vector.h>
+#include <vlc_iso_lang.h>
 
 /*****************************************************************************
  * Module descriptor
@@ -105,6 +108,7 @@ enum subtitle_type_e
                          and Gnome subtitles SubViewer 1.0 */
     SUB_TYPE_SBV,
     SUB_TYPE_SCC,      /* Scenarist Closed Caption */
+    SUB_TYPE_LRC,
 };
 
 typedef struct
@@ -155,6 +159,13 @@ typedef struct
         const char *psz_start;
     } sami;
 
+    struct
+    {
+        vlc_lyrics_t *p_lyrics;
+        char *psz_description;
+        input_attachment_t *p_attachment; /* p_lyrics, for the interfaces */
+    } lrc;
+
 } subs_properties_t;
 
 typedef struct
@@ -200,6 +211,7 @@ static int  ParseDKS        ( vlc_object_t *, subs_properties_t *, text_t *, sub
 static int  ParseSubViewer1 ( vlc_object_t *, subs_properties_t *, text_t *, subtitle_t *, size_t );
 static int  ParseCommonSBV  ( vlc_object_t *, subs_properties_t *, text_t *, subtitle_t *, size_t );
 static int  ParseSCC        ( vlc_object_t *, subs_properties_t *, text_t *, subtitle_t *, size_t );
+static int  ParseLRC        ( vlc_object_t *, subs_properties_t *, text_t *, subtitle_t *, size_t );
 
 static const struct
 {
@@ -229,6 +241,7 @@ static const struct
     { "subviewer1", SUB_TYPE_SUBVIEW1,    "Subviewer 1", ParseSubViewer1 },
     { "sbv",        SUB_TYPE_SBV,         "SBV",         ParseCommonSBV },
     { "scc",        SUB_TYPE_SCC,         "SCC",         ParseSCC },
+    { "lrc",        SUB_TYPE_LRC,         "LRC",         ParseLRC },
     { NULL,         SUB_TYPE_UNKNOWN,     "Unknown",     NULL }
 };
 /* When adding support for more formats, be sure to add their file extension
@@ -240,6 +253,7 @@ static int Control( demux_t *, int, va_list );
 
 static void Fix( demux_t * );
 static char *get_language_from_url(const char *);
+static char *get_filename_from_url(const char *);
 
 static vlc_tick_t vlc_tick_from_HMS( int h, int m, int s )
 {
@@ -340,6 +354,9 @@ static int Open ( vlc_object_t *p_this )
     p_sys->props.jss.b_inited       = false;
     p_sys->props.mpsub.b_inited     = false;
     p_sys->props.sami.psz_start     = NULL;
+    p_sys->props.lrc.p_lyrics       = NULL;
+    p_sys->props.lrc.psz_description = NULL;
+    p_sys->props.lrc.p_attachment   = NULL;
 
     /* Get the FPS */
     f_fps = var_CreateGetFloat( p_demux, "sub-original-fps" );
@@ -553,8 +570,10 @@ static int Open ( vlc_object_t *p_this )
                 p_sys->props.i_type = SUB_TYPE_DVDSUBTITLE;
                 break;
             }
-            else if( sscanf( s, "[%d:%d:%d]%c",
-                     &i_dummy, &i_dummy, &i_dummy, &p_dummy ) == 4 )
+            /* An LRC line using "[mm:ss:xx]" looks just like a DKS one */
+            else if( !demux_IsPathExtension( p_demux, ".lrc" ) &&
+                     sscanf( s, "[%d:%d:%d]%c",
+                             &i_dummy, &i_dummy, &i_dummy, &p_dummy ) == 4 )
             {
                 p_sys->props.i_type = SUB_TYPE_DKS;
                 break;
@@ -562,6 +581,17 @@ static int Open ( vlc_object_t *p_this )
             else if( strstr( s, "*** START SCRIPT" ) )
             {
                 p_sys->props.i_type = SUB_TYPE_SUBVIEW1;
+                break;
+            }
+            else if( sscanf( s, " [%d:%d]", &i_dummy, &i_dummy ) == 2 ||
+                     !strncasecmp( s, "[ar:", 4 ) || !strncasecmp( s, "[al:", 4 ) ||
+                     !strncasecmp( s, "[ti:", 4 ) || !strncasecmp( s, "[au:", 4 ) ||
+                     !strncasecmp( s, "[by:", 4 ) || !strncasecmp( s, "[re:", 4 ) ||
+                     !strncasecmp( s, "[ve:", 4 ) ||
+                     !strncasecmp( s, "[offset:", 8 ) ||
+                     !strncasecmp( s, "[length:", 8 ) )
+            {
+                p_sys->props.i_type = SUB_TYPE_LRC;
                 break;
             }
             else if( sscanf( s, "[%d][%d]", &i_dummy, &i_dummy ) == 2 ||
@@ -651,6 +681,35 @@ static int Open ( vlc_object_t *p_this )
         return VLC_EGENERIC;
     }
 
+    /* The lyrics track is tagged with the language, and is immutable once
+     * parsed, so it has to be known before rather than after the parse loop.
+     * "song.fr.lrc" names the language in ISO 639-1 while the lyrics API only
+     * takes ISO 639-2, so convert rather than lose it. */
+    if( p_sys->props.i_type == SUB_TYPE_LRC && p_sys->props.psz_lang == NULL )
+    {
+        char *psz_lang = get_language_from_url( p_demux->psz_url );
+
+        if( psz_lang != NULL )
+        {
+            const iso639_lang_t * const p_lang = vlc_find_iso639( psz_lang, false );
+            if( p_lang != NULL )
+            {
+                char *psz_iso2 = strdup( p_lang->psz_iso639_2B );
+                if( psz_iso2 != NULL )
+                {
+                    free( psz_lang );
+                    psz_lang = psz_iso2;
+                }
+            }
+        }
+        p_sys->props.psz_lang = psz_lang;
+    }
+
+    /* Tell the lyrics of this file apart from the other lyrics of the media */
+    if( p_sys->props.i_type == SUB_TYPE_LRC )
+        p_sys->props.lrc.psz_description =
+            get_filename_from_url( p_demux->psz_url );
+
     /* Load the whole file */
     text_t txtlines;
     TextLoad( &txtlines, p_demux->s );
@@ -682,6 +741,15 @@ static int Open ( vlc_object_t *p_this )
     TextUnload( &txtlines );
 
     msg_Dbg(p_demux, "loaded %zu subtitles", p_sys->subtitles.i_count );
+
+    /* The interfaces get the lyrics as an attachment */
+    if( p_sys->props.lrc.p_lyrics != NULL )
+    {
+        p_sys->props.lrc.p_attachment =
+            vlc_lyrics_ToAttachment( p_sys->props.lrc.p_lyrics );
+        vlc_lyrics_Release( p_sys->props.lrc.p_lyrics );
+        p_sys->props.lrc.p_lyrics = NULL;
+    }
 
     /* *** add subtitle ES *** */
     if( p_sys->props.i_type == SUB_TYPE_SSA1 ||
@@ -754,6 +822,12 @@ static void Close( vlc_object_t *p_this )
         free( p_sys->subtitles.p_array[i].psz_text );
     free( p_sys->subtitles.p_array );
     free( p_sys->props.psz_header );
+    free( p_sys->props.psz_lang );
+    if( p_sys->props.lrc.p_lyrics != NULL )
+        vlc_lyrics_Release( p_sys->props.lrc.p_lyrics );
+    free( p_sys->props.lrc.psz_description );
+    if( p_sys->props.lrc.p_attachment != NULL )
+        vlc_input_attachment_Release( p_sys->props.lrc.p_attachment );
 
     free( p_sys );
 }
@@ -844,10 +918,26 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
         case DEMUX_CAN_CONTROL_PACE:
             return demux_vaControlHelper( p_demux->s, 0, -1, 0, 1, i_query, args );
 
+        case DEMUX_GET_ATTACHMENTS:
+        {
+            if( p_sys->props.lrc.p_attachment == NULL )
+                break;
+
+            input_attachment_t ***ppp_attach =
+                va_arg( args, input_attachment_t *** );
+            int *pi_int = va_arg( args, int * );
+
+            *ppp_attach = vlc_alloc( 1, sizeof(input_attachment_t *) );
+            if( *ppp_attach == NULL )
+                return VLC_ENOMEM;
+            (*ppp_attach)[0] =
+                vlc_input_attachment_Hold( p_sys->props.lrc.p_attachment );
+            *pi_int = 1;
+            return VLC_SUCCESS;
+        }
         case DEMUX_GET_PTS_DELAY:
         case DEMUX_GET_FPS:
         case DEMUX_GET_META:
-        case DEMUX_GET_ATTACHMENTS:
         case DEMUX_GET_TITLE_INFO:
         case DEMUX_HAS_UNSUPPORTED_META:
         case DEMUX_CAN_RECORD:
@@ -2511,6 +2601,322 @@ static int ParseSCC( vlc_object_t *p_obj, subs_properties_t *p_props,
     }
 
     return VLC_SUCCESS;
+}
+
+/*****************************************************************************
+ * LRC, including the A2 word timing extension
+ *****************************************************************************/
+
+/* Parse "mm:ss", "mm:ss.xx", "mm:ss.xxx" or the colon separated "mm:ss:xx".
+ * Minutes may exceed 59, which long tracks rely on. On success *pp is left on
+ * the first byte after the timestamp. */
+static bool LrcTimestamp( const char **pp, const char *end, vlc_tick_t *pi_time )
+{
+    const char *p = *pp;
+    uint64_t i_minutes = 0, i_seconds = 0, i_fraction = 0;
+    unsigned i_digits = 0;
+
+    if( p == end || !isdigit( (unsigned char) *p ) )
+        return false;
+
+    while( p < end && isdigit( (unsigned char) *p ) )
+    {
+        if( i_minutes < UINT32_MAX )
+            i_minutes = i_minutes * 10 + (unsigned) (*p - '0');
+        p++;
+    }
+
+    if( p == end || *p != ':' )
+        return false;
+    p++;
+
+    if( p == end || !isdigit( (unsigned char) *p ) )
+        return false;
+    while( p < end && isdigit( (unsigned char) *p ) )
+    {
+        i_seconds = i_seconds * 10 + (unsigned) (*p - '0');
+        if( i_seconds > 59 )
+            return false;
+        p++;
+    }
+
+    if( p < end && (*p == '.' || *p == ':') )
+    {
+        p++;
+        if( p == end || !isdigit( (unsigned char) *p ) )
+            return false;
+        while( p < end && isdigit( (unsigned char) *p ) )
+        {
+            if( i_digits < 3 )
+                i_fraction = i_fraction * 10 + (unsigned) (*p - '0');
+            i_digits++;
+            p++;
+        }
+        /* One digit is tenths, two hundredths, three milliseconds */
+        while( i_digits < 3 )
+        {
+            i_fraction *= 10;
+            i_digits++;
+        }
+    }
+
+    *pi_time = vlc_tick_from_sec( i_minutes * 60 + i_seconds )
+             + VLC_TICK_FROM_MS( i_fraction );
+    *pp = p;
+    return true;
+}
+
+static bool LrcWordTag( const char **pp, const char *end, vlc_tick_t *pi_time )
+{
+    const char *p = *pp;
+
+    if( p == end || *p != '<' )
+        return false;
+    p++;
+    if( !LrcTimestamp( &p, end, pi_time ) || p == end || *p != '>' )
+        return false;
+
+    *pp = p + 1;
+    return true;
+}
+
+/* Strip the word tags out of a line and collapse its blanks, recording where
+ * each timed word lands in the resulting text. This is done in one pass so
+ * that the word offsets cannot get out of step with the text. A tag that gets
+ * no text, right before another tag or at the end of the line, is dropped. */
+static char *ParseLRCLine( const char *psz_line, struct vlc_lyrics_word **pp_words,
+                           size_t *pi_count )
+{
+    const char *p = psz_line;
+    const char *const end = psz_line + strlen( psz_line );
+    struct VLC_VECTOR(struct vlc_lyrics_word) words = VLC_VECTOR_INITIALIZER;
+    size_t i_len = 0;        /* bytes written so far */
+    bool b_space = false;    /* blank seen, not written yet */
+    bool b_pending = false;  /* the last word has no text yet */
+
+    /* Removing tags and collapsing blanks never makes the text longer */
+    char *psz_text = malloc( end - p + 1 );
+    if( psz_text == NULL )
+        return NULL;
+
+    while( p < end )
+    {
+        vlc_tick_t i_time;
+
+        if( LrcWordTag( &p, end, &i_time ) )
+        {
+            if( b_pending )
+                vlc_vector_last_ref( &words )->time = i_time;
+            else
+            {
+                if( words.size > 0 )
+                {
+                    struct vlc_lyrics_word *w = vlc_vector_last_ref( &words );
+                    w->length = i_len - w->offset;
+                }
+                const struct vlc_lyrics_word word = { .time = i_time };
+                if( !vlc_vector_push( &words, word ) )
+                {
+                    vlc_vector_destroy( &words );
+                    free( psz_text );
+                    return NULL;
+                }
+                b_pending = true;
+            }
+            continue;
+        }
+
+        if( isspace( (unsigned char) *p ) )
+        {
+            b_space = true;
+            p++;
+            continue;
+        }
+
+        if( b_space && i_len > 0 ) /* never leading */
+            psz_text[i_len++] = ' ';
+        b_space = false;
+
+        if( b_pending )
+        {
+            vlc_vector_last_ref( &words )->offset = i_len;
+            b_pending = false;
+        }
+        psz_text[i_len++] = *p++;
+    }
+    psz_text[i_len] = '\0';
+
+    if( b_pending )
+        vlc_vector_remove( &words, words.size - 1 );
+    else if( words.size > 0 )
+    {
+        struct vlc_lyrics_word *w = vlc_vector_last_ref( &words );
+        w->length = i_len - w->offset;
+    }
+
+    *pp_words = words.data; /* freed by the caller */
+    *pi_count = words.size;
+    return psz_text;
+}
+
+/* Parse a "[mm:ss.xx]" line time tag, which may be preceded by blanks */
+static bool LrcLineTag( const char **pp, const char *end, vlc_tick_t *pi_time )
+{
+    const char *p = *pp;
+
+    while( p < end && (*p == ' ' || *p == '\t') )
+        p++;
+    if( p == end || *p != '[' )
+        return false;
+    p++;
+    if( !LrcTimestamp( &p, end, pi_time ) || p == end || *p != ']' )
+        return false;
+
+    *pp = p + 1;
+    return true;
+}
+
+/* Parse an "[offset:ms]" tag. A positive offset shows the lyrics earlier. */
+static bool LrcOffsetTag( const char *psz_line, vlc_tick_t *pi_offset )
+{
+    while( *psz_line == ' ' || *psz_line == '\t' )
+        psz_line++;
+    if( strncasecmp( psz_line, "[offset:", 8 ) )
+        return false;
+    psz_line += 8;
+
+    char *psz_end;
+    const long long i_ms = strtoll( psz_line, &psz_end, 10 );
+    if( psz_end == psz_line || i_ms > INT32_MAX || i_ms < -INT32_MAX )
+        return false;
+    while( *psz_end == ' ' || *psz_end == '\t' )
+        psz_end++;
+    if( *psz_end != ']' )
+        return false;
+
+    *pi_offset = VLC_TICK_FROM_MS( i_ms );
+    return true;
+}
+
+/* Add a line once for each time tag it starts with, as in
+ * "[00:12.00][00:45.00]Chorus" */
+static int LoadLRCLine( vlc_lyrics_t *p_lyrics, const char *psz_line,
+                        vlc_tick_t i_offset )
+{
+    const char *const end = psz_line + strlen( psz_line );
+    const char *p = psz_line;
+    vlc_tick_t i_first, i_time;
+
+    if( !LrcLineTag( &p, end, &i_first ) )
+        return VLC_SUCCESS; /* not a lyrics line */
+    while( LrcLineTag( &p, end, &i_time ) )
+        ;
+
+    struct vlc_lyrics_word *words;
+    size_t word_count;
+    char *psz_text = ParseLRCLine( p, &words, &word_count );
+    if( psz_text == NULL )
+        return VLC_ENOMEM;
+
+    int ret = VLC_SUCCESS;
+    vlc_tick_t i_shift = 0;
+
+    p = psz_line;
+    while( ret != VLC_ENOMEM && LrcLineTag( &p, end, &i_time ) )
+    {
+        i_time -= i_offset;
+
+        /* Word times are absolute, so move them along with each repeat and
+         * with the offset */
+        for( size_t i = 0; i < word_count; i++ )
+            words[i].time += i_time - i_first - i_shift;
+        i_shift = i_time - i_first;
+
+        /* An offset can move the first lines before the start */
+        i_time = __MAX( i_time, 0 );
+
+        ret = vlc_lyrics_AddTimedLine( p_lyrics, 0, psz_text, i_time,
+                                       words, word_count );
+        /* Rather lose the word timing than the whole line */
+        if( ret == VLC_EINVAL && word_count > 0 )
+            ret = vlc_lyrics_AddLine( p_lyrics, 0, psz_text, i_time );
+    }
+
+    free( words );
+    free( psz_text );
+    return ret == VLC_ENOMEM ? VLC_ENOMEM : VLC_SUCCESS;
+}
+
+static int LoadLRC( subs_properties_t *p_props, text_t *txt )
+{
+    vlc_lyrics_t *p_lyrics = vlc_lyrics_New();
+    if( p_lyrics == NULL )
+        return VLC_ENOMEM;
+
+    int ret = VLC_SUCCESS;
+    if( vlc_lyrics_GetOrCreateTrack( p_lyrics, p_props->psz_lang,
+                                     p_props->lrc.psz_description, true ) < 0 )
+        ret = VLC_ENOMEM;
+
+    /* The offset applies to the whole file, wherever it is given */
+    vlc_tick_t i_offset = 0;
+    for( size_t i = txt->i_line; i < txt->i_line_count; i++ )
+        if( LrcOffsetTag( txt->line[i], &i_offset ) )
+            break;
+
+    const char *psz_line;
+    while( ret == VLC_SUCCESS && (psz_line = TextGetLine( txt )) != NULL )
+        ret = LoadLRCLine( p_lyrics, psz_line, i_offset );
+
+    if( ret == VLC_SUCCESS && !vlc_lyrics_Finish( p_lyrics ) )
+        ret = VLC_EGENERIC; /* not a single lyrics line */
+
+    if( ret != VLC_SUCCESS )
+    {
+        vlc_lyrics_Release( p_lyrics );
+        return ret;
+    }
+    p_props->lrc.p_lyrics = p_lyrics;
+    return VLC_SUCCESS;
+}
+
+static int ParseLRC( vlc_object_t *p_obj, subs_properties_t *p_props,
+                     text_t *txt, subtitle_t *p_subtitle, size_t i_idx )
+{
+    VLC_UNUSED( p_obj );
+
+    /* Lines can be repeated and can come in any order, so the whole file is
+     * read first, and the subtitles are taken from the sorted lyrics track */
+    if( i_idx == 0 )
+    {
+        int ret = LoadLRC( p_props, txt );
+        if( ret != VLC_SUCCESS )
+            return ret;
+    }
+
+    const struct vlc_lyrics_track *p_track =
+        vlc_lyrics_GetTrack( p_props->lrc.p_lyrics, 0 );
+    if( i_idx >= p_track->count )
+        return VLC_EGENERIC;
+
+    const struct vlc_lyrics_line *p_line = &p_track->lines[i_idx];
+    p_subtitle->psz_text = strdup( p_line->text );
+    if( !p_subtitle->psz_text )
+        return VLC_ENOMEM;
+    p_subtitle->i_start = VLC_TICK_0 + p_line->time;
+    p_subtitle->i_stop = -1;
+    return VLC_SUCCESS;
+}
+
+/* Name of the file pointed to by a URL, or NULL */
+static char *get_filename_from_url(const char *urlstr)
+{
+    const char *filename = strrchr(urlstr, '/');
+
+    filename = filename != NULL ? filename + 1 : urlstr;
+    if (*filename == '\0')
+        return NULL;
+    return vlc_uri_decode_duplicate(filename);
 }
 
 /* Tries to extract language from common filename patterns PATH/filename.LANG.ext
