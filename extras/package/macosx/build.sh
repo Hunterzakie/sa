@@ -139,7 +139,7 @@ BUILD_ARCH=`get_buildsystem_arch $BUILD_ARCH`
 BUILD_TRIPLET=$BUILD_ARCH-apple-darwin$OSX_KERNELVERSION
 HOST_TRIPLET=$ARCH-apple-darwin$OSX_KERNELVERSION
 
-info "Building VLC for macOS for architecture ${ACTUAL_ARCH} on a ${BUILD_ARCH} device"
+info "Building VLC for macOS, architecture ${ACTUAL_ARCH} on a ${BUILD_ARCH} device"
 
 spushd `dirname $0`/../../..
 vlcroot=`pwd`
@@ -285,11 +285,10 @@ else
 if [ ! -e "../$HOST_TRIPLET" ]; then
     if [ -n "$VLC_PREBUILT_CONTRIBS_URL" ]; then
         make prebuilt PREBUILT_URL="$VLC_PREBUILT_CONTRIBS_URL"
-        make .luac
     else
         make prebuilt
-        make .luac
     fi
+    make .luac
 fi
 fi
 spopd
@@ -388,9 +387,9 @@ if [ "$PACKAGETYPE" = "u" ]; then
     find VLC.app/ -type f -name "Growl" -exec strip -x {} \;
     find VLC.app/ -type f -name "Breakpad" -exec strip -x {} \;
 
-if [ "$BUILD_TRIPLET" = "$HOST_TRIPLET" ]; then
-    bin/vlc-cache-gen VLC.app/Contents/MacOS/plugins
-fi
+    if [ "$BUILD_TRIPLET" = "$HOST_TRIPLET" ]; then
+        bin/vlc-cache-gen VLC.app/Contents/MacOS/plugins
+    fi
 
     info "Building VLC release archive"
     make package-macosx-release
@@ -400,6 +399,6 @@ elif [ "$PACKAGETYPE" = "n" -o "$PACKAGE" = "yes" ]; then
     make package-macosx
 fi
 
-if [ ! -z "$VLCBUILDDIR" ];then
+if [ ! -z "$VLCBUILDDIR" ]; then
     popd
 fi
