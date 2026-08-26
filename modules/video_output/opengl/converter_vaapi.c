@@ -315,16 +315,49 @@ error:
     return VLC_EGENERIC;
 }
 
-/* Check that a surface from the pool can be derived and displayed via
- * dmabuf.
- */
 static bool
 vaegl_check_surface(const opengl_tex_converter_t *tc, VASurfaceID surface)
 {
     vlc_object_t *o = VLC_OBJECT(tc->gl);
     struct priv *priv = tc->priv;
-
     bool success = false;
+
+#if VA_CHECK_VERSION(1, 1, 0)
+    VADRMPRIMESurfaceDescriptor desc;
+
+    if (vlc_vaapi_ExportSurfaceHandle(o, priv->vadpy, surface,
+                                      VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2, 0,
+                                      &desc))
+        return false;
+
+    for (unsigned i = 0; i < desc.num_layers; ++i)
+    {
+        unsigned obj_idx = desc.layers[i].object_index[0];
+
+        if (desc.layers[i].num_planes > 1)
+            goto done;
+
+        EGLint w = (desc.width * tc->texs[i].w.num) / tc->texs[i].w.den;
+        EGLint h = (desc.height * tc->texs[i].h.num) / tc->texs[i].h.den;
+        EGLImageKHR egl_image =
+            vaegl_image_create(tc, w, h, priv->drm_fourccs[i],
+                               desc.objects[obj_idx].fd,
+                               desc.layers[i].offset[0], desc.layers[i].pitch[0],
+                               desc.objects[obj_idx].drm_format_modifier);
+        if (egl_image == NULL)
+        {
+            msg_Warn(o, "Can't create Image KHR: kernel too old ?");
+            goto done;
+        }
+        vaegl_image_destroy(tc, egl_image);
+    }
+
+    success = true;
+done:
+    for (unsigned i = 0; i < desc.num_objects; ++i)
+        close(desc.objects[i].fd);
+    return success;
+#else
     VAImage va_image = { .image_id = VA_INVALID_ID };
     if (vlc_vaapi_DeriveImage(o, priv->vadpy, surface, &va_image))
         goto error;
@@ -363,6 +396,7 @@ error:
         vlc_vaapi_DestroyImage(o, priv->vadpy, va_image.image_id);
     }
     return success;
+#endif
 }
 
 static picture_pool_t *
