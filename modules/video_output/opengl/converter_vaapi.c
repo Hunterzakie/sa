@@ -341,7 +341,7 @@ tc_vaegl_get_pool(const opengl_tex_converter_t *tc, unsigned requested_count)
     VABufferInfo va_buffer_info = (VABufferInfo) {
         .mem_type = VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME
     };
-    if (vlc_vaapi_AcquireBufferHandle(o ,priv->vadpy, va_image.buf,
+    if (vlc_vaapi_AcquireBufferHandle(o, priv->vadpy, va_image.buf,
                                       &va_buffer_info))
         goto error;
 
