@@ -315,25 +315,18 @@ error:
     return VLC_EGENERIC;
 }
 
-static picture_pool_t *
-tc_vaegl_get_pool(const opengl_tex_converter_t *tc, unsigned requested_count)
+/* Check that a surface from the pool can be derived and displayed via
+ * dmabuf.
+ */
+static bool
+vaegl_check_surface(const opengl_tex_converter_t *tc, VASurfaceID surface)
 {
     vlc_object_t *o = VLC_OBJECT(tc->gl);
     struct priv *priv = tc->priv;
 
-    picture_pool_t *pool =
-        vlc_vaapi_PoolNew(VLC_OBJECT(tc->gl), priv->vainst, priv->vadpy,
-                          requested_count, &priv->va_surface_ids, &tc->fmt,
-                          true);
-    if (!pool)
-        return NULL;
-
-    /* Check if a surface from the pool can be derived and displayed via dmabuf
-     * */
     bool success = false;
     VAImage va_image = { .image_id = VA_INVALID_ID };
-    if (vlc_vaapi_DeriveImage(o, priv->vadpy, priv->va_surface_ids[0],
-                              &va_image))
+    if (vlc_vaapi_DeriveImage(o, priv->vadpy, surface, &va_image))
         goto error;
 
     assert(va_image.format.fourcc == priv->fourcc);
@@ -369,11 +362,27 @@ error:
             vlc_vaapi_ReleaseBufferHandle(o, priv->vadpy, va_image.buf);
         vlc_vaapi_DestroyImage(o, priv->vadpy, va_image.image_id);
     }
-    if (!success)
+    return success;
+}
+
+static picture_pool_t *
+tc_vaegl_get_pool(const opengl_tex_converter_t *tc, unsigned requested_count)
+{
+    struct priv *priv = tc->priv;
+
+    picture_pool_t *pool =
+        vlc_vaapi_PoolNew(VLC_OBJECT(tc->gl), priv->vainst, priv->vadpy,
+                          requested_count, &priv->va_surface_ids, &tc->fmt,
+                          true);
+    if (!pool)
+        return NULL;
+
+    if (!vaegl_check_surface(tc, priv->va_surface_ids[0]))
     {
         picture_pool_Release(pool);
-        pool = NULL;
+        return NULL;
     }
+
     return pool;
 }
 
