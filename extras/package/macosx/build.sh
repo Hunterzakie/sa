@@ -99,6 +99,9 @@ do
          ;;
          k)
              SDKROOT=$OPTARG
+             if [ -z "$DEVELOPER_DIR" ]; then
+                DEVELOPER_DIR=$(echo $SDKROOT | sed 's,/Platforms/.*,,') && test -d $DEVELOPER_DIR && export DEVELOPER_DIR
+             fi
          ;;
          j)
              JOBS=$OPTARG
