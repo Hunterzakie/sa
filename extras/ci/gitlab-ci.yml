@@ -61,7 +61,6 @@ variables:
 .variables-macos-arm64: &variables-macos-arm64
         VLC_PATH: /Users/videolanci/sandbox/bin
         VLC_FORCE_KERNELVERSION: 19
-        DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
         HOST_ARCH: aarch64
         SHORTARCH: arm64
         TRIPLET: $HOST_ARCH-apple-darwin$VLC_FORCE_KERNELVERSION
