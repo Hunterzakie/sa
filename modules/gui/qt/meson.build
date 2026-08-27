@@ -1120,14 +1120,30 @@ if qt6_dep.found()
         qt_extra_flags += '-DQT_QML_DEBUG'
     endif
 
+    have_qt_gui_private = false
+    have_qt_declarative_private = false
+
     #check private headers
     if cpp.has_header('private/qquickitem_p.h', dependencies: qt6_dep) \
       and cpp.has_header('private/qquickwindow_p.h', dependencies: qt6_dep)
         qt_extra_flags += '-DQT_DECLARATIVE_PRIVATE'
+        have_qt_declarative_private = true
     endif
 
     if cpp.has_header('qpa/qplatformnativeinterface.h', dependencies: qt6_dep)
         qt_extra_flags += '-DQT_GUI_PRIVATE'
+        have_qt_gui_private = true
+    endif
+
+    qt_compute_node_sources = files('util/qsgcomputenode.cpp',
+                                    'util/qsgcomputenode.hpp')
+
+    if qt6_dep.version().version_compare('>= 6.6')
+        qt_plugin_sources += qt_compute_node_sources
+    else
+        if have_qt_gui_private and have_qt_gui_private
+            qt_plugin_sources += qt_compute_node_sources
+        endif
     endif
 
     qt_wayland_gui_private = cpp.has_header(

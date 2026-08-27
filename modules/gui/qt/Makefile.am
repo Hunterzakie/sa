@@ -384,6 +384,19 @@ libqt_plugin_la_SOURCES = \
 	widgets/native/viewblockingrectangle.cpp widgets/native/viewblockingrectangle.hpp \
 	widgets/native/doubleclickignoringitem.hpp
 
+QT_COMPUTE_NODE_SOURCES = util/qsgcomputenode.cpp \
+	util/qsgcomputenode.hpp
+
+if HAVE_QT66
+libqt_plugin_la_SOURCES += $(QT_COMPUTE_NODE_SOURCES)
+else
+if HAVE_QT_GUI_PRIVATE
+if HAVE_QT_DECLARATIVE_PRIVATE
+libqt_plugin_la_SOURCES += $(QT_COMPUTE_NODE_SOURCES)
+endif
+endif
+endif
+
 # Meta-object compilation
 
 moc_verbose = $(moc_verbose_$(V))
