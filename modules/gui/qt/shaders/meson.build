@@ -33,23 +33,38 @@ shader_files = files(shader_sources)
 qt_bin_directory = qt6_dep.get_variable(pkgconfig: 'bindir', configtool: 'QT_HOST_BINS')
 qsb = find_program('qsb', dirs: qt_bin_directory, required: true)
 
-qsb_params = ['--glsl=300 es,130,150', '--batchable', '-O']
+qsb_params_common = ['--batchable', '-O']
+qsb_params = ['--glsl=300 es,130,150'] + qsb_params_common
+qsb_params_comp = ['--glsl="310 es,430'] + qsb_params_common
 if host_system == 'windows'
-    qsb_params += ['--hlsl=50', '-c']
+    qsb_params_windows = ['--hlsl=50', '-c']
+    qsb_params += qsb_params_windows
+    qsb_params_comp += qsb_params_windows
 elif host_system == 'darwin'
-    qsb_params += '--msl=12'
+    qsb_params_darwin += '--msl=12'
+    qsb_params += qsb_params_darwin
+    qsb_params_comp += qsb_params_darwin
 endif
 
 shader_targets = []
 foreach shader: shader_sources
     shader_target_name = shader + '.qsb'
 
-    target = custom_target(shader_target_name,
-      depend_files: ['Common.glsl'],
-      input: shader,
-      output: shader_target_name,
-      command: [qsb, qsb_params, '--output', '@OUTPUT@', '@INPUT@']
-    )
+    if shader.endswith('.comp')
+        target = custom_target(shader_target_name,
+          input: shader,
+          output: shader_target_name,
+          command: [qsb, qsb_params_comp, '--output', '@OUTPUT@', '@INPUT@']
+        )
+    else
+        target = custom_target(shader_target_name,
+          depend_files: ['Common.glsl'],
+          input: shader,
+          output: shader_target_name,
+          command: [qsb, qsb_params, '--output', '@OUTPUT@', '@INPUT@']
+        )
+    endif
+
     shader_targets += [target]
 endforeach
 

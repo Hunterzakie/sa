@@ -1477,20 +1477,30 @@ libqt_plugin_la_SHADER_VERT = shaders/FadingEdgeX.vert \
                               shaders/FadingEdgeY.vert \
                               shaders/SubTexture.vert
 
-libqt_plugin_la_SHADER = $(libqt_plugin_la_SHADER_FRAG) $(libqt_plugin_la_SHADER_VERT)
+libqt_plugin_la_SHADER_COMP =
+
+libqt_plugin_la_SHADER = $(libqt_plugin_la_SHADER_FRAG) $(libqt_plugin_la_SHADER_VERT) $(libqt_plugin_la_SHADER_COMP)
 
 if ENABLE_QT
 
 BUILT_SOURCES += \
     $(libqt_plugin_la_SHADER_FRAG:.frag=.frag.qsb) \
-    $(libqt_plugin_la_SHADER_VERT:.vert=.vert.qsb)
+    $(libqt_plugin_la_SHADER_VERT:.vert=.vert.qsb) \
+    $(libqt_plugin_la_SHADER_COMP:.comp=.comp.qsb)
 
-QSB_PARAMS = --glsl="300 es,130,150" --batchable -O
+QSB_PARAMS_COMMON = --batchable -O
+
+QSB_PARAMS = --glsl="300 es,130,150" $(QSB_PARAMS_COMMON)
+QSB_PARAMS_COMP = --glsl="310 es,430" $(QSB_PARAMS_COMMON)
 if HAVE_WIN32
-QSB_PARAMS += --hlsl=50 -c
+QSB_PARAMS_WIN32 = --hlsl=50 -c
+QSB_PARAMS += $(QSB_PARAMS_WIN32)
+QSB_PARAMS_COMP += $(QSB_PARAMS_WIN32)
 endif
 if HAVE_DARWIN
-QSB_PARAMS += --msl=12
+QSB_PARAMS_DARWIN = --msl=12
+QSB_PARAMS += $(QSB_PARAMS_DARWIN)
+QSB_PARAMS_COMP += $(QSB_PARAMS_DARWIN)
 endif
 
 QSB_EXTRA_PATH =
@@ -1518,7 +1528,10 @@ $(libqt_plugin_la_SHADER_FRAG:.frag=.frag.qsb):
 $(libqt_plugin_la_SHADER_VERT:.vert=.vert.qsb):
 	$(qsb_verbose)PATH="$(QSB_EXTRA_PATH)$$PATH" $(QSB) $(QSB_PARAMS) $(QSB_PARAMS_VERBOSE) -o $@ $(srcdir)/$(@:.qsb=)
 
-shaders/shaders.cpp: $(srcdir)/shaders/shaders.qrc $(libqt_plugin_la_SHADER_FRAG:.frag=.frag.qsb) $(libqt_plugin_la_SHADER_VERT:.vert=.vert.qsb)
+$(libqt_plugin_la_SHADER_COMP:.comp=.comp.qsb):
+	$(qsb_verbose)PATH="$(QSB_EXTRA_PATH)$$PATH" $(QSB) $(QSB_PARAMS_COMP) $(QSB_PARAMS_VERBOSE) -o $@ $(srcdir)/$(@:.qsb=)
+
+shaders/shaders.cpp: $(srcdir)/shaders/shaders.qrc $(libqt_plugin_la_SHADER_FRAG:.frag=.frag.qsb) $(libqt_plugin_la_SHADER_VERT:.vert=.vert.qsb) $(libqt_plugin_la_SHADER_COMP:.comp=.comp.qsb)
 	$(AM_V_GEN) cp -f $< $(builddir)/shaders/shaders.qrc || true
 	$(AM_V_GEN) $(RCC) $(RCC_EXTRA_PARAMS) --name shaders -o $@ $(builddir)/shaders/shaders.qrc
 
@@ -1547,7 +1560,7 @@ endif
 shaders/shaders.deps: Makefile
 	$(AM_V_at)$(MKDIR_P) $(@D)
 	$(AM_V_GEN){ \
-	  for s in $(libqt_plugin_la_SHADER_FRAG) $(libqt_plugin_la_SHADER_VERT); do \
+	  for s in $(libqt_plugin_la_SHADER_FRAG) $(libqt_plugin_la_SHADER_VERT) $(libqt_plugin_la_SHADER_COMP); do \
 	    echo "$$s.qsb: $(srcdir)/$$s"; \
 	  done; \
 	} > $@.tmp && \
