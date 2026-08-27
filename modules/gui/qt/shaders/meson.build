@@ -26,6 +26,7 @@ shader_sources = [
     'DualKawaseBlur_downsample.frag',
     'DualKawaseBlur_upsample.frag',
     'DualKawaseBlur_upsample_postprocess.frag',
+    'GaussianBlur.comp',
 ]
 
 shader_files = files(shader_sources)

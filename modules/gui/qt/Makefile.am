@@ -1490,7 +1490,7 @@ libqt_plugin_la_SHADER_VERT = shaders/FadingEdgeX.vert \
                               shaders/FadingEdgeY.vert \
                               shaders/SubTexture.vert
 
-libqt_plugin_la_SHADER_COMP =
+libqt_plugin_la_SHADER_COMP = shaders/GaussianBlur.comp
 
 libqt_plugin_la_SHADER = $(libqt_plugin_la_SHADER_FRAG) $(libqt_plugin_la_SHADER_VERT) $(libqt_plugin_la_SHADER_COMP)
 
