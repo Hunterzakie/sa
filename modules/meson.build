@@ -353,6 +353,9 @@ subdir('spu')
 # text renderer modules
 subdir('text_renderer')
 
+# dmabuf helpers
+subdir('hw/dmabuf')
+
 # video output modules
 subdir('video_output')
 
