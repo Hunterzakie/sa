@@ -1,7 +1,8 @@
 /*****************************************************************************
- * converter_vaapi.c: OpenGL VAAPI opaque converter
+ * interop_dmabuf.c: OpenGL interop for pictures exported as a dmabuf
  *****************************************************************************
  * Copyright (C) 2017 VLC authors and VideoLAN
+ * Copyright (C) 2026 Alexandre Janniaux <ajanni@videolabs.io>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by
@@ -131,7 +132,7 @@ ReleaseLastPicture(const struct vlc_gl_interop *interop)
 }
 
 static int
-tc_vaegl_update(const struct vlc_gl_interop *interop, uint32_t textures[],
+Update(const struct vlc_gl_interop *interop, uint32_t textures[],
                 const int32_t tex_width[], const int32_t tex_height[],
                 picture_t *pic, const size_t *plane_offset)
 {
@@ -339,7 +340,7 @@ Open(struct vlc_gl_interop *interop)
     interop->fmt_out.space = interop->fmt_in.space;
 
     static const struct vlc_gl_interop_ops ops = {
-        .update_textures = tc_vaegl_update,
+        .update_textures = Update,
         .close = Close,
     };
     interop->ops = &ops;
@@ -352,10 +353,13 @@ error:
     return VLC_EGENERIC;
 }
 
-vlc_module_begin ()
-    set_description("VA-API OpenGL surface converter")
+vlc_module_begin()
+    set_description("dmabuf OpenGL interop")
     set_capability("glinterop", 1)
     set_callback(Open)
     set_subcategory(SUBCAT_VIDEO_VOUT)
-    add_shortcut("vaapi")
-vlc_module_end ()
+
+    // keep the previous interop name that are merged into this module
+    // for backward compatibility
+    add_shortcut("dmabuf", "vaapi")
+vlc_module_end()

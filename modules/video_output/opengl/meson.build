@@ -169,14 +169,14 @@ vlc_modules += {
     'enabled' : have_win_desktop and opengl32_lib.found() and dxva2_dep.found() and not missing_win_glew,
 }
 
-# glinterop_vaapi - VAAPI (E)GL interop
+# glinterop_dmabuf
 vlc_modules += {
-    'name' : 'glinterop_vaapi',
-    'sources' : files('interop_vaapi.c'),
+    'name' : 'glinterop_dmabuf',
+    'sources' : files('interop_dmabuf.c'),
     'dependencies' : [gl_common_dep, egl_dep, drm_includes],
     'plugin_dir' : 'video_output',
     'link_with' : [dmabuf_lib],
-    'enabled' : opengl_dep.found() and egl_dep.found() and libva_dep.found(),
+    'enabled' : opengl_dep.found() and egl_dep.found(),
 }
 
 # egl_display_generic
