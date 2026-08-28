@@ -161,11 +161,10 @@ libglinterop_gst_mem_plugin_la_CFLAGS = $(AM_CFLAGS) $(GL_CFLAGS) $(GST_VIDEO_CF
 	$(GST_APP_CFLAGS)
 libglinterop_gst_mem_plugin_la_LIBADD = $(GST_VIDEO_LIBS) $(GST_APP_LIBS)
 
-libglinterop_vaapi_plugin_la_SOURCES = video_output/opengl/interop_vaapi.c \
-	video_output/opengl/interop.h \
-	hw/vaapi/vlc_vaapi.c hw/vaapi/vlc_vaapi.h
+libglinterop_vaapi_plugin_la_SOURCES = video_output/opengl/interop_vaapi.c
 libglinterop_vaapi_plugin_la_CFLAGS = $(AM_CFLAGS) $(GL_CFLAGS)
-libglinterop_vaapi_plugin_la_LIBADD = $(LIBVA_LIBS) $(LIBVA_EGL_LIBS)
+libglinterop_vaapi_plugin_la_LIBADD = libvlc_dmabuf.la
+
 if HAVE_LIBDRM
 libglinterop_vaapi_plugin_la_CFLAGS += $(LIBDRM_CFLAGS) -DHAVE_LIBDRM
 endif
