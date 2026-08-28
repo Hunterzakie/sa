@@ -20,8 +20,17 @@
 
 #include "covergenerator.hpp"
 
+// Comment this out if you don't want to use compute shader for blurring:
+#define BLUR_USE_COMPUTE_SHADER
+
 // VLC includes
 #include "qt.hpp"
+
+#ifdef BLUR_USE_COMPUTE_SHADER
+#if __has_include("util/qsgcomputenode.hpp")
+#include "util/qsgcomputenode.hpp"
+#endif
+#endif
 
 // MediaLibrary includes
 #include "medialibrary/mlhelper.hpp"
@@ -36,6 +45,9 @@
 #include <QGraphicsBlurEffect>
 #include <QUrl>
 #include <QQmlFile>
+#include <QApplication>
+#include <QQuickWindow>
+#include <QElapsedTimer>
 
 // Qt private exported function
 QT_BEGIN_NAMESPACE
@@ -274,11 +286,69 @@ void CoverGenerator::drawImage(QPainter & painter, const QString & fileName, con
 
 void CoverGenerator::blur(QImage& image) const
 {
+    QElapsedTimer elapsedTimer;
+
+#ifdef BLUR_USE_COMPUTE_SHADER
+    {
+        // Try to use compute shader, if applicable.
+        // We need to use one `QQuickWindow`, usually
+        // this would be the main interface window,
+        // but it can be any `QQuickWindow`.
+        static QPointer<QQuickWindow> quickWindow = nullptr;
+
+        if (!quickWindow)
+        {
+            for (const auto w : qGuiApp->allWindows())
+            {
+                if (const auto qW = qobject_cast<QQuickWindow*>(w))
+                {
+                    quickWindow = qW;
+                    break;
+                }
+            }
+        }
+
+        if (quickWindow)
+        {
+            if (QSGComputeNode::supported(quickWindow))
+            {
+                // Good news.
+
+                // `GaussianBlur.comp` uses `local_size_x = 32, local_size_y = 32`
+                const std::tuple<int, int, int> dispatchParameters = {
+                    (image.width() + 31) / 32,
+                    (image.height() + 31) / 32,
+                    1
+                };
+
+                elapsedTimer.start();
+                const auto ret = QSGComputeNode::compute(":/shaders/GaussianBlur.comp.qsb",
+                                                         image,
+                                                         quickWindow,
+                                                         dispatchParameters);
+                if (ret.isValid())
+                {
+                    qDebug() << "Blurring using compute shader took" << elapsedTimer.elapsed() << "ms to blur the image" << image;
+                    assert(ret.typeId() == QMetaType::QImage);
+                    image = ret.value<QImage>();
+                    return;
+                }
+
+                elapsedTimer.invalidate();
+            }
+        }
+    }
+#endif
+
     if (Q_LIKELY(&qt_blurImage))
     {
+        elapsedTimer.start();
+
         // A symbol is available for qt_blurImage()
         // Exported function can be used directly within a separate thread:
         qt_blurImage(image, 2.5 * (m_blur + 1), true);
+
+        qDebug() << "qt_blurImage() took" << elapsedTimer.elapsed() << "ms to blur the image" << image;
     }
     else
     {
