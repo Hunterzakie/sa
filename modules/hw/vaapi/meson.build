@@ -46,6 +46,18 @@ vlc_modules += {
     'enabled' : libva_dep.found() and libva_wayland_dep.found() and have_wayland,
 }
 
+# VAAPI dmabuf exporter
+vlc_modules += {
+    'name' : 'vaapi_dmabuf',
+    'sources' : files(
+        'dmabuf.c',
+        'vlc_vaapi.c',
+    ),
+    'dependencies' : [libva_dep],
+    'plugin_dir' : 'vaapi',
+    'enabled' : libva_dep.found(),
+}
+
 # VAAPI filters plugin
 vlc_modules += {
     'name' : 'vaapi_filters',
