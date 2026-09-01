@@ -554,9 +554,27 @@ static int ReadDir(stream_t *access, input_item_node_t *node)
         const vlc_tick_t duration =
             vlc_tick_from_samples(i_last_sector - i_first_sector, CD_ROM_CDDA_FRAMES);
 
-        input_item_t *item = input_item_NewDisc(access->psz_url,
+        char *mrl = NULL;
+        if (access->psz_filepath == NULL && access->psz_location[0] != '\0')
+        {
+            /* A trailing separator would come back as an empty final component
+             * and leave one in the device path. */
+            size_t len = strlen(access->psz_url);
+            const size_t schemelen = len - strlen(access->psz_location);
+
+            while (len > schemelen && access->psz_url[len - 1] == '/')
+                len--;
+
+            if (unlikely(asprintf(&mrl, "%.*s/Track%%20%02u",
+                                  (int) len, access->psz_url, i + 1) == -1))
+                mrl = NULL;
+        }
+
+        input_item_t *item = input_item_NewDisc((mrl != NULL) ? mrl :
+                                                access->psz_url,
                                                 (name != NULL) ? name :
                                                 access->psz_url, duration);
+        free(mrl);
         free(name);
 
         if (unlikely(item == NULL))
@@ -832,7 +850,7 @@ static void Close(vlc_object_t *obj)
 # endif
 #endif
 
-#define HELP_TEXT N_("Usage hint: [cdda:][device][@[track]]")
+#define HELP_TEXT N_("Usage hint: [cdda:][device][/Track [track]]")
 
 vlc_module_begin ()
     set_shortname( N_("Audio CD") )
