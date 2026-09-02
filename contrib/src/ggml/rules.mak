@@ -1,10 +1,17 @@
 # ggml
 
-GGML_VERSION := 0.11.0
+GGML_VERSION := 0.15.3
 GGML_URL := $(GITHUB)/ggml-org/ggml/archive/refs/tags/v$(GGML_VERSION).tar.gz
+
+# ggml has no VLC module of its own: it is only built when whisper, llama
+# or sam3 pull it in through DEPS_*.
 
 ifeq ($(call need_pkg,"ggml"),)
 PKGS_FOUND += ggml
+endif
+
+ifndef HAVE_DARWIN_OS
+DEPS_ggml = vulkan-loader $(DEPS_vulkan-loader) glslc $(DEPS_glslc) spirv-headers $(DEPS_spirv-headers)
 endif
 
 $(TARBALLS)/ggml-$(GGML_VERSION).tar.gz:
@@ -14,19 +21,31 @@ $(TARBALLS)/ggml-$(GGML_VERSION).tar.gz:
 
 ggml: ggml-$(GGML_VERSION).tar.gz .sum-ggml
 	$(UNPACK)
-	# fix path to install ggml.pc
-	sed -i.orig 's,DESTINATION share/pkgconfig,DESTINATION $${CMAKE_INSTALL_LIBDIR}/pkgconfig,' $(UNPACK_DIR)/CMakeLists.txt
-	# add missing libraries
-	sed -i.orig 's, -lggml$$, -lggml -lggml-base -lggml-cpu,' $(UNPACK_DIR)/ggml.pc.in
-	# use regular static library names
-	sed -i.orig 's,set(CMAKE_STATIC_LIBRARY_PREFIX,#set(CMAKE_STATIC_LIBRARY_PREFIX,' $(UNPACK_DIR)/CMakeLists.txt
 	$(APPLY) $(SRC)/ggml/0001-Use-LoadPackagedLibrary-in-UWP-builds.patch
+	$(APPLY) $(SRC)/ggml/0002-ggml-fix-mingw-cross-prefix.patch
+	$(APPLY) $(SRC)/ggml/0003-ggml-increase-GGML_MAX_NAME-from-64-to-96.patch
+	$(APPLY) $(SRC)/ggml/0004-ggml-pc-list-the-backend-libraries.patch
+	$(APPLY) $(SRC)/ggml/0005-ggml-export-the-GGML_USE_-backend-macros.patch
 	$(MOVE)
 
 GGML_CONF := \
 	-DGGML_OPENMP=OFF \
+	-DGGML_NATIVE=OFF \
+	-DGGML_LLAMAFILE=OFF \
+	-DGGML_CCACHE=OFF \
+	-DGGML_RPC=OFF \
 	-DGGML_BUILD_TESTS=OFF \
 	-DGGML_BUILD_EXAMPLES=OFF
+
+ifdef HAVE_DARWIN_OS
+# Metal requires macOS 14.4.
+GGML_CONF += -DCMAKE_OSX_DEPLOYMENT_TARGET=14.4
+GGML_CONF += -DGGML_METAL=ON
+GGML_CONF += -DGGML_METAL_EMBED_LIBRARY=ON
+GGML_CONF += -DGGML_ACCELERATE=ON
+else
+GGML_CONF += -DGGML_VULKAN=ON
+endif
 
 .ggml: ggml toolchain.cmake
 	$(CMAKECLEAN)

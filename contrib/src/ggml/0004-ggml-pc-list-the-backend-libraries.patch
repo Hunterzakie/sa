@@ -1,0 +1,55 @@
+From: Gabriel Lafond-Thenaille <gabriel@videolabs.io>
+Subject: [PATCH] ggml.pc: list the backend libraries
+
+ggml.pc only advertises -lggml, but a static build splits the library
+into libggml.a, libggml-base.a and one archive per enabled backend.
+Static consumers need all of them, plus the system libraries the
+backends pull in: the Vulkan loader, or the Metal and Accelerate
+frameworks on Darwin.
+
+On Windows the Vulkan loader is an import library (libvulkan-1.dll.a)
+that the static linker can only find by exact filename.
+---
+ CMakeLists.txt | 22 ++++++++++++++++++++++
+ ggml.pc.in     |  2 +-
+ 2 files changed, 23 insertions(+), 1 deletion(-)
+
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -347,6 +347,28 @@
+ install(TARGETS ggml-base LIBRARY)
+ 
+ if (GGML_STANDALONE)
++    foreach (_ggml_backend ${GGML_AVAILABLE_BACKENDS})
++        list(APPEND GGML_PC_LIBS "-l${_ggml_backend}")
++    endforeach()
++
++    if (GGML_VULKAN)
++        if (WIN32)
++            list(APPEND GGML_PC_LIBS "-l:libvulkan-1.dll.a")
++        else()
++            list(APPEND GGML_PC_LIBS "-lvulkan")
++        endif()
++    endif()
++
++    if (GGML_METAL)
++        list(APPEND GGML_PC_LIBS "-framework Foundation" "-framework Metal" "-framework MetalKit")
++    endif()
++
++    if (APPLE AND GGML_ACCELERATE)
++        list(APPEND GGML_PC_LIBS "-framework Accelerate")
++    endif()
++
++    string(REPLACE ";" " " GGML_PC_LIBS "${GGML_PC_LIBS}")
++
+     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ggml.pc.in
+         ${CMAKE_CURRENT_BINARY_DIR}/ggml.pc
+         @ONLY)
+--- a/ggml.pc.in
++++ b/ggml.pc.in
+@@ -7,4 +7,4 @@
+ Description: The GGML Tensor Library for Machine Learning
+ Version: @GGML_VERSION@
+ Cflags: -I${includedir}
+-Libs: -L${libdir} -lggml
++Libs: -L${libdir} -lggml -lggml-base @GGML_PC_LIBS@
