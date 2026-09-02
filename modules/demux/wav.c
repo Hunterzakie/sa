@@ -55,7 +55,6 @@ typedef struct
 
     date_t          pts;
 
-    uint32_t i_channel_mask;
     uint8_t i_chans_to_reorder;            /* do we need channel reordering */
     uint8_t pi_chan_table[AOUT_CHAN_MAX];
 } demux_sys_t;
@@ -352,14 +351,12 @@ static void InitFmt( demux_t *p_demux )
     p_sys->i_frame_size = 0;
     p_sys->i_frame_samples = 0;
     p_sys->i_chans_to_reorder = 0;
-    p_sys->i_channel_mask = 0;
 }
 
 static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
 {
     demux_sys_t *p_sys = p_demux->p_sys;
-    WAVEFORMATEXTENSIBLE *p_wf_ext = NULL;
-    WAVEFORMATEX         *p_wf = NULL;
+    uint8_t *p_data = NULL;
     const char *psz_name;
     unsigned int i_extended;
 
@@ -371,46 +368,55 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
     }
 
     /* load waveformatex */
-    p_wf_ext = malloc( i_size );
-    if( unlikely( !p_wf_ext ) )
+    p_data = malloc( i_size );
+    if( unlikely( !p_data ) )
          goto error;
 
-    p_wf         = &p_wf_ext->Format;
-    p_wf->cbSize = 0;
     i_size      -= 2;
-    if( vlc_stream_Read( p_demux->s, p_wf, i_size ) != (int)i_size ||
+    if( vlc_stream_Read( p_demux->s, p_data, i_size ) != (int)i_size ||
         ( ( i_size & 1 ) && vlc_stream_Read( p_demux->s, NULL, 1 ) != 1 ) )
     {
         msg_Err( p_demux, "cannot load 'fmt ' chunk" );
         goto error;
     }
 
-    wf_tag_to_fourcc( GetWLE( &p_wf->wFormatTag ), &p_sys->fmt.i_codec,
-                      &psz_name );
-    p_sys->fmt.audio.i_channels      = GetWLE ( &p_wf->nChannels );
-    p_sys->fmt.audio.i_rate          = GetDWLE( &p_wf->nSamplesPerSec );
-    p_sys->fmt.audio.i_blockalign    = GetWLE( &p_wf->nBlockAlign );
-    p_sys->fmt.i_bitrate             = GetDWLE( &p_wf->nAvgBytesPerSec ) * 8;
-    p_sys->fmt.audio.i_bitspersample = GetWLE( &p_wf->wBitsPerSample );
+    static_assert(offsetof(WAVEFORMATEX, wFormatTag) == 0, "bogus wFormatTag offset");
+    static_assert(offsetof(WAVEFORMATEX, nChannels) == 2, "bogus nChannels offset");
+    static_assert(offsetof(WAVEFORMATEX, nSamplesPerSec) == 4, "bogus nSamplesPerSec offset");
+    static_assert(offsetof(WAVEFORMATEX, nBlockAlign) == 12, "bogus nBlockAlign offset");
+    static_assert(offsetof(WAVEFORMATEX, nAvgBytesPerSec) == 8, "bogus nAvgBytesPerSec offset");
+    static_assert(offsetof(WAVEFORMATEX, wBitsPerSample) == 14, "bogus wBitsPerSample offset");
+    static_assert(offsetof(WAVEFORMATEX, cbSize) == 16, "bogus cbSize offset");
+
+    static_assert(offsetof(WAVEFORMATEXTENSIBLE, dwChannelMask) == 20, "bogus dwChannelMask offset");
+    static_assert(offsetof(WAVEFORMATEXTENSIBLE, SubFormat) == 24, "bogus SubFormat offset");
+
+    uint32_t physical_channels_mask = 0;
+    uint16_t wFormatTag = GetWLE( &p_data[0] /* wFormatTag */ );
+
+    wf_tag_to_fourcc( wFormatTag, &p_sys->fmt.i_codec, &psz_name );
+    p_sys->fmt.audio.i_channels      = GetWLE ( &p_data[2] /* nChannels */ );
+    p_sys->fmt.audio.i_rate          = GetDWLE( &p_data[4] /* nSamplesPerSec */ );
+    p_sys->fmt.audio.i_blockalign    = GetWLE( &p_data[12] /* nBlockAlign */ );
+    p_sys->fmt.i_bitrate             = GetDWLE( &p_data[8] /* nAvgBytesPerSec */ ) * 8;
+    p_sys->fmt.audio.i_bitspersample = GetWLE( &p_data[14] /* wBitsPerSample */ );
     if( i_size >= sizeof(WAVEFORMATEX) )
-        p_sys->fmt.i_extra = __MIN( GetWLE( &p_wf->cbSize ), i_size - sizeof(WAVEFORMATEX) );
+        p_sys->fmt.i_extra = __MIN( GetWLE( &p_data[16] /* cbSize */ ), i_size - sizeof(WAVEFORMATEX) );
+    else
+        p_sys->fmt.i_extra = 0;
     i_extended = 0;
 
     /* Handle new WAVE_FORMAT_EXTENSIBLE wav files */
     /* see the following link for more information:
      * http://www.microsoft.com/whdc/device/audio/multichaud.mspx#EFAA */
-    if( GetWLE( &p_wf->wFormatTag ) == WAVE_FORMAT_EXTENSIBLE &&
+    if( wFormatTag == WAVE_FORMAT_EXTENSIBLE &&
         i_size >= sizeof( WAVEFORMATEXTENSIBLE ) &&
-        ( p_sys->fmt.i_extra + sizeof( WAVEFORMATEX )
-            >= sizeof( WAVEFORMATEXTENSIBLE ) ) )
+        ( p_sys->fmt.i_extra >= sizeof( WAVEFORMATEXTENSIBLE ) - sizeof( WAVEFORMATEX ) ) )
     {
-        unsigned i_channel_mask;
+        uint32_t dwChannelMask;
         GUID guid_subformat;
 
-        guid_subformat = p_wf_ext->SubFormat;
-        guid_subformat.Data1 = GetDWLE( &p_wf_ext->SubFormat.Data1 );
-        guid_subformat.Data2 = GetWLE( &p_wf_ext->SubFormat.Data2 );
-        guid_subformat.Data3 = GetWLE( &p_wf_ext->SubFormat.Data3 );
+        memcpy(&guid_subformat, &p_data[26] /* SubFormat */, sizeof(GUID) );
 
         sf_tag_to_fourcc( &guid_subformat, &p_sys->fmt.i_codec, &psz_name );
 
@@ -419,13 +425,13 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
         i_extended = sizeof( WAVEFORMATEXTENSIBLE ) - sizeof( WAVEFORMATEX );
         p_sys->fmt.i_extra -= i_extended;
 
-        i_channel_mask = GetDWLE( &p_wf_ext->dwChannelMask );
-        if( i_channel_mask )
+        dwChannelMask = GetDWLE( &p_data[20] /* dwChannelMask */ );
+        if( dwChannelMask )
         {
             int i_match = 0;
-            p_sys->i_channel_mask = getChannelMask( &i_channel_mask, p_sys->fmt.audio.i_channels, &i_match );
-            if( i_channel_mask )
-                msg_Warn( p_demux, "Some channels are unrecognized or uselessly specified (0x%x)", i_channel_mask );
+            physical_channels_mask = getChannelMask( &dwChannelMask, p_sys->fmt.audio.i_channels, &i_match );
+            if( dwChannelMask )
+                msg_Warn( p_demux, "Some channels are unrecognized or uselessly specified (0x%x)", dwChannelMask );
             if( i_match < p_sys->fmt.audio.i_channels )
             {
                 int i_missing = p_sys->fmt.audio.i_channels - i_match;
@@ -442,18 +448,18 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
                 /* Try to complete with pair */
                 for( unsigned i = 0; i < ARRAY_SIZE(pi_pair); i++ )
                 {
-                    if( i_missing >= 2 && !(p_sys->i_channel_mask & pi_pair[i] ) )
+                    if( i_missing >= 2 && !(physical_channels_mask & pi_pair[i] ) )
                     {
                         i_missing -= 2;
-                        p_sys->i_channel_mask |= pi_pair[i];
+                        physical_channels_mask |= pi_pair[i];
                     }
                 }
                 /* Well fill up with what we can */
                 for( unsigned i = 0; i < ARRAY_SIZE(pi_channels_aout) && i_missing > 0; i++ )
                 {
-                    if( !( p_sys->i_channel_mask & pi_channels_aout[i] ) )
+                    if( !( physical_channels_mask & pi_channels_aout[i] ) )
                     {
-                        p_sys->i_channel_mask |= pi_channels_aout[i];
+                        physical_channels_mask |= pi_channels_aout[i];
                         i_missing--;
 
                         if( i_missing <= 0 )
@@ -466,11 +472,15 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
             if( i_match < p_sys->fmt.audio.i_channels )
             {
                 msg_Err( p_demux, "Invalid/unsupported channel mask" );
-                p_sys->i_channel_mask = 0;
+                physical_channels_mask = 0;
             }
         }
     }
-    if( p_sys->i_channel_mask == 0 && p_sys->fmt.audio.i_channels > 2
+
+    if( p_sys->fmt.i_codec == VLC_CODEC_UNKNOWN )
+        msg_Err( p_demux, "Unrecognized wf tag: 0x%x", wFormatTag );
+
+    if( physical_channels_mask == 0 && p_sys->fmt.audio.i_channels > 2
      && p_sys->fmt.audio.i_channels <= AOUT_CHAN_MAX )
     {
         /* A dwChannelMask of 0 tells the audio device to render the first
@@ -488,23 +498,23 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
         for( unsigned i = 0; i < p_sys->fmt.audio.i_channels &&
              i < ARRAY_SIZE(pi_default_channels);
              i++ )
-            p_sys->i_channel_mask |= pi_default_channels[i];
+            physical_channels_mask |= pi_default_channels[i];
     }
 
-    if( p_sys->i_channel_mask )
+    if( physical_channels_mask )
     {
         if( p_sys->fmt.i_codec == VLC_FOURCC('a','r','a','w') ||
             p_sys->fmt.i_codec == VLC_FOURCC('a','f','l','t') )
             p_sys->i_chans_to_reorder =
                 aout_CheckChannelReorder( pi_channels_aout, NULL,
-                                          p_sys->i_channel_mask,
+                                          physical_channels_mask,
                                           p_sys->pi_chan_table );
 
         msg_Dbg( p_demux, "channel mask: %x, reordering: %u",
-                 p_sys->i_channel_mask, p_sys->i_chans_to_reorder );
+                 physical_channels_mask, p_sys->i_chans_to_reorder );
     }
 
-    p_sys->fmt.audio.i_physical_channels = p_sys->i_channel_mask;
+    p_sys->fmt.audio.i_physical_channels = physical_channels_mask;
 
     if( p_sys->fmt.i_extra > 0 )
     {
@@ -514,20 +524,20 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
             p_sys->fmt.i_extra = 0;
             goto error;
         }
-        memcpy( p_sys->fmt.p_extra, (uint8_t *)p_wf + sizeof( WAVEFORMATEX ) + i_extended,
+        memcpy( p_sys->fmt.p_extra, p_data + sizeof( WAVEFORMATEX ) + i_extended,
                 p_sys->fmt.i_extra );
     }
 
     msg_Dbg( p_demux, "format: 0x%4.4x, fourcc: %4.4s, channels: %d, "
              "freq: %u Hz, bitrate: %uKo/s, blockalign: %d, bits/samples: %d, "
              "extra size: %zu",
-             GetWLE( &p_wf->wFormatTag ), (char *)&p_sys->fmt.i_codec,
+             wFormatTag, (char *)&p_sys->fmt.i_codec,
              p_sys->fmt.audio.i_channels, p_sys->fmt.audio.i_rate,
              p_sys->fmt.i_bitrate / 8 / 1024, p_sys->fmt.audio.i_blockalign,
              p_sys->fmt.audio.i_bitspersample, p_sys->fmt.i_extra );
 
-    free( p_wf );
-    p_wf = NULL;
+    free( p_data );
+    p_data = NULL;
 
     switch( p_sys->fmt.i_codec )
     {
@@ -605,7 +615,7 @@ static int ChunkParseFmt( demux_t *p_demux, uint32_t i_size )
 error:
     es_format_Clean( &p_sys->fmt );
     InitFmt( p_demux );
-    free( p_wf );
+    free( p_data );
     return VLC_EGENERIC;
 }
 
