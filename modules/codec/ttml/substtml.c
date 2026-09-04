@@ -1357,8 +1357,11 @@ static int ParseBlock( decoder_t *p_dec, const block_t *p_block )
 #endif
     vlc_tick_t i_block_start_time = p_block->i_dts - p_sys->pes.i_offset;
 
-    if(TTML_in_PES(p_dec) && i_block_start_time < p_sys->pes.i_prev_segment_start_time )
-        i_block_start_time = p_sys->pes.i_prev_segment_start_time;
+    /* Segments only share a timeline through Pi/Ti (EN 303 560 5.2.4.1); a document
+     * may restart at zero, so track already-shown content in presentation time. */
+    if(TTML_in_PES(p_dec) &&
+       p_sys->pes.i_offset + i_block_start_time < p_sys->pes.i_prev_segment_start_time )
+        i_block_start_time = p_sys->pes.i_prev_segment_start_time - p_sys->pes.i_offset;
 
     for( size_t i=0; i+1 < i_timings_count; i++ )
     {
@@ -1370,8 +1373,9 @@ static int ParseBlock( decoder_t *p_dec, const block_t *p_block )
             tt_time_Convert( &p_timings_array[i] ) + VLC_TICK_0 > i_block_start_time + p_block->i_length )
             break;
 
-        if( TTML_in_PES(p_dec) && p_sys->pes.i_prev_segment_start_time < tt_time_Convert( &p_timings_array[i] ) )
-            p_sys->pes.i_prev_segment_start_time = tt_time_Convert( &p_timings_array[i] );
+        vlc_tick_t i_start = p_sys->pes.i_offset + VLC_TICK_0 + tt_time_Convert( &p_timings_array[i] );
+        if( TTML_in_PES(p_dec) && p_sys->pes.i_prev_segment_start_time < i_start )
+            p_sys->pes.i_prev_segment_start_time = i_start;
 
         bool b_bitmap_regions = false;
         subpicture_t *p_spu = NULL;
