@@ -1224,6 +1224,8 @@ static void MP4_FreeBox_trun( MP4_Box_t *p_box )
     free( p_box->data.p_trun->p_samples );
 }
 
+#define MP4_TRUN_MAX_SAMPLES 1000000
+
 static int MP4_ReadBox_trun(  stream_t *p_stream, MP4_Box_t *p_box )
 {
     uint32_t count;
@@ -1243,6 +1245,9 @@ static int MP4_ReadBox_trun(  stream_t *p_stream, MP4_Box_t *p_box )
         !!(p_trun->i_flags & MP4_TRUN_SAMPLE_SIZE) +
         !!(p_trun->i_flags & MP4_TRUN_SAMPLE_FLAGS) +
         !!(p_trun->i_flags & MP4_TRUN_SAMPLE_TIME_OFFSET);
+
+    if( i_entry_size == 0 && count > MP4_TRUN_MAX_SAMPLES )
+        MP4_READBOX_EXIT( 0 );
 
     if( i_entry_size * 4 * count > i_read )
         MP4_READBOX_EXIT( 0 );
