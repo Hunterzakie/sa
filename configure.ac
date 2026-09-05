@@ -1278,6 +1278,15 @@ AC_SUBST([LIBZ])
 AM_CONDITIONAL([HAVE_ZLIB], [ test "${have_zlib}" = "yes" ])
 
 
+dnl Check for zstd
+PKG_CHECK_MODULES([ZSTD], [libzstd], [
+  have_zstd="yes"
+], [
+  AC_MSG_WARN([${ZSTD_PKG_ERRORS}.])
+])
+AM_CONDITIONAL([HAVE_ZSTD], [test "${have_zstd}" = "yes"])
+
+
 dnl
 dnl Domain name i18n support via GNU libidn
 dnl

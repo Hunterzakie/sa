@@ -631,6 +631,16 @@ static void BlockDecode( demux_t *p_demux, KaxBlock *block, KaxSimpleBlock *simp
                 break;
         }
         else
+#ifdef HAVE_ZSTD
+        if( track.i_compression_type == MATROSKA_COMPRESSION_ZSTD &&
+            track.i_encoding_scope & MATROSKA_ENCODING_SCOPE_ALL_FRAMES )
+        {
+            p_block = block_zstd_decompress( VLC_OBJECT(p_demux), p_block );
+            if( p_block == NULL )
+                break;
+        }
+        else
+#endif
         if( track.i_compression_type == MATROSKA_COMPRESSION_HEADER &&
             track.i_encoding_scope & MATROSKA_ENCODING_SCOPE_ALL_FRAMES )
         {

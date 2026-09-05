@@ -104,6 +104,7 @@ namespace mkv {
 #define MATROSKA_COMPRESSION_BLIB   1
 #define MATROSKA_COMPRESSION_LZOX   2
 #define MATROSKA_COMPRESSION_HEADER 3
+#define MATROSKA_COMPRESSION_ZSTD   4 // https://github.com/ietf-wg-cellar/matroska-specification/pull/866
 
 enum
 {

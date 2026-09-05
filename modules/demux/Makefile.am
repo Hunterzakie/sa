@@ -216,6 +216,10 @@ libmkv_plugin_la_SOURCES += packetizer/dts_header.h packetizer/dts_header.c
 libmkv_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) $(CFLAGS_mkv)
 libmkv_plugin_la_LDFLAGS = $(AM_LDFLAGS) $(demux_RPATH)
 libmkv_plugin_la_LIBADD = $(LIBS_mkv) $(LIBZ) libvlc_mp4.la
+if HAVE_ZSTD
+libmkv_plugin_la_CPPFLAGS += $(ZSTD_CFLAGS) -DHAVE_ZSTD
+libmkv_plugin_la_LIBADD += $(ZSTD_LIBS)
+endif
 demux_PLUGINS += $(LTLIBmkv)
 EXTRA_LTLIBRARIES += libmkv_plugin.la
 

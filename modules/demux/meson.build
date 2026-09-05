@@ -274,6 +274,16 @@ vlc_modules += {
 # MKV demux
 libebml_dep = dependency('libebml', 'EBML', required: get_option('matroska'))
 libmatroska_dep = dependency('libmatroska', 'Matroska', required: get_option('matroska'))
+mkv_flags = []
+mkv_deps = [libebml_dep, libmatroska_dep]
+if z_dep.found()
+    mkv_deps += [z_dep]
+endif
+zstd_dep = dependency('libzstd', 'zstd::libzstd_static', required: false)
+if zstd_dep.found()
+    mkv_flags += '-DHAVE_ZSTD'
+    mkv_deps += [zstd_dep]
+endif
 if libebml_dep.found() and libmatroska_dep.found()
     vlc_modules += {
         'name' : 'mkv',
@@ -298,7 +308,8 @@ if libebml_dep.found() and libmatroska_dep.found()
             'mp4/libmp4.c',
             '../packetizer/dts_header.c',
         ),
-        'dependencies' : [libebml_dep, libmatroska_dep, z_dep]
+        'cpp_args' : mkv_flags,
+        'dependencies' : mkv_deps,
     }
 endif
 

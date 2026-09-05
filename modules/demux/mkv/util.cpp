@@ -25,8 +25,14 @@
 #include "demux.hpp"
 #include "virtual_segment.hpp"
 #include "../../codec/webvtt/helpers.h"
+#include "vlc_cxx_helpers.hpp"
 
 #include "lzokay.hpp"
+
+#ifdef HAVE_ZSTD
+# include <zstd.h>
+#endif
+
 
 namespace mkv {
 
@@ -222,6 +228,149 @@ block_t *block_lzo1x_decompress( vlc_object_t *p_this, block_t *p_in_block ) {
 
     return p_block;
 }
+
+#ifdef HAVE_ZSTD
+bool zstd_decompress_extra( demux_t * p_demux, mkv_track_t & tk )
+{
+    // TODO: add support for a dictionary from KaxContentCompSettings
+
+    msg_Dbg(p_demux,"Inflating private data");
+
+    uint8_t Buffer[4+14]; // 14: max frame header size / ZSTD_FRAMEHEADERSIZE_MAX
+    SetDWBE(Buffer, ZSTD_MAGICNUMBER);
+    memcpy(&Buffer[4], tk.p_extra_data, std::min(sizeof(Buffer)-4, tk.i_extra_data));
+
+    unsigned long long outSize = ZSTD_getFrameContentSize(Buffer, sizeof(Buffer));
+
+    uint8_t * p_new_extra = static_cast<uint8_t *>(malloc( outSize ));
+    if( p_new_extra == nullptr )
+    {
+        msg_Err( p_demux, "Couldn't allocate buffer to inflate data, ignore track %u",
+                    tk.i_number );
+        free(p_new_extra);
+        return false;
+    }
+    auto dstream = vlc::wrap_cptr(ZSTD_createDStream(), &ZSTD_freeDStream);
+    if (unlikely(!dstream))
+    {
+        msg_Err( p_demux, "zstd creation failed." );
+        free(p_new_extra);
+        return false;
+    }
+
+    size_t Count;
+    Count = ZSTD_initDStream(dstream.get());
+    if (ZSTD_isError(Count))
+    {
+        msg_Err( p_demux, "zstd initialization failed." );
+        free(p_new_extra);
+        return false;
+    }
+
+    ZSTD_inBuffer  in;
+    ZSTD_outBuffer out;
+    out.dst = p_new_extra;
+    out.size = outSize;
+    out.pos = 0;
+
+    // feed the magic number not stored in the block
+    in.src = Buffer;
+    in.size = 4;
+    in.pos = 0;
+    Count = ZSTD_decompressStream(dstream.get(), &out, &in);
+    if (unlikely(ZSTD_isError(Count)))
+    {
+        msg_Err( p_demux, "zstd magic number feeding failed." );
+        free(p_new_extra);
+        return false;
+    }
+
+    // feed the data
+    in.src = tk.p_extra_data;
+    in.size = tk.i_extra_data;
+    in.pos = 0;
+    Count = ZSTD_decompressStream(dstream.get(), &out, &in);
+    if (ZSTD_isError(Count))
+    {
+        msg_Err( p_demux, "zstd decompression failed. Result: %zx", Count );
+        free(p_new_extra);
+        return false;
+    }
+    assert(outSize == out.size);
+
+    free( tk.p_extra_data );
+    tk.i_extra_data = out.size;
+    tk.p_extra_data = p_new_extra;
+
+    return true;
+}
+
+block_t *block_zstd_decompress( vlc_object_t *p_this, block_t *p_in_block ) {
+    // TODO: add support for a dictionary from KaxContentCompSettings
+    // possibly by keeping a ZSTD_DStream in the track to reuse for each Block
+
+    uint8_t Buffer[4+14]; // 14: max frame header size / ZSTD_FRAMEHEADERSIZE_MAX
+    SetDWBE(Buffer, ZSTD_MAGICNUMBER);
+    memcpy(&Buffer[4], p_in_block->p_buffer, std::min(sizeof(Buffer)-4, p_in_block->i_buffer));
+
+    unsigned long long outSize = ZSTD_getFrameContentSize(Buffer, sizeof(Buffer));
+    block_t *p_block = block_Alloc( outSize );
+    if (unlikely(!p_block))
+        return p_in_block;
+
+    auto dstream = vlc::wrap_cptr(ZSTD_createDStream(), &ZSTD_freeDStream);
+    if (unlikely(!dstream))
+    {
+        msg_Err( p_this, "zstd creation failed." );
+        block_Release( p_block );
+        return p_in_block;
+    }
+
+    size_t Count;
+    Count = ZSTD_initDStream(dstream.get());
+    if (ZSTD_isError(Count))
+    {
+        msg_Err( p_this, "zstd initialization failed." );
+        block_Release( p_block );
+        return p_in_block;
+    }
+
+    ZSTD_inBuffer  in;
+    ZSTD_outBuffer out;
+    out.dst = p_block->p_buffer;
+    out.size = p_block->i_buffer;
+    out.pos = 0;
+
+    // feed the magic number not stored in the block
+    in.src = Buffer;
+    in.size = 4;
+    in.pos = 0;
+    Count = ZSTD_decompressStream(dstream.get(), &out, &in);
+    if (unlikely(ZSTD_isError(Count)))
+    {
+        msg_Err( p_this, "zstd magic number feeding failed." );
+        block_Release( p_block );
+        return p_in_block;
+    }
+
+    // feed the data
+    in.src = p_in_block->p_buffer;
+    in.size = p_in_block->i_buffer;
+    in.pos = 0;
+    Count = ZSTD_decompressStream(dstream.get(), &out, &in);
+    if (ZSTD_isError(Count))
+    {
+        msg_Err( p_this, "zstd decompression failed. Result: %zx", Count );
+        block_Release( p_block );
+        return p_in_block;
+    }
+    assert(p_block->i_buffer == out.size);
+
+    block_Release( p_in_block );
+
+    return p_block;
+}
+#endif
 
 /* Utility function for BlockDecode */
 block_t *MemToBlock( uint8_t *p_mem, size_t i_mem, size_t offset)
