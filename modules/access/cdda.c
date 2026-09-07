@@ -336,8 +336,9 @@ static int DemuxOpen(vlc_object_t *obj, vcddev_t *dev, unsigned track)
         }
 
         track--;
-        int i_first_sector = p_toc->p_sectors[track].i_lba;
-        int i_last_sector = p_toc->p_sectors[track + 1].i_lba;
+        const unsigned toc_track = track + (i_cdda_first - p_toc->i_first_track);
+        int i_first_sector = p_toc->p_sectors[toc_track].i_lba;
+        int i_last_sector = p_toc->p_sectors[toc_track + 1].i_lba;
         if(i_cdda_first + track == (unsigned) i_cdda_last && p_toc->i_last_track > i_cdda_last)
             i_last_sector -= CD_ROM_XA_INTERVAL;
 
