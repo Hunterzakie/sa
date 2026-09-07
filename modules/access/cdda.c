@@ -21,11 +21,6 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
-/**
- * Todo:
- *   - Fix tracknumber in MRL
- */
-
 /*****************************************************************************
  * Preamble
  *****************************************************************************/
@@ -63,6 +58,43 @@
 
 #define INVALID_SECTOR ((unsigned) -1)
 
+static unsigned SplitTrackSuffix(char *location, bool *restrict splitp)
+{
+    unsigned track = 0;
+    /* A '/' left in a location is a separator; an encoded one reads %2F */
+    char *sl = strrchr(location, '/');
+
+    *splitp = false;
+
+    if (sl == NULL)
+        return 0;
+
+    if (sl[1] == '\0') /* trailing separator */
+    {
+        *sl = '\0';
+        return 0;
+    }
+
+    char *component = vlc_uri_decode_duplicate(sl + 1);
+    if (component == NULL)
+        return 0;
+
+    int end = -1;
+
+    if (sscanf(component, "Track %2u%n", &track, &end) == 1 && end >= 0
+     && component[end] == '\0')
+    {
+        *sl = '\0';
+        *splitp = true;
+    }
+    else
+        track = 0;
+
+    free(component);
+
+    return track;
+}
+
 static vcddev_t *DiscOpen(vlc_object_t *obj, const char *location,
                          const char *path, unsigned *restrict trackp)
 {
@@ -71,34 +103,53 @@ static vcddev_t *DiscOpen(vlc_object_t *obj, const char *location,
     *trackp = var_InheritInteger(obj, "cdda-track");
 
     if (path != NULL)
-        devpath = ToLocaleDup(path);
+    {
+        char *base = strdup(location);
+        if (base == NULL)
+            return NULL;
+
+        bool split;
+        unsigned track = SplitTrackSuffix(base, &split);
+        free(base);
+
+        if (track != 0)
+            *trackp = track;
+
+        char *dev = strdup(path);
+        if (dev == NULL)
+            return NULL;
+
+        if (split)
+        {
+            char *sep = strrchr(dev, DIR_SEP_CHAR);
+            if (sep != NULL)
+                *sep = '\0';
+
+            size_t len = strlen(dev);
+            while (len > 0 && dev[len - 1] == DIR_SEP_CHAR)
+                dev[--len] = '\0';
+        }
+
+        devpath = ToLocaleDup(dev);
+        free(dev);
+    }
     else if (location[0] != '\0')
     {
 #if (DIR_SEP_CHAR == '/')
-        char *dec = vlc_uri_decode_duplicate(location);
-        if (dec == NULL)
+        char *base = strdup(location);
+        if (base == NULL)
             return NULL;
 
-        /* GNOME CDDA syntax */
-        const char *sl = strrchr(dec, '/');
-        if (sl != NULL)
-        {
-            unsigned track = 0;
+        bool split;
+        unsigned track = SplitTrackSuffix(base, &split);
+        if (track != 0)
+            *trackp = track;
 
-            /* Match a location in the form "/" or "/Track <number>*".  If
-             * there's no match or if it's 0 (invalid), read the whole disk --
-             * but leave *trackp to the inherited value from cdda-track option.
-             * It's important not to reset it to 0 because although it means
-             * "whole disk" we must not switch back to that mode if we get
-             * called for a specific track later on, at the risk of recursing
-             * forever. */
-            if (sl[1] == '\0' || sscanf(sl, "/Track %2u", &track) == 1)
-            {
-                if (track != 0)
-                    *trackp = track;
-                dec[sl - dec] = '\0';
-            }
-        }
+        /* GNOME CDDA syntax */
+        char *dec = vlc_uri_decode_duplicate(base);
+        free(base);
+        if (dec == NULL)
+            return NULL;
 
         if (unlikely(asprintf(&devpath, "/dev/%s", dec) == -1))
             devpath = NULL;
@@ -561,7 +612,7 @@ static int ReadDir(stream_t *access, input_item_node_t *node)
             vlc_tick_from_samples(i_last_sector - i_first_sector, CD_ROM_CDDA_FRAMES);
 
         char *mrl = NULL;
-        if (access->psz_filepath == NULL && access->psz_location[0] != '\0')
+        if (access->psz_location[0] != '\0')
         {
             /* A trailing separator would come back as an empty final component
              * and leave one in the device path. */
