@@ -988,6 +988,34 @@ static void *Thread( void *obj )
         requestedFormat.setRenderableType(QSurfaceFormat::OpenGL);
         requestedFormat.setProfile(QSurfaceFormat::CoreProfile);
 
+        /// <QSGDefaultContext::defaultSurfaceFormat()>
+        /// This is copied from `QSGDefaultContext::defaultSurfaceFormat()`, since
+        /// it is not public. The default `QSurfaceFormat::defaultFormat()` that is
+        /// provided by Qt Gui naturally does not consider the default format of
+        /// Qt Quick:
+        // These depend solely on the env.vars., not QQuickGraphicsConfiguration
+        // since that does not have a flag that maps 100% to QSG_NO_xx_BUFFER.
+        static bool useDepth = qEnvironmentVariableIsEmpty("QSG_NO_DEPTH_BUFFER");
+        static bool useStencil = qEnvironmentVariableIsEmpty("QSG_NO_STENCIL_BUFFER");
+        static bool enableDebug = qEnvironmentVariableIsSet("QSG_OPENGL_DEBUG");
+        static bool disableVSync = qEnvironmentVariableIsSet("QSG_NO_VSYNC");
+        if (useDepth && requestedFormat.depthBufferSize() == -1)
+            requestedFormat.setDepthBufferSize(24);
+        else if (!useDepth)
+            requestedFormat.setDepthBufferSize(0);
+        if (useStencil && requestedFormat.stencilBufferSize() == -1)
+            requestedFormat.setStencilBufferSize(8);
+        else if (!useStencil)
+            requestedFormat.setStencilBufferSize(0);
+        if (enableDebug)
+            requestedFormat.setOption(QSurfaceFormat::DebugContext);
+        if (QQuickWindow::hasDefaultAlphaBuffer())
+            requestedFormat.setAlphaBufferSize(8);
+        requestedFormat.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+        if (disableVSync) // swapInterval defaults to 1, it has no -1 special value
+            requestedFormat.setSwapInterval(0);
+        /// </QSGDefaultContext::defaultSurfaceFormat()>
+
         QOpenGLContext ctx;
         ctx.setFormat(requestedFormat);
 
