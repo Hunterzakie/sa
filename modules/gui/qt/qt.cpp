@@ -977,35 +977,53 @@ static void *Thread( void *obj )
 
     // It is guaranteed that the returned format is supported, if a format is returned.
     static const auto createCompatibleOpenGLFormat = []() -> std::optional<QSurfaceFormat> {
-        QOpenGLContext defaultCtx;
-        // This is really unnecessary to check, since Qt should not be using unavailable contexts, but nevertheless.
-        if (Q_UNLIKELY(!defaultCtx.create()))
-            return std::nullopt;
-
-        const QSurfaceFormat format = defaultCtx.format();
-
-        if (format.majorVersion() >= 3) // We need OpenGL (ES) 3.0 since our shaders use `textureSize()`.
-            return format;
-
-        QSurfaceFormat compatibleFormat = format;
-        compatibleFormat.setMajorVersion(3);
-        compatibleFormat.setMinorVersion(0);
-
-        // OpenGL ES does not have core/compatibility profiles:
-        if (compatibleFormat.renderableType() == QSurfaceFormat::OpenGL)
-            compatibleFormat.setProfile(QSurfaceFormat::CoreProfile);
+        // If Qt uses OpenGL ES by default, we can't rely on the default format, that is
+        // why we need to request OpenGL format (highest available) ourselves. According
+        // to the docs of `QOpenGLContext::create()`, if OpenGL 4.6 is not available (such
+        // as with Mac, or old hardware), it should use a lower version. Note that using
+        // attribute `Qt::AA_UseDesktopOpenGL` was not functional on Linux Wayland.
+        QSurfaceFormat requestedFormat = QSurfaceFormat::defaultFormat();
+        requestedFormat.setMajorVersion(4);
+        requestedFormat.setMinorVersion(6);
+        requestedFormat.setRenderableType(QSurfaceFormat::OpenGL);
+        requestedFormat.setProfile(QSurfaceFormat::CoreProfile);
 
         QOpenGLContext ctx;
-        ctx.setFormat(compatibleFormat);
+        ctx.setFormat(requestedFormat);
 
-        if (!ctx.create() || ctx.format().majorVersion() < 3)
+        // According to the docs, this should not fail due to version mismatch. If the
+        // requested version is not available, it should just use a lower version (we
+        // check below if it is the minimum required, which is 3.0):
+        // "For example, if you request a context that supports OpenGL 4.3 Core profile
+        //  but the driver and/or hardware only supports version 3.2 Core profile contexts
+        //  then you will get a 3.2 Core profile context."
+        if (Q_UNLIKELY(!ctx.create()))
         {
-            qCritical() << "OpenGL (ES) 3.0 context creation failed.";
+            qCritical() << "OpenGL context creation failed.";
             return std::nullopt;
+        }
+
+        // Realized format:
+        const QSurfaceFormat format = ctx.format();
+
+        // We need at least OpenGL 3.0 since our shaders use `textureSize()`:
+        if (format.majorVersion() >= 3 &&
+            // We do not allow OpenGL ES, because in many cases we use our own fragment shader, and rely
+            // on Qt's built-in vertex shader. Since 5d318868, we deviate from Qt's own shader baking that
+            // we provide ESSL 3.00 whereas Qt provides ESSL 1.00. According to OpenGL ES Shading Language 3.20.8,
+            // section 1.5: "It is an error to link shaders if they are written in different versions of
+            // the language.", which means we can only allow OpenGL (non-ES). Also see Qt commit 329159f.
+            // The reason we can't simply use our own vertex shader, which would be very trivial, is that
+            // using a custom vertex shader breaks batch rendering (in `ShaderEffect`).
+            (format.renderableType() == QSurfaceFormat::OpenGL) &&
+            (format.profile() == QSurfaceFormat::CoreProfile))
+        {
+            return format;
         }
         else
         {
-            return compatibleFormat;
+            qCritical() << "OpenGL (minimum 3.0) context creation failed.";
+            return std::nullopt;
         }
     };
 
