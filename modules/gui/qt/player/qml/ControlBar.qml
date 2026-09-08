@@ -142,6 +142,18 @@ T.Pane {
                 font: timeTextMetrics.font
                 horizontalAlignment: Text.AlignHCenter
 
+                topPadding: (root.textPosition === ControlBar.TimeTextPosition.AboveSlider) ? VLCStyle.margin_xxxsmall : 0.0
+                bottomPadding: (root.textPosition === ControlBar.TimeTextPosition.AboveSlider) ? VLCStyle.margin_xxxsmall : 0.0
+                leftPadding: (root.textPosition === ControlBar.TimeTextPosition.AboveSlider) ? VLCStyle.margin_xxxsmall : 0.0
+                rightPadding: (root.textPosition === ControlBar.TimeTextPosition.AboveSlider) ? VLCStyle.margin_xxxsmall : 0.0
+
+                background: Rectangle {
+                    visible: (root.textPosition === ControlBar.TimeTextPosition.AboveSlider) && !!root.background?.visible
+                    color: root.background?.color ?? "transparent"
+                    opacity: root.background?.opacity ?? 1.0
+                    radius: VLCStyle.dp(4, VLCStyle.scale)
+                }
+
                 // TODO: Do not use `Binding` when minimum Qt is 6.12:
                 Binding {
                     target: mediaTime
@@ -169,6 +181,18 @@ T.Pane {
                 horizontalAlignment: Text.AlignHCenter
 
                 visible: root.showRemainingTime
+
+                topPadding: (root.textPosition === ControlBar.TimeTextPosition.AboveSlider) ? VLCStyle.margin_xxxsmall : 0.0
+                bottomPadding: (root.textPosition === ControlBar.TimeTextPosition.AboveSlider) ? VLCStyle.margin_xxxsmall : 0.0
+                leftPadding: (root.textPosition === ControlBar.TimeTextPosition.AboveSlider) ? VLCStyle.margin_xxxsmall : 0.0
+                rightPadding: (root.textPosition === ControlBar.TimeTextPosition.AboveSlider) ? VLCStyle.margin_xxxsmall : 0.0
+
+                background: Rectangle {
+                    visible: (root.textPosition === ControlBar.TimeTextPosition.AboveSlider) && !!root.background?.visible
+                    color: root.background?.color ?? "transparent"
+                    opacity: root.background?.opacity ?? 1.0
+                    radius: VLCStyle.dp(4, VLCStyle.scale)
+                }
 
                 // TODO: Do not use `Binding` when minimum Qt is 6.12:
                 Binding {
