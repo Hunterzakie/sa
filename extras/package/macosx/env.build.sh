@@ -1,7 +1,6 @@
 #!/bin/bash
 
-HOST_ARCH="x86_64"
-BUILD_ARCH=`uname -m | cut -d. -f1`
+
 MINIMAL_OSX_VERSION="10.7"
 
 get_actual_arch() {
@@ -20,7 +19,10 @@ get_buildsystem_arch() {
     fi
 }
 
-ACTUAL_HOST_ARCH="$(get_actual_arch "${HOST_ARCH}")"
+ACTUAL_HOST_ARCH=`uname -m | cut -d. -f1`
+HOST_ARCH=`get_buildsystem_arch $ACTUAL_HOST_ARCH`
+ACTUAL_BUILD_ARCH=`uname -m | cut -d. -f1`
+BUILD_ARCH=`get_buildsystem_arch $ACTUAL_BUILD_ARCH`
 
 vlcGetOSXKernelVersion() {
     local OSX_KERNELVERSION=$(uname -r | cut -d. -f1)
@@ -91,7 +93,7 @@ vlcSetBaseEnvironment() {
         python3Path=""
     fi
 
-    export PATH="${VLC_ROOT_DIR}/extras/tools/build/bin:${VLC_ROOT_DIR}/contrib/${LOCAL_BUILD_TRIPLET}/bin:$python3Path:${VLC_PATH}:/bin:/sbin:/usr/bin:/usr/sbin"
+    export PATH="${VLC_ROOT_DIR}/extras/tools/build/bin:$python3Path:${VLC_PATH}:/bin:/sbin:/usr/bin:/usr/sbin"
 }
 
 vlcSetSymbolEnvironment() {
@@ -116,6 +118,9 @@ vlcSetSymbolEnvironment() {
     # - Added symbols in macOS 10.13 / iOS 11 / watchOS 4 / tvOS 11
     # - Added symbol in macOS 10.14 / iOS 12 / tvOS 9
     # - Added symbols in macOS 10.15 / iOS 13 / tvOS 13
+    #
+    # ac_cv_prog_cc_c23: autoconf 2.73 adds -std=gnu23 to CC but not OBJC
+    #                    breaking libtool's ObjC tag inference.
     "${cmd}" "$@" \
     ac_cv_lib_network_connect=no \
     \
@@ -129,6 +134,8 @@ vlcSetSymbolEnvironment() {
     ac_cv_func_readlinkat=no \
     ac_cv_func_linkat=no \
     ac_cv_func_unlinkat=no \
+    \
+    ac_cv_prog_cc_c23=no \
     \
     ac_cv_func_basename_r=no \
     ac_cv_func_clock_getres=no \
@@ -159,11 +166,15 @@ vlcSetContribEnvironment() {
     local MINIMAL_OSX_VERSION="$1"
 
     if [ -z "$SDKROOT" ]; then
-        export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
+        SDKROOT="$(xcrun --sdk macosx --show-sdk-path)" && export SDKROOT
     fi
-    SDK_VERSION="$(xcrun --sdk $SDKROOT --show-sdk-version)"
+    SDK_VERSION="$(xcrun --sdk $SDKROOT --show-sdk-version)" || SDK_VERSION="<unknown version>"
+    XCODE_VERSION="$(xcodebuild -version)"
 
-    echo "Setting contrib environment with minimum macOS version $MINIMAL_OSX_VERSION and SDK $SDK_VERSION at $SDKROOT"
+    echo "Setting contrib environment with minimum macOS version $MINIMAL_OSX_VERSION and SDK $SDK_VERSION at $SDKROOT using $XCODE_VERSION"
+
+    # Select avcodec flavor to compile contribs with
+    export USE_FFMPEG=1
 
     # Usually, VLCs contrib libraries do not support partial availability at runtime.
     # Forcing those errors has two reasons:
@@ -176,6 +187,7 @@ vlcSetContribEnvironment() {
     export CXXFLAGS="-Werror=partial-availability"
     export OBJCFLAGS="-Werror=partial-availability"
 
+    export VLC_DEPLOYMENT_TARGET="$MINIMAL_OSX_VERSION"
     export EXTRA_CFLAGS="-isysroot $SDKROOT -mmacosx-version-min=$MINIMAL_OSX_VERSION -DMACOSX_DEPLOYMENT_TARGET=$MINIMAL_OSX_VERSION -arch $ACTUAL_HOST_ARCH"
     export EXTRA_LDFLAGS="-isysroot $SDKROOT -mmacosx-version-min=$MINIMAL_OSX_VERSION -DMACOSX_DEPLOYMENT_TARGET=$MINIMAL_OSX_VERSION -arch $ACTUAL_HOST_ARCH"
     export XCODE_FLAGS="MACOSX_DEPLOYMENT_TARGET=$MINIMAL_OSX_VERSION -sdk $SDKROOT WARNING_CFLAGS=-Werror=partial-availability"
@@ -197,9 +209,9 @@ vlcSetLibVLCEnvironment() {
     echo "Setting libVLC flags"
 
     # Enable debug symbols by default
-    export CFLAGS="-g -arch $ACTUAL_HOST_ARCH"
-    export CXXFLAGS="-g -arch $ACTUAL_HOST_ARCH"
-    export OBJCFLAGS="-g -arch $ACTUAL_HOST_ARCH"
+    export CFLAGS="-g -arch $ACTUAL_HOST_ARCH -Werror=incompatible-function-pointer-types"
+    export CXXFLAGS="-g -arch $ACTUAL_HOST_ARCH -Werror=incompatible-function-pointer-types"
+    export OBJCFLAGS="-g -arch $ACTUAL_HOST_ARCH -Werror=incompatible-function-pointer-types"
     export LDFLAGS="-arch $ACTUAL_HOST_ARCH"
 }
 

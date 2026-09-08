@@ -1,7 +1,7 @@
 #!/bin/sh
 
-CFLAGS=${CFLAGS}
-LDFLAGS=${LDFLAGS}
+SCRIPTDIR=$(dirname "$0")
+. "$SCRIPTDIR/env.build.sh" "none"
 
 OPTIONS="
         --prefix=`pwd`/vlc_install_dir
@@ -25,7 +25,6 @@ OPTIONS="
         --with-macosx-version-min=10.7
 "
 
-export CFLAGS
-export LDFLAGS
+vlcSetSymbolEnvironment
 
 sh "$(dirname $0)"/../../../configure ${OPTIONS} "$@"
