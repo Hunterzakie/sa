@@ -373,7 +373,10 @@ static void BindBuffer(vlc_gl_t* gl)
     }
 
     wl_surface_attach(gl->surface->handle.wl, bo_data->wl_buffer, 0, 0);
-    wl_surface_damage(gl->surface->handle.wl, 0, 0, width, height);
+    if (wl_surface_get_version(gl->surface->handle.wl) >= WL_SURFACE_DAMAGE_BUFFER_SINCE_VERSION)
+        wl_surface_damage_buffer(gl->surface->handle.wl, 0, 0, width, height);
+    else
+        wl_surface_damage(gl->surface->handle.wl, 0, 0, width, height);
     wl_surface_commit(gl->surface->handle.wl);
 
     wl_display_roundtrip_queue(gl->surface->display.wl, sys->wayland.wl_queue);

@@ -110,6 +110,7 @@ typedef struct
     struct wl_cursor_theme *cursor_theme;
     struct wl_cursor *cursor;
     struct wl_surface *cursor_surface;
+    uint32_t cursor_surface_version;
 
     vlc_mutex_t lock;
     vlc_thread_t thread;
@@ -551,7 +552,7 @@ struct registry_handler
 
 static const struct registry_handler global_handlers[] =
 {
-     { "wl_compositor", register_wl_compositor, 2 },
+     { "wl_compositor", register_wl_compositor, 4 },
      { "wl_output", register_wl_output, 4 },
      { "wl_seat", register_wl_seat, UINT32_C(-1) },
 #ifndef XDG_SHELL
@@ -633,7 +634,10 @@ struct wl_surface *window_get_cursor(vlc_window_t *wnd, int32_t *restrict hsx,
     if (likely(surface != NULL))
     {
         wl_surface_attach(surface, wl_cursor_image_get_buffer(img), 0, 0);
-        wl_surface_damage(surface, 0, 0, img->width, img->height);
+        if (sys->cursor_surface_version >= WL_SURFACE_DAMAGE_BUFFER_SINCE_VERSION)
+            wl_surface_damage_buffer(surface, 0, 0, img->width, img->height);
+        else
+            wl_surface_damage(surface, 0, 0, img->width, img->height);
         wl_surface_commit(surface);
     }
 
@@ -676,6 +680,7 @@ static int Open(vlc_window_t *wnd)
     wl_list_init(&sys->seats);
     sys->cursor_theme = NULL;
     sys->cursor_surface = NULL;
+    sys->cursor_surface_version = 0;
     vlc_mutex_init(&sys->lock);
     vlc_sem_init(&sys->wm.configured, 0);
     wnd->sys = sys;
@@ -747,6 +752,8 @@ static int Open(vlc_window_t *wnd)
                                                      "left_ptr");
 
         sys->cursor_surface = wl_compositor_create_surface(sys->compositor);
+        if (likely(sys->cursor_surface))
+            sys->cursor_surface_version = wl_surface_get_version(sys->cursor_surface);
     }
     if (sys->cursor == NULL)
         msg_Err(wnd, "failed to load cursor");
