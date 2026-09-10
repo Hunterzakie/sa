@@ -437,15 +437,24 @@ static bool DecodePageHeaderPacket( decoder_t *p_dec, const uint8_t *packet,
 
     for ( int a = 0; a < 6; a++ )
     {
-        flag |= (0xF & (bytereverse( hamming_8_4(packet[8 + a]) ) >> 4))
+        int value = hamming_8_4( packet[8 + a] );
+        if ( value < 0 )
+            return false;
+
+        flag |= (0xF & (bytereverse( value ) >> 4))
                   << (a * 4);
     }
 
 /*         if (!p_sys->b_ignore_sub_flag && !(flag & FLAG_SUBTITLE)) */
 /*           return false; */
 
-    p_sys->i_page[magazine] = (0xF0 & bytereverse( hamming_8_4(packet[7]) )) | /* tens */
-                              (0x0F & (bytereverse( hamming_8_4(packet[6]) ) >> 4) ); /* units */
+    int page_tens = hamming_8_4( packet[7] );
+    int page_units = hamming_8_4( packet[6] );
+    if ( page_tens < 0 || page_units < 0 )
+        return false;
+
+    p_sys->i_page[magazine] = (0xF0 & bytereverse( page_tens )) | /* tens */
+                              (0x0F & (bytereverse( page_units ) >> 4) ); /* units */
 
     char psz_line[(40 - 14) * 3 + 1];
     decode_string( psz_line, sizeof(psz_line), p_sys, magazine,
@@ -650,14 +659,17 @@ static int Decode( decoder_t *p_dec, block_t *p_block )
 /*       } */
 
         /* See EN.300.706 7.1.4 */
-        int mpag = (hamming_8_4( packet[4] ) << 4) | hamming_8_4( packet[5] );
-        int row, magazine;
-        if ( mpag < 0 )
+        int mpag_hi = hamming_8_4( packet[4] );
+        int mpag_lo = hamming_8_4( packet[5] );
+        if ( mpag_hi < 0 || mpag_lo < 0 )
         {
             /* decode error */
             dbg((p_dec, "mpag hamming error"));
             continue;
         }
+
+        int mpag = (mpag_hi << 4) | mpag_lo;
+        int row, magazine;
 
         /* magazine number 0-7, row 0-31 (== packet number... or Y) */
         row = 0xFF & bytereverse(mpag);
