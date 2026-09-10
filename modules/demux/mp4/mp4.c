@@ -4903,7 +4903,7 @@ static int ProbeFragments( demux_t *p_demux, bool b_force, bool *pb_fragmented )
 
             for( unsigned track_num=0; track_num<p_sys->i_tracks; track_num++ )
             {
-                stime_t fragment_time = pi_track_times[track_num];
+                stime_t fragment_time = 0;
                 unsigned fragment = 0;
 
                 for( MP4_Box_t *p_moof = p_vroot->p_first; p_moof; p_moof = p_moof->p_next )
