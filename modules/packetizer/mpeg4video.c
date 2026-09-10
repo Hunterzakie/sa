@@ -570,12 +570,6 @@ static int ParseVOP( decoder_t *p_dec, block_t *p_vop )
         p_sys->i_interpolated_pts += vlc_tick_from_samples( i_time_diff, p_sys->i_fps_num );
     }
 
-#if 0
-    msg_Err( p_dec, "interp dts/pts (%"PRId64",%"PRId64"), dts/pts (%"PRId64",%"PRId64") %"PRId64" mod %d inc %"PRId64,
-             p_sys->i_interpolated_dts, p_sys->i_interpolated_pts,
-             p_vop->i_dts, p_vop->i_pts, p_sys->i_time_ref, i_modulo_time_base, i_time_increment );
-#endif
-
     p_sys->i_last_time = i_time_ref;
     if( p_sys->i_fps_num )
         p_sys->i_last_timeincr = i_time_increment;
