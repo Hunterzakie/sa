@@ -570,10 +570,6 @@ static int ParseVOP( decoder_t *p_dec, block_t *p_vop )
         p_sys->i_interpolated_pts += vlc_tick_from_samples( i_time_diff, p_sys->i_fps_num );
     }
 
-    p_sys->i_last_time = i_time_ref;
-    if( p_sys->i_fps_num )
-        p_sys->i_last_timeincr = i_time_increment;
-
     /* Correct interpolated dts when we receive a new pts/dts */
     if( p_vop->i_pts != VLC_TICK_INVALID )
         p_sys->i_interpolated_pts = p_vop->i_pts;
@@ -600,6 +596,10 @@ static int ParseVOP( decoder_t *p_dec, block_t *p_vop )
 
         p_sys->i_last_ref_pts = p_sys->i_interpolated_pts;
     }
+
+    p_sys->i_last_time = i_time_ref;
+    if( p_sys->i_fps_num )
+        p_sys->i_last_timeincr = i_time_increment;
 
     return VLC_SUCCESS;
 }
