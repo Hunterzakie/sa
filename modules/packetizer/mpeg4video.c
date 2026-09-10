@@ -583,16 +583,18 @@ static int ParseVOP( decoder_t *p_dec, block_t *p_vop )
             p_sys->i_interpolated_dts = p_vop->i_pts;
         else
             p_sys->i_interpolated_dts = p_sys->i_interpolated_pts;
+    }
+    else if( p_sys->i_last_ref_pts != VLC_TICK_INVALID )
+        p_sys->i_interpolated_dts = p_sys->i_last_ref_pts;
+    else if( p_vop->i_dts != VLC_TICK_INVALID )
+        p_sys->i_interpolated_dts = p_vop->i_dts;
 
+    if( (p_sys->i_flags & BLOCK_FLAG_TYPE_B) || !p_sys->b_frame )
+    {
         p_sys->i_interpolated_pts = p_sys->i_interpolated_dts;
     }
     else
     {
-        if( p_sys->i_last_ref_pts != VLC_TICK_INVALID )
-            p_sys->i_interpolated_dts = p_sys->i_last_ref_pts;
-        else if( p_vop->i_dts != VLC_TICK_INVALID )
-            p_sys->i_interpolated_dts = p_vop->i_dts;
-
         p_sys->i_last_ref_pts = p_sys->i_interpolated_pts;
     }
 
