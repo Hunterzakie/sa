@@ -124,6 +124,32 @@ T.Control {
         Widgets.DefaultShadow {
 
         }
+
+        // Border provider:
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: -border.width // `Rectangle` border grows inwards
+
+            // Radius depends on border width to contain the
+            // rectangular video surface. Adjust the border
+            // width, if you want bigger radius.
+            radius: (2 + Math.sqrt(2)) * border.width
+            color: "transparent"
+
+            border.pixelAligned: false
+            // It must be opaque:
+            border.color: Qt.alpha(theme.bg.primary, 1.0)
+            border.width: Math.round(VLCStyle.dp(2, VLCStyle.scale))
+
+            // This should match with what the main view uses, so that
+            // in most cases the border would blend in to the main view's
+            // background:
+            ColorContext {
+                id: theme
+                palette: VLCStyle.palette
+                colorSet: ColorContext.View
+            }
+        }
     }
 
     contentItem: Item {
