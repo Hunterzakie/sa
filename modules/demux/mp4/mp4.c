@@ -5241,7 +5241,7 @@ static int DemuxMoof( demux_t *p_demux )
             if( i_track_end < i_segment_end  )
                 i_segment_end = i_track_end;
         }
-        if( i_segment_end != VLC_TICK_MAX )
+        if( i_segment_end != VLC_TICK_MAX && VLC_TICK_0 + i_segment_end > p_sys->i_pcr )
         {
             p_sys->i_nztime = i_segment_end;
             p_sys->i_pcr = VLC_TICK_0 + p_sys->i_nztime;
