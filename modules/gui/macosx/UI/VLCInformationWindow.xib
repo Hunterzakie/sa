@@ -592,17 +592,17 @@
                             </tabViewItem>
                             <tabViewItem label="Codec Details" identifier="2" id="420">
                                 <view key="view" id="421">
-                                    <rect key="frame" x="0.0" y="0.0" width="539" height="438"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="567" height="563"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="516">
-                                            <rect key="frame" x="17" y="0.0" width="510" height="440"/>
+                                            <rect key="frame" x="16" y="155" width="535" height="392"/>
                                             <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="jDW-Lc-WE4">
-                                                <rect key="frame" x="0.0" y="0.0" width="510" height="440"/>
-                                                <autoresizingMask key="autoresizingMask"/>
+                                                <rect key="frame" x="0.0" y="0.0" width="535" height="392"/>
+                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
-                                                    <outlineView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnReordering="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" typeSelect="NO" rowSizeStyle="automatic" viewBased="YES" indentationPerLevel="16" indentationMarkerFollowsCell="NO" autoresizesOutlineColumn="YES" outlineTableColumn="521" id="519">
-                                                        <rect key="frame" x="0.0" y="0.0" width="494" height="440"/>
+                                                    <outlineView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" columnReordering="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" typeSelect="NO" rowSizeStyle="automatic" viewBased="YES" indentationPerLevel="16" indentationMarkerFollowsCell="NO" autoresizesOutlineColumn="YES" outlineTableColumn="521" id="519">
+                                                        <rect key="frame" x="0.0" y="0.0" width="535" height="392"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <size key="intercellSpacing" width="3" height="2"/>
                                                         <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -621,12 +621,11 @@
                                                                 <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                                 <prototypeCellViews>
                                                                     <tableCellView id="sWh-xo-F0z">
-                                                                        <rect key="frame" x="11" y="1" width="254" height="17"/>
+                                                                        <rect key="frame" x="11" y="1" width="247" height="17"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
-                                                                            <textField identifier="VLCInformationWindowPropertyNameCell" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="aQy-jV-OVS">
-                                                                                <rect key="frame" x="0.0" y="1" width="254" height="16"/>
-                                                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+                                                                            <textField identifier="VLCInformationWindowPropertyNameCell" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="aQy-jV-OVS">
+                                                                                <rect key="frame" x="0.0" y="1" width="247" height="16"/>
                                                                                 <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="S8v-2v-4vD">
                                                                                     <font key="font" usesAppearanceFont="YES"/>
                                                                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -634,6 +633,11 @@
                                                                                 </textFieldCell>
                                                                             </textField>
                                                                         </subviews>
+                                                                        <constraints>
+                                                                            <constraint firstItem="aQy-jV-OVS" firstAttribute="centerY" secondItem="sWh-xo-F0z" secondAttribute="centerY" id="4j6-nW-Wla"/>
+                                                                            <constraint firstItem="aQy-jV-OVS" firstAttribute="leading" secondItem="sWh-xo-F0z" secondAttribute="leading" constant="2" id="ada-Sa-NIW"/>
+                                                                            <constraint firstItem="aQy-jV-OVS" firstAttribute="centerX" secondItem="sWh-xo-F0z" secondAttribute="centerX" id="uP1-Jf-ybw"/>
+                                                                        </constraints>
                                                                         <connections>
                                                                             <outlet property="textField" destination="aQy-jV-OVS" id="hPV-Nv-lEm"/>
                                                                         </connections>
@@ -653,12 +657,11 @@
                                                                 <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                                 <prototypeCellViews>
                                                                     <tableCellView id="AiZ-f9-liR">
-                                                                        <rect key="frame" x="261" y="1" width="227" height="17"/>
+                                                                        <rect key="frame" x="261" y="1" width="221" height="17"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
-                                                                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="oPm-Le-K3W">
-                                                                                <rect key="frame" x="0.0" y="1" width="227" height="16"/>
-                                                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+                                                                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="oPm-Le-K3W">
+                                                                                <rect key="frame" x="0.0" y="1" width="221" height="16"/>
                                                                                 <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="F2n-nI-GbZ">
                                                                                     <font key="font" usesAppearanceFont="YES"/>
                                                                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -666,6 +669,11 @@
                                                                                 </textFieldCell>
                                                                             </textField>
                                                                         </subviews>
+                                                                        <constraints>
+                                                                            <constraint firstItem="oPm-Le-K3W" firstAttribute="leading" secondItem="AiZ-f9-liR" secondAttribute="leading" constant="2" id="ALl-N4-SFH"/>
+                                                                            <constraint firstItem="oPm-Le-K3W" firstAttribute="centerX" secondItem="AiZ-f9-liR" secondAttribute="centerX" id="NpD-AU-ZfU"/>
+                                                                            <constraint firstItem="oPm-Le-K3W" firstAttribute="centerY" secondItem="AiZ-f9-liR" secondAttribute="centerY" id="Onw-Kq-Aol"/>
+                                                                        </constraints>
                                                                         <connections>
                                                                             <outlet property="textField" destination="oPm-Le-K3W" id="WSP-1y-2Ac"/>
                                                                         </connections>
@@ -688,16 +696,16 @@
                                         </scrollView>
                                     </subviews>
                                     <constraints>
-                                        <constraint firstItem="516" firstAttribute="top" secondItem="421" secondAttribute="top" constant="4" id="IN7-1d-XgS" customClass="VLCSpacingConstraint">
+                                        <constraint firstItem="516" firstAttribute="top" secondItem="421" secondAttribute="top" constant="16" id="IN7-1d-XgS" customClass="VLCSpacingConstraint">
                                             <userDefinedRuntimeAttributes>
                                                 <userDefinedRuntimeAttribute type="number" keyPath="spacingToken">
-                                                    <integer value="1"/>
+                                                    <integer key="value" value="0"/>
                                                 </userDefinedRuntimeAttribute>
                                             </userDefinedRuntimeAttributes>
                                         </constraint>
-                                        <constraint firstItem="516" firstAttribute="leading" secondItem="421" secondAttribute="leading" constant="17" id="Kl2-Pc-PKz"/>
-                                        <constraint firstAttribute="trailing" secondItem="516" secondAttribute="trailing" constant="12" id="dUM-Kn-Ofw"/>
-                                        <constraint firstAttribute="bottom" secondItem="516" secondAttribute="bottom" id="zKT-kB-cpy"/>
+                                        <constraint firstItem="516" firstAttribute="leading" secondItem="421" secondAttribute="leading" constant="16" id="Kl2-Pc-PKz"/>
+                                        <constraint firstAttribute="trailing" secondItem="516" secondAttribute="trailing" constant="16" id="xrq-LV-jcu"/>
+                                        <constraint firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="516" secondAttribute="bottom" constant="16" id="zKT-kB-cpy"/>
                                     </constraints>
                                 </view>
                             </tabViewItem>
