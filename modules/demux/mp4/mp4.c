@@ -5234,7 +5234,7 @@ static int DemuxMoof( demux_t *p_demux )
         for( unsigned i = 0; i < p_sys->i_tracks; i++ )
         {
             mp4_track_t *tk = &p_sys->track[i];
-            if( tk->b_ok || MP4_isMetadata( tk ) ||
+            if( !tk->b_ok || MP4_isMetadata( tk ) ||
                (!tk->b_selected && !p_sys->b_seekable) )
                 continue;
             vlc_tick_t i_track_end = MP4_rescale_mtime( tk->i_time, tk->i_timescale );
