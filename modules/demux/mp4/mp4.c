@@ -5545,11 +5545,12 @@ static int FragGetMoofByTfraIndex( demux_t *p_demux, const vlc_tick_t i_target_t
                 continue;
 
             uint64_t i_pos = 0;
+            stime_t i_pos_time = 0;
             mp4_track_t *p_track = MP4_GetTrackByTrackID( p_demux, p_data->i_track_ID );
             if ( p_track )
             {
                 stime_t i_track_target_time = MP4_rescale_qtime( i_target_time, p_track->i_timescale );
-                for ( uint32_t i = 0; i<p_data->i_number_of_entries; i += ( p_data->i_version == 1 ) ? 2 : 1 )
+                for ( uint32_t i = 0; i<p_data->i_number_of_entries; i++ )
                 {
                     stime_t i_time = p_data->p_time[i];
                     uint64_t i_offset = p_data->p_moof_offset[i];
@@ -5560,11 +5561,14 @@ static int FragGetMoofByTfraIndex( demux_t *p_demux, const vlc_tick_t i_target_t
                             break;
 
                         *pi_moof_pos = i_pos;
-                        *pi_sampletime = MP4_rescale_mtime( i_time, p_track->i_timescale );
+                        *pi_sampletime = MP4_rescale_mtime( i_pos_time, p_track->i_timescale );
                         return VLC_SUCCESS;
                     }
                     else
+                    {
                         i_pos = i_offset;
+                        i_pos_time = i_time;
+                    }
                 }
             }
         }
