@@ -134,6 +134,7 @@ class MainCtx : public QObject
     Q_PROPERTY(bool lyricsMode READ lyricsMode WRITE setLyricsMode NOTIFY lyricsModeChanged FINAL)
     Q_PROPERTY(bool usingTouch READ usingTouch NOTIFY usingTouchChanged FINAL)
     Q_PROPERTY(CSDButtonModel *csdButtonModel READ csdButtonModel CONSTANT FINAL)
+    Q_PROPERTY(bool csdRoundedCorners READ csdRoundedCorners NOTIFY csdRoundedCornersChanged FINAL)
     Q_PROPERTY(MainInterfaceModes mainInterfaceModes READ getMainInterfaceModes NOTIFY mainInterfaceModesChanged FINAL)
     Q_PROPERTY(MainInterfaceMode effectiveMainInterfaceMode READ getEffectiveMainInterfaceMode NOTIFY mainInterfaceModesChanged FINAL)
     Q_PROPERTY(MainInterfaceMode initialEffectiveMainInterfaceMode READ getInitialEffectiveMainInterfaceMode CONSTANT FINAL)
@@ -239,6 +240,7 @@ public:
     inline bool hasGridView() const { return m_gridView; }
     inline Grouping grouping() const { return m_grouping; }
     inline bool albumSections() const { return m_albumSections; }
+    inline bool csdRoundedCorners() const { return m_csdRoundedCorners; }
     inline bool lyricsMode() const { return m_lyricsMode; }
     inline ColorSchemeModel* getColorScheme() const { return m_colorScheme; }
     bool hasVLM() const;
@@ -492,6 +494,8 @@ protected:
 
     bool m_albumSections = true;
 
+    bool m_csdRoundedCorners = true;
+
     bool m_lyricsMode = true;
 
     bool m_usingTouch = false;
@@ -575,6 +579,7 @@ signals:
     void hasGridListModeChanged( bool );
     void groupingChanged( Grouping );
     void albumSectionsChanged( bool );
+    void csdRoundedCornersChanged( );
     void lyricsModeChanged( bool );
     void colorSchemeChanged( QString );
     void useClientSideDecorationChanged();
