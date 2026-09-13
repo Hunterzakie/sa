@@ -204,8 +204,6 @@ public:
         : m_stream( p_stream )
         , m_previousPos( 0 )
         , m_borked( false )
-        , m_seqReadLength( 0 )
-        , m_seqReadLimit( std::numeric_limits<long>::max() )
     {
     }
 
@@ -214,7 +212,7 @@ public:
         vlc_stream_Delete( m_stream );
     }
 
-    FileName name() const
+    FileName name() const override
     {
         // Taglib only cares about the file name part, so it doesn't matter
         // whether we include the mrl scheme or not
@@ -222,12 +220,18 @@ public:
     }
 
 #if TAGLIB_VERSION >= VERSION_INT(2, 0, 0)
-    ByteVector readBlock(size_t length)
+    ByteVector readBlock(size_t length) override
 #else
-    ByteVector readBlock(ulong length)
+    ByteVector readBlock(ulong length) override
 #endif
     {
-        if(m_borked || m_seqReadLength >= m_seqReadLimit)
+        if (length > std::numeric_limits<unsigned int>::max())
+            // ByteVector can't hold more data than unsigned int size
+            // we can read less and provide what we got
+            // we can't return nothing in case it considers it's EOF, so read 16 KB
+            length = 1 << 14;
+
+        if(m_borked)
             return {};
         ByteVector res(length, 0);
         ssize_t i_read = vlc_stream_Read( m_stream, res.data(), length);
@@ -236,60 +240,59 @@ public:
         else if ((size_t)i_read != length)
             res.resize(i_read);
         m_previousPos += i_read;
-        m_seqReadLength += i_read;
         return res;
     }
 
-    void writeBlock(const ByteVector&)
+    void writeBlock(const ByteVector&) override
     {
         // Let's stay Read-Only for now
     }
 
 #if TAGLIB_VERSION >= VERSION_INT(2, 0, 0)
-    void insert(const ByteVector&, offset_t, size_t)
+    void insert(const ByteVector&, offset_t, size_t) override
 #else
-    void insert(const ByteVector&, ulong, ulong)
+    void insert(const ByteVector&, ulong, ulong) override
 #endif
     {
     }
 
 #if TAGLIB_VERSION >= VERSION_INT(2, 0, 0)
-    void removeBlock(offset_t, size_t)
+    void removeBlock(offset_t, size_t) override
 #else
-    void removeBlock(ulong, ulong)
+    void removeBlock(ulong, ulong) override
 #endif
     {
     }
 
-    bool readOnly() const
+    bool readOnly() const override
     {
         return true;
     }
 
-    bool isOpen() const
+    bool isOpen() const override
     {
         return true;
-    }
-
-    void setMaxSequentialRead(long s)
-    {
-        m_seqReadLimit = s;
     }
 
 #if TAGLIB_VERSION >= VERSION_INT(2, 0, 0)
-    void seek(offset_t offset, Position p)
+    void seek(offset_t offset, Position p) override
 #else
-    void seek(long offset, Position p)
+    void seek(long offset, Position p) override
 #endif
     {
         uint64_t pos = 0;
-        long len;
         switch (p)
         {
             case Current:
                 pos = m_previousPos;
                 break;
             case End:
+            {
+#if TAGLIB_VERSION >= VERSION_INT(2, 0, 0)
+                offset_t len;
+#else
+                long len;
+#endif
                 len = length();
                 if(len > -1)
                 {
@@ -301,33 +304,33 @@ public:
                     return;
                 }
                 break;
+            }
             default:
                 break;
         }
         m_borked = (vlc_stream_Seek( m_stream, pos + offset ) != 0);
         if(!m_borked)
             m_previousPos = pos + offset;
-        m_seqReadLength = 0;
     }
 
-    void clear()
+    void clear() override
     {
         return;
     }
 
 #if TAGLIB_VERSION >= VERSION_INT(2, 0, 0)
-    offset_t tell() const
+    offset_t tell() const override
 #else
-    long tell() const
+    long tell() const override
 #endif
     {
         return m_previousPos;
     }
 
 #if TAGLIB_VERSION >= VERSION_INT(2, 0, 0)
-    offset_t length()
+    offset_t length() override
 #else
-    long length()
+    long length() override
 #endif
     {
         uint64_t i_size;
@@ -337,9 +340,9 @@ public:
     }
 
 #if TAGLIB_VERSION >= VERSION_INT(2, 0, 0)
-    void truncate(offset_t)
+    void truncate(offset_t) override
 #else
-    void truncate(long)
+    void truncate(long) override
 #endif
     {
     }
@@ -348,8 +351,6 @@ private:
     stream_t* m_stream;
     int64_t m_previousPos;
     bool m_borked;
-    long m_seqReadLength;
-    long m_seqReadLimit;
 };
 
 static int ExtractCoupleNumberValues( vlc_meta_t* p_meta, const char *psz_value,

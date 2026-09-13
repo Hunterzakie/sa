@@ -249,17 +249,19 @@ static NSString *genreArrayDisplayString(NSArray<VLCMediaLibraryGenre *> * const
         _frameRate = p_track->v.i_fpsNum;
         _frameRateDenominator = p_track->v.i_fpsDen;
 
-        const unsigned int realHeight = MIN(_videoWidth, _videoHeight);
-        const unsigned int realWidth = MAX(_videoWidth, _videoHeight);
+        if (p_track->i_type == VLC_ML_TRACK_TYPE_VIDEO) {
+            const unsigned int realHeight = MIN(_videoWidth, _videoHeight);
+            const unsigned int realWidth = MAX(_videoWidth, _videoHeight);
 
-        if (realHeight >= VLCMediaLibrary8KHeight || realWidth >= VLCMediaLibrary8KHeight * (16.0 / 9.0)) {
-            _resolutionLabel = _NS("8K");
-        } else if (realHeight >= VLCMediaLibrary4KHeight || realWidth >= VLCMediaLibrary4KHeight * (16.0 / 9.0)) {
-            _resolutionLabel = _NS("4K");
-        } else if (realHeight >= VLCMediaLibrary1080pHeight || realWidth >= VLCMediaLibrary1080pHeight * (16.0 / 9.0)) {
-            _resolutionLabel = _NS("HD");
-        } else if (realHeight >= VLCMediaLibrary540pHeight || realWidth >= VLCMediaLibrary540pHeight * (16.0 / 9.0)) {
-            _resolutionLabel = _NS("SD");
+            if (realHeight >= VLCMediaLibrary8KHeight || realWidth >= VLCMediaLibrary8KHeight * (16.0 / 9.0)) {
+                _resolutionLabel = _NS("8K");
+            } else if (realHeight >= VLCMediaLibrary4KHeight || realWidth >= VLCMediaLibrary4KHeight * (16.0 / 9.0)) {
+                _resolutionLabel = _NS("4K");
+            } else if (realHeight >= VLCMediaLibrary1080pHeight || realWidth >= VLCMediaLibrary1080pHeight * (16.0 / 9.0)) {
+                _resolutionLabel = _NS("HD");
+            } else if (realHeight >= VLCMediaLibrary540pHeight || realWidth >= VLCMediaLibrary540pHeight * (16.0 / 9.0)) {
+                _resolutionLabel = _NS("SD");
+            }
         }
     }
     return self;
@@ -1011,6 +1013,7 @@ static NSString *genreArrayDisplayString(NSArray<VLCMediaLibraryGenre *> * const
     self = [super init];
     if (self && p_playlist != NULL) {
         self.libraryID = p_playlist->i_id;
+        self.smallArtworkGenerated = p_playlist->psz_artwork_mrl != NULL;
         self.smallArtworkMRL = toNSStr(p_playlist->psz_artwork_mrl);
         self.displayString = toNSStr(p_playlist->psz_name);
         const unsigned int numberOfMedia = p_playlist->i_nb_media;
@@ -1150,6 +1153,9 @@ static NSString *genreArrayDisplayString(NSArray<VLCMediaLibraryGenre *> * const
     NSUInteger rangeLen = 1;
     for (NSUInteger i = 1; i < sorted.count; i++) {
         const NSUInteger pos = sorted[i].unsignedIntegerValue;
+        if (pos == rangeStart + rangeLen - 1) {
+            continue;
+        }
         if (pos == rangeStart + rangeLen) {
             rangeLen++;
             continue;
@@ -1179,6 +1185,10 @@ static NSString *genreArrayDisplayString(NSArray<VLCMediaLibraryGenre *> * const
 
 - (void)revealInFinder
 {
+    if (_MRL.length == 0) {
+        return;
+    }
+
     NSURL * const URL = [NSURL URLWithString:_MRL];
     if (URL) {
         [NSWorkspace.sharedWorkspace activateFileViewerSelectingURLs:@[URL]];
