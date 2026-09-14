@@ -74,6 +74,7 @@ PlaylistManager::PlaylistManager( demux_t *p_demux_,
     b_preparsing = false;
     nextPlaylistupdate = 0;
     demux.pcr_syncpoint = TimestampSynchronizationPoint::RandomAccess;
+    demux.rate = 1.0;
     vlc_mutex_init(&demux.lock);
     vlc_cond_init(&demux.cond);
     vlc_mutex_init(&cached.lock);
@@ -556,6 +557,25 @@ int PlaylistManager::doControl(int i_query, va_list args)
         case DEMUX_CAN_CONTROL_PACE:
             *(va_arg (args, bool *)) = true;
             break;
+
+        case DEMUX_NOTIFY_RATE:
+        {
+            const float newRate = va_arg(args, double);
+
+            logic->setPlaybackRate(newRate);
+
+            vlc_mutex_lock(&demux.lock);
+            demux.rate = newRate;
+            vlc_cond_signal(&demux.cond);
+            vlc_mutex_unlock(&demux.lock);
+
+            lock.lock();
+            waitcond.signal();
+            lock.unlock();
+
+            msg_Dbg(p_demux, "adaptive playback rate changed to %.3f", newRate);
+            break;
+        }
 
         case DEMUX_CAN_PAUSE:
         {
