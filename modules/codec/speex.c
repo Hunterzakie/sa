@@ -207,7 +207,12 @@ static int OpenCommon( vlc_object_t *p_this, bool b_packetizer )
     /* Allocate the memory needed to store the decoder's structure */
     if( ( p_dec->p_sys = p_sys = malloc(sizeof(decoder_sys_t)) ) == NULL )
         return VLC_ENOMEM;
-    p_sys->bits.buf_size = 0;
+    speex_bits_init( &p_sys->bits );
+    if( !p_sys->bits.chars )
+    {
+        free( p_sys );
+        return VLC_ENOMEM;
+    }
     p_sys->b_packetizer = b_packetizer;
     p_sys->rtp_rate = p_dec->fmt_in->audio.i_rate;
     p_sys->b_has_headers = false;
@@ -564,7 +569,6 @@ static int ProcessInitialHeader( decoder_t *p_dec, ogg_packet *p_oggpacket )
              p_header->vbr ? ", VBR)" : ")" );
 
     /* Take care of speex decoder init */
-    speex_bits_init( &p_sys->bits );
     p_sys->p_state = p_state = speex_decoder_init( p_mode );
     if( !p_state )
     {
@@ -773,19 +777,8 @@ static int DecodeRtpSpeexPacket( decoder_t *p_dec, block_t *p_speex_bit_block )
         return VLCDEC_SUCCESS;
     }
 
-    /*
-      If the SpeexBits buffer size is 0 (a default value),
-      we know that a proper initialization has not yet been done.
-    */
-    if ( p_sys->bits.buf_size==0 )
+    if ( p_sys->p_header == NULL )
     {
-        speex_bits_init( &p_sys->bits );
-        if( p_sys->bits.buf_size==0 )
-        {
-            block_Release( p_speex_bit_block );
-            return VLCDEC_SUCCESS;
-        }
-
         p_sys->p_header = calloc(1, sizeof(SpeexHeader));
         if ( !p_sys->p_header )
         {
@@ -801,6 +794,8 @@ static int DecodeRtpSpeexPacket( decoder_t *p_dec, block_t *p_speex_bit_block )
         if ( !p_sys->p_state )
         {
             msg_Err( p_dec, "Could not allocate a Speex decoder." );
+            speex_header_free( p_sys->p_header );
+            p_sys->p_header = NULL;
             block_Release( p_speex_bit_block );
             return VLCDEC_SUCCESS;
         }
@@ -828,17 +823,6 @@ static int DecodeRtpSpeexPacket( decoder_t *p_dec, block_t *p_speex_bit_block )
         p_dec->fmt_out.audio.i_bytes_per_frame = i_speex_frame_size;
 
         date_Init(&p_sys->end_date, p_sys->p_header->rate, 1);
-    }
-
-    /*
-      If the SpeexBits are initialized but there is
-      still no header, an error must be thrown.
-    */
-    if ( !p_sys->p_header )
-    {
-        msg_Err( p_dec, "There is no valid Speex header found." );
-        block_Release( p_speex_bit_block );
-        return VLCDEC_SUCCESS;
     }
 
     if ( date_Get( &p_sys->end_date ) == VLC_TICK_INVALID )
@@ -1025,10 +1009,8 @@ static void CloseDecoder( vlc_object_t *p_this )
     decoder_sys_t *p_sys = p_dec->p_sys;
 
     if( p_sys->p_state )
-    {
         speex_decoder_destroy( p_sys->p_state );
-        speex_bits_destroy( &p_sys->bits );
-    }
+    speex_bits_destroy( &p_sys->bits );
 
     free( p_sys->p_tempbuffer );
 
