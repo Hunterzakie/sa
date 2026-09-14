@@ -523,14 +523,18 @@ release-snap:
 macos-x86_64:
     extends: .macos-common
     tags:
-        - old-macmini
-    variables: *variables-macos-x86_64
+        - macos-xcode26
+    variables:
+        <<: *variables-macos-x86_64
+        VLC_CONFIGURE_ARGS: --disable-sparkle
 
 macos-arm64:
     extends: .macos-common
     tags:
-        - monterey
-    variables: *variables-macos-arm64
+        - macos-xcode26
+    variables:
+        <<: *variables-macos-arm64
+        VLC_CONFIGURE_ARGS: --disable-sparkle
 
 .nightly-macos-common:
     extends: .macos-common
