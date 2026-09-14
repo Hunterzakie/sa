@@ -81,6 +81,23 @@ static int ytdl_popen(pid_t *restrict pid, const char *argv[])
     int fdv[] = { -1, fds[1], STDERR_FILENO, -1 };
     int val = vlc_spawnp(pid, argv[0], fdv, argv);
 
+#ifdef __APPLE__
+    static const char *const dirs[] = {
+        "/opt/homebrew/bin", "/usr/local/bin", "/opt/local/bin",
+    };
+
+    for (size_t i = 0; val == ENOENT && strchr(argv[0], '/') == NULL
+                    && i < ARRAY_SIZE(dirs); i++) {
+        char *path;
+
+        if (asprintf(&path, "%s/%s", dirs[i], argv[0]) == -1)
+            break;
+
+        val = vlc_spawn(pid, path, fdv, argv);
+        free(path);
+    }
+#endif
+
     vlc_close(fds[1]);
 
     if (val) {
