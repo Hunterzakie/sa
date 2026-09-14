@@ -50,7 +50,8 @@ typedef struct {
     const char           *str_id;
     const video_format_t *fmt;
     vlc_mouse_event      mouse_event;
-    void                 *mouse_opaque;
+    void (*mouse_event_request_pause)(void* user_data);
+    void                 *event_opaque;
 } vout_configuration_t;
 
 /**
@@ -168,6 +169,7 @@ void vout_ControlChangeSubSources(vout_thread_t *, const char *);
 void vout_ControlChangeSubFilters(vout_thread_t *, const char *);
 void vout_ChangeSpuChannelMargin(vout_thread_t *, enum vlc_vout_order order, int);
 void vout_ChangeViewpoint( vout_thread_t *, const vlc_viewpoint_t *);
+void vout_SetMousePauseType(vout_thread_t *vout, int mouse_pause_mode);
 void vout_ControlChangeStereo(vout_thread_t *vout, vlc_stereoscopic_mode_t);
 void vout_ChangeIccProfile(vout_thread_t *, vlc_icc_profile_t *);
 void vout_ChangeProjection(vout_thread_t *, video_projection_mode_t projection);

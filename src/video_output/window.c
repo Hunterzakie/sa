@@ -87,6 +87,7 @@ vlc_window_t *vlc_window_New(vlc_object_t *obj, const char *module,
     w->inhibit_windowed = dss == 1;
     w->active = false;
     w->fullscreen = false;
+    window->mouse_pause_type = MOUSE_PAUSE_ON_RELEASE;
     vlc_mutex_init(&w->lock);
 
     w->module = vlc_module_load(vlc_object_logger(window), "vout window", module,

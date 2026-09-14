@@ -65,7 +65,9 @@ typedef struct vout_display_window
         vlc_mouse_t video;
         vlc_tick_t last_left_press;
         vlc_mouse_event event;
+        void (*mouse_ev_req_pause)(void* user_data);
         void *opaque;
+        bool is_being_dragged;
     } mouse;
 } vout_display_window_t;
 
@@ -133,6 +135,25 @@ static void vout_display_window_WindowingNotify(vlc_window_t *window)
     var_SetBool(vout, "window-fullscreen", false);
 }
 
+static void processMousePause(vlc_window_t *window, const vlc_mouse_t *video_mouse)
+{
+    vout_display_window_t *state = window->owner.sys;
+
+    if (window->mouse_pause_type == MOUSE_PAUSE_NONE)
+        return;
+
+    if (!vlc_mouse_HasReleased(&state->mouse.video, video_mouse, MOUSE_BUTTON_LEFT))
+        return;
+
+    if (state->format.projection_mode != PROJECTION_MODE_RECTANGULAR &&
+        state->mouse.is_being_dragged)
+        return;
+
+    state->mouse.mouse_ev_req_pause(state->mouse.opaque);
+
+}
+
+
 static void vout_display_window_MouseEvent(vlc_window_t *window,
                                            const vlc_window_mouse_event_t *ev)
 {
@@ -147,6 +168,7 @@ static void vout_display_window_MouseEvent(vlc_window_t *window,
         case VLC_WINDOW_MOUSE_MOVED:
             vlc_mouse_SetPosition(m, ev->x, ev->y);
             state->mouse.last_left_press = VLC_TICK_MIN;
+            state->mouse.is_being_dragged = vlc_mouse_IsLeftPressed(m);
             break;
 
         case VLC_WINDOW_MOUSE_PRESSED:
@@ -199,6 +221,8 @@ static void vout_display_window_MouseEvent(vlc_window_t *window,
     /* Stop propagation if the event was consumed by a video filter */
     if (vout_FilterMouse(vout, &video_mouse))
         return;
+
+    processMousePause(window, &video_mouse);
 
     /* Check if the mouse state actually changed and emit events. */
     /* NOTE: sys->mouse is only used here, so no need to lock. */
@@ -274,6 +298,13 @@ void vout_display_window_SetMouseHandler(vlc_window_t *window,
     state->mouse.opaque = opaque;
     vlc_mutex_unlock(&state->lock);
 }
+
+void vout_display_window_SetRequestPauseHandler(vlc_window_t *window, void (*cb)(void*))
+{
+    vout_display_window_t *state = window->owner.sys;
+    state->mouse.mouse_ev_req_pause = cb;
+}
+
 
 static
 void vout_display_SizeWindow(unsigned *restrict width,
@@ -399,7 +430,9 @@ vlc_window_t *vout_display_window_New(vout_thread_t *vout)
     vlc_mouse_Init(&state->mouse.window);
     vlc_mouse_Init(&state->mouse.video);
     state->mouse.last_left_press = VLC_TICK_MIN;
+    state->mouse.is_being_dragged = false;
     state->mouse.event = NULL;
+    state->mouse.mouse_ev_req_pause = NULL;
     state->vout = vout;
 
     char *modlist = var_InheritString(vout, "window");

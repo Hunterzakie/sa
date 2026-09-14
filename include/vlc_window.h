@@ -432,6 +432,11 @@ typedef struct vlc_window {
      */
     void *sys;
 
+    enum {
+        MOUSE_PAUSE_NONE = 0,
+        MOUSE_PAUSE_ON_RELEASE = 1
+    } mouse_pause_type;
+
     vlc_window_owner_t owner;
 } vlc_window_t;
 

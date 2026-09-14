@@ -609,6 +609,16 @@ static void DecoderUpdateFormatLocked( vlc_input_decoder_t *p_owner )
     p_owner->b_fmt_description = true;
 }
 
+
+static void decoder_request_pause( void *user_data )
+{
+    decoder_t *dec = user_data;
+    vlc_input_decoder_t *owner = dec_get_owner( dec );
+    vlc_mutex_lock( &owner->video.mouse_lock );
+    owner->cbs->on_window_request_pause(owner, owner->cbs_userdata);
+    vlc_mutex_unlock( &owner->video.mouse_lock );
+}
+
 static void MouseEvent( const vlc_mouse_t *newmouse, void *user_data )
 {
     decoder_t *dec = user_data;
@@ -798,7 +808,8 @@ static int ModuleThread_UpdateVideoFormat( decoder_t *p_dec, vlc_video_context *
         .vout = p_owner->video.vout, .clock = p_owner->p_clock,
         .str_id = p_owner->psz_id,
         .fmt = &p_dec->fmt_out.video,
-        .mouse_event = MouseEvent, .mouse_opaque = p_dec,
+        .mouse_event = MouseEvent, .event_opaque = p_dec,
+        .mouse_event_request_pause = decoder_request_pause
     };
     vlc_fifo_Unlock(p_owner->p_fifo);
 

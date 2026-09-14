@@ -352,6 +352,10 @@ void VLCMenuBar::ViewMenu(qt_intf_t *p_intf, QMenu *menu)
     action->setChecked( mi->hasGridView() );
 
     menu->addMenu( new CheckableListMenu(qtr( "&Color Scheme" ), mi->getColorScheme(), QActionGroup::ExclusionPolicy::Exclusive, menu) );
+    menu->addSeparator();
+
+    VLCVarChoiceModel* model = new VLCVarChoiceModel(VLC_OBJECT(THEMIM->getVout().get()), "mouse-pause-mode", menu);
+    menu->addMenu( new CheckableListMenu(qtr( "Mouse &Pause" ), model, QActionGroup::ExclusionPolicy::Exclusive, menu) );
 
     menu->addSeparator();
 

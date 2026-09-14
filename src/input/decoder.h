@@ -61,6 +61,7 @@ struct vlc_input_decoder_callbacks {
     void (*frame_previous_seek)(vlc_input_decoder_t *decoder, vlc_tick_t pts,
                                 unsigned frame_rate, unsigned frame_rate_base,
                                 int steps, bool failed, void *userdata);
+    void (*on_window_request_pause)(vlc_input_decoder_t *decoder, void* userdata);
     /* requests */
     int (*get_attachments)(vlc_input_decoder_t *decoder,
                            input_attachment_t ***ppp_attachment,

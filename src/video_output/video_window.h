@@ -30,3 +30,5 @@ void vout_display_ResizeWindow(vlc_window_t *,
                                const struct vout_display_placement *restrict dp);
 void vout_display_window_SetMouseHandler(vlc_window_t *,
                                          vlc_mouse_event, void *);
+
+void vout_display_window_SetRequestPauseHandler(vlc_window_t *window, void (*cb)(void*));

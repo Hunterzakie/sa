@@ -478,6 +478,16 @@ void vout_ChangeWindowState(vout_thread_t *vout, unsigned st)
     vlc_mutex_unlock(&sys->window_lock);
 }
 
+
+/* select mouse pause type */
+void vout_SetMousePauseType(vout_thread_t *vout, int mouse_pause_mode)
+{
+    vout_thread_sys_t *sys = VOUT_THREAD_TO_SYS(vout);
+    vlc_mutex_lock(&sys->window_lock);
+    sys->display_cfg.window->mouse_pause_type = mouse_pause_mode;
+    vlc_mutex_unlock(&sys->window_lock);
+}
+
 void vout_ChangeDisplaySize(vout_thread_t *vout,
                             unsigned width, unsigned height,
                             void (*cb)(void *), void *opaque)
@@ -1859,7 +1869,9 @@ static int vout_Start(vout_thread_sys_t *vout, vlc_video_context *vctx, const vo
 
     vlc_mutex_lock(&sys->window_lock);
     vout_display_window_SetMouseHandler(sys->display_cfg.window,
-                                        cfg->mouse_event, cfg->mouse_opaque);
+                                        cfg->mouse_event, cfg->event_opaque);
+
+    vout_display_window_SetRequestPauseHandler(sys->display_cfg.window, cfg->mouse_event_request_pause);
     vlc_mutex_unlock(&sys->window_lock);
 
     sys->private_pool = NULL;
@@ -1981,6 +1993,7 @@ error:
     }
     vlc_mutex_lock(&sys->window_lock);
     vout_display_window_SetMouseHandler(sys->display_cfg.window, NULL, NULL);
+    vout_display_window_SetRequestPauseHandler(sys->display_cfg.window, NULL);
     vlc_mutex_unlock(&sys->window_lock);
     return VLC_EGENERIC;
 }
@@ -2069,6 +2082,7 @@ static void vout_ReleaseDisplay(vout_thread_sys_t *vout)
 
     vlc_mutex_lock(&sys->window_lock);
     vout_display_window_SetMouseHandler(sys->display_cfg.window, NULL, NULL);
+    vout_display_window_SetRequestPauseHandler(sys->display_cfg.window, NULL);
     vlc_mutex_unlock(&sys->window_lock);
 
     if (sys->spu)

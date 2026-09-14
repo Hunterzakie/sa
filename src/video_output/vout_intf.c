@@ -80,6 +80,8 @@ static int SubMarginCallback( vlc_object_t *, char const *,
                               vlc_value_t, vlc_value_t, void * );
 static int SecondarySubMarginCallback( vlc_object_t *, char const *,
                                        vlc_value_t, vlc_value_t, void * );
+static int ChangeMousePauseModeCallback( vlc_object_t *, char const *,
+                                       vlc_value_t, vlc_value_t, void * );
 static int ViewpointCallback( vlc_object_t *, char const *,
                               vlc_value_t, vlc_value_t, void * );
 static int Stereo3DCallback( vlc_object_t *, char const *,
@@ -348,6 +350,19 @@ void vout_CreateVars( vout_thread_t *p_vout )
     /* Mouse coordinates */
     var_Create( p_vout, "mouse-button-down", VLC_VAR_INTEGER );
     var_Create( p_vout, "mouse-moved", VLC_VAR_COORDS );
+
+    vlc_value_t mouse_pause_mode_val;
+    var_Create( p_vout, "mouse-pause-mode", VLC_VAR_INTEGER );
+
+    mouse_pause_mode_val.i_int = MOUSE_PAUSE_NONE;
+    var_Change( p_vout, "mouse-pause-mode", VLC_VAR_ADDCHOICE, mouse_pause_mode_val, _("No mouse pause"));
+
+    mouse_pause_mode_val.i_int = MOUSE_PAUSE_ON_RELEASE;
+    var_Change( p_vout, "mouse-pause-mode", VLC_VAR_ADDCHOICE, mouse_pause_mode_val, _("Pause on release"));
+
+    var_Set( p_vout, "mouse-pause-mode", mouse_pause_mode_val);
+    var_AddCallback( p_vout, "mouse-pause-mode", ChangeMousePauseModeCallback, NULL );
+
 
     /* Device orientation */
     var_Create( p_vout, "viewpoint-moved", VLC_VAR_ADDRESS );
@@ -835,5 +850,16 @@ static int ViewpointCallback( vlc_object_t *p_this, char const *psz_cmd,
 
     if( newval.p_address != NULL )
         vout_ChangeViewpoint(p_vout, newval.p_address);
+    return VLC_SUCCESS;
+}
+
+static int ChangeMousePauseModeCallback( vlc_object_t *p_this, char const *psz_cmd,
+                              vlc_value_t oldval, vlc_value_t newval, void *p_data)
+{
+    vout_thread_t *p_vout = (vout_thread_t *)p_this;
+    vout_SetMousePauseType(p_vout, newval.i_int);
+
+    VLC_UNUSED(psz_cmd);
+    VLC_UNUSED(psz_cmd); VLC_UNUSED(oldval); VLC_UNUSED(p_data);
     return VLC_SUCCESS;
 }

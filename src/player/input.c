@@ -886,13 +886,6 @@ vlc_player_input_NavigationFallback(struct vlc_player_input *input, int nav_type
 }
 
 static void
-vlc_player_input_MouseFallback(struct vlc_player_input *input)
-{
-    vlc_player_t *player = input->player;
-    vlc_player_TogglePause(player);
-}
-
-static void
 vlc_player_DisplayFrameError(vlc_player_t *player,
                              const char *title, const char *title_error,
                              int status)
@@ -1176,9 +1169,11 @@ input_thread_Events(input_thread_t *input_thread,
         case INPUT_EVENT_NAV_FAILED:
             vlc_player_input_NavigationFallback(input, event->nav_type);
             break;
-        case INPUT_EVENT_MOUSE_LEFT:
-            vlc_player_input_MouseFallback(input);
+
+        case INPUT_EVENT_TOGGLE_PAUSE:
+            vlc_player_TogglePause(input->player);
             break;
+
         case INPUT_EVENT_FRAME_NEXT_STATUS:
             vlc_player_input_FrameNextStatus(input,
                                              event->frame_next_status);
