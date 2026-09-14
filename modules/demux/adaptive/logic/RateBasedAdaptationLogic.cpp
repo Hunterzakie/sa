@@ -32,6 +32,8 @@
 #include "../http/Chunk.h"
 #include "../tools/Debug.hpp"
 
+#include <limits>
+
 using namespace adaptive::logic;
 using namespace adaptive;
 
@@ -52,7 +54,12 @@ BaseRepresentation *RateBasedAdaptationLogic::getNextRepresentation(BaseAdaptati
         return nullptr;
 
     vlc_mutex_lock(&lock);
-    size_t availBps = currentBps + ((currep) ? currep->getBandwidth() : 0);
+    size_t availBps = getUsableBandwidth(currentBps);
+    const size_t currentRepresentationBps = (currep) ? currep->getBandwidth() : 0;
+    if(availBps > std::numeric_limits<size_t>::max() - currentRepresentationBps)
+        availBps = std::numeric_limits<size_t>::max();
+    else
+        availBps += currentRepresentationBps;
     vlc_mutex_unlock(&lock);
     if(availBps > usedBps)
         availBps -= usedBps;
@@ -129,7 +136,7 @@ BaseRepresentation *FixedRateAdaptationLogic::getNextRepresentation(BaseAdaptati
         return nullptr;
 
     RepresentationSelector selector(maxwidth, maxheight);
-    BaseRepresentation *rep = selector.select(adaptSet, currentBps);
+    BaseRepresentation *rep = selector.select(adaptSet, getUsableBandwidth(currentBps));
     if ( rep == nullptr )
     {
         rep = selector.select(adaptSet);

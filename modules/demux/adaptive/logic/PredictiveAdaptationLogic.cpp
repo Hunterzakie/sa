@@ -30,6 +30,8 @@
 #include "../http/Chunk.h"
 #include "../tools/Debug.hpp"
 
+#include <limits>
+
 using namespace adaptive::logic;
 using namespace adaptive;
 
@@ -105,7 +107,9 @@ BaseRepresentation *PredictiveAdaptationLogic::getNextRepresentation(BaseAdaptat
         }
         else
         {
-            const unsigned i_available_bw = getAvailableBw(i_max_bitrate, prevRep);
+            const size_t usableBps = getUsableBandwidth(i_max_bitrate);
+            const unsigned i_available_bw =
+                    getAvailableBw(std::min<size_t>(usableBps, std::numeric_limits<unsigned>::max()), prevRep);
             if(!prevRep)
             {
                 rep = selector.select(adaptSet, i_available_bw);

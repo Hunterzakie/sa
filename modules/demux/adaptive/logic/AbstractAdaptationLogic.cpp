@@ -36,6 +36,8 @@ AbstractAdaptationLogic::AbstractAdaptationLogic    (vlc_object_t *obj)
     p_obj = obj;
     maxwidth = std::numeric_limits<int>::max();
     maxheight = std::numeric_limits<int>::max();
+    playbackRate = 1.0;
+    vlc_mutex_init(&rateLock);
 }
 
 void AbstractAdaptationLogic::updateDownloadRate    (const adaptive::ID &, size_t,
@@ -47,4 +49,31 @@ void AbstractAdaptationLogic::setMaxDeviceResolution (int w, int h)
 {
     maxwidth = (w > 0) ? w : std::numeric_limits<int>::max();
     maxheight = (h > 0) ? h : std::numeric_limits<int>::max();
+}
+
+void AbstractAdaptationLogic::setPlaybackRate(float rate)
+{
+    if(unlikely(rate == 0))
+        return;
+
+    vlc_mutex_locker locker(&rateLock);
+    playbackRate = rate;
+}
+
+size_t AbstractAdaptationLogic::getUsableBandwidth(size_t bandwidth) const
+{
+    vlc_mutex_locker locker(&rateLock);
+
+    const long double usable = (double)bandwidth / (double)playbackRate;
+
+    if (usable >= (double) std::numeric_limits<size_t>::max())
+        return std::numeric_limits<size_t>::max();
+
+    return usable;
+}
+
+vlc_tick_t AbstractAdaptationLogic::getPlaybackDuration(vlc_tick_t mediaDuration) const
+{
+    vlc_mutex_locker locker(&rateLock);
+    return mediaDuration / playbackRate;
 }
