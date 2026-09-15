@@ -68,6 +68,7 @@ struct rtsp_stream_t
 
     int             sessionc;
     rtsp_session_t **sessionv;
+    int             max_clients;
 
     vlc_tick_t      timeout;
     vlc_timer_t     timer;
@@ -93,6 +94,7 @@ rtsp_stream_t *RtspSetup( vlc_object_t *owner, const char *path )
 
     rtsp->owner = owner;
     vlc_mutex_init( &rtsp->lock );
+    rtsp->max_clients = var_GetInteger( owner, "sout-rtp-max-clients" );
 
     rtsp->timeout = vlc_tick_from_sec(__MAX(0,var_InheritInteger(owner, "rtsp-timeout")));
     if (rtsp->timeout != 0)
@@ -733,6 +735,14 @@ static int RtspHandler( rtsp_stream_t *rtsp, rtsp_stream_id_t *id,
                     vlc_mutex_lock( &rtsp->lock );
                     if( psz_session == NULL )
                     {
+                        if( rtsp->max_clients > 0
+                         && rtsp->sessionc >= rtsp->max_clients )
+                        {
+                            answer->i_status = 503;
+                            vlc_mutex_unlock( &rtsp->lock );
+                            net_Close( fd );
+                            break;
+                        }
                         ses = RtspClientNew( rtsp );
                         snprintf( psz_sesbuf, sizeof( psz_sesbuf ), "%"PRIx64,
                                   ses->id );
@@ -1001,12 +1011,7 @@ static int RtspHandler( rtsp_stream_t *rtsp, rtsp_stream_id_t *id,
             ses = RtspClientGet( rtsp, psz_session );
             if( ses != NULL )
             {
-                if( id == NULL ) /* Delete the entire session */
-                {
-                    RtspClientDel( rtsp, ses );
-                    RtspUpdateTimer(rtsp);
-                }
-                else /* Delete one track from the session */
+                if( id != NULL ) /* Delete one track from the session */
                 {
                     for( int i = 0; i < ses->trackc; i++ )
                     {
@@ -1016,8 +1021,14 @@ static int RtspHandler( rtsp_stream_t *rtsp, rtsp_stream_id_t *id,
                             TAB_ERASE(ses->trackc, ses->trackv, i);
                         }
                     }
-                    RtspClientAlive(ses);
                 }
+                if( id == NULL || ses->trackc == 0 )
+                {
+                    RtspClientDel( rtsp, ses );
+                    RtspUpdateTimer(rtsp);
+                }
+                else
+                    RtspClientAlive(ses);
             }
             vlc_mutex_unlock( &rtsp->lock );
             break;
