@@ -122,6 +122,8 @@ struct vlc_stream_operations {
             int (*filter_disable)(demux_t *);
 
             int (*test_and_clear_flags)(demux_t *, unsigned *);
+
+            void (*notify_rate)(demux_t *, float);
         } demux;
     };
 };

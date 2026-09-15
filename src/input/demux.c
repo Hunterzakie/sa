@@ -450,6 +450,13 @@ int demux_vaControl( demux_t *demux, int query, va_list args )
                 return demux->ops->demux.set_rate(demux, rate);
             }
             return VLC_EGENERIC;
+        case DEMUX_NOTIFY_RATE:
+            if (demux->ops->demux.notify_rate != NULL) {
+                float rate = va_arg(args, double);
+                demux->ops->demux.notify_rate(demux, rate);
+                return VLC_SUCCESS;
+            }
+            return VLC_EGENERIC;
         case DEMUX_SET_GROUP_DEFAULT:
             if (demux->ops->demux.set_group_default != NULL) {
                 return demux->ops->demux.set_group_default(demux);
@@ -659,6 +666,7 @@ int demux_vaControlHelper( stream_t *s,
         case DEMUX_NAV_MENU:
         case DEMUX_FILTER_ENABLE:
         case DEMUX_FILTER_DISABLE:
+        case DEMUX_NOTIFY_RATE:
             return VLC_EGENERIC;
 
         case DEMUX_SET_TITLE:

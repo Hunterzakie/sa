@@ -283,7 +283,14 @@ enum demux_query_e
      * work in future VLC versions, nor with all demux filters
      */
     DEMUX_FILTER_ENABLE,
-    DEMUX_FILTER_DISABLE
+    DEMUX_FILTER_DISABLE,
+
+    /** Notifies the demuxer of the effective core playback rate.
+     * \warning Different from DEMUX_SET_RATE
+     * Emitted on DEMUX_CAN_CONTROL_PACE but without DEMUX_CAN_CONTROL_RATE.
+     * In this mode, no transfer rate or clock control is transferred to the demuxer.
+     * Intended to be used as a hint to adapt its data reads and buffering. */
+    DEMUX_NOTIFY_RATE /* arg1= float */
 };
 
 /*************************************************************************

@@ -2222,6 +2222,8 @@ static bool Control( input_thread_t *p_input,
             /* */
             if( rate != priv->rate )
             {
+                (void) demux_Control( priv->master->p_demux, DEMUX_NOTIFY_RATE, rate );
+
                 priv->rate = rate;
                 input_SendEventRate( p_input, rate );
 
