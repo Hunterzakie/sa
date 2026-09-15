@@ -30,6 +30,7 @@
 #endif
 
 #include <stdint.h>
+#include <limits.h>
 
 #include <vlc_common.h>
 #include <vlc_configuration.h>
@@ -60,6 +61,9 @@ static void Close( vlc_object_t * );
 #define METACUBE_TEXT N_("Metacube")
 #define METACUBE_LONGTEXT N_("Use the Metacube protocol. Needed for streaming " \
                              "to the Cubemap reflector.")
+#define MAX_CLIENTS_TEXT N_("Maximum clients")
+#define MAX_CLIENTS_LONGTEXT N_("Maximum number of clients for this stream " \
+                               "(0 for unlimited).")
 
 
 vlc_module_begin ()
@@ -75,6 +79,9 @@ vlc_module_begin ()
                 MIME_TEXT, MIME_LONGTEXT )
     add_bool( SOUT_CFG_PREFIX "metacube", false,
               METACUBE_TEXT, METACUBE_LONGTEXT )
+    add_integer( SOUT_CFG_PREFIX "max-clients", 0,
+                 MAX_CLIENTS_TEXT, MAX_CLIENTS_LONGTEXT )
+        change_integer_range( 0, INT_MAX )
     set_callbacks( Open, Close )
 vlc_module_end ()
 
@@ -83,7 +90,7 @@ vlc_module_end ()
  * Exported prototypes
  *****************************************************************************/
 static const char *const ppsz_sout_options[] = {
-    "user", "pwd", "mime", "metacube", NULL
+    "user", "pwd", "mime", "metacube", "max-clients", NULL
 };
 
 static ssize_t Write( sout_access_out_t *, block_t * );
@@ -257,7 +264,8 @@ static int Open( vlc_object_t *p_this )
 
     p_sys->p_httpd_stream =
         httpd_StreamNew( p_sys->p_httpd_host, path, psz_mime,
-                         psz_user, psz_pwd );
+                         psz_user, psz_pwd,
+                         var_GetInteger( p_access, SOUT_CFG_PREFIX "max-clients" ) );
     free( psz_user );
     free( psz_pwd );
     free( psz_mime );
