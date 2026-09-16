@@ -15,6 +15,16 @@ option('nls',
     value : 'auto',
     description : 'Native Language Support')
 
+option('kde_solid',
+    type : 'feature',
+    value : 'auto',
+    description : 'Install the KDE Solid actions for optical discs')
+
+option('kde_solid_dir',
+    type : 'string',
+    value : '',
+    description : 'KDE Solid actions directory (default: <datadir>/solid/actions)')
+
 option('optimize_memory',
     type : 'boolean',
     value : false,

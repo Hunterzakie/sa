@@ -289,3 +289,19 @@ if have_freedesktop
             install_dir: sysdatadir_path / 'metainfo')
     endif
 endif
+
+# KDE Solid actions
+kde_solid_option = get_option('kde_solid').disable_auto_if(not have_freedesktop)
+if kde_solid_option.allowed()
+    kde_solid_dir = get_option('kde_solid_dir')
+    if kde_solid_dir == ''
+        kde_solid_dir = sysdatadir_path / 'solid' / 'actions'
+    endif
+
+    install_data(
+        'solid/vlc-openbd.desktop',
+        'solid/vlc-opencda.desktop',
+        'solid/vlc-opendvd.desktop',
+        'solid/vlc-openvcd.desktop',
+        install_dir: kde_solid_dir)
+endif
