@@ -258,4 +258,34 @@ if have_freedesktop
             args: desktop_files,
             suite: 'share')
     endif
+
+    # AppStream metadata
+    appdata_conf = configuration_data()
+    appdata_conf.set('VERSION', vlc_version_full)
+    appdata_conf.set('VERSION_DATE', vlc_version_date)
+    appdata_conf.set('LIBVLC_ABI_MAJOR', libvlc_abi_version_major)
+
+    appdata_template = configure_file(
+        input: 'org.videolan.vlc.appdata.xml.in.in',
+        output: 'org.videolan.vlc.appdata.xml.in',
+        configuration: appdata_conf)
+
+    msgfmt = find_program('msgfmt', version: '>= 0.19.7', required: false, native: true)
+    if msgfmt.found()
+        i18n = import('i18n')
+        i18n.merge_file(
+            input: appdata_template,
+            output: 'org.videolan.vlc.appdata.xml',
+            type: 'xml',
+            po_dir: vlc_src_root / 'po',
+            install: true,
+            install_dir: sysdatadir_path / 'metainfo')
+    else
+        configure_file(
+            input: appdata_template,
+            output: 'org.videolan.vlc.appdata.xml',
+            copy: true,
+            install: true,
+            install_dir: sysdatadir_path / 'metainfo')
+    endif
 endif
