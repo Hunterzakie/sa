@@ -1013,6 +1013,7 @@ vlc_pkg_suffix = meson.project_name().to_lower()
 
 sysdatadir_path = prefix_path / get_option('datadir')
 pkgdatadir_path = sysdatadir_path / vlc_pkg_suffix
+docdir_path = sysdatadir_path / 'doc' / vlc_pkg_suffix
 if host_system == 'windows'
     libdir_path = prefix_path
     pkglibdir_path = libdir_path / vlc_pkg_suffix

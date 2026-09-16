@@ -115,6 +115,25 @@ lua_pkgdata = files(
     'lua/http/js/controllers.js',
 )
 
+# Installed as documentation only, together with a few sample scripts
+lua_doc = files(
+    'lua/README.txt',
+    'lua/extensions/README.txt',
+    'lua/http/requests/README.txt',
+    'lua/intf/README.txt',
+    'lua/intf/dumpmeta.lua',
+    'lua/meta/README.txt',
+    'lua/meta/art/README.txt',
+    'lua/meta/art/01_googleimage.lua',
+    'lua/meta/fetcher/README.txt',
+    'lua/meta/reader/README.txt',
+    'lua/meta/reader/filename.lua',
+    'lua/playlist/README.txt',
+    'lua/sd/README.txt',
+    'lua/sd/icecast.lua',
+    'lua/sd/icast.lua',
+)
+
 if lua_enabled
     luac = find_program('luac')
 
@@ -145,6 +164,14 @@ if lua_enabled
     install_data(lua_pkgdata,
         install_dir: lua_pkgdata_install_dir,
         preserve_path: true)
+
+    # The installation tree is the package itself on Windows, where the
+    # documentation is not shipped
+    if host_system != 'windows'
+        install_data(lua_doc,
+            install_dir: docdir_path,
+            preserve_path: true)
+    endif
 endif
 
 #
