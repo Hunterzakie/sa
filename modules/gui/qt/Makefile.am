@@ -571,6 +571,11 @@ nodist_libqt_plugin_la_SOURCES += \
 if HAVE_WIN32
 
 libqt_plugin_la_SOURCES += \
+	dialogs/preferences/win32_association_dialog.cpp \
+	dialogs/preferences/win32_association_dialog.hpp \
+	util/win32_association_task.cpp \
+	util/win32_association_task.hpp \
+	util/win32_association_types.hpp \
 	maininterface/mainctx_win32.cpp \
 	maininterface/mainctx_win32.hpp \
 	maininterface/compositor_win7.cpp \
@@ -1764,7 +1769,8 @@ TESTS = base_model_test
 if HAVE_WIN32
 test_win32_association_decisions_SOURCES = \
 	tests/test_win32_association_decisions.cpp \
-	util/win32_associations.hpp
+	util/win32_associations.hpp \
+	util/win32_association_types.hpp
 test_win32_association_decisions_CXXFLAGS = $(AM_CXXFLAGS) $(CXXFLAGS_qt)
 check_PROGRAMS += test_win32_association_decisions
 TESTS += test_win32_association_decisions
@@ -1819,6 +1825,24 @@ QT_QTEST_COMMON_cxxflags = $(AM_CXXFLAGS) $(QT_CFLAGS) $(QT_QTEST_CFLAGS) -fPIC 
 QT_QTEST_COMMON_ldadd = $(QT_LIBS) $(LIBS_qt) $(QT_QTEST_LIBS) $(LIBVLCCORE) $(LIBVLC)
 QT_QTEST_COMMON_ldflags = $(AM_LDFLAGS) $(QT_LDFLAGS) $(QT_QTEST_LDFLAGS)
 
+if HAVE_WIN32
+test_win32_association_ui_SOURCES = \
+	tests/test_win32_association_ui.cpp \
+	util/win32_association_task.cpp util/win32_association_task.hpp \
+	util/win32_association_types.hpp util/win32_associations.hpp
+nodist_test_win32_association_ui_SOURCES = \
+	tests/test_win32_association_ui.moc util/asynctask.moc.cpp
+BUILT_SOURCES += tests/test_win32_association_ui.moc
+CLEANFILES += tests/test_win32_association_ui.moc
+test_win32_association_ui_CPPFLAGS = $(QT_QTEST_COMMON_cppflags)
+test_win32_association_ui_CXXFLAGS = $(QT_QTEST_COMMON_cxxflags)
+test_win32_association_ui_LDADD = $(QT_QTEST_COMMON_ldadd)
+test_win32_association_ui_LDFLAGS = $(QT_QTEST_COMMON_ldflags)
+tests/test_win32_association_ui-test_win32_association_ui.$(OBJEXT): tests/test_win32_association_ui.moc
+check_PROGRAMS += test_win32_association_ui
+TESTS += test_win32_association_ui
+
+endif
 
 
 # test_ml_model
