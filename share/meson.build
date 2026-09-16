@@ -221,3 +221,41 @@ if host_system != 'windows'
         install_dir: pkgdatadir_path / 'utils',
         install_mode: 'rwxr-xr-x')
 endif
+
+#
+# freedesktop.org integration
+#
+
+have_freedesktop = host_system not in ['windows', 'darwin', 'android', 'emscripten']
+
+if have_freedesktop
+    # Desktop entries
+    desktop_conf = configuration_data()
+    desktop_conf.set('bindir', bindir_path)
+
+    mimetypes = []
+    foreach line : fs.read('vlc.desktop.mimetypes').split('\n')
+        mimetype = line.split('#')[0].strip()
+        if mimetype != ''
+            mimetypes += mimetype
+        endif
+    endforeach
+    desktop_conf.set('MIMETYPES', ';'.join(mimetypes) + ';')
+
+    desktop_files = []
+    foreach name : ['vlc', 'vlc-openbd', 'vlc-opendvd', 'vlc-openvcd', 'vlc-opencda']
+        desktop_files += configure_file(
+            input: name + '.desktop.in',
+            output: name + '.desktop',
+            configuration: desktop_conf,
+            install: true,
+            install_dir: sysdatadir_path / 'applications')
+    endforeach
+
+    desktop_file_validate = find_program('desktop-file-validate', required: false)
+    if desktop_file_validate.found() and get_option('tests').allowed()
+        test('desktop-file-validate', desktop_file_validate,
+            args: desktop_files,
+            suite: 'share')
+    endif
+endif
