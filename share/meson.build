@@ -181,3 +181,43 @@ endif
 if skins2_feasible
     subdir('skins2')
 endif
+
+#
+# Icons and helper scripts
+#
+
+if host_system != 'windows'
+    hicolor_dir = sysdatadir_path / 'icons' / 'hicolor'
+
+    install_data('icons/vlc.ico', install_dir: pkgdatadir_path)
+    install_data(
+        'icons/16x16/vlc.png',
+        'icons/16x16/vlc.xpm',
+        install_dir: hicolor_dir / '16x16' / 'apps')
+    install_data(
+        'icons/32x32/vlc.png',
+        'icons/32x32/vlc.xpm',
+        'icons/32x32/vlc-xmas.xpm',
+        'icons/32x32/vlc-aprilfools.xpm',
+        install_dir: hicolor_dir / '32x32' / 'apps')
+    install_data(
+        'icons/48x48/vlc.png',
+        'icons/48x48/vlc-xmas.png',
+        'icons/48x48/vlc-aprilfools.png',
+        install_dir: hicolor_dir / '48x48' / 'apps')
+    install_data(
+        'icons/128x128/vlc.png',
+        'icons/128x128/vlc-xmas.png',
+        'icons/128x128/vlc-kb.png',
+        'icons/128x128/vlc-aprilfools.png',
+        install_dir: hicolor_dir / '128x128' / 'apps')
+    install_data(
+        'icons/256x256/vlc.png',
+        install_dir: hicolor_dir / '256x256' / 'apps')
+
+    install_data(
+        'utils/audio-vlc-default.sh',
+        'utils/video-vlc-default.sh',
+        install_dir: pkgdatadir_path / 'utils',
+        install_mode: 'rwxr-xr-x')
+endif
