@@ -1180,6 +1180,9 @@ subdir('lib')
 # VLC plugins
 subdir('modules')
 
+# Data files
+subdir('share')
+
 # VLC binaries
 subdir('bin')
 
