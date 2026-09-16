@@ -548,9 +548,13 @@ if host_system == 'windows'
         'style/windowsthemeprovider.cpp',
         'util/csdmenu_win32.c',
         'util/csdmenu_win32.h',
+        'util/userchoice_hash.cpp',
+        'util/userchoice_hash.hpp',
         'util/userchoice_latest_hash/HashCodec.cpp',
         'util/userchoice_latest_hash/HashCommon.h',
         'util/userchoice_latest_hash/HashTables.cpp',
+        'util/win32_associations.cpp',
+        'util/win32_associations.hpp',
         'maininterface/compositor_dcomp.cpp',
         'maininterface/compositor_dcomp_acrylicsurface.cpp',
     )
@@ -1095,6 +1099,10 @@ if qt6_dep.found()
             cc.find_library('crypt32'),
             cc.find_library('dwmapi'),
             cc.find_library('comctl32'),
+            cc.find_library('ole32'),
+            cc.find_library('uuid'),
+            cc.find_library('shell32'),
+            cc.find_library('shlwapi'),
         ]
     endif
 
@@ -1308,6 +1316,12 @@ if qt6_dep.found()
     }
 
     if host_system == 'windows'
+        vlc_tests += {
+            'name': 'test_win32_association_decisions',
+            'sources': files(
+                'tests/test_win32_association_decisions.cpp'),
+            'suite': ['qt'],
+        }
 
         vlc_tests += {
             'name': 'test_userchoice_latest_hash',
@@ -1322,7 +1336,37 @@ if qt6_dep.found()
             ],
         }
 
+        vlc_tests += {
+            'name': 'test_userchoice_hash',
+            'sources': files(
+                'tests/test_userchoice_hash.cpp',
+                'util/userchoice_hash.cpp',
+                'util/userchoice_latest_hash/HashCodec.cpp',
+                'util/userchoice_latest_hash/HashTables.cpp'),
+            'suite': ['qt'],
+            'dependencies': [
+                cc.find_library('advapi32'),
+                cc.find_library('crypt32'),
+            ],
+        }
 
+        vlc_tests += {
+            'name': 'test_win32_association_registry',
+            'sources': files(
+                'tests/test_win32_association_registry.cpp',
+                'util/userchoice_hash.cpp',
+                'util/userchoice_latest_hash/HashCodec.cpp',
+                'util/userchoice_latest_hash/HashTables.cpp'),
+            'suite': ['qt'],
+            'dependencies': [
+                cc.find_library('advapi32'),
+                cc.find_library('crypt32'),
+                cc.find_library('ole32'),
+                cc.find_library('uuid'),
+                cc.find_library('shell32'),
+                cc.find_library('shlwapi'),
+            ],
+        }
     endif
 
     qtest_qt6_dep = dependency('qt6', version: '=' + qt6_dep.version(), modules: ['Test'], required: false)
