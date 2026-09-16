@@ -46,6 +46,11 @@ FirstRunWizard::FirstRunWizard( qt_intf_t *_p_intf, QWidget *parent)
 
     /* Build the Ui */
     ui.setupUi( this );
+#ifndef _WIN32
+    removePage( DEFAULT_APPS_PAGE );
+#else
+    setupDefaultAppsPage();
+#endif
 
     /* Set the privacy and network policy */
     ui.policy->setHtml( qtr( "<p>In order to protect your privacy, <i>VLC media player</i> "
@@ -125,7 +130,6 @@ FirstRunWizard::FirstRunWizard( qt_intf_t *_p_intf, QWidget *parent)
     connect( colorSchemeImages, qOverload<QAbstractButton*>( &QButtonGroup::buttonClicked ), this, &FirstRunWizard::imageColorSchemeClick );
     connect( ui.layoutGroup, qOverload<QAbstractButton*>( &QButtonGroup::buttonClicked ), this, &FirstRunWizard::updateLayoutLabel );
     connect( layoutImages, qOverload<QAbstractButton*>( &QButtonGroup::buttonClicked ), this, &FirstRunWizard::imageLayoutClick );
-    connect( this->button(QWizard::FinishButton), &QPushButton::clicked, this, &FirstRunWizard::finish );
 }
 
 /**
@@ -273,6 +277,12 @@ int FirstRunWizard::nextId() const
             return COLOR_SCHEME_PAGE;
         case COLOR_SCHEME_PAGE:
             return LAYOUT_PAGE;
+        case LAYOUT_PAGE:
+#ifdef _WIN32
+            return DEFAULT_APPS_PAGE;
+#else
+            return -1;
+#endif
         default:
             return -1;
     }
@@ -316,6 +326,11 @@ void FirstRunWizard::initializePage( int id )
  */
 void FirstRunWizard::reject()
 {
+#ifdef _WIN32
+    // Closing now would reset wizard choices while the worker continues writing.
+    if( m_associationTask != nullptr || m_finished )
+        return;
+#endif
     assert(p_intf->p_mi);
     /* Welcome Page settings  */
     config_PutInt( "metadata-network-access", 1 );

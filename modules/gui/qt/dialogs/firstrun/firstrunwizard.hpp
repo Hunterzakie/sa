@@ -26,20 +26,33 @@
 class MLFoldersEditor;
 class MLFoldersModel;
 
+#ifdef _WIN32
+namespace vlc::win32
+{
+class AssociationTask;
+}
+#endif
+
 class FirstRunWizard : public QWizard
 {
     Q_OBJECT
 
 public:
     explicit FirstRunWizard ( qt_intf_t*, QWidget* parent = nullptr );
-    enum { WELCOME_PAGE, FOLDER_PAGE, COLOR_SCHEME_PAGE, LAYOUT_PAGE };
+    ~FirstRunWizard() override;
+    enum { WELCOME_PAGE, FOLDER_PAGE, COLOR_SCHEME_PAGE, LAYOUT_PAGE, DEFAULT_APPS_PAGE };
     enum { MODERN, CLASSIC };
 
     void addDefaults();
 
-    int nextId() const;
-    void initializePage( int id );
-    void reject();
+    int nextId() const override;
+    void initializePage( int id ) override;
+    void accept() override;
+    void reject() override;
+    void done( int result ) override;
+
+protected:
+    void showEvent( QShowEvent *event ) override;
 
 private:
     Ui::firstrun ui;
@@ -53,6 +66,18 @@ private:
     QButtonGroup* colorSchemeGroup = nullptr;
     QButtonGroup* colorSchemeImages = nullptr;
     QButtonGroup* layoutImages = nullptr;
+
+#ifdef _WIN32
+    vlc::win32::AssociationTask *m_associationTask = nullptr;
+    // Completing/closed, including re-entry during the OS handoff; reset on show.
+    bool m_finished = false;
+    void setupDefaultAppsPage();
+    void applyDefaultApps();
+    void skipDefaultApps();
+    void updateDefaultAppsPage( int id );
+#endif
+
+    void complete();
 
 private slots:
     void finish();

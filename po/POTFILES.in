@@ -690,6 +690,7 @@ modules/gui/qt/dialogs/fingerprint/fingerprintdialog.cpp
 modules/gui/qt/dialogs/fingerprint/fingerprintdialog.hpp
 modules/gui/qt/dialogs/firstrun/firstrunwizard.cpp
 modules/gui/qt/dialogs/firstrun/firstrunwizard.hpp
+modules/gui/qt/dialogs/firstrun/firstrunwizard_associations.cpp
 modules/gui/qt/dialogs/gototime/gototime.cpp
 modules/gui/qt/dialogs/gototime/gototime.hpp
 modules/gui/qt/dialogs/help/help.cpp

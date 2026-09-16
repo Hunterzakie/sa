@@ -233,6 +233,7 @@ qt_plugin_sources = files(
     'dialogs/fingerprint/fingerprintdialog.cpp',
     'dialogs/fingerprint/fingerprintdialog.hpp',
     'dialogs/firstrun/firstrunwizard.cpp',
+    'dialogs/firstrun/firstrunwizard_associations.cpp',
     'dialogs/firstrun/firstrunwizard.hpp',
     'dialogs/gototime/gototime.cpp',
     'dialogs/gototime/gototime.hpp',
@@ -1384,6 +1385,23 @@ if qt6_dep.found()
                     'util/win32_association_task.cpp'),
                 'moc_sources': files('tests/test_win32_association_ui.cpp'),
                 'moc_headers': files('util/asynctask.hpp'),
+                'suite': ['qt'],
+                'include_directories': qt_include_dir,
+                'link_with': [libvlccore],
+                'link_args': qt_link_args,
+                'dependencies': [qt6_dep, qt_extra_deps, qtest_qt6_dep],
+            }
+            vlc_tests += {
+                'name': 'test_win32_firstrun',
+                'sources': files(
+                    'tests/test_win32_firstrun.cpp',
+                    'util/win32_association_task.cpp') + qt6.preprocess(
+                    ui_files: files('dialogs/firstrun/firstrunwizard.ui'),
+                    include_directories: qt_include_dir,
+                    dependencies: qt6_dep),
+                'moc_sources': files('tests/test_win32_firstrun.cpp'),
+                'moc_headers': files('util/asynctask.hpp',
+                                     'dialogs/firstrun/firstrunwizard.hpp'),
                 'suite': ['qt'],
                 'include_directories': qt_include_dir,
                 'link_with': [libvlccore],

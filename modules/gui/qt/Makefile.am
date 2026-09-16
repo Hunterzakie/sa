@@ -127,6 +127,7 @@ libqt_plugin_la_SOURCES = \
 	dialogs/fingerprint/fingerprintdialog.cpp \
 	dialogs/fingerprint/fingerprintdialog.hpp \
 	dialogs/firstrun/firstrunwizard.cpp dialogs/firstrun/firstrunwizard.hpp \
+	dialogs/firstrun/firstrunwizard_associations.cpp \
 	dialogs/gototime/gototime.cpp dialogs/gototime/gototime.hpp \
 	dialogs/help/aboutmodel.hpp \
 	dialogs/help/help.cpp dialogs/help/help.hpp \
@@ -792,6 +793,9 @@ libqt_plugin_la_UI = \
 	dialogs/vlm/vlm.ui
 EXTRA_DIST += $(libqt_plugin_la_UI)
 
+# Keep the suffix variable so Automake retains its per-target compile recipe.
+dialogs/firstrun/libqt_plugin_la-firstrunwizard_associations.$(LTOBJEXT): dialogs/firstrun/ui_firstrunwizard.h
+
 ui_%.h: %.ui
 	$(AM_V_at)$(MKDIR_P) "ui"
 	$(AM_V_at)rm -f $@ $@.tmp
@@ -950,6 +954,7 @@ libqt_plugin_la_RES = \
 	pixmaps/menu/volume-low.svg \
 	pixmaps/menu/volume-muted.svg \
 	pixmaps/misc/cone.svg \
+	pixmaps/misc/default_apps_artwork.png \
 	pixmaps/misc/new_indicator.svg \
 	pixmaps/misc/theme_dark.svg \
 	pixmaps/misc/theme_daynight.svg \
@@ -1842,6 +1847,27 @@ tests/test_win32_association_ui-test_win32_association_ui.$(OBJEXT): tests/test_
 check_PROGRAMS += test_win32_association_ui
 TESTS += test_win32_association_ui
 
+# The fixture isolates VLC configuration/ML; the association lifecycle and
+# button wiring are the production implementation, with a stubbed backend.
+test_win32_firstrun_SOURCES = \
+	tests/test_win32_firstrun.cpp \
+	dialogs/firstrun/firstrunwizard.hpp \
+	util/win32_association_task.cpp util/win32_association_task.hpp
+nodist_test_win32_firstrun_SOURCES = \
+	tests/test_win32_firstrun.moc util/asynctask.moc.cpp \
+	dialogs/firstrun/firstrunwizard.moc.cpp \
+	dialogs/firstrun/ui_firstrunwizard.h
+BUILT_SOURCES += tests/test_win32_firstrun.moc
+CLEANFILES += tests/test_win32_firstrun.moc
+test_win32_firstrun_CPPFLAGS = $(QT_QTEST_COMMON_cppflags)
+test_win32_firstrun_CXXFLAGS = $(QT_QTEST_COMMON_cxxflags)
+test_win32_firstrun_LDADD = $(QT_QTEST_COMMON_ldadd)
+test_win32_firstrun_LDFLAGS = $(QT_QTEST_COMMON_ldflags)
+tests/test_win32_firstrun-test_win32_firstrun.$(OBJEXT): tests/test_win32_firstrun.moc
+tests/test_win32_firstrun-test_win32_firstrun.$(OBJEXT) \
+dialogs/firstrun/test_win32_firstrun-firstrunwizard.moc.$(OBJEXT): dialogs/firstrun/ui_firstrunwizard.h
+check_PROGRAMS += test_win32_firstrun
+TESTS += test_win32_firstrun
 endif
 
 
