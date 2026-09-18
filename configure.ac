@@ -10,6 +10,10 @@ VERSION_EXTRA=0
 VERSION_DEV=dev
 
 VERSION_DATE=$(
+    if test -f "$srcdir/.version-date"; then
+        cat "$srcdir/.version-date"
+        exit 0
+    fi
     VERSION_PATTERN='^v?([[0-9]]+\.?)+(-[[0-9]]+)?$'
     VERSION_TAG=$(git tag --points-at HEAD --sort=-version:refname 2>/dev/null | grep -E "$VERSION_PATTERN" | head -n 1)
     if test -n "$VERSION_TAG"; then
