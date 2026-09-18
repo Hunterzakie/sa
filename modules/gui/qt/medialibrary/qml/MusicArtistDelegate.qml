@@ -203,6 +203,9 @@ T.ItemDelegate {
             implicitHeight: artistName.implicitHeight
             implicitWidth: artistName.implicitWidth
 
+            backgroundColor: (root.background?.visible && root.background?.color.a > (1.0 - Number.EPSILON)) ? root.background.color
+                                                                                                             : Qt.alpha(root.background.color, 0)
+
             Layout.fillWidth: true
             Layout.fillHeight: true
 
