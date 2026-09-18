@@ -507,7 +507,7 @@ T.ProgressBar {
                 },
                 State {
                     name: "buffering not started"
-                    when: control.visible && Player.buffering === 0
+                    when: control.visible && Player.buffering === 0 && Player.isStarted
                     PropertyChanges {
                         target: bufferRect
                         width: bufferAnimWidth
