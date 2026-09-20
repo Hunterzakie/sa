@@ -1457,6 +1457,7 @@ libqt_plugin_la_ALL_QML = \
 
 # Shaders:
 libqt_plugin_la_SHADER_FRAG = shaders/FadingEdge.frag \
+                              shaders/Fade.frag \
                               shaders/Noise.frag \
                               shaders/RectFilter.frag \
                               shaders/SDFAARoundedTexture.frag \

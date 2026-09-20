@@ -10,6 +10,7 @@ shader_sources = [
     'FadingEdge.frag',
     'FadingEdgeX.vert',
     'FadingEdgeY.vert',
+    'Fade.frag',
     'Noise.frag',
     'RectFilter.frag',
     'SubTexture.vert',
