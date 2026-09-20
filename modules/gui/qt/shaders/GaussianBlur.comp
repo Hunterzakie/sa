@@ -1,0 +1,160 @@
+#version 430
+
+// https://lisyarus.github.io/blog/posts/compute-blur.html
+//
+// Changes made:
+// * Moved the barrier outside the varying branch, since it 
+//   does not seem to be spec-conforming, and causes compilation
+//   failure with HLSL. See:
+//   https://github.com/KhronosGroup/glslang/issues/1389#issuecomment-1478623022
+// * Used `uint` instead of `vec4` for the cache with packing,
+//   since otherwise HLSL compilation complains with:
+//   "error X4586: The total amount of group shared memory
+//    (36864 bytes) exceeds the cs_5_0 limit of 32768 bytes".
+//   This change is also beneficial for non-HLSL cases.
+// * Increased group size from 16 to 32, since using `uint`
+//   and packing in the cache gave headroom for such increase,
+//   even with `cs_5_0`.
+// * Used sampler2D instead of image2D for the input image, since
+//   loading RGBA8 image is not universally supported, particularly
+//   with DirectX it requires `D3D11_FORMAT_SUPPORT2_UAV_TYPED_LOAD`,
+//   which unlike `D3D11_FORMAT_SUPPORT2_UAV_TYPED_STORE` may not
+//   be supported.
+
+const int GROUP_SIZE = 32;
+
+layout(local_size_x = 32, local_size_y = 32) in;
+
+layout(binding = 0) uniform sampler2D u_input_image;
+// layout(rgba8, binding = 0) uniform restrict readonly image2D u_input_image;
+layout(rgba8, binding = 1) uniform restrict writeonly image2D u_output_image;
+
+const int M = 16;
+const int N = 2 * M + 1;
+
+// sigma = 10
+const float coeffs[N] = float[N](
+	0.012318109844189502,
+	0.014381474814203989,
+	0.016623532195728208,
+	0.019024086115486723,
+	0.02155484948872149,
+	0.02417948052890078,
+	0.02685404941667096,
+	0.0295279624870386,
+	0.03214534135442581,
+	0.03464682117793548,
+	0.0369716985390341,
+	0.039060328279673276,
+	0.040856643282313365,
+	0.04231065439216247,
+	0.043380781642569775,
+	0.044035873841196206,
+	0.04425662519949865,
+	0.044035873841196206,
+	0.043380781642569775,
+	0.04231065439216247,
+	0.040856643282313365,
+	0.039060328279673276,
+	0.0369716985390341,
+	0.03464682117793548,
+	0.03214534135442581,
+	0.0295279624870386,
+	0.02685404941667096,
+	0.02417948052890078,
+	0.02155484948872149,
+	0.019024086115486723,
+	0.016623532195728208,
+	0.014381474814203989,
+	0.012318109844189502
+);
+
+const int CACHE_SIZE = GROUP_SIZE + 2 * M;
+
+shared uint cache[CACHE_SIZE][CACHE_SIZE];
+
+const int LOAD = (CACHE_SIZE + GROUP_SIZE - 1) / GROUP_SIZE;
+
+void main()
+{
+	ivec2 size = textureSize(u_input_image, 0);
+	ivec2 pixel_coord = ivec2(gl_GlobalInvocationID.xy);
+
+	ivec2 workgroup_origin = ivec2(gl_WorkGroupID.xy) * GROUP_SIZE - ivec2(M, M);
+
+	// Populate shared group cache
+	for (int i = 0; i < LOAD; ++i)
+	{
+		for (int j = 0; j < LOAD; ++j)
+		{
+			ivec2 local = ivec2(gl_LocalInvocationID.xy) * LOAD + ivec2(i, j);
+			ivec2 pc = workgroup_origin + local;
+
+			if (pc.x >= 0 && pc.y >= 0 && pc.x < size.x && pc.y < size.y && local.x < CACHE_SIZE && local.y < CACHE_SIZE)
+			{
+				cache[local.x][local.y] = packUnorm4x8(texelFetch(u_input_image, pc, 0));
+			}
+		}
+	}
+
+	memoryBarrierShared();
+	barrier();
+
+	// Horizontal blur
+	for (int i = 0; i < LOAD; ++i)
+	{
+		ivec2 local = ivec2(pixel_coord.x - workgroup_origin.x, gl_LocalInvocationID.y * LOAD + i);
+		ivec2 pixel_coord = workgroup_origin + local;
+
+		bool valid = pixel_coord.y < size.y && local.x < CACHE_SIZE && local.y < CACHE_SIZE;
+
+		vec4 sum;
+		if (valid)
+		{
+			sum = vec4(0.0);
+
+			for (int i = 0; i < N; ++i)
+			{
+				ivec2 pc = pixel_coord + ivec2(i - M, 0);
+				if (pc.x < 0) pc.x = 0;
+				if (pc.y < 0) pc.y = 0;
+				if (pc.x >= size.x) pc.x = size.x - 1;
+				if (pc.y >= size.y) pc.y = size.y - 1;
+
+				ivec2 local = pc - workgroup_origin;
+
+				sum += coeffs[i] * unpackUnorm4x8(cache[local.x][local.y]);
+			}
+		}
+
+		memoryBarrierShared();
+		barrier();
+
+		if (valid)
+			cache[local.x][local.y] = packUnorm4x8(sum);
+	}
+
+	memoryBarrierShared();
+	barrier();
+
+	// Vertical blur
+	if (pixel_coord.x < size.x)
+	{
+		vec4 sum = vec4(0.0);
+
+		for (int i = 0; i < N; ++i)
+		{
+			ivec2 pc = pixel_coord + ivec2(0, i - M);
+			if (pc.x < 0) pc.x = 0;
+			if (pc.y < 0) pc.y = 0;
+			if (pc.x >= size.x) pc.x = size.x - 1;
+			if (pc.y >= size.y) pc.y = size.y - 1;
+
+			ivec2 local = pc - workgroup_origin;
+
+			sum += coeffs[i] * unpackUnorm4x8(cache[local.x][local.y]);
+		}
+
+		imageStore(u_output_image, pixel_coord, sum);
+	}
+}

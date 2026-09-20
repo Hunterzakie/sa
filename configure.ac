@@ -4246,6 +4246,7 @@ have_qt_gtk="no"
 have_qt_qtest="no"
 have_qt_quick_test="no"
 have_qt_gui_private="no"
+have_qt_declarative_private="no"
 have_qt65="no"
 have_qt_zstd="no"
 have_fxc="no"
@@ -4510,6 +4511,17 @@ AS_IF([test "${enable_qt}" != "no"], [
             ;;
       esac
 
+      AC_MSG_CHECKING([for Qt Declarative private])
+      case $QT_CFLAGS in
+        *-DQT_DECLARATIVE_PRIVATE\ *)
+            AC_MSG_RESULT([yes])
+            have_qt_declarative_private="yes"
+            ;;
+        *)
+            AC_MSG_RESULT([no])
+            ;;
+      esac
+
       dnl gtk theme provider
       PKG_CHECK_MODULES([GTK3], [gtk+-3.0 >= 3.20], [
         have_qt_gtk="yes"
@@ -4549,8 +4561,10 @@ AM_CONDITIONAL([HAVE_QT_GTK], [test "${have_qt_gtk}" = "yes"])
 AM_CONDITIONAL([HAVE_QT_QTEST], [test "${have_qt_qtest}" = "yes"])
 AM_CONDITIONAL([HAVE_QT_QUICK_TEST], [test "${have_qt_quick_test}" = "yes"])
 AM_CONDITIONAL([HAVE_QT_GUI_PRIVATE], [test "${have_qt_gui_private}" = "yes"])
+AM_CONDITIONAL([HAVE_QT_DECLARATIVE_PRIVATE], [test "${have_qt_declarative_private}" = "yes"])
 AM_CONDITIONAL([HAVE_FXC], [test "${have_fxc}" = "yes"])
 AM_CONDITIONAL([HAVE_QT67], [test "${QT_VERSION_MAJ:-0}" -gt "6" || (test "${QT_VERSION_MAJ:-0}" = "6" && test "${QT_VERSION_MIN:-0}" -ge "7")])
+AM_CONDITIONAL([HAVE_QT66], [test "${QT_VERSION_MAJ:-0}" -gt "6" || (test "${QT_VERSION_MAJ:-0}" = "6" && test "${QT_VERSION_MIN:-0}" -ge "6")])
 AM_CONDITIONAL([HAVE_QT65], [test "${have_qt65}" = "yes"])
 AM_CONDITIONAL([HAVE_QT_ZSTD], [test "${have_qt_zstd}" = "yes"])
 AM_CONDITIONAL([HAVE_QT_XCB], [test "${have_qt_xcb}" = "yes"])

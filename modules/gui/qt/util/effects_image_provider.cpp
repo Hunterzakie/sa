@@ -18,12 +18,24 @@
 
 #include "effects_image_provider.hpp"
 
+// Comment this out if you don't want to use compute shader for blurring:
+#define BLUR_USE_COMPUTE_SHADER
+
 #include <QPainter>
 #include <QUrl>
 #include <QUrlQuery>
 #include <QPainterPath>
+#include <QApplication>
+#include <QElapsedTimer>
+#include <QQuickWindow>
 
 #include <memory>
+
+#ifdef BLUR_USE_COMPUTE_SHADER
+#if __has_include("util/qsgcomputenode.hpp")
+#include "util/qsgcomputenode.hpp"
+#endif
+#endif
 
 #include "fast_gaussian_blur_template.h"
 
@@ -91,6 +103,60 @@ public:
             //note: can we use painter.scale here?
             draw(painter, xscale, yscale);
         }
+
+
+#ifdef BLUR_USE_COMPUTE_SHADER
+        {
+            // Try to use compute shader, if applicable.
+            // We need to use one `QQuickWindow`, usually
+            // this would be the main interface window,
+            // but it can be any `QQuickWindow`.
+            static QPointer<QQuickWindow> quickWindow = nullptr;
+
+            if (!quickWindow)
+            {
+                for (const auto w : qGuiApp->allWindows())
+                {
+                    if (const auto qW = qobject_cast<QQuickWindow*>(w))
+                    {
+                        quickWindow = qW;
+                        break;
+                    }
+                }
+            }
+
+            if (quickWindow)
+            {
+                if (QSGComputeNode::supported(quickWindow))
+                {
+                    // Good news.
+
+                    QElapsedTimer elapsedTimer;
+
+                    // `GaussianBlur.comp` uses `local_size_x = 32, local_size_y = 32`
+                    const std::tuple<int, int, int> dispatchParameters = {
+                        (source.width() + 31) / 32,
+                        (source.height() + 31) / 32,
+                        1
+                    };
+
+                    //QImage dest;
+
+                    elapsedTimer.start();
+                    const auto ret = QSGComputeNode::compute(":/shaders/GaussianBlur.comp.qsb",
+                                                             source,
+                                                             quickWindow,
+                                                             dispatchParameters);
+                    if (ret.isValid())
+                    {
+                        qDebug() << "Blurring using compute shader took" << elapsedTimer.elapsed() << "ms to blur the image" << source;
+                        assert(ret.typeId() == QMetaType::QImage);
+                        return ret.value<QImage>();
+                    }
+                }
+            }
+        }
+#endif
 
         unsigned char* rawDest = (unsigned char*)malloc(viewport.width() * viewport.height() * 4);
         if (!rawDest)

@@ -20,5 +20,6 @@
         <file alias="DualKawaseBlur_upsample.frag.qsb">DualKawaseBlur_upsample.frag.qsb</file>
         <file alias="DualKawaseBlur_downsample.frag.qsb">DualKawaseBlur_downsample.frag.qsb</file>
         <file alias="DualKawaseBlur_upsample_postprocess.frag.qsb">DualKawaseBlur_upsample_postprocess.frag.qsb</file>
+        <file alias="GaussianBlur.comp.qsb">GaussianBlur.comp.qsb</file>
     </qresource>
 </RCC>
