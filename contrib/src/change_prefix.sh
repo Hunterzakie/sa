@@ -97,6 +97,12 @@ process() {
 }
 
 process bin/ "*" text_only
+# Qt host paths may need a different relative layout after importing a prebuilt.
+if [ -z "$CHECK_PREFIX" -a -f bin/target_qt.conf ]; then
+    sed -i.orig -e "s,^HostPrefix=.*,HostPrefix=$new_tool_prefix," \
+        -e "s,^HostData=.*,HostData=$new_prefix," bin/target_qt.conf
+    rm -f bin/target_qt.conf.orig
+fi
 process lib/ "*.la"
 process lib/pkgconfig/ "*.pc" check
 process share/meson/cross/ "*.ini"
