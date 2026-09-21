@@ -20,8 +20,8 @@ DATE := $(shell date +%Y%m%d)
 VPATH := $(TARBALLS)
 
 # Default Qt version
-QTBASE_VERSION_MAJOR := 6.8
-QTBASE_VERSION := $(QTBASE_VERSION_MAJOR).3
+QTBASE_VERSION_MAJOR := 6.12
+QTBASE_VERSION := $(QTBASE_VERSION_MAJOR).0
 
 # Common download locations
 GNU ?= https://ftpmirror.gnu.org/gnu

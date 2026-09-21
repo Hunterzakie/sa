@@ -54,12 +54,12 @@ qt: qtbase-everywhere-src-$(QTBASE_VERSION_FULL).tar.xz .sum-qt
 	$(APPLY) $(SRC)/qt/0001-disable-precompiled-headers-when-forcing-WINVER-inte.patch
 	$(APPLY) $(SRC)/qt/0001-Use-DirectWrite-font-database-only-with-Windows-10-a.patch
 	$(APPLY) $(SRC)/qt/0001-Use-DirectWrite-font-engine-only-with-Windows-10-and.patch
-	$(APPLY) $(SRC)/qt/0001-WIP-Core-Add-operator-to-our-bidirectional-meta-iter.patch
 	$(APPLY) $(SRC)/qt/0001-macos-guard-text-html.patch
 	$(APPLY) $(SRC)/qt/0001-QEventDispatcherWin32-treat-posted-events-fairly.patch
 	$(APPLY) $(SRC)/qt/0001-rhi-d3d11-Use-DXGI_SWAP_EFFECT_FLIP_DISCARD-only-on-.patch
 	$(APPLY) $(SRC)/qt/0001-rhi-d3d11-fix-availability-on-Windows-7-with-the-pla.patch
 	$(APPLY) $(SRC)/qt/0001-rhi-d3d11-emulate-constant-buffer-offsetting-if-ther.patch
+	$(APPLY) $(SRC)/qt/0001-rhi-make-QDxgiVSyncService-opt-in-on-Windows-7.patch
 	$(MOVE)
 
 ifdef HAVE_WIN32
@@ -98,6 +98,10 @@ QTBASE_COMMON_CONFIG += -DFEATURE_stack_clash_protection=OFF
 endif
 endif
 
+ifdef HAVE_WIN32
+QTBASE_COMMON_CONFIG += -DFEATURE_waylandscanner=OFF
+endif
+
 ifdef ENABLE_LTO
 QTBASE_CONFIG += -DFEATURE_ltcg=ON
 endif
@@ -115,9 +119,9 @@ QTBASE_CONFIG += $(QTBASE_COMMON_CONFIG) \
 QTBASE_NATIVE_CONFIG := $(QTBASE_COMMON_CONFIG) -DQT_BUILD_TESTS=FALSE \
 	-DFEATURE_accessibility=ON -DFEATURE_widgets=OFF -DFEATURE_testlib=OFF \
 	-DFEATURE_vnc=OFF -DFEATURE_linuxfb=OFF -DFEATURE_xlib=OFF \
-	-DFEATURE_vulkan=OFF -DFEATURE_imageformatplugin=OFF \
+	-DFEATURE_vulkan=OFF -DFEATURE_imageformatplugin=OFF -DFEATURE_harmonydeployqt=OFF \
 	-DFEATURE_xkbcommon=OFF -DFEATURE_evdev=OFF -DFEATURE_sessionmanager=OFF -DFEATURE_png=OFF \
-	-DFEATURE_glib=OFF -DFEATURE_icu=OFF \
+	-DFEATURE_glib=OFF -DFEATURE_icu=OFF -DFEATURE_wayland=OFF \
 	-DFEATURE_texthtmlparser=OFF -DFEATURE_cssparser=OFF -DFEATURE_textodfwriter=OFF -DFEATURE_textmarkdownreader=OFF \
 	-DFEATURE_textmarkdownwriter=OFF -DINPUT_libb2=no -DFEATURE_harfbuzz=OFF -DFEATURE_freetype=OFF -DINPUT_opengl=no
 

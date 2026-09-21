@@ -1,0 +1,36 @@
+From a6b8f1fa4d8f85b46b94ce09a847b42b597b753d Mon Sep 17 00:00:00 2001
+From: Fatih Uzunoglu <fuzun54@outlook.com>
+Date: Fri, 18 Sep 2026 15:56:17 +0300
+Subject: [PATCH] rhi: make `QDxgiVSyncService` opt-in on Windows 7
+
+---
+ src/gui/rhi/qdxgivsyncservice.cpp | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/src/gui/rhi/qdxgivsyncservice.cpp b/src/gui/rhi/qdxgivsyncservice.cpp
+index 7a909db7a01..2756205411f 100644
+--- a/src/gui/rhi/qdxgivsyncservice.cpp
++++ b/src/gui/rhi/qdxgivsyncservice.cpp
+@@ -10,6 +10,7 @@
+ #include <QLoggingCategory>
+ #include <QScreen>
+ #include <QVarLengthArray>
++#include <QOperatingSystemVersion>
+ #include <QtCore/private/qsystemerror_p.h>
+ 
+ QT_BEGIN_NAMESPACE
+@@ -97,7 +98,10 @@ QDxgiVSyncService::QDxgiVSyncService()
+ {
+     qCDebug(lcQpaScreenUpdates) << "New QDxgiVSyncService" << this;
+ 
+-    disableService = qEnvironmentVariableIntValue("QT_D3D_NO_VBLANK_THREAD");
++    // QDxgiVSyncService causes major stuttering on Windows 7, so it
++    // is opt-in unlike opt-out on Windows >= 8.
++    disableService = (QOperatingSystemVersion::current() >= QOperatingSystemVersion::Windows8) ? qEnvironmentVariableIntValue("QT_D3D_NO_VBLANK_THREAD")
++                                                                                               : !qEnvironmentVariableIntValue("QT_D3D_VBLANK_THREAD");
+     if (disableService) {
+         qCDebug(lcQpaScreenUpdates) << "QDxgiVSyncService disabled by environment";
+         return;
+-- 
+2.55.0
+
