@@ -27,15 +27,16 @@ LANG=C
 export LANG
 
 usage() {
-  echo "Usage: $0 [prefix]
+  echo "Usage: $0 [prefix [tool_prefix]]
 
  * If a prefix is provided, this script will replaces any of its occurences
    with its own internal value to be able to replace the prefixes when using a
    prebuild package.
    If the .pc file contains a prefix which doesn't match the provided one, this
    script will error out
- * If no prefix is provided, this script will replace its internal value with
-   the current working directory
+ * If no prefix, or an empty prefix, is provided, this script will replace its
+   internal value with the current working directory
+ * tool_prefix defaults to the parent of the target prefix.
 "
 }
 
@@ -45,13 +46,24 @@ if test "$1" = "-h" -o "$1" = "--help" ; then
 elif [ $# -gt 2 ]; then
     usage
     exit 1
-elif [ $# != 1 ]; then
+elif [ -z "$1" ]; then
     old_prefix=@@CONTRIB_PREFIX@@
     new_prefix=`pwd`
+    old_tool_prefix=@@CONTRIB_TOOL_PREFIX@@
+    new_tool_prefix=${2:-`dirname "$new_prefix"`}
 else
     old_prefix=$1
     new_prefix=@@CONTRIB_PREFIX@@
+    old_tool_prefix=${2:-`dirname "$old_prefix"`}
+    new_tool_prefix=@@CONTRIB_TOOL_PREFIX@@
     CHECK_PREFIX=1
+fi
+
+# Replace the longer prefix first when the directories are nested.
+if [ ${#old_tool_prefix} -gt ${#old_prefix} ]; then
+    prefix_sed="s,$old_tool_prefix,$new_tool_prefix,g; s,$old_prefix,$new_prefix,g"
+else
+    prefix_sed="s,$old_prefix,$new_prefix,g; s,$old_tool_prefix,$new_tool_prefix,g"
 fi
 
 # process [dir] [filemask] [text_only|check]
@@ -79,7 +91,7 @@ process() {
                 fi
             fi
         fi
-        sed -i.orig -e "s,$old_prefix,$new_prefix,g" $file
+        sed -i.orig -e "$prefix_sed" $file
         rm -f $file.orig
     done
 }
