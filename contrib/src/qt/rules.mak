@@ -115,6 +115,7 @@ QTBASE_CONFIG += $(QTBASE_COMMON_CONFIG) \
 	-DFEATURE_syntaxhighlighter=OFF -DFEATURE_undoview=OFF -DFEATURE_splashscreen=OFF \
 	-DFEATURE_dockwidget=OFF -DFEATURE_statusbar=OFF -DFEATURE_statustip=OFF \
 	-DFEATURE_keysequenceedit=OFF -DFEATURE_mdiarea=OFF -DFEATURE_textodfwriter=OFF \
+	-DFEATURE_textmarkdownreader=OFF -DFEATURE_textmarkdownwriter=OFF \
 	-DCMAKE_TOOLCHAIN_FILE=$(abspath toolchain.cmake) $(QT_HOST_PATH)
 
 QTBASE_NATIVE_CONFIG := $(QTBASE_COMMON_CONFIG) -DQT_BUILD_TESTS=FALSE \
