@@ -757,7 +757,7 @@ prebuilt: vlc-contrib-$(HOST)-latest.tar.zst
 	$(RM) -r $(PREFIX)
 	$(UNPACK)
 	mv $(HOST) $(PREFIX)
-	cd $(PREFIX) && $(abspath $(SRC))/change_prefix.sh
+	cd $(PREFIX) && $(abspath $(SRC))/change_prefix.sh "" "$(or $(QT_HOST_PREFIX),$(BUILDPREFIX))"
 
 package: install
 	rm -Rf tmp/
@@ -767,7 +767,7 @@ package: install
 	cd tmp/$(notdir $(PREFIX)); \
 		cd share; rm -Rf man doc gtk-doc info lua projectM; cd ..; \
 		rm -Rf man sbin etc lib/lua lib/sidplay
-	cd tmp/$(notdir $(PREFIX)) && $(abspath $(SRC))/change_prefix.sh $(PREFIX)
+	cd tmp/$(notdir $(PREFIX)) && $(abspath $(SRC))/change_prefix.sh "$(PREFIX)" "$(or $(QT_HOST_PREFIX),$(BUILDPREFIX))"
 ifneq ($(notdir $(PREFIX)),$(HOST))
 	(cd tmp && mv $(notdir $(PREFIX)) $(HOST))
 endif
