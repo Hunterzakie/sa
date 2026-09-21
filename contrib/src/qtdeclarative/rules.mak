@@ -52,10 +52,19 @@ qtdeclarative: qtdeclarative-everywhere-src-$(QTDECLARATIVE_VERSION).tar.xz .sum
 QT_DECLARATIVE_COMMON_CONFIG := \
 	-DFEATURE_qml_debug=OFF \
 	-DFEATURE_qml_profiler=OFF \
-	-DFEATURE_quick_designer=OFF \
-	-DFEATURE_quick_particles=OFF \
 	-DFEATURE_qml_preview=OFF \
 	-DFEATURE_qml_designsupport=OFF \
+	-DFEATURE_qml_network=OFF \
+	-DQT_FEATURE_testlib=OFF
+
+QT_DECLARATIVE_CONFIG := $(QT_DECLARATIVE_COMMON_CONFIG) \
+	-DFEATURE_quick_animatedimage=OFF \
+	-DFEATURE_quick_canvas=OFF \
+	-DFEATURE_quick_designer=OFF \
+	-DFEATURE_quick_flipable=OFF \
+	-DFEATURE_quick_particles=OFF \
+	-DFEATURE_quick_path=OFF \
+	-DFEATURE_quick_sprite=OFF \
 	-DFEATURE_quickcontrols2_imagine=OFF \
 	-DFEATURE_quickcontrols2_material=OFF \
 	-DFEATURE_quickcontrols2_universal=OFF \
@@ -64,16 +73,7 @@ QT_DECLARATIVE_COMMON_CONFIG := \
 	-DFEATURE_quickcontrols2_fusion=OFF \
 	-DFEATURE_quickcontrols2_windows=OFF \
 	-DFEATURE_quickcontrols2_stylekit=OFF \
-	-DFEATURE_qml_network=OFF \
-	-DFEATURE_quick_animatedimage=OFF \
-	-DFEATURE_quick_flipable=OFF \
-	-DFEATURE_quick_sprite=OFF \
-	-DFEATURE_quick_canvas=OFF \
-	-DFEATURE_quick_path=OFF \
 	-DFEATURE_quicktemplates2_calendar=OFF \
-	-DQT_FEATURE_testlib=OFF
-
-QT_DECLARATIVE_CONFIG := $(QT_DECLARATIVE_COMMON_CONFIG) \
 	$(QT_CMAKE_CONFIG)
 
 QT_DECLARATIVE_NATIVE_CONFIG := $(QT_DECLARATIVE_COMMON_CONFIG) \
@@ -82,7 +82,6 @@ QT_DECLARATIVE_NATIVE_CONFIG := $(QT_DECLARATIVE_COMMON_CONFIG) \
 	-DFEATURE_qml_itemmodel=OFF \
 	-DFEATURE_qml_object_model=OFF \
 	-DFEATURE_qml_table_model=OFF \
-	-DFEATURE_quick_shadereffect=OFF \
 	-DQT_GENERATE_SBOM=OFF \
 	-DCMAKE_TOOLCHAIN_FILE=$(QT_HOST_LIBS)/cmake/Qt6/qt.toolchain.cmake
 
