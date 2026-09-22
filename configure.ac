@@ -10,6 +10,10 @@ VERSION_EXTRA=0
 VERSION_DEV=dev
 
 VERSION_DATE=$(
+    if test -f "$srcdir/.version-date"; then
+        cat "$srcdir/.version-date"
+        exit 0
+    fi
     VERSION_PATTERN='^v?([[0-9]]+\.?)+(-[[0-9]]+)?$'
     VERSION_TAG=$(git tag --points-at HEAD --sort=-version:refname 2>/dev/null | grep -E "$VERSION_PATTERN" | head -n 1)
     if test -n "$VERSION_TAG"; then
@@ -4556,14 +4560,6 @@ AM_CONDITIONAL([HAVE_QT_ZSTD], [test "${have_qt_zstd}" = "yes"])
 AM_CONDITIONAL([HAVE_QT_XCB], [test "${have_qt_xcb}" = "yes"])
 
 dnl
-dnl detect kde4-config patch (used for kde solids).
-dnl
-AC_ARG_VAR([KDE4_CONFIG], [kde4-config utility])
-AS_IF([test "x$KDE4_CONFIG" = "x"], [
-  KDE4_CONFIG="kde4-config"
-])
-
-dnl
 dnl Simple test for skins2 dependency
 dnl
 AS_IF([test "$enable_qt" = "no" -a "${SYS}" != "darwin"], [
@@ -5123,12 +5119,7 @@ fi
 soliddatadir=""
 AS_IF([test "${with_kde_solid}" != "no"], [
   AS_IF([test "${with_kde_solid}" = "yes"], [
-    dnl automatic detection of the path via KDE4_CONFIG
-    AS_IF([test -x "${KDE4_CONFIG}"], [
-      kde4datadir="`${KDE4_CONFIG} --install data`"
-    ])
-    AS_IF([test "x$kde4datadir" = "x"], [kde4datadir='${datadir}/kde4/apps'])
-    soliddatadir="${kde4datadir}/solid/actions"
+    soliddatadir='${datadir}/solid/actions'
   ], [
     soliddatadir="${with_kde_solid}"
   ])

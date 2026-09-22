@@ -41,6 +41,13 @@ vlc_package_name = meson.project_name().to_lower()
 vlc_src_root = meson.current_source_dir()
 vlc_build_root = meson.current_build_dir()
 
+# Release date of this version, for the AppStream metadata. Computed like
+# VERSION_DATE in configure.ac: from .version-date in a release tarball, else
+# from the git tag. "meson dist" writes .version-date in the tarballs it makes.
+gen_version_date = find_program('buildsystem/gen-version-date.py')
+vlc_version_date = run_command(gen_version_date, vlc_src_root, check: true).stdout().strip()
+meson.add_dist_script(gen_version_date, '--dist', vlc_src_root)
+
 cdata = configuration_data()
 
 cargo_rustc_static_libs = find_program('buildsystem/cargo-rustc-static-libs.py')
@@ -1015,6 +1022,7 @@ vlc_pkg_suffix = meson.project_name().to_lower()
 
 sysdatadir_path = prefix_path / get_option('datadir')
 pkgdatadir_path = sysdatadir_path / vlc_pkg_suffix
+docdir_path = sysdatadir_path / 'doc' / vlc_pkg_suffix
 if host_system == 'windows'
     libdir_path = prefix_path
     pkglibdir_path = libdir_path / vlc_pkg_suffix
@@ -1181,6 +1189,9 @@ subdir('lib')
 
 # VLC plugins
 subdir('modules')
+
+# Data files
+subdir('share')
 
 # VLC binaries
 subdir('bin')
