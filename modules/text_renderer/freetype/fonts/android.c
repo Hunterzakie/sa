@@ -33,12 +33,16 @@
 # include "config.h"
 #endif
 
+#include <sys/stat.h>
+
 #include <vlc_common.h>
 #include <vlc_arrays.h>
 #include <vlc_filter.h>                                      /* filter_sys_t */
 
 # include <vlc_xml.h>
 # include <vlc_stream.h>
+# include <vlc_fs.h>
+# include <vlc_fixups.h>
 
 #include "../platform_fonts.h"
 #include "backends.h"
@@ -106,6 +110,23 @@ static int Android_ParseFont( vlc_font_select_t *fs, xml_reader_t *p_xml,
         psz_fontfile[sizeof(SYSTEM_FONT_PATH) - 1] = '/';
         memcpy( &psz_fontfile[sizeof(SYSTEM_FONT_PATH)], psz_val, len );
         psz_fontfile[sizeof(SYSTEM_FONT_PATH) + len] = '\0';
+
+        struct stat st;
+        if( vlc_stat( psz_fontfile, &st ) ||
+            !(st.st_mode & (S_IFLNK|S_IFREG)) ) /* Not regular file nor symlink */
+        {
+            free( psz_fontfile );
+            return VLC_ENOENT;
+        }
+
+        if( st.st_mode & S_IFLNK )
+        {
+            char *psz_resolved = realpath( psz_fontfile, NULL );
+            free( psz_fontfile );
+            if( !psz_resolved )
+                return VLC_ENOENT;
+            psz_fontfile = psz_resolved;
+        }
 
         if( !NewFont( psz_fontfile, 0, i_flags, p_family ) )
             return VLC_ENOMEM;
