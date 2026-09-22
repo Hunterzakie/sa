@@ -245,6 +245,16 @@ static NSImage *ImageFromEmoji(NSString *emoji, NSSize size)
     return [NSImage imageNamed:@"repeatOff"];
 }
 
++ (NSImage *)VLCFilterOffImage
+{
+    return [NSImage imageNamed:@"filterOff"];
+}
+
++ (NSImage *)VLCFilterOnImage
+{
+    return [NSImage imageNamed:@"filterOn"];
+}
+
 + (nullable NSImage *)flagImageForCountryCode:(NSString *)countryCode
                                          size:(NSSize)size
 {

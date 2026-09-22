@@ -27,6 +27,7 @@
 
 #import "main/VLCMain.h"
 #import "playqueue/VLCPlayQueueController.h"
+#import "playqueue/VLCPlayQueueDataSource.h"
 #import "playqueue/VLCPlayQueueMenuController.h"
 
 @interface VLCPlayQueueTableView ()
@@ -36,6 +37,21 @@
 @end
 
 @implementation VLCPlayQueueTableView
+
+- (void)removeSelectedPlayQueueItems
+{
+    NSIndexSet * const selectedIndexes = self.selectedRowIndexes;
+    if (selectedIndexes.count == 0) {
+        NSBeep();
+        return;
+    }
+
+    VLCPlayQueueDataSource * const dataSource =
+        [self.dataSource isKindOfClass:VLCPlayQueueDataSource.class] ? (VLCPlayQueueDataSource *)self.dataSource : nil;
+    NSIndexSet * const modelIndexes = dataSource != nil ? [dataSource modelIndexSetForRowIndexes:selectedIndexes]
+                                                        : selectedIndexes;
+    [VLCMain.sharedInstance.playQueueController removeItemsAtIndexes:modelIndexes];
+}
 
 - (NSMenu *)menuForEvent:(NSEvent *)event
 {
@@ -66,7 +82,8 @@
     }
 
     size_t indexOfSelectedItem = self.selectedRow;
-    NSIndexSet *selectedIndexes = [self selectedRowIndexes];
+    VLCPlayQueueDataSource * const dataSource =
+        [self.dataSource isKindOfClass:VLCPlayQueueDataSource.class] ? (VLCPlayQueueDataSource *)self.dataSource : nil;
 
     switch(key) {
         case NSDeleteCharacter:
@@ -74,20 +91,34 @@
         case NSDeleteCharFunctionKey:
         case NSBackspaceCharacter:
         {
-            VLCPlayQueueController *playQueueController = VLCMain.sharedInstance.playQueueController;
-            [playQueueController removeItemsAtIndexes:selectedIndexes];
+            [self removeSelectedPlayQueueItems];
             break;
         }
 
         case NSEnterCharacter:
         case NSCarriageReturnCharacter:
+        {
+            if (dataSource != nil) {
+                indexOfSelectedItem = [dataSource modelIndexForRow:indexOfSelectedItem];
+            }
             [VLCMain.sharedInstance.playQueueController playItemAtIndex:indexOfSelectedItem];
             break;
+        }
 
         default:
             [super keyDown: event];
             break;
     }
+}
+
+- (void)deleteBackward:(id)sender
+{
+    [self removeSelectedPlayQueueItems];
+}
+
+- (void)deleteForward:(id)sender
+{
+    [self removeSelectedPlayQueueItems];
 }
 
 - (BOOL)acceptsFirstResponder

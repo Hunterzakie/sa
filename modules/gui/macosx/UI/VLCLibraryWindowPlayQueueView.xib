@@ -18,6 +18,8 @@
                 <outlet property="footerContainerViewTrailingConstraint" destination="ftr-trail-999" id="BCD-w4-CYV"/>
                 <outlet property="openMediaButton" destination="ghp-DI-YmZ" id="30J-m7-gLb"/>
                 <outlet property="repeatButton" destination="9xU-Ba-Hys" id="myS-5X-rgK"/>
+                <outlet property="filterField" destination="Lj7-Km-NpQ" id="gFx-Ih-Oov"/>
+                <outlet property="filterButton" destination="qQ2-vR-WzJ" id="gFb-Ih-Oov"/>
                 <outlet property="scrollView" destination="EIb-Is-vco" id="9JX-Ba-BHj"/>
                 <outlet property="scrollViewDefaultBottomConstraint" destination="scr-bot-001" id="ndp-LY-vyP"/>
                 <outlet property="shuffleButton" destination="bdZ-N9-Noa" id="bJz-sR-lGW"/>
@@ -167,14 +169,30 @@
                                         <action selector="clearPlayQueue:" target="-2" id="DEh-0j-CpD"/>
                                     </connections>
                                 </button>
+                                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="qQ2-vR-WzJ">
+                                    <rect key="frame" x="494" y="13" width="24" height="24"/>
+                                    <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="line.3.horizontal.decrease.circle" catalog="system" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="Kz5-Vp-QmB">
+                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                        <font key="font" metaFont="system"/>
+                                    </buttonCell>
+                                    <constraints>
+                                        <constraint firstAttribute="height" constant="24" id="Fk7-Lm-PoI"/>
+                                        <constraint firstAttribute="width" constant="24" id="Rt2-Xy-VbN"/>
+                                    </constraints>
+                                    <connections>
+                                        <action selector="toggleFilterField:" target="-2" id="Lm4-Np-QrS"/>
+                                    </connections>
+                                </button>
                             </subviews>
                             <visibilityPriorities>
                                 <integer value="1000"/>
                                 <integer value="1000"/>
                                 <integer value="1000"/>
                                 <integer value="1000"/>
+                                <integer value="1000"/>
                             </visibilityPriorities>
                             <customSpacing>
+                                <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
@@ -246,6 +264,14 @@
                         <constraint firstItem="qv6-Mn-ifA" firstAttribute="centerX" secondItem="grx-kk-1X1" secondAttribute="centerX" id="z8g-fU-cRw"/>
                     </constraints>
                 </customView>
+                <searchField focusRingType="none" verticalHuggingPriority="750" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Lj7-Km-NpQ" hidden="YES">
+                    <rect key="frame" x="20" y="60" width="470" height="28"/>
+                    <searchFieldCell key="cell" controlSize="large" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" usesSingleLineMode="YES" bezelStyle="round" sendsSearchStringImmediately="YES" id="sC4-Vr-TyW">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </searchFieldCell>
+                </searchField>
             </subviews>
             <constraints>
                 <constraint firstItem="ik5-L4-VLw" firstAttribute="top" secondItem="NJR-gf-yTs" secondAttribute="top" id="1za-9j-6sD"/>
@@ -260,7 +286,21 @@
                 </constraint>
                 <constraint firstItem="EIb-Is-vco" firstAttribute="top" secondItem="ik5-L4-VLw" secondAttribute="bottom" id="Cyw-MK-W8n"/>
                 <constraint firstAttribute="trailing" secondItem="EIb-Is-vco" secondAttribute="trailing" id="UAJ-gH-fWy"/>
+                <constraint firstItem="Lj7-Km-NpQ" firstAttribute="leading" secondItem="NJR-gf-yTs" secondAttribute="leading" constant="16" id="Ld9-Km-NpQ" customClass="VLCSpacingConstraint">
+                    <userDefinedRuntimeAttributes>
+                        <userDefinedRuntimeAttribute type="number" keyPath="spacingToken">
+                            <integer value="3"/>
+                        </userDefinedRuntimeAttribute>
+                    </userDefinedRuntimeAttributes>
+                </constraint>
                 <constraint firstAttribute="trailing" secondItem="ik5-L4-VLw" secondAttribute="trailing" constant="16" id="ef5-v1-Rm6" customClass="VLCSpacingConstraint">
+                    <userDefinedRuntimeAttributes>
+                        <userDefinedRuntimeAttribute type="number" keyPath="spacingToken">
+                            <integer value="3"/>
+                        </userDefinedRuntimeAttribute>
+                    </userDefinedRuntimeAttributes>
+                </constraint>
+                <constraint firstAttribute="trailing" secondItem="Lj7-Km-NpQ" secondAttribute="trailing" constant="16" id="Lt9-Km-NpQ" customClass="VLCSpacingConstraint">
                     <userDefinedRuntimeAttributes>
                         <userDefinedRuntimeAttribute type="number" keyPath="spacingToken">
                             <integer value="3"/>
@@ -271,6 +311,8 @@
                 <constraint firstItem="ftr-ct-999" firstAttribute="leading" secondItem="NJR-gf-yTs" secondAttribute="leading" id="ftr-lead-999"/>
                 <constraint firstAttribute="trailing" secondItem="ftr-ct-999" secondAttribute="trailing" id="ftr-trail-999"/>
                 <constraint firstItem="ew3-Pn-diG" firstAttribute="top" secondItem="grx-kk-1X1" secondAttribute="bottom" id="haK-Qu-HJv"/>
+                <constraint firstItem="Lj7-Km-NpQ" firstAttribute="bottom" secondItem="ftr-ct-999" secondAttribute="top" constant="-10" id="Lt8-Km-NpQ"/>
+                <constraint firstItem="Lj7-Km-NpQ" firstAttribute="height" constant="28" id="Lh8-Km-NpQ"/>
                 <constraint firstItem="EIb-Is-vco" firstAttribute="leading" secondItem="NJR-gf-yTs" secondAttribute="leading" id="kEZ-5n-pxq"/>
                 <constraint firstItem="grx-kk-1X1" firstAttribute="leading" secondItem="NJR-gf-yTs" secondAttribute="leading" id="mCw-UE-mS0"/>
                 <constraint firstItem="EIb-Is-vco" firstAttribute="bottom" secondItem="ftr-ct-999" secondAttribute="top" id="scr-bot-001"/>
@@ -280,6 +322,7 @@
     </objects>
     <resources>
         <image name="dropzone" width="112" height="112"/>
+        <image name="line.3.horizontal.decrease.circle" catalog="system" width="17" height="16"/>
         <image name="line.horizontal.3.decrease" catalog="system" width="16" height="10"/>
         <image name="repeatOff" width="24" height="24"/>
         <image name="shuffleOn" width="24" height="24"/>

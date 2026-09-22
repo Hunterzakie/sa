@@ -70,6 +70,8 @@ struct vlc_object_t;
 @property (class, readonly) NSImage *VLCRepeatAllImage;
 @property (class, readonly) NSImage *VLCRepeatOneImage;
 @property (class, readonly) NSImage *VLCRepeatOffImage;
+@property (class, readonly) NSImage *VLCFilterOffImage;
+@property (class, readonly) NSImage *VLCFilterOnImage;
 
 + (void)quickLookPreviewForLocalPath:(NSString *)path
                             withSize:(NSSize)size 

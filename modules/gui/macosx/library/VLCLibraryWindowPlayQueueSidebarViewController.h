@@ -33,8 +33,9 @@ NS_ASSUME_NONNULL_BEGIN
 @class VLCPlayQueueSortingMenuController;
 @class VLCRoundedCornerTextField;
 
-@interface VLCLibraryWindowPlayQueueSidebarViewController : VLCLibraryWindowAbstractSidebarViewController
+@interface VLCLibraryWindowPlayQueueSidebarViewController : VLCLibraryWindowAbstractSidebarViewController<NSSearchFieldDelegate>
 
+@property (readwrite, weak) IBOutlet NSSearchField *filterField;
 @property (readwrite, weak) IBOutlet NSTableView *tableView;
 @property (readwrite, weak) IBOutlet NSView *footerContainerView;
 @property (readwrite, weak) IBOutlet VLCDragDropView *dragDropView;
@@ -44,6 +45,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readwrite, weak) IBOutlet NSButton *shuffleButton;
 @property (readwrite, weak) IBOutlet NSButton *sortButton;
 @property (readwrite, weak) IBOutlet NSButton *clearButton;
+@property (readwrite, weak) IBOutlet NSButton *filterButton;
 @property (readwrite, weak) IBOutlet NSStackView *buttonStack;
 @property (readwrite, weak) IBOutlet NSScrollView *scrollView;
 @property (readwrite, weak) IBOutlet NSLayoutConstraint *footerContainerViewDefaultBottomConstraint;
@@ -60,6 +62,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithLibraryWindow:(VLCLibraryWindow *)libraryWindow;
 
 - (IBAction)tableDoubleClickAction:(id)sender;
+- (IBAction)toggleFilterField:(id)sender;
 - (IBAction)openMedia:(id)sender;
 - (IBAction)shuffleAction:(id)sender;
 - (IBAction)repeatAction:(id)sender;
