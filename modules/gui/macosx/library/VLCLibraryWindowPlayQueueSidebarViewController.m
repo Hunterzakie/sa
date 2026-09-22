@@ -41,7 +41,6 @@
 #import "playqueue/VLCPlayQueueSortingMenuController.h"
 
 #import "views/VLCDragDropView.h"
-#import "views/VLCRoundedCornerTextField.h"
 #import "views/VLCUIUnits.h"
 
 #import "windows/VLCOpenWindowController.h"

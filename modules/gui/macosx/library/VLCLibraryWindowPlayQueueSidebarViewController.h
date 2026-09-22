@@ -31,7 +31,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class VLCPlayQueueController;
 @class VLCPlayQueueDataSource;
 @class VLCPlayQueueSortingMenuController;
-@class VLCRoundedCornerTextField;
 
 @interface VLCLibraryWindowPlayQueueSidebarViewController : VLCLibraryWindowAbstractSidebarViewController<NSSearchFieldDelegate>
 
