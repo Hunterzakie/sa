@@ -129,6 +129,12 @@ libjpeg_plugin_la_LIBADD = -ljpeg
 EXTRA_LTLIBRARIES += libjpeg_plugin.la
 codec_PLUGINS += $(LTLIBjpeg)
 
+libultrahdr_plugin_la_SOURCES = codec/ultrahdr.c
+libultrahdr_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(codecdir)'
+libultrahdr_plugin_la_LIBADD = $(LIBS_ultrahdr)
+EXTRA_LTLIBRARIES += libultrahdr_plugin.la
+codec_LTLIBRARIES += $(LTLIBultrahdr)
+
 libbpg_plugin_la_SOURCES = codec/bpg.c
 libbpg_plugin_la_LDFLAGS = $(AM_LDFLAGS) $(codec_RPATH)
 libbpg_plugin_la_LIBADD = -lbpg

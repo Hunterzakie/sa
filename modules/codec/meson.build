@@ -193,6 +193,15 @@ vlc_modules += {
     'enabled' : jpeg_dep.found(),
 }
 
+# UltraHDR codec
+ultrahdr_dep = dependency('libuhdr', required: get_option('ultrahdr'))
+vlc_modules += {
+    'name' : 'ultrahdr',
+    'sources' : files('ultrahdr.c'),
+    'dependencies' : [ultrahdr_dep],
+    'enabled' : ultrahdr_dep.found(),
+}
+
 # BPG codec
 bpg_lib = cc.find_library('bpg', required: get_option('bpg'))
 vlc_modules += {

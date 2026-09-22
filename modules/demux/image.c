@@ -469,7 +469,36 @@ static bool IsSpiff(stream_t *s)
         return false;
     if (memcmp(&header[6], "SPIFF\0", 6))
         return false;
-    return true;
+    return false;
+}
+
+static bool IsUltraHDR(stream_t *s)
+{
+    /* UltraHDR images are JPEGs with an XMP metadata block containing
+     * the HDR gain map marker. The XMP block can be quite large, so we
+     * search in the first 64KB which should cover most cases. */
+    static const char hdrgm_marker[] = "hdrgm=\"http://ns.adobe.com/hdr-gain-map/1.0/\"";
+    const size_t marker_len = sizeof(hdrgm_marker) - 1;
+    const size_t peek_size = 65536;
+
+    const uint8_t *header;
+    ssize_t peek = vlc_stream_Peek(s, &header, peek_size);
+    if (peek < (ssize_t)(2 + marker_len))
+        return false;
+
+    /* Check JPEG SOI marker */
+    if (header[0] != 0xFF || header[1] != 0xD8)
+        return false;
+
+    /* Search for the HDR gain map marker starting after SOI */
+    const size_t search_end = (size_t)peek - marker_len;
+    for (size_t i = 2; i <= search_end; i++)
+    {
+        if (memcmp(&header[i], hdrgm_marker, marker_len) == 0)
+            return true;
+    }
+
+    return false;
 }
 
 #define EXIF_STRING "Exif" /* includes \0 */
@@ -656,6 +685,9 @@ static const image_format_t formats[] = {
     { .codec = VLC_CODEC_MXPEG,
       .detect = IsMxpeg,
     },
+    { .codec = VLC_CODEC_UHDR,
+      .detect = IsUltraHDR,
+    },
     { .codec = VLC_CODEC_JPEG,
       .detect = IsJfif,
     },
@@ -753,9 +785,6 @@ static int Open(vlc_object_t *object)
     if (codec == 0)
         return VLC_EGENERIC;
 
-    msg_Dbg(demux, "Detected image: %s",
-            vlc_fourcc_GetDescription(VIDEO_ES, codec));
-
     if (codec == VLC_CODEC_MXPEG)
         return VLC_EGENERIC; //let avformat demux this file
 
@@ -771,6 +800,9 @@ static int Open(vlc_object_t *object)
     }
 
     block_t *data = Load(demux);
+
+    msg_Dbg(demux, "Detected image: %s",
+            vlc_fourcc_GetDescription(VIDEO_ES, codec));
     if (data && var_InheritBool(demux, "image-decode")) {
         char *string = var_InheritString(demux, "image-chroma");
         vlc_fourcc_t chroma = vlc_fourcc_GetCodecFromString(VIDEO_ES, string);

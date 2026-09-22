@@ -3247,6 +3247,24 @@ AS_IF([test "${enable_jpeg}" != "no"], [
 ])
 
 dnl
+dnl  UltraHDR decoder module + demux detection (via pkg-config)
+dnl
+AC_ARG_ENABLE([ultrahdr],
+  AS_HELP_STRING([--enable-ultrahdr], [UltraHDR image codec support (default auto)]))
+AS_IF([test "${enable_ultrahdr}" != "no"], [
+  PKG_CHECK_MODULES([ULTRAHDR], [libuhdr], [
+    VLC_ADD_PLUGIN([ultrahdr])
+    VLC_ADD_CFLAGS([ultrahdr], [${ULTRAHDR_CFLAGS}])
+    VLC_ADD_LIBS([ultrahdr], [${ULTRAHDR_LIBS}])
+    dnl Also link demux/image for detection when available
+    VLC_ADD_CFLAGS([image], [${ULTRAHDR_CFLAGS}])
+    VLC_ADD_LIBS([image], [${ULTRAHDR_LIBS}])
+  ], [
+    AC_MSG_WARN([libuhdr not found; UltraHDR decoding/detection disabled])
+  ])
+])
+
+dnl
 dnl  BPG decoder module
 dnl
 AC_ARG_ENABLE([bpg],

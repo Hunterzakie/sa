@@ -204,7 +204,7 @@ vlc_modules += {
 # Image demux
 vlc_modules += {
     'name' : 'image',
-    'sources' : files('image.c')
+    'sources' : files('image.c'),
 }
 
 # STL demux

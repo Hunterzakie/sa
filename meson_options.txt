@@ -504,6 +504,11 @@ option('jpeg',
     value : 'auto',
     description : 'JPEG support')
 
+option('ultrahdr',
+    type : 'feature',
+    value : 'auto',
+    description : 'UltraHDR image codec support')
+
 option('bpg',
     type : 'feature',
     value : 'disabled',
