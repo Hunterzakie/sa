@@ -35,9 +35,15 @@ struct WindowEffectsModule
     module_t *p_module = nullptr;
     void *p_sys = nullptr;
 
+    // NOTE: For optimization purposes, if the module does not
+    //       support applying effects in a partial area, such
+    //       as with the `Win32WindowEffects` module, you may
+    //       choose to not spend time on calculating the region:
+    bool (*supportsPartialArea)(WindowEffectsModule& obj, Effect effect);
+
     bool (*isEffectAvailable)(WindowEffectsModule& obj, const QWindow* window, Effect effect);
 
-    // NOTE: Region is not guaranteed to be respected.
+    // NOTE: Region is not guaranteed to be respected, see `supportsPartialArea()`.
     // WARNING: Care must be taken for Qt library ABI compatibility.
     //          For example, KWindowSystem may be built with Qt that are not
     //          binary compatible with the version the application uses.

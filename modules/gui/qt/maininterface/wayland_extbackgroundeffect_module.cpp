@@ -100,6 +100,12 @@ inline size_t qHash(const QRegion &key, size_t seed)
     return qHashRangeCommutative(rects.cbegin(), rects.cend(), seed);
 }
 
+static bool SupportsPartialArea(WindowEffectsModule&, WindowEffectsModule::Effect effect)
+{
+    Q_UNUSED(effect);
+    return true;
+}
+
 static void ext_background_effect_manager_capabilities_cb(void *data,
                                                           struct ext_background_effect_manager_v1 *,
                                                           uint32_t flags)
@@ -470,6 +476,7 @@ static int Open(vlc_object_t* const p_this) try
 
     obj->setBlurBehind = SetBlurBehind;
     obj->isEffectAvailable = IsEffectAvailable;
+    obj->supportsPartialArea = SupportsPartialArea;
 
     obj->p_sys = sys;
 

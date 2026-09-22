@@ -23,6 +23,12 @@
 
 #include <KWindowEffects>
 
+static bool SupportsPartialArea(WindowEffectsModule&, WindowEffectsModule::Effect effect)
+{
+    Q_UNUSED(effect);
+    return true;
+}
+
 static bool isEffectAvailable(WindowEffectsModule&, const QWindow*, const WindowEffectsModule::Effect effect)
 {
     KWindowEffects::Effect kWindowEffect;
@@ -61,6 +67,7 @@ static int Open(vlc_object_t* const p_this)
 
     obj->setBlurBehind = setBlurBehind;
     obj->isEffectAvailable = isEffectAvailable;
+    obj->supportsPartialArea = SupportsPartialArea;
 
     return VLC_SUCCESS;
 }

@@ -347,6 +347,8 @@ void CompositorVideo::adjustBlurBehind()
                 QRegion blurRegion;
                 const auto margin = m_mainCtx->windowExtendedMargin();
 
+                static const bool effectSupportsPartialArea = (m_windowEffectsModule->supportsPartialArea(*m_windowEffectsModule, WindowEffectsModule::BlurBehind));
+                if (effectSupportsPartialArea)
                 {
                     if (margin > 0)
                     {

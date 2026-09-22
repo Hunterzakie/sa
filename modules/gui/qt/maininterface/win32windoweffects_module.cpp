@@ -27,6 +27,12 @@
 #include <dwmapi.h>
 #include <winuser.h>
 
+static bool SupportsPartialArea(WindowEffectsModule&, WindowEffectsModule::Effect effect)
+{
+    Q_UNUSED(effect);
+    return false;
+}
+
 static bool isEffectAvailable(WindowEffectsModule&, const QWindow* window, const WindowEffectsModule::Effect effect)
 {
     // Version check is done on module open, no need to re-do it here.
@@ -97,6 +103,7 @@ int QtWin32WindowEffectsOpen(vlc_object_t* p_this)
 
     obj->setBlurBehind = setBlurBehind;
     obj->isEffectAvailable = isEffectAvailable;
+    obj->supportsPartialArea = SupportsPartialArea;
 
     return VLC_SUCCESS;
 }
