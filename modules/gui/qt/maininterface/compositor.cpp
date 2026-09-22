@@ -477,6 +477,7 @@ bool CompositorVideo::setBlurBehind(QWindow *window, const bool enable)
         return false;
 
     m_mainCtx->setHasAcrylicSurface(enable);
+    m_mainCtx->setAcrylicSurfaceRequiresOpacityLayer(m_windowEffectsModule->blurBehindRequiresOpacityLayer(*m_windowEffectsModule));
 
     if (m_mainCtx->windowSuportExtendedFrame())
     {

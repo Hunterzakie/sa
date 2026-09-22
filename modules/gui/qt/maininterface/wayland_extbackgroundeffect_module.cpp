@@ -106,6 +106,15 @@ static bool SupportsPartialArea(WindowEffectsModule&, WindowEffectsModule::Effec
     return true;
 }
 
+static bool BlurBehindRequiresOpacityLayer(WindowEffectsModule&)
+{
+    static const auto ret = []() {
+        return qEnvironmentVariable("XDG_SESSION_DESKTOP") == QLatin1String("GNOME");
+    }();
+
+    return ret;
+}
+
 static void ext_background_effect_manager_capabilities_cb(void *data,
                                                           struct ext_background_effect_manager_v1 *,
                                                           uint32_t flags)
@@ -477,6 +486,7 @@ static int Open(vlc_object_t* const p_this) try
     obj->setBlurBehind = SetBlurBehind;
     obj->isEffectAvailable = IsEffectAvailable;
     obj->supportsPartialArea = SupportsPartialArea;
+    obj->blurBehindRequiresOpacityLayer = BlurBehindRequiresOpacityLayer;
 
     obj->p_sys = sys;
 

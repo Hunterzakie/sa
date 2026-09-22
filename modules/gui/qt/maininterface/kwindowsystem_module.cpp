@@ -29,6 +29,11 @@ static bool SupportsPartialArea(WindowEffectsModule&, WindowEffectsModule::Effec
     return true;
 }
 
+static bool BlurBehindRequiresOpacityLayer(WindowEffectsModule&)
+{
+    return false;
+}
+
 static bool isEffectAvailable(WindowEffectsModule&, const QWindow*, const WindowEffectsModule::Effect effect)
 {
     KWindowEffects::Effect kWindowEffect;
@@ -68,6 +73,7 @@ static int Open(vlc_object_t* const p_this)
     obj->setBlurBehind = setBlurBehind;
     obj->isEffectAvailable = isEffectAvailable;
     obj->supportsPartialArea = SupportsPartialArea;
+    obj->blurBehindRequiresOpacityLayer = BlurBehindRequiresOpacityLayer;
 
     return VLC_SUCCESS;
 }

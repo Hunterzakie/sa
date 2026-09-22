@@ -25,7 +25,9 @@ import VLC.MainInterface
 Item {
     id: root
 
-    property real uiTransluency: (enabled && MainCtx.intfMainWindow.active) ? 1 : 0
+    property real uiTransluency: (enabled && MainCtx.intfMainWindow.active) ? (MainCtx.acrylicSurfaceRequiresOpacityLayer ? 0.4
+                                                                                                                          : 1.0)
+                                                                            : 0.0
 
     enabled: MainCtx.hasAcrylicSurface
 

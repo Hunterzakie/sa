@@ -50,6 +50,9 @@ struct WindowEffectsModule
     // WARNING: It is not permitted to call `setBlurBehind()` if `isEffectAvailable()` returned
     //          false for `Effect::BlurBehind` effect.
     void (*setBlurBehind)(WindowEffectsModule& obj, QWindow* window, bool enable, const QRegion& region);
+
+    // NOTE: Returns true if you should not place controls directly on top of the effect:
+    bool (*blurBehindRequiresOpacityLayer)(WindowEffectsModule& obj);
 };
 
 #endif // WINDOWEFFECTSMODULE_HPP
