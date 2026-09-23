@@ -529,7 +529,7 @@ T.ProgressBar {
                 },
                 State {
                     name: "playing from buffer"
-                    when: control.visible && !bufferRect.display
+                    when: control.visible && bufferRect.buffering && !bufferRect.display
                     PropertyChanges {
                         target: bufferRect
                         width: Player.buffering * parent.width
