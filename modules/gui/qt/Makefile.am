@@ -1553,7 +1553,7 @@ shaders/shaders.deps: Makefile
 	    echo "$$s.qsb: $(srcdir)/$$s"; \
 	  done; \
 	} > $@.tmp && \
-	if cmp -s $@.tmp $@; then rm -f $@.tmp; else mv $@.tmp $@; fi
+	mv $@.tmp $@
 
 BUILT_SOURCES += shaders/shaders.deps
 CLEANFILES    += shaders/shaders.deps
@@ -1582,7 +1582,7 @@ $(QML_RULES_DEPS): Makefile
 	  echo '$(@D)/qmlassets.cpp: $$(libqml_module_$(@D)_a_QML) $$(libqml_module_$(@D)_a_Singleton_QML)'; \
 	  echo '$$(libqml_module_$(@D)_a_QML:.qml=.cpp) $$(libqml_module_$(@D)_a_Singleton_QML:.qml=.cpp): $$(builddir)/$(@D)/res.qrc'; \
 	} > $@.tmp && \
-	if cmp -s $@.tmp $@; then rm -f $@.tmp; else mv $@.tmp $@; fi
+	mv $@.tmp $@
 
 BUILT_SOURCES += $(QML_RULES_DEPS)
 CLEANFILES += $(QML_RULES_DEPS)
