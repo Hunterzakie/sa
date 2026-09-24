@@ -27,6 +27,7 @@
 
 #include "IDownloadRateObserver.h"
 #include "../SegmentTracker.hpp"
+#include <vlc_threads.h>
 
 namespace adaptive
 {
@@ -53,6 +54,7 @@ namespace adaptive
                                                                     vlc_tick_t, vlc_tick_t) override;
                 void                        trackerEvent           (const TrackerEvent &) override {}
                 void                        setMaxDeviceResolution (int, int);
+                void                        setPlaybackRate        (float);
 
                 enum class LogicType
                 {
@@ -66,9 +68,15 @@ namespace adaptive
                 };
 
             protected:
+                size_t                      getUsableBandwidth (size_t) const;
+                vlc_tick_t                  getPlaybackDuration(vlc_tick_t) const;
                 vlc_object_t *p_obj;
                 int maxwidth;
                 int maxheight;
+
+            private:
+                float playbackRate;
+                mutable vlc_mutex_t rateLock;
         };
     }
 }

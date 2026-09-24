@@ -125,6 +125,7 @@ namespace adaptive
             {
                 TimestampSynchronizationPoint pcr_syncpoint;
                 Times times, firsttimes;
+                float rate;
                 mutable vlc_mutex_t lock;
                 vlc_cond_t  cond;
             } demux;

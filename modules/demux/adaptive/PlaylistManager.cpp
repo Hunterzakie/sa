@@ -74,6 +74,7 @@ PlaylistManager::PlaylistManager( demux_t *p_demux_,
     b_preparsing = false;
     nextPlaylistupdate = 0;
     demux.pcr_syncpoint = TimestampSynchronizationPoint::RandomAccess;
+    demux.rate = 1.0;
     vlc_mutex_init(&demux.lock);
     vlc_cond_init(&demux.cond);
     vlc_mutex_init(&cached.lock);
@@ -446,6 +447,12 @@ bool PlaylistManager::reactivateStream(AbstractStream *stream)
 }
 
 #define DEMUX_INCREMENT VLC_TICK_FROM_MS(50)
+
+static inline vlc_tick_t scaledDuration(vlc_tick_t duration, float rate)
+{
+    return duration * rate;
+}
+
 int PlaylistManager::demux_callback(demux_t *p_demux)
 {
     PlaylistManager *manager = reinterpret_cast<PlaylistManager *>(p_demux->p_sys);
@@ -556,6 +563,25 @@ int PlaylistManager::doControl(int i_query, va_list args)
         case DEMUX_CAN_CONTROL_PACE:
             *(va_arg (args, bool *)) = true;
             break;
+
+        case DEMUX_NOTIFY_RATE:
+        {
+            const float newRate = va_arg(args, double);
+
+            logic->setPlaybackRate(newRate);
+
+            vlc_mutex_lock(&demux.lock);
+            demux.rate = newRate;
+            vlc_cond_signal(&demux.cond);
+            vlc_mutex_unlock(&demux.lock);
+
+            lock.lock();
+            waitcond.signal();
+            lock.unlock();
+
+            msg_Dbg(p_demux, "adaptive playback rate changed to %.3f", newRate);
+            break;
+        }
 
         case DEMUX_CAN_PAUSE:
         {
@@ -726,10 +752,27 @@ void PlaylistManager::Run()
 
         vlc_mutex_lock(&demux.lock);
         Times pcr = demux.times;
+        float rate = demux.rate;
         vlc_mutex_unlock(&demux.lock);
 
-        AbstractStream::BufferingStatus i_return = bufferize(pcr, i_min_buffering,
-                                                             i_max_buffering, i_target_buffering);
+        vlc_tick_t i_scaled_min_buffering = i_min_buffering;
+        vlc_tick_t i_scaled_target_buffering = i_target_buffering;
+        if(rate > 1.0)
+        {
+            /* increase the min/target requirements to help dealing with the increased rate */
+            i_scaled_target_buffering = std::min(scaledDuration(i_scaled_target_buffering, rate), i_max_buffering);
+            i_scaled_min_buffering = std::min(scaledDuration(i_scaled_min_buffering, rate), i_scaled_target_buffering);
+        }
+        else
+        {
+            /* we don't touch min/max limits */
+            i_scaled_target_buffering = std::max(scaledDuration(i_target_buffering, rate), i_min_buffering);
+        }
+
+        AbstractStream::BufferingStatus i_return = bufferize(pcr,
+                                                             i_scaled_min_buffering,
+                                                             i_max_buffering,
+                                                             i_scaled_target_buffering);
 
         if(i_return != AbstractStream::BufferingStatus::Lessthanmin)
         {

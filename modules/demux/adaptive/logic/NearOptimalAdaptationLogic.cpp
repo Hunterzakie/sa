@@ -30,6 +30,7 @@
 #include "../tools/Debug.hpp"
 
 #include <cmath>
+#include <limits>
 
 using namespace adaptive::logic;
 using namespace adaptive;
@@ -108,7 +109,9 @@ BaseRepresentation *NearOptimalAdaptationLogic::getNextRepresentation(BaseAdapta
     }
     NearOptimalContext ctxcopy = (*it).second;
 
-    const unsigned bps = getAvailableBw(currentBps, prevRep);
+    const size_t usableBps = getUsableBandwidth(currentBps);
+    const unsigned bps =
+            getAvailableBw(std::min<size_t>(usableBps, std::numeric_limits<unsigned>::max()), prevRep);
 
     vlc_mutex_unlock(&lock);
 
@@ -253,8 +256,8 @@ void NearOptimalAdaptationLogic::trackerEvent(const TrackerEvent &ev)
             const ID &id = *event.id;
             vlc_mutex_locker locker(&lock);
             NearOptimalContext &ctx = streams[id];
-            ctx.buffering_level = event.current;
-            ctx.buffering_target = event.target;
+            ctx.buffering_level = getPlaybackDuration(event.current);
+            ctx.buffering_target = getPlaybackDuration(event.target);
         }
         break;
 
