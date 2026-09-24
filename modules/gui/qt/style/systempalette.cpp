@@ -547,11 +547,13 @@ void SystemPalette::makeLightPalette()
         C::ColorSet CS = C::ToolButton;
         setColor(CS, C::Bg, C::Primary, C::Normal, Qt::transparent);
         setColor(CS, C::Bg, C::Primary, C::Hovered, setColorAlpha(Qt::black, 0.08));
+        setColor(CS, C::Bg, C::Primary, C::Pressed, setColorAlpha(Qt::black, 0.15));
         setColor(CS, C::Bg, C::Secondary, C::Normal, lightGrey400);
 
         setColor(CS, C::Fg, C::Primary, C::Normal, setColorAlpha(Qt::black, 0.6));
         setColor(CS, C::Fg, C::Primary, C::Focused, Qt::black);
         setColor(CS, C::Fg, C::Primary, C::Hovered, Qt::black);
+        setColor(CS, C::Fg, C::Primary, C::Pressed, Qt::black);
         setColor(CS, C::Fg, C::Primary, C::Disabled, setColorAlpha(Qt::black, 0.2));
         setColor(CS, C::Fg, C::Secondary, C::Normal, Qt::black);
 
@@ -761,11 +763,13 @@ void SystemPalette::makeDarkPalette()
         C::ColorSet CS = C::ToolButton;
         setColor(CS, C::Bg, C::Primary, C::Normal, setColorAlpha(darkGrey800, 0.0));
         setColor(CS, C::Bg, C::Primary, C::Hovered, darkGrey800);
+        setColor(CS, C::Bg, C::Primary, C::Pressed, darkGrey100);
         setColor(CS, C::Bg, C::Secondary, C::Normal, Qt::black);
 
         setColor(CS, C::Fg, C::Primary, C::Normal, setColorAlpha(Qt::white, 0.6));
         setColor(CS, C::Fg, C::Primary, C::Focused, Qt::white);
         setColor(CS, C::Fg, C::Primary, C::Hovered, Qt::white);
+        setColor(CS, C::Fg, C::Primary, C::Pressed, Qt::white);
         setColor(CS, C::Fg, C::Primary, C::Disabled, setColorAlpha(Qt::white, 0.2));
         setColor(CS, C::Fg, C::Secondary, C::Normal, Qt::white);
 
