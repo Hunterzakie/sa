@@ -64,8 +64,6 @@ struct priv
     struct
     {
         EGLDisplay display;
-        EGLDisplay (*getCurrentDisplay)(void);
-        const char *(*queryString)(EGLDisplay, EGLint);
         EGLImage (*createImageKHR)(EGLDisplay, EGLContext, EGLenum target, EGLClientBuffer buffer,
                 const EGLint *attrib_list);
         void (*destroyImageKHR)(EGLDisplay, EGLImage image);
@@ -508,21 +506,19 @@ Open(struct vlc_gl_interop *interop)
     if (vaegl_init_fourcc(priv, va_fourcc))
         goto error;
 
-    priv->egl.getCurrentDisplay = vlc_gl_GetProcAddress(interop->gl, "eglGetCurrentDisplay");
-    if (priv->egl.getCurrentDisplay == EGL_NO_DISPLAY)
-        goto error;
-
-    priv->egl.display = priv->egl.getCurrentDisplay();
+    priv->egl.display = eglGetCurrentDisplay();
     if (priv->egl.display == EGL_NO_DISPLAY)
         goto error;
 
-    priv->egl.queryString = vlc_gl_GetProcAddress(interop->gl, "eglQueryString");
-    if (priv->egl.queryString == NULL)
+    /* EGL_EXT_image_dma_buf_import implies EGL_KHR_image_base */
+    const char *eglexts = eglQueryString(priv->egl.display, EGL_EXTENSIONS);
+    if (eglexts == NULL || !vlc_gl_StrHasToken(eglexts, "EGL_EXT_image_dma_buf_import"))
         goto error;
 
-    /* EGL_EXT_image_dma_buf_import implies EGL_KHR_image_base */
-    const char *eglexts = priv->egl.queryString(priv->egl.display, EGL_EXTENSIONS);
-    if (eglexts == NULL || !vlc_gl_StrHasToken(eglexts, "EGL_EXT_image_dma_buf_import"))
+    /* EGL_KHR_get_all_proc_addresses is required to load EGL extension
+     * functions through vlc_gl_GetProcAddress. Without this extension,
+     * the function pointers may be invalid. */
+    if (!vlc_gl_StrHasToken(eglexts, "EGL_KHR_get_all_proc_addresses"))
         goto error;
 
     priv->egl.createImageKHR =

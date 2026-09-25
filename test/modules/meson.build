@@ -198,6 +198,19 @@ vlc_tests += {
 }
 
 vlc_tests += {
+    'name' : 'test_modules_video_output_opengl_interop_vaapi',
+    'sources' : files(
+        'video_output/opengl/interop_vaapi.c',
+        '../../modules/video_output/opengl/interop.c',
+        '../../modules/video_output/opengl/interop.h'),
+    'suite' : ['modules', 'test_modules'],
+    'link_with' : [libvlc, libvlccore],
+    'module_depends' : vlc_plugins_targets.keys(),
+    'enabled' : opengl_dep.found(),
+    'wrapper' : xvfb_run,
+}
+
+vlc_tests += {
     'name' : 'test_modules_video_output_opengl_es2_filters',
     'sources' : files(
         'video_output/opengl/filters.c',

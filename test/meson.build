@@ -1,3 +1,6 @@
+# Find common test wrapper programs
+xvfb_run = find_program('xvfb-run', required: false)
+
 subdir('src')
 subdir('modules')
 subdir('libvlc')

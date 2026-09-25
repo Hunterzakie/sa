@@ -164,8 +164,8 @@ libglinterop_gst_mem_plugin_la_LIBADD = $(GST_VIDEO_LIBS) $(GST_APP_LIBS)
 libglinterop_vaapi_plugin_la_SOURCES = video_output/opengl/interop_vaapi.c \
 	video_output/opengl/interop.h \
 	hw/vaapi/vlc_vaapi.c hw/vaapi/vlc_vaapi.h
-libglinterop_vaapi_plugin_la_CFLAGS = $(AM_CFLAGS) $(GL_CFLAGS)
-libglinterop_vaapi_plugin_la_LIBADD = $(LIBVA_LIBS) $(LIBVA_EGL_LIBS)
+libglinterop_vaapi_plugin_la_CFLAGS = $(AM_CFLAGS) $(GL_CFLAGS) $(EGL_CFLAGS)
+libglinterop_vaapi_plugin_la_LIBADD = $(LIBVA_LIBS) $(LIBVA_EGL_LIBS) $(EGL_LIBS)
 
 libglinterop_vdpau_plugin_la_SOURCES = video_output/opengl/interop_vdpau.c \
 	video_output/opengl/interop.h hw/vdpau/picture.c hw/vdpau/vlc_vdpau.h
