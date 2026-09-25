@@ -166,8 +166,11 @@ int OpenCommonDvdread( vlc_object_t *p_this , dvd_type_t type,
         case DVD_A:
             p_dvdread = DVDOpenAudio( p_demux, &cbs, psz_path );
             break;
-#ifndef DVDREAD_HAS_DVDVIDEORECORDING
         case DVD_VR:
+#ifdef DVDREAD_HAS_DVDVIDEORECORDING
+            p_dvdread = DVDOpenVideoRecording( p_demux, &cbs, psz_path );
+            break;
+#else
             msg_Err( p_demux, "Version of libdvdread does not support DVD-VideoRecording" );
             free( psz_file );
             return VLC_EGENERIC;
