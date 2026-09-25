@@ -41,11 +41,9 @@ static uint32_t DvdVRVobuSector( const vobu_map_t *map, uint32_t vobu )
     return sector;
 }
 
-/* estimated sector span of a vr program's vobu map
+/* sector span of a vr program's vobu map
  * dvd-vr has no flat vobu address map like VOBU_ADMAP in dvd-video
- * instead time_info entries store vobu_adr as sector offset and vobu_entn
- * as vobu index so the last entry gives a sectors-per-vobu ratio
- * falls back to a per-program or constant ratio when no usable entries exist
+ * so the span is the sum of the vobu sizes
  * returns 0 when the map has no VOBUs */
 uint32_t DvdVRGetProgramSectorSpan( const demux_sys_t *p_sys,
                                     const vobu_map_t *map )
@@ -685,7 +683,7 @@ static void DvdVRReadDemuxTitles( demux_t *p_demux, int *pi_angle )
                 cell->m_vobi_srpn > p_sys->pgc_gi->nr_of_programs )
                 break;
             const pgi_t *pgi = &p_sys->pgc_gi->pgi[cell->m_vobi_srpn - 1];
-            /* ep_ptm disc-global, subtract title start for relative offset */
+            /* ep_ptm is per vob, subtract its vob start for relative offset */
             const vlc_tick_t title_base =
                 FROM_SCALE_NZ( pgi->header.vob_v_s_ptm.ptm ) - cell_start;
             cell_start += DvdVRProgramDuration( pgi );
