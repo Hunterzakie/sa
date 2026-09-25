@@ -229,7 +229,6 @@ int OpenCommonDvdread( vlc_object_t *p_this , dvd_type_t type,
         DVDClose( p_dvdread );
         return VLC_EGENERIC;
     }
-    msg_Dbg( p_demux, "%s opened", ( type == DVD_V ? "VMG" : type == DVD_VR ? "RTAV_VMGI" : "AMG" ) );
 
     /* Fill p_demux field */
     DEMUX_INIT_COMMON(); p_sys = p_demux->p_sys;
@@ -276,6 +275,7 @@ int OpenCommonDvdread( vlc_object_t *p_this , dvd_type_t type,
 #else
     p_sys->type = type;
 #endif
+    msg_Dbg( p_demux, "%s opened", ( p_sys->type == DVD_V ? "VMG" : p_sys->type == DVD_VR ? "RTAV_VMGI" : "AMG" ) );
     DvdReadSetOps( p_sys, video_ops );
     if( unlikely( p_sys->ops == NULL ) )
     {
