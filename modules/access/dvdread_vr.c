@@ -67,6 +67,20 @@ uint32_t DvdVRGetProgramSectorSpan( const demux_sys_t *p_sys,
     return map->nr_of_vobu_info * sects_per_vobu;
 }
 
+static bool DvdVRTitleFirstCell( const ud_pgcit_t *ud_pgcit, int i_title,
+                                 uint16_t *p_first_cell )
+{
+    uint32_t cell = 0;
+    for( int i = 0; i < i_title; i++ )
+        cell += ud_pgcit->ud_pgci_items[i].nr_of_programs;
+    if( ud_pgcit->ud_pgci_items[i_title].nr_of_programs == 0 ||
+        cell + ud_pgcit->ud_pgci_items[i_title].nr_of_programs >
+        ud_pgcit->total_nr_of_programs )
+        return false;
+    *p_first_cell = cell;
+    return true;
+}
+
 static vlc_tick_t DvdVRProgramDuration( const pgi_t *pgi )
 {
     if( pgi->header.vob_v_e_ptm.ptm <= pgi->header.vob_v_s_ptm.ptm )
@@ -156,18 +170,16 @@ static int DvdVRReadSetArea( demux_t *p_demux, int i_title, int i_chapter,
             return VLC_EGENERIC;
         }
 
-        uint16_t fpid = p_sys->ud_pgcit->ud_pgci_items[i_title].first_prog_id;
-        if( fpid == 0 || fpid == 0xFFFF
-            || fpid > p_sys->pgc_gi->nr_of_programs )
+        uint16_t first_cell;
+        if( !DvdVRTitleFirstCell( p_sys->ud_pgcit, i_title, &first_cell ) )
         {
-            msg_Warn( p_demux, "invalid first_prog_id %u for title %d",
-                      fpid, i_title );
+            msg_Warn( p_demux, "invalid cells for title %d", i_title );
             return VLC_EGENERIC;
         }
-        i_start_cell = p_sys->i_title_start_cell = fpid - 1;
+        i_start_cell = p_sys->i_title_start_cell = first_cell;
 
         p_sys->i_cur_cell = i_start_cell;
-        i_end_cell = p_sys->i_title_end_cell = p_sys->ud_pgcit->ud_pgci_items[i_title].first_prog_id - 1 +
+        i_end_cell = p_sys->i_title_end_cell = first_cell +
            p_sys->ud_pgcit->ud_pgci_items[i_title].nr_of_programs;
 
         if( i_end_cell > p_sys->pgc_gi->nr_of_programs )
@@ -384,7 +396,7 @@ static void DvdVRFindCell( demux_t *p_demux )
 
     /* see if we've reached the next entry point */
     ud_pgci_t *psi = &p_sys->ud_pgcit->ud_pgci_items[p_sys->i_title];
-    int cell_base = psi->first_prog_id - 1;
+    int cell_base = p_sys->i_title_start_cell;
 
     for( int i = 0; i < psi->nr_of_programs; i++ )
     {
@@ -420,17 +432,16 @@ static vlc_tick_t DVDVRGetTitleLength( pgc_gi_t *pgc_gi, ud_pgcit_t *ud_pgcit, i
         return 0;
 
     uint64_t length_ptm = 0;
-    uint16_t first_prog_id = ud_pgcit->ud_pgci_items[program].first_prog_id;
+    uint16_t first_cell;
     uint16_t nr_of_programs = ud_pgcit->ud_pgci_items[program].nr_of_programs;
 
-    if( first_prog_id == 0 || first_prog_id > pgc_gi->nr_of_programs ||
-        nr_of_programs == 0 ||
-        first_prog_id - 1 + nr_of_programs > pgc_gi->nr_of_programs )
+    if( !DvdVRTitleFirstCell( ud_pgcit, program, &first_cell ) ||
+        first_cell + nr_of_programs > pgc_gi->nr_of_programs )
         return 0;
 
     for ( int i = 0; i < nr_of_programs; i++ )
-        length_ptm += pgc_gi->pgi[first_prog_id -1 + i].header.vob_v_e_ptm.ptm
-            - pgc_gi->pgi[first_prog_id -1 + i].header.vob_v_s_ptm.ptm;
+        length_ptm += pgc_gi->pgi[first_cell + i].header.vob_v_e_ptm.ptm
+            - pgc_gi->pgi[first_cell + i].header.vob_v_s_ptm.ptm;
 
     return FROM_SCALE_NZ( length_ptm );
 }
@@ -442,7 +453,7 @@ static int DvdVRReadSeek( demux_t *p_demux, uint32_t i_block_offset )
     uint32_t vobu_accum = 0;
     bool found_cell = false;
 
-    int cell_base = p_sys->ud_pgcit->ud_pgci_items[p_sys->i_title].first_prog_id - 1;
+    int cell_base = p_sys->i_title_start_cell;
     int nr = p_sys->ud_pgcit->ud_pgci_items[p_sys->i_title].nr_of_programs;
 
     for( int c = 0; c < nr; c++ )
@@ -643,12 +654,12 @@ static void DvdVRReadDemuxTitles( demux_t *p_demux, int *pi_angle )
     for( int i = 0; i < i_titles; i++ )
     {
         int32_t i_chapters = 0;
-        uint16_t fpid = p_sys->ud_pgcit->ud_pgci_items[i].first_prog_id;
-        if( fpid == 0 || fpid == 0xFFFF || fpid > p_sys->pgc_gi->nr_of_programs )
+        uint16_t first_cell;
+        if( !DvdVRTitleFirstCell( p_sys->ud_pgcit, i, &first_cell ) )
             continue;
 
         /* chapters are entry points across all cells */
-        int cell_base = fpid - 1;
+        int cell_base = first_cell;
         int nr = p_sys->ud_pgcit->ud_pgci_items[i].nr_of_programs;
         for( int c = 0; c < nr; c++ )
         {
