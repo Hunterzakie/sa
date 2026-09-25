@@ -660,11 +660,6 @@ static void DvdVRReadDemuxTitles( demux_t *p_demux, int *pi_angle )
         if( unlikely( !t ) )
             return;
 
-        /* ep_ptm disc-global, subtract title start for relative offset */
-        vlc_tick_t title_base = 0;
-        if( nr > 0 )
-            title_base = FROM_SCALE_NZ( p_sys->ud_pgcit->m_c_gi[cell_base].c_v_s_ptm.ptm );
-
         char *converted_title = FromCharset(
             disc_charset,
             p_sys->ud_pgcit->ud_pgci_items[i].title,
@@ -682,9 +677,19 @@ static void DvdVRReadDemuxTitles( demux_t *p_demux, int *pi_angle )
         t->i_length = DVDVRGetTitleLength( p_sys->pgc_gi, p_sys->ud_pgcit, i );
 
         /* create one seekpoint per entry point */
+        vlc_tick_t cell_start = 0;
         for( int c = 0; c < nr; c++ )
         {
             m_c_gi_t *cell = &p_sys->ud_pgcit->m_c_gi[cell_base + c];
+            if( cell->m_vobi_srpn == 0 ||
+                cell->m_vobi_srpn > p_sys->pgc_gi->nr_of_programs )
+                break;
+            const pgi_t *pgi = &p_sys->pgc_gi->pgi[cell->m_vobi_srpn - 1];
+            /* ep_ptm disc-global, subtract title start for relative offset */
+            const vlc_tick_t title_base =
+                FROM_SCALE_NZ( pgi->header.vob_v_s_ptm.ptm ) - cell_start;
+            cell_start += DvdVRProgramDuration( pgi );
+
             if( cell->c_epi_n > 0 )
             {
                 for( int ep = 0; ep < cell->c_epi_n; ep++ )
