@@ -726,9 +726,9 @@ static int Demux( demux_t *p_demux )
         while( k < p_sys->i_titles &&
                p_sys->ops->set_area( p_demux, ++k, 0, -1 ) != VLC_SUCCESS )
         {
-            msg_Err(p_demux, "Failed next title, trying another: %i", k );
             if( k >= p_sys->i_titles )
                 return 0; // EOF
+            msg_Err(p_demux, "Failed next title, trying another: %i", k );
         }
     }
 
