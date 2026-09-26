@@ -107,6 +107,8 @@ T.Pane {
 
             text: qsTr("See All")
 
+            underlineOnHover: true
+
             font.pixelSize: VLCStyle.fontSize_large
 
             Navigation.parentItem: root
