@@ -279,6 +279,13 @@ static int updatePalette(vlc_qt_theme_provider_t* obj)
         setQtColor(obj, CS, VQTC_SECTION_BG, VQTC_NAME_PRIMARY, VQTC_STATE_NORMAL, buttonBgNormal);
         setQtColor(obj, CS, VQTC_SECTION_BG, VQTC_NAME_PRIMARY, VQTC_STATE_DISABLED, buttonBgNormal);
 
+        QColor toolButtonHover(sys->m_isDark ? Qt::white : Qt::black);
+        toolButtonHover.setAlphaF(0.08);
+        QColor toolButtonPressed(Qt::black);
+        toolButtonPressed.setAlphaF(0.15);
+        setQtColor(obj, CS, VQTC_SECTION_BG, VQTC_NAME_PRIMARY, VQTC_STATE_HOVERED, toolButtonHover);
+        setQtColor(obj, CS, VQTC_SECTION_BG, VQTC_NAME_PRIMARY, VQTC_STATE_PRESSED, toolButtonPressed);
+
         setQtColor(obj, CS, VQTC_SECTION_DECORATION, VQTC_NAME_BORDER, VQTC_STATE_NORMAL, Qt::transparent);
 
         setQtColor(obj, CS, VQTC_SECTION_BG, VQTC_NAME_NEGATIVE, VQTC_STATE_NORMAL, negative);
