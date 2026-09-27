@@ -26,6 +26,7 @@
 #endif
 
 #include <assert.h>
+#include <ctype.h>
 
 #include <vlc_common.h>
 #include <vlc_arrays.h>
@@ -147,19 +148,12 @@ static seekpoint_t * getChapterEntry( unsigned int i_index, chapters_array_t *p_
         unsigned int i_newsize = p_array->i_size;
         while( i_index >= i_newsize ) i_newsize += 50;
 
-        if ( !p_array->pp_chapters )
-        {
-            p_array->pp_chapters = calloc( i_newsize, sizeof( seekpoint_t * ) );
-            if ( !p_array->pp_chapters ) return NULL;
-            p_array->i_size = i_newsize;
-        } else {
-            seekpoint_t **tmp = calloc( i_newsize, sizeof( seekpoint_t * ) );
-            if ( !tmp ) return NULL;
-            memcpy( tmp, p_array->pp_chapters, p_array->i_size * sizeof( seekpoint_t * ) );
-            free( p_array->pp_chapters );
-            p_array->pp_chapters = tmp;
-            p_array->i_size = i_newsize;
-        }
+        seekpoint_t **tmp = vlc_reallocarray( p_array->pp_chapters, i_newsize, sizeof( seekpoint_t * ) );
+        if( !tmp )
+            return NULL;
+        memset( &tmp[p_array->i_size], 0, (i_newsize - p_array->i_size) * sizeof( seekpoint_t * ) );
+        p_array->pp_chapters = tmp;
+        p_array->i_size = i_newsize;
     }
     if ( !p_array->pp_chapters[i_index] )
         p_array->pp_chapters[i_index] = vlc_seekpoint_New();
@@ -323,11 +317,8 @@ static void xiph_ParseCueSheet( unsigned *pi_flags, vlc_meta_t *p_meta,
     }
 }
 
-void vorbis_ParseComment( es_format_t *p_fmt, vlc_meta_t **pp_meta,
-        const uint8_t *p_data, size_t i_data,
-        int *i_attachments, input_attachment_t ***attachments,
-        int *i_cover_score, int *i_cover_idx,
-        int *i_seekpoint, seekpoint_t ***ppp_seekpoint )
+static void vorbis_ParseCommentCB( const uint8_t *p_data, size_t i_data,
+                                   void(*pf)(void *, uint32_t, const uint8_t *), void *priv )
 {
     if( i_data < 8 )
         return;
@@ -347,19 +338,6 @@ void vorbis_ParseComment( es_format_t *p_fmt, vlc_meta_t **pp_meta,
     if( i_comment > i_data || i_comment == 0 )
         return; /* invalid length */
 
-    /* */
-    vlc_meta_t *p_meta = *pp_meta;
-    if( !p_meta )
-        *pp_meta = p_meta = vlc_meta_New();
-
-    if( unlikely( !p_meta ) )
-        return;
-
-    /* */
-    unsigned hasMetaFlags = 0;
-
-    chapters_array_t chapters_array = { 0, NULL };
-
     for( ; i_comment > 0 && i_data >= 4; i_comment-- )
     {
         uint32_t comment_size = GetDWLE(p_data); RM(4);
@@ -370,172 +348,220 @@ void vorbis_ParseComment( es_format_t *p_fmt, vlc_meta_t **pp_meta,
         if( comment_size == 0 )
             continue;
 
-        char* psz_comment = malloc( comment_size + 1 );
+        pf( priv, comment_size, p_data );
 
-        if( unlikely( !psz_comment ) )
-            goto next_comment;
+        RM( comment_size );
+    }
+#undef RM
+}
 
-        memcpy( psz_comment, p_data, comment_size );
-        psz_comment[comment_size] = '\0';
+struct hander_priv_s
+{
+    es_format_t *p_fmt;
+    vlc_meta_t *p_meta;
+    int *pi_attachments;
+    input_attachment_t ***ppp_attachments;
+    int *pi_cover_score;
+    int *pi_cover_idx;
+    int *pi_seekpoint;
+    seekpoint_t ***ppp_seekpoint;
+    chapters_array_t chapters_array;
+    unsigned hasMetaFlags;
+};
+
+static void MatchComment( struct hander_priv_s *ctx, char *psz_key, char *psz_value )
+{
 
 #define IF_EXTRACT(txt,var) \
-    if( !strncasecmp(psz_comment, txt, strlen(txt)) ) \
+    if( !strcasecmp( psz_key, txt ) ) \
     { \
-        size_t key_length = strlen(txt); \
-        EnsureUTF8( psz_comment + key_length ); \
-        const char *oldval = vlc_meta_Get( p_meta, vlc_meta_ ## var ); \
-        if( oldval && (hasMetaFlags & XIPHMETA_##var)) \
+        const char *oldval = vlc_meta_Get( ctx->p_meta, vlc_meta_ ## var ); \
+        if( oldval && (ctx->hasMetaFlags & XIPHMETA_##var)) \
         { \
             char * newval; \
-            if( asprintf( &newval, "%s,%s", oldval, &psz_comment[key_length] ) == -1 ) \
+            if( asprintf( &newval, "%s,%s", oldval, psz_value ) == -1 ) \
                 newval = NULL; \
-            vlc_meta_Set( p_meta, vlc_meta_ ## var, newval ); \
+            vlc_meta_Set( ctx->p_meta, vlc_meta_ ## var, newval ); \
             free( newval ); \
         } \
         else \
-            vlc_meta_Set( p_meta, vlc_meta_ ## var, &psz_comment[key_length] ); \
-        hasMetaFlags |= XIPHMETA_##var; \
+            vlc_meta_Set( ctx->p_meta, vlc_meta_ ## var, psz_value ); \
+        ctx->hasMetaFlags |= XIPHMETA_##var; \
     }
 
 #define IF_EXTRACT_ONCE_NUMBER(txt,var) \
-    if( !strncasecmp(psz_comment, txt, strlen(txt)) && !(hasMetaFlags & XIPHMETA_##var) ) \
+    if( !strcasecmp( psz_key, txt ) && !(ctx->hasMetaFlags & XIPHMETA_##var) ) \
     { \
         bool isnum = true; \
-        const char *num_str = &psz_comment[strlen(txt)], *c; \
+        const char *num_str = psz_value, *c; \
         for (c = num_str; isnum && *c != '\0'; c++) { \
             isnum = *c >= '0' && *c <= '9'; \
         } \
         if (isnum) \
         { \
-            vlc_meta_Set( p_meta, vlc_meta_ ## var, num_str ); \
-            hasMetaFlags |= XIPHMETA_##var; \
+            vlc_meta_Set( ctx->p_meta, vlc_meta_ ## var, num_str ); \
+            ctx->hasMetaFlags |= XIPHMETA_##var; \
         } \
     }
 
-        IF_EXTRACT("TITLE=", Title )
-        else IF_EXTRACT("ARTIST=", Artist )
-        else IF_EXTRACT("GENRE=", Genre )
-        else IF_EXTRACT("COPYRIGHT=", Copyright )
-        else IF_EXTRACT("ALBUM=", Album )
-        else if( !(hasMetaFlags & XIPHMETA_TrackNum) && !strncasecmp(psz_comment, "TRACKNUMBER=", strlen("TRACKNUMBER=" ) ) )
-        {
-            /* Yeah yeah, such a clever idea, let's put xx/xx inside TRACKNUMBER
-             * Oh, and let's not use TRACKTOTAL or TOTALTRACKS... */
-            short unsigned u_track, u_total;
-            int nb_values = sscanf( &psz_comment[strlen("TRACKNUMBER=")], "%hu/%hu", &u_track, &u_total );
-            if( nb_values >= 1 )
-            {
-                char str[6];
-                snprintf(str, 6, "%u", u_track);
-                vlc_meta_Set( p_meta, vlc_meta_TrackNumber, str );
-                hasMetaFlags |= XIPHMETA_TrackNum;
-                if( nb_values >= 2 )
-                {
-                    snprintf(str, 6, "%u", u_total);
-                    vlc_meta_Set( p_meta, vlc_meta_TrackTotal, str );
-                    hasMetaFlags |= XIPHMETA_TrackTotal;
-                }
-            }
-        }
-        else IF_EXTRACT_ONCE_NUMBER("TRACKTOTAL=", TrackTotal )
-        else IF_EXTRACT_ONCE_NUMBER("TOTALTRACKS=", TrackTotal )
-        else IF_EXTRACT("DESCRIPTION=", Description )
-        else IF_EXTRACT("COMMENT=", Description )
-        else IF_EXTRACT("COMMENTS=", Description )
-        else IF_EXTRACT("RATING=", Rating )
-        else IF_EXTRACT("DATE=", Date )
-        else if( !strncasecmp(psz_comment, "LANGUAGE=", strlen("LANGUAGE=") ) )
-        {
-            IF_EXTRACT("LANGUAGE=",Language)
-            if( p_fmt )
-            {
-                free( p_fmt->psz_language );
-                p_fmt->psz_language = strdup(&psz_comment[strlen("LANGUAGE=")]);
-            }
-        }
-        else IF_EXTRACT("ORGANIZATION=", Publisher )
-        else IF_EXTRACT("ENCODER=", EncodedBy )
-        else if( !strncasecmp( psz_comment, "METADATA_BLOCK_PICTURE=", strlen("METADATA_BLOCK_PICTURE=")))
-        {
-            if( attachments == NULL )
-                goto next_comment;
-
-            uint8_t *p_picture;
-            size_t i_size = vlc_b64_decode_binary( &p_picture, &psz_comment[strlen("METADATA_BLOCK_PICTURE=")]);
-            input_attachment_t *p_attachment = ParseFlacPicture( p_picture,
-                i_size, *i_attachments, i_cover_score, i_cover_idx );
-            free( p_picture );
-            if( p_attachment )
-            {
-                TAB_APPEND_CAST( (input_attachment_t**),
-                    *i_attachments, *attachments, p_attachment );
-            }
-        }
-        else if( !strncasecmp(psz_comment, "CHAPTER", 7) )
-        {
-            unsigned int i_chapt;
-            seekpoint_t *p_seekpoint = NULL;
-
-            for( int i = 0; psz_comment[i] && psz_comment[i] != '='; i++ )
-                if( psz_comment[i] >= 'a' && psz_comment[i] <= 'z' )
-                    psz_comment[i] -= 'a' - 'A';
-
-            if( strstr( psz_comment, "NAME=" ) &&
-                    sscanf( psz_comment, "CHAPTER%uNAME=", &i_chapt ) == 1 )
-            {
-                char *p = strchr( psz_comment, '=' );
-                p_seekpoint = getChapterEntry( i_chapt, &chapters_array );
-                if ( !p || ! p_seekpoint ) goto next_comment;
-                EnsureUTF8( ++p );
-                if ( ! p_seekpoint->psz_name )
-                    p_seekpoint->psz_name = strdup( p );
-            }
-            else if( sscanf( psz_comment, "CHAPTER%u=", &i_chapt ) == 1 )
-            {
-                unsigned int h, m, s, ms;
-                char *p = strchr( psz_comment, '=' );
-                if( p && sscanf( ++p, "%u:%u:%u.%u", &h, &m, &s, &ms ) == 4 )
-                {
-                    p_seekpoint = getChapterEntry( i_chapt, &chapters_array );
-                    if ( ! p_seekpoint ) goto next_comment;
-                    p_seekpoint->i_time_offset = vlc_tick_from_sec(h * 3600 + m * 60 + s) + VLC_TICK_FROM_MS(ms);
-                }
-            }
-        }
-        else if( !strncasecmp(psz_comment, "cuesheet=", 9) )
-        {
-            EnsureUTF8( &psz_comment[9] );
-            xiph_ParseCueSheet( &hasMetaFlags, p_meta, &psz_comment[9], comment_size - 9,
-                                i_seekpoint, ppp_seekpoint );
-        }
-        else if( strchr( psz_comment, '=' ) )
-        {
-            /* generic (PERFORMER/LICENSE/ORGANIZATION/LOCATION/CONTACT/ISRC,
-             * undocumented tags and replay gain ) */
-            char *p = strchr( psz_comment, '=' );
-            *p++ = '\0';
-            EnsureUTF8( p );
-
-            for( int i = 0; psz_comment[i]; i++ )
-                if( psz_comment[i] >= 'a' && psz_comment[i] <= 'z' )
-                    psz_comment[i] -= 'a' - 'A';
-
-            vlc_meta_SetExtra( p_meta, psz_comment, p );
-        }
-#undef IF_EXTRACT
-next_comment:
-        free( psz_comment );
-        RM( comment_size );
-    }
-#undef RM
-
-    for ( unsigned int i=0; i<chapters_array.i_size; i++ )
+    IF_EXTRACT("TITLE", Title )
+    else IF_EXTRACT("ARTIST", Artist )
+    else IF_EXTRACT("GENRE", Genre )
+    else IF_EXTRACT("COPYRIGHT", Copyright )
+    else IF_EXTRACT("ALBUM", Album )
+    else if( !(ctx->hasMetaFlags & XIPHMETA_TrackNum) && !strcasecmp(psz_key, "TRACKNUMBER") )
     {
-        if ( !chapters_array.pp_chapters[i] ) continue;
-        TAB_APPEND_CAST( (seekpoint_t**), *i_seekpoint, *ppp_seekpoint,
-                         chapters_array.pp_chapters[i] );
+        /* Yeah yeah, such a clever idea, let's put xx/xx inside TRACKNUMBER
+             * Oh, and let's not use TRACKTOTAL or TOTALTRACKS... */
+        short unsigned u_track, u_total;
+        int nb_values = sscanf( psz_value, "%hu/%hu", &u_track, &u_total );
+        if( nb_values >= 1 )
+        {
+            char str[6];
+            snprintf(str, 6, "%u", u_track);
+            vlc_meta_Set( ctx->p_meta, vlc_meta_TrackNumber, str );
+            ctx->hasMetaFlags |= XIPHMETA_TrackNum;
+            if( nb_values >= 2 )
+            {
+                snprintf(str, 6, "%u", u_total);
+                vlc_meta_Set( ctx->p_meta, vlc_meta_TrackTotal, str );
+                ctx->hasMetaFlags |= XIPHMETA_TrackTotal;
+            }
+        }
     }
-    free( chapters_array.pp_chapters );
+    else IF_EXTRACT_ONCE_NUMBER("TRACKTOTAL", TrackTotal )
+    else IF_EXTRACT_ONCE_NUMBER("TOTALTRACKS", TrackTotal )
+    else IF_EXTRACT("DESCRIPTION", Description )
+    else IF_EXTRACT("COMMENT", Description )
+    else IF_EXTRACT("COMMENTS", Description )
+    else IF_EXTRACT("RATING", Rating )
+    else IF_EXTRACT("DATE", Date )
+    else if( !strcasecmp(psz_key, "LANGUAGE" ) )
+    {
+        IF_EXTRACT("LANGUAGE",Language)
+                if( ctx->p_fmt )
+        {
+            free( ctx->p_fmt->psz_language );
+            ctx->p_fmt->psz_language = strdup(psz_value);
+        }
+    }
+    else IF_EXTRACT("ORGANIZATION", Publisher )
+    else IF_EXTRACT("ENCODER", EncodedBy )
+    else if( !strcasecmp( psz_key, "METADATA_BLOCK_PICTURE" ) )
+    {
+        if( ctx->ppp_attachments == NULL )
+            return;
+
+        uint8_t *p_picture;
+        size_t i_size = vlc_b64_decode_binary( &p_picture, psz_value );
+        input_attachment_t *p_attachment = ParseFlacPicture( p_picture,
+                                                             i_size, *ctx->pi_attachments, ctx->pi_cover_score, ctx->pi_cover_idx );
+        free( p_picture );
+        if( p_attachment )
+        {
+            TAB_APPEND_CAST( (input_attachment_t**),
+                             *ctx->pi_attachments, *ctx->ppp_attachments, p_attachment );
+        }
+    }
+    else if( !strncasecmp(psz_key, "CHAPTER", 7) )
+    {
+        unsigned int i_chapt;
+        seekpoint_t *p_seekpoint = NULL;
+
+        for( int i = 0; psz_key[i]; i++ )
+            psz_key[i] = toupper(psz_key[i]);
+
+        if( strstr( psz_key, "NAME" ) &&
+                sscanf( psz_key, "CHAPTER%uNAME", &i_chapt ) == 1 )
+        {
+            p_seekpoint = getChapterEntry( i_chapt, &ctx->chapters_array );
+            if ( ! p_seekpoint )
+                return;
+            if ( ! p_seekpoint->psz_name )
+                p_seekpoint->psz_name = strdup( psz_value );
+        }
+        else if( sscanf( psz_key, "CHAPTER%u", &i_chapt ) == 1 )
+        {
+            unsigned int h, m, s, ms;
+            if( sscanf( psz_value, "%u:%u:%u.%u", &h, &m, &s, &ms ) == 4 )
+            {
+                p_seekpoint = getChapterEntry( i_chapt, &ctx->chapters_array );
+                if ( ! p_seekpoint )
+                    return;
+                p_seekpoint->i_time_offset = vlc_tick_from_sec(h * 3600 + m * 60 + s) + VLC_TICK_FROM_MS(ms);
+            }
+        }
+    }
+    else if( !strcasecmp(psz_key, "cuesheet") )
+    {
+        xiph_ParseCueSheet( &ctx->hasMetaFlags, ctx->p_meta, psz_value, strlen(psz_value),
+                            ctx->pi_seekpoint, ctx->ppp_seekpoint );
+    }
+    else
+    {
+        /* generic (PERFORMER/LICENSE/ORGANIZATION/LOCATION/CONTACT/ISRC,
+             * undocumented tags and replay gain ) */
+        for( int i = 0; psz_key[i]; i++ )
+            psz_key[i] = toupper(psz_key[i]);
+        fprintf(stderr,"EXTRA COMMENT %s\n", psz_key);
+        vlc_meta_SetExtra( ctx->p_meta, psz_key, psz_value );
+    }
+#undef IF_EXTRACT
+}
+
+
+static void ParseCommentHandler( void *priv, uint32_t comment_size, const uint8_t *ps_comment )
+{
+    struct hander_priv_s *ctx = priv;
+
+    char* psz_comment = strndup( (const char *)ps_comment, comment_size );
+    if( unlikely( !psz_comment ) )
+        return;
+
+    char *s = strchr( psz_comment, '=' );
+    if( s )
+    {
+        *s = '\0';
+        EnsureUTF8( s + 1 );
+        MatchComment( ctx, s, s + 1 );
+    }
+    free( psz_comment );
+}
+
+void vorbis_ParseComment( es_format_t *p_fmt, vlc_meta_t **pp_meta,
+        const uint8_t *p_data, size_t i_data,
+        int *pi_attachments, input_attachment_t ***ppp_attachments,
+        int *pi_cover_score, int *pi_cover_idx,
+        int *pi_seekpoint, seekpoint_t ***ppp_seekpoint )
+{
+    struct hander_priv_s priv;
+    priv.p_fmt = p_fmt;
+    priv.pi_attachments = pi_attachments;
+    priv.ppp_attachments = ppp_attachments;
+    priv.pi_cover_score = pi_cover_score;
+    priv.pi_cover_idx = pi_cover_idx;
+    priv.pi_seekpoint = pi_seekpoint;
+    priv.ppp_seekpoint = ppp_seekpoint;
+    priv.chapters_array.i_size = 0;
+    priv.chapters_array.pp_chapters = NULL;
+    priv.hasMetaFlags = 0;
+
+    priv.p_meta = *pp_meta;
+    if( !priv.p_meta )
+        *pp_meta = priv.p_meta = vlc_meta_New();
+
+    if( unlikely( !priv.p_meta ) )
+        return;
+
+    vorbis_ParseCommentCB( p_data, i_data, ParseCommentHandler, &priv );
+
+    for ( unsigned int i=0; i<priv.chapters_array.i_size; i++ )
+    {
+        if ( !priv.chapters_array.pp_chapters[i] ) continue;
+        TAB_APPEND_CAST( (seekpoint_t**), *priv.pi_seekpoint, *priv.ppp_seekpoint,
+                         priv.chapters_array.pp_chapters[i] );
+    }
+    free( priv.chapters_array.pp_chapters );
 }
 
 const char *FindKateCategoryName( const char *psz_tag )
