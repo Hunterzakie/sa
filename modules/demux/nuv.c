@@ -110,6 +110,7 @@ typedef struct
 } header_t;
 
 #define NUV_FH_SIZE 12
+#define NUV_TIMECODE_BASE CLOCK_FREQ
 typedef struct
 {
     char i_type;        /* A: audio, V: video, S: sync; T: test
@@ -187,7 +188,6 @@ typedef struct
     bool b_seekable;
     /* frameheader buffer */
     uint8_t fh_buffer[NUV_FH_SIZE];
-    int64_t i_total_frames;
     vlc_tick_t i_total_length;
     /* first frame position (used for calculating size without seektable) */
     uint64_t i_first_frame_offset;
@@ -224,7 +224,6 @@ static int Open( vlc_object_t * p_this )
     p_sys->p_extra_f = NULL;
     p_sys->i_pcr = -1;
     p_sys->b_index = false;
-    p_sys->i_total_frames = -1;
     p_sys->i_total_length = -1;
     demux_IndexInit( &p_sys->idx );
 
@@ -387,8 +386,7 @@ static int Demux( demux_t *p_demux )
     /* */
     if( ( p_data = vlc_stream_Block( p_demux->s, fh.i_length ) ) == NULL )
         return VLC_DEMUXER_EOF;
-
-    p_data->i_dts = VLC_TICK_0 + (int64_t)fh.i_timecode * 1000;
+    p_data->i_dts = VLC_TICK_0 + NUV_TIMECODE_BASE + (int64_t)fh.i_timecode * 1000;
     p_data->i_pts = (fh.i_type == 'V') ? VLC_TICK_INVALID : p_data->i_dts;
 
     /* only add keyframes to index */
@@ -487,7 +485,7 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
 
             /* first try to see if we can seek based on time (== GET_LENGTH works) */
             if (p_sys->i_total_length > 0) {
-                vlc_tick_t t = llround(p_sys->i_total_length * f);
+                vlc_tick_t t = NUV_TIMECODE_BASE + llround(p_sys->i_total_length * f);
 
                 offset = demux_IndexConvertTime(&p_sys->idx, t);
                 if (offset != UINT64_C(-1))
@@ -505,6 +503,10 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
                                    - p_sys->i_first_frame_offset) * f);
             return ControlSetPosition(p_demux, offset, true);
         }
+
+        case DEMUX_GET_NORMAL_TIME:
+            *va_arg( args, vlc_tick_t * ) = VLC_TICK_0 + NUV_TIMECODE_BASE;
+            return VLC_SUCCESS;
 
         case DEMUX_GET_TIME:
             *va_arg( args, vlc_tick_t * ) = __MAX(p_sys->i_pcr, 0);
@@ -746,42 +748,45 @@ static int ExtendedHeaderLoad( demux_t *p_demux, extended_header_t *h )
 static int SeekTableLoad( demux_t *p_demux, demux_sys_t *p_sys )
 {
     frame_header_t fh;
-    int64_t i_original_pos;
+    uint64_t i_original_pos;
     int64_t i_time, i_offset;
     int keyframe, last_keyframe = 0, frame = 0, kfa_entry_id = 0;
+    int ret = VLC_EGENERIC;
 
     if( p_sys->exh.i_seektable_offset <= 0 )
         return VLC_SUCCESS;
 
-    /* Save current position */
-    i_original_pos = vlc_stream_Tell( p_demux->s );
+    i_original_pos = vlc_stream_Tell( p_demux->s ); /* Save current position */
 #if 0
-    msg_Dbg( p_demux, "current offset %"PRIi64, i_original_pos );
+    msg_Dbg( p_demux, "current offset %"PRIu64, i_original_pos );
 
     msg_Dbg( p_demux, "seeking in stream to %"PRIi64, p_sys->exh.i_seektable_offset );
 #endif
     if( vlc_stream_Seek( p_demux->s, p_sys->exh.i_seektable_offset ) )
-        return VLC_EGENERIC;
+        goto restore;
 
     if( FrameHeaderLoad( p_demux, &fh ) )
-        return VLC_EGENERIC;
+        goto restore;
 
     if( fh.i_type != 'Q' )
     {
         msg_Warn( p_demux, "invalid seektable, frame type=%c", fh.i_type );
-        return VLC_EGENERIC;
+        goto restore;
     }
 
     /* */
     uint8_t *p_seek_table = malloc( fh.i_length );
     if( p_seek_table == NULL )
-        return VLC_ENOMEM;
+    {
+        ret = VLC_ENOMEM;
+        goto restore;
+    }
 
     if( vlc_stream_Read( p_demux->s, p_seek_table,
                          fh.i_length ) != fh.i_length )
     {
         free( p_seek_table );
-        return VLC_EGENERIC;
+        goto restore;
     }
     const int32_t i_seek_elements = fh.i_length / 12;
 
@@ -795,13 +800,13 @@ static int SeekTableLoad( demux_t *p_demux, demux_sys_t *p_sys )
         if( vlc_stream_Seek( p_demux->s, p_sys->exh.i_keyframe_adjust_offset ) )
         {
             free( p_seek_table );
-            return VLC_EGENERIC;
+            goto restore;
         }
 
         if( FrameHeaderLoad( p_demux, &fh ) )
         {
             free( p_seek_table );
-            return VLC_EGENERIC;
+            goto restore;
         }
 
         if( fh.i_type == 'K' && fh.i_length >= 8 )
@@ -811,7 +816,8 @@ static int SeekTableLoad( demux_t *p_demux, demux_sys_t *p_sys )
             if( p_kfa_table == NULL )
             {
                 free( p_seek_table );
-                return VLC_ENOMEM;
+                ret = VLC_ENOMEM;
+                goto restore;
             }
 
             if( vlc_stream_Read( p_demux->s, p_kfa_table,
@@ -819,7 +825,7 @@ static int SeekTableLoad( demux_t *p_demux, demux_sys_t *p_sys )
             {
                 free( p_seek_table );
                 free( p_kfa_table );
-                return VLC_EGENERIC;
+                goto restore;
             }
 
             i_kfa_elements = fh.i_length / 8;
@@ -864,11 +870,9 @@ static int SeekTableLoad( demux_t *p_demux, demux_sys_t *p_sys )
         last_keyframe = keyframe;
     }
 
-    p_sys->i_total_frames = (int64_t)frame;
-
     p_sys->b_index = true;
 
-    p_sys->i_total_length = p_sys->i_total_frames * CLOCK_FREQ / p_sys->hdr.d_fps;
+    p_sys->i_total_length = (frame + INT64_C(1)) * CLOCK_FREQ / p_sys->hdr.d_fps;
 
     msg_Dbg( p_demux, "index table loaded (%d elements)", i_seek_elements );
 
@@ -877,12 +881,14 @@ static int SeekTableLoad( demux_t *p_demux, demux_sys_t *p_sys )
 
     free ( p_seek_table );
 
+    ret = VLC_SUCCESS;
+
+restore:
     /* Restore stream position */
     if( vlc_stream_Seek( p_demux->s, i_original_pos ) )
         return VLC_EGENERIC;
 
-    return VLC_SUCCESS;
-
+    return ret;
 }
 
 /*****************************************************************************/
