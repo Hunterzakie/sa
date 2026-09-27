@@ -276,7 +276,10 @@ static int updatePalette(vlc_qt_theme_provider_t* obj)
 
         setQtColor(obj, CS, VQTC_SECTION_FG, VQTC_NAME_SECONDARY, VQTC_STATE_NORMAL, secondaryTextButton);
 
-        setQtColorSetBorder(obj, CS, QPalette::Button, QPalette::ButtonText, 0.8);
+        setQtColor(obj, CS, VQTC_SECTION_BG, VQTC_NAME_PRIMARY, VQTC_STATE_NORMAL, buttonBgNormal);
+        setQtColor(obj, CS, VQTC_SECTION_BG, VQTC_NAME_PRIMARY, VQTC_STATE_DISABLED, buttonBgNormal);
+
+        setQtColor(obj, CS, VQTC_SECTION_DECORATION, VQTC_NAME_BORDER, VQTC_STATE_NORMAL, Qt::transparent);
 
         setQtColor(obj, CS, VQTC_SECTION_BG, VQTC_NAME_NEGATIVE, VQTC_STATE_NORMAL, negative);
         setQtColor(obj, CS, VQTC_SECTION_BG, VQTC_NAME_NEGATIVE, VQTC_STATE_HOVERED, negativeHover);
