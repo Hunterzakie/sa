@@ -30,8 +30,16 @@
 
 #ifdef DVDREAD_HAS_DVDVIDEORECORDING
 typedef struct demux_sys_t demux_sys_t;
-#define DVDVR_FALLBACK_SECTORS_PER_VOBU 512
 #define DVDVR_EARLY_SNAP_VOBU_WINDOW 4
+#define DVDVR_VOBU_SIZE_MASK 0x3ff
+
+static uint32_t DvdVRVobuSector( const vobu_map_t *map, uint32_t vobu )
+{
+    uint32_t sector = 0;
+    for( uint32_t i = 0; i < vobu && i < map->nr_of_vobu_info; i++ )
+        sector += map->vobu_infos[i].vobu_size & DVDVR_VOBU_SIZE_MASK;
+    return sector;
+}
 
 /* estimated sector span of a vr program's vobu map
  * dvd-vr has no flat vobu address map like VOBU_ADMAP in dvd-video
@@ -42,29 +50,8 @@ typedef struct demux_sys_t demux_sys_t;
 uint32_t DvdVRGetProgramSectorSpan( const demux_sys_t *p_sys,
                                     const vobu_map_t *map )
 {
-    if( map->nr_of_time_info > 0 )
-    {
-        const uint32_t last_adr = map->time_infos[map->nr_of_time_info - 1].vobu_adr;
-        const uint32_t last_entn = map->time_infos[map->nr_of_time_info - 1].vobu_entn;
-        if( last_entn > 1 )
-            return (uint32_t)( (uint64_t)last_adr * map->nr_of_vobu_info /
-                               ( last_entn - 1 ) );
-    }
-
-    uint32_t sects_per_vobu = DVDVR_FALLBACK_SECTORS_PER_VOBU;
-    for( int p = 0; p < p_sys->pgc_gi->nr_of_programs; p++ )
-    {
-        const vobu_map_t *m = &p_sys->pgc_gi->pgi[p].map;
-        if( m->nr_of_time_info > 0 &&
-            m->time_infos[m->nr_of_time_info - 1].vobu_entn > 1 )
-        {
-            sects_per_vobu = m->time_infos[m->nr_of_time_info - 1].vobu_adr /
-                             ( m->time_infos[m->nr_of_time_info - 1].vobu_entn - 1 );
-            break;
-        }
-    }
-
-    return map->nr_of_vobu_info * sects_per_vobu;
+    VLC_UNUSED( p_sys );
+    return DvdVRVobuSector( map, map->nr_of_vobu_info );
 }
 
 static bool DvdVRTitleFirstCell( const ud_pgcit_t *ud_pgcit, int i_title,
@@ -328,7 +315,7 @@ static int DvdVRReadSetArea( demux_t *p_demux, int i_title, int i_chapter,
             within_vobu = map->nr_of_vobu_info - 1;
 
         /* time_infos sparse, snap to entry only near program start */
-        uint32_t snap_sector = 0;
+        uint32_t snap_sector = DvdVRVobuSector( map, within_vobu );
         if( within_vobu < DVDVR_EARLY_SNAP_VOBU_WINDOW &&
             DvdVRTimeInfosSane( map, total_sectors ) )
         {
@@ -507,14 +494,7 @@ static int DvdVRReadSeek( demux_t *p_demux, uint32_t i_block_offset )
     if( map->nr_of_vobu_info > 0 && within_program >= map->nr_of_vobu_info )
         within_program = map->nr_of_vobu_info - 1;
 
-    uint32_t raw_sector = 0;
-    if( total_sectors > 0 && map->nr_of_vobu_info > 0 )
-    {
-        uint64_t scaled_sector = 0;
-        if( !ckd_mul( &scaled_sector, (uint64_t)within_program,
-                      (uint64_t)total_sectors ) )
-            raw_sector = (uint32_t)( scaled_sector / map->nr_of_vobu_info );
-    }
+    uint32_t raw_sector = DvdVRVobuSector( map, within_program );
 
     /* time_infos sparse, snap to entry only near program start */
     uint32_t sector = raw_sector;
@@ -604,9 +584,16 @@ static bool DvdVRReadTimelineBase( const demux_sys_t *p_sys, vlc_tick_t *base )
         else if( within_sectors >= (int64_t)total_sectors )
             within_sectors = (int64_t)total_sectors - 1;
 
-        vlc_tick_t scaled;
-        if( !ckd_mul( &scaled, within_sectors, program_duration ) )
-            cell_dvd_time += scaled / total_sectors;
+        uint32_t vobu = 0;
+        int64_t sector = 0;
+        while( vobu + 1 < pgi->map.nr_of_vobu_info )
+        {
+            sector += pgi->map.vobu_infos[vobu].vobu_size & DVDVR_VOBU_SIZE_MASK;
+            if( sector > within_sectors )
+                break;
+            vobu++;
+        }
+        cell_dvd_time += program_duration * vobu / pgi->map.nr_of_vobu_info;
     }
 
     *base = cell_dvd_time;
