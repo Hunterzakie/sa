@@ -60,6 +60,8 @@
 
 
 static int  Open ( vlc_object_t * );
+static int  DemuxOpen ( vlc_object_t * );
+static int  DemuxOpenAudio ( vlc_object_t * );
 static void Close( vlc_object_t * );
 
 vlc_module_begin ()
@@ -85,6 +87,18 @@ vlc_module_begin ()
         set_capability( "demux", 6 )
         add_shortcut( "iso" )
         set_callbacks( Open, Close )
+    add_submodule()
+        set_description( N_("DVDRead demuxer (no menu support)") )
+        set_subcategory( SUBCAT_INPUT_DEMUX )
+        set_capability( "demux", 0 )
+        add_shortcut( "dvdsimple" )
+        set_callbacks( DemuxOpen, Close )
+    add_submodule()
+        set_description( N_("DVDRead DVD-Audio demuxer") )
+        set_subcategory( SUBCAT_INPUT_DEMUX )
+        set_capability( "demux", 0 )
+        add_shortcut( "dvda" )
+        set_callbacks( DemuxOpenAudio, Close )
 vlc_module_end ()
 
 /* how many blocks DVDRead will read in each loop */
@@ -304,6 +318,87 @@ static int CommonOpen( vlc_object_t *p_this, dvd_reader_t *p_dvdread,
         return VLC_EGENERIC;
     }
     return VLC_SUCCESS;
+}
+
+/*****************************************************************************
+ * dvdread stream callbacks
+ *****************************************************************************/
+static int stream_cb_seek( void *demux, uint64_t pos )
+{
+    return vlc_stream_Seek( ((demux_t *)demux)->s, pos );
+}
+
+static int stream_cb_read( void *demux, void *buffer, int size )
+{
+    return vlc_stream_Read( ((demux_t *)demux)->s, buffer, size );
+}
+
+static dvd_reader_stream_cb stream_cb =
+{
+    .pf_seek = stream_cb_seek,
+    .pf_read = stream_cb_read,
+    /* NULL, as in dvdnav: libdvdread's stream input reads through pf_read only */
+    .pf_readv = NULL,
+};
+
+
+/*****************************************************************************
+ * DemuxOpenCommon: the stream-based entry point.
+ *****************************************************************************/
+static int DemuxOpenCommon( vlc_object_t *p_this, const char *psz_shortcut,
+                            dvd_type_t type, const dvdread_ops_t *video_ops )
+{
+    demux_t *p_demux = (demux_t*)p_this;
+    bool b_seekable = false;
+
+    if( p_demux->out == NULL )
+        return VLC_EGENERIC;
+
+    /* Forced only, never probed. */
+    if( p_demux->psz_name == NULL
+     || strcmp( p_demux->psz_name, psz_shortcut ) )
+        return VLC_EGENERIC;
+
+    vlc_stream_Control( p_demux->s, STREAM_CAN_SEEK, &b_seekable );
+    if( !b_seekable )
+    {
+        msg_Warn( p_demux, "stream is not seekable" );
+        return VLC_EGENERIC;
+    }
+
+#if DVDREAD_VERSION >= DVDREAD_VERSION_CODE(6, 1, 0)
+    dvd_logger_cb cbs = { .pf_log = DvdReadLog };
+    dvd_reader_t *p_dvdread;
+# ifdef DVDREAD_HAS_DVDAUDIO
+    if( type == DVD_A )
+        p_dvdread = DVDOpenStreamAudio( p_demux, &cbs, &stream_cb );
+    else
+# endif
+        p_dvdread = DVDOpenStream2( p_demux, &cbs, &stream_cb );
+#else
+    dvd_reader_t *p_dvdread = DVDOpenStream( p_demux, &stream_cb );
+#endif
+
+    if( p_dvdread == NULL )
+    {
+        msg_Warn( p_demux, "cannot open %s through the stream callbacks; "
+                  "no fallback to another DVD kind is attempted on this path",
+                  type == DVD_A ? "DVD-Audio" : "DVD-Video" );
+        return VLC_EGENERIC;
+    }
+
+    /* No fallback cascade, unlike Open() below. */
+    return CommonOpen( p_this, p_dvdread, type, video_ops );
+}
+
+static int DemuxOpen( vlc_object_t *p_this )
+{
+    return DemuxOpenCommon( p_this, "dvdsimple", DVD_V, &DvdReadVideoOps );
+}
+
+static int DemuxOpenAudio( vlc_object_t *p_this )
+{
+    return DemuxOpenCommon( p_this, "dvda", DVD_A, NULL );
 }
 
 /*Call Backs*/
