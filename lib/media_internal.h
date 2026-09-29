@@ -51,9 +51,9 @@ struct libvlc_media_t
 };
 
 /* Media Descriptor */
-libvlc_media_t * libvlc_media_new_from_input_item(
+LIBVLC_API libvlc_media_t * libvlc_media_new_from_input_item(
         libvlc_instance_t *, input_item_t * );
 
-void libvlc_media_set_state( libvlc_media_t *, libvlc_state_t );
+LIBVLC_API void libvlc_media_set_state( libvlc_media_t *, libvlc_state_t );
 
 #endif
