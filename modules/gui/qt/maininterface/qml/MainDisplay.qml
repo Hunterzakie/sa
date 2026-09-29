@@ -16,6 +16,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 import QtQuick
+import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
 
@@ -466,38 +467,78 @@ FocusScope {
                 rightPadding: playlistLoader.shown ? 0 : VLCStyle.applicationHorizontalMargin
 
                 // Top-left corner rounding:
-                Widgets.AcrylicBackground {
+                Loader {
                     id: topLeftCornerBackground
 
-                    z: 99
-                    color: sidebar.background.color
-                    visible: sidebar.visible && (stackViewTopLeftRadiusRectangle.topLeftRadius !== undefined)
-
                     anchors.left: stackView.left
-                    anchors.leftMargin: -1
+                    anchors.leftMargin: useCustomShader ? 0.0 : -1.0
                     anchors.top: stackView.top
 
-                    // (-1) is to prevent seams
-                    width: stackViewTopLeftRadiusRectangle.width - 1
-                    height: stackViewTopLeftRadiusRectangle.height - 1
+                    visible: active && (sidebar.visible && (VLCStyle.isScreenSmall ? (sidebar.state === "") : true))
 
-                    Rectangle {
-                        id: stackViewTopLeftRadiusRectangle
+                    z: 99
 
-                        width: (stackViewTopLeftRadiusRectangle.topLeftRadius * 2)
-                        height: (stackViewTopLeftRadiusRectangle.topLeftRadius * 2)
+                    // Using custom shader can "clip" only outside the arc, but it comes with restrictions:
+                    // - There will be no AA.
+                    // - Depth buffer is necessary (this is provided by default).
+                    // - RHI must be used.
+                    // So for now, we restrict it only when it is absolutely necessary, that is, when
+                    // the top left of the page content is not uniform that we can't rely on painting
+                    // with a rectangle. In practice, this means the music artists page.
+                    property bool useCustomShader: !!History.viewProp?.nonUniformTopLeftCorner
 
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.leftMargin: 1
+                    active: (stackViewParent.topLeftRadius !== undefined) /* Qt version check in disguise */ &&
+                            (!useCustomShader || ((GraphicsInfo.shaderType === GraphicsInfo.RhiShader) &&
+                                                  (Window.window && MainCtx.windowHasDepthBuffer(Window.window))))
 
-                        color: stackViewParent.color
+                    sourceComponent: (useCustomShader ? depthMaskClipShaderEffectComponent : acrylicBackgroundComponent)
 
-                        property real implicitTopLeftRadius: VLCStyle.mainView_topLeftRadius
+                    Component {
+                        id: depthMaskClipShaderEffectComponent
 
-                        Component.onCompleted: {
-                            if (stackViewTopLeftRadiusRectangle.topLeftRadius !== undefined) // TODO: Directly set when minimum Qt is 6.7
-                                stackViewTopLeftRadiusRectangle.topLeftRadius = Qt.binding(() => stackViewTopLeftRadiusRectangle.implicitTopLeftRadius)
+                        ShaderEffect {
+                            width: VLCStyle.mainView_topLeftRadius
+                            height: VLCStyle.mainView_topLeftRadius
+
+                            blending: false
+
+                            property color outsideColor: sidebar.background.color
+                            readonly property bool discardInside: true
+                            property size size: Qt.size(width, height)
+
+                            fragmentShader: "qrc:///shaders/Arc.frag.qsb"
+                        }
+                    }
+
+                    Component {
+                        id: acrylicBackgroundComponent
+
+                        Widgets.AcrylicBackground {
+                            color: sidebar.background.color
+
+                            // (-1) is to prevent seams
+                            width: stackViewTopLeftRadiusRectangle.width - 1
+                            height: stackViewTopLeftRadiusRectangle.height - 1
+
+                            Rectangle {
+                                id: stackViewTopLeftRadiusRectangle
+
+                                width: (stackViewTopLeftRadiusRectangle.topLeftRadius * 2)
+                                height: (stackViewTopLeftRadiusRectangle.topLeftRadius * 2)
+
+                                anchors.top: parent.top
+                                anchors.left: parent.left
+                                anchors.leftMargin: 1
+
+                                color: stackViewParent.color
+
+                                property real implicitTopLeftRadius: VLCStyle.mainView_topLeftRadius
+
+                                Component.onCompleted: {
+                                    if (stackViewTopLeftRadiusRectangle.topLeftRadius !== undefined) // TODO: Directly set when minimum Qt is 6.7
+                                        stackViewTopLeftRadiusRectangle.topLeftRadius = Qt.binding(() => stackViewTopLeftRadiusRectangle.implicitTopLeftRadius)
+                                }
+                            }
                         }
                     }
                 }
@@ -674,7 +715,7 @@ FocusScope {
                 atRight: true
 
                 resizeHandle.visible: (sidebar.state === "expanded") && !VLCStyle.isScreenSmall
-                visualBorder.visible: !topLeftCornerBackground.visible
+                visualBorder.visible: !topLeftCornerBackground.active
 
                 minimumWidth: sidebar.minimumWidth
                 maximumWidth: sidebar.maximumWidth
