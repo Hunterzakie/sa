@@ -674,6 +674,7 @@ FocusScope {
                 atRight: true
 
                 resizeHandle.enabled: (sidebar.state === "expanded") && !VLCStyle.isScreenSmall
+                resizeHandle.hoverLine.anchors.topMargin: topLeftCornerBackground.visible ? VLCStyle.mainView_topLeftRadius : 0
                 visualBorder.visible: !topLeftCornerBackground.visible
 
                 minimumWidth: sidebar.minimumWidth
