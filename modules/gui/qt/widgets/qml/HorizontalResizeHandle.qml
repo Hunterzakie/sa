@@ -36,6 +36,9 @@ MouseArea {
     property bool atRight: true
 
     property alias handleVisual: handleVisual
+    property alias hoverLine: resizeHoverLine
+
+    property bool highlight: root.containsMouse || root.pressed
 
     property int _previousX
 
@@ -62,6 +65,9 @@ MouseArea {
     }
 
     onPositionChanged: {
+        if (!pressed)
+            return
+
         const f = atRight ? 1 : -1
         const delta = mouseX - _previousX
         root.requestedWidth = Helpers.clamp(
@@ -82,5 +88,19 @@ MouseArea {
 
         width: VLCStyle.border
         color: theme.separator
+    }
+
+    Rectangle {
+        id: resizeHoverLine
+
+        anchors {
+            top: parent.top
+            bottom: parent.bottom
+            horizontalCenter: root.atRight ? parent.right : parent.left
+        }
+
+        width: VLCStyle.resizeHandleBorder
+        color: theme.accent
+        visible: root.highlight
     }
 }

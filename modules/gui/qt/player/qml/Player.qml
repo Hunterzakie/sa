@@ -1133,6 +1133,8 @@ FocusScope {
 
                 property bool _inhibitMainCtxUpdate: false
 
+                hoverEnabled: true
+
                 parent: playlistView
 
                 anchors {
@@ -1145,6 +1147,7 @@ FocusScope {
                 currentWidth: playlistpopup.width
 
                 handleVisual.visible: false
+                hoverLine.width: VLCStyle.resizeHandleBorder / 2
 
                 maximumWidth: playlistView.maximumWidth
                 minimumWidth: playlistView.minimumWidth

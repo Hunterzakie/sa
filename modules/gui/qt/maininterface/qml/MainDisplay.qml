@@ -1100,6 +1100,8 @@ FocusScope {
 
             property bool _inhibitMainInterfaceUpdate: false
 
+            hoverEnabled: true
+
             anchors {
                 top: parent.top
                 bottom: parent.bottom

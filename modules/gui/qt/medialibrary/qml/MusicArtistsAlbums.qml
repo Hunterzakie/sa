@@ -248,6 +248,8 @@ Widgets.PageExt {
 
                 property bool _inhibitMainCtxUpdate: false
 
+                hoverEnabled: true
+
                 anchors {
                     top: parent.top
                     bottom: parent.bottom
