@@ -100,6 +100,8 @@ static int DemuxBlock( demux_t *, const uint8_t *, int );
 
 static void DemuxTitles( demux_t *, int * );
 static void DvdReadSetOps( demux_sys_t *, const dvdread_ops_t * );
+static int  CommonOpen( vlc_object_t *, dvd_reader_t *, dvd_type_t,
+                        const dvdread_ops_t * );
 
 #if DVDREAD_VERSION >= DVDREAD_VERSION_CODE(6, 1, 0)
 static void DvdReadLog( void *foo, dvd_logger_level_t i, const char *p, va_list z )
@@ -115,9 +117,7 @@ int OpenCommonDvdread( vlc_object_t *p_this , dvd_type_t type,
                        const dvdread_ops_t *video_ops )
 {
     demux_t      *p_demux = (demux_t*)p_this;
-    demux_sys_t  *p_sys;
     char         *psz_file;
-    ifo_handle_t *p_vmg_file;
 
     if (p_demux->out == NULL)
         return VLC_EGENERIC;
@@ -208,6 +208,20 @@ int OpenCommonDvdread( vlc_object_t *p_this , dvd_type_t type,
         return VLC_EGENERIC;
     }
     free( psz_file );
+
+    return CommonOpen( p_this, p_dvdread, type, video_ops );
+}
+
+/*****************************************************************************
+ * CommonOpen: everything the entry points share, from an already-open
+ * libdvdread onwards.
+ *****************************************************************************/
+static int CommonOpen( vlc_object_t *p_this, dvd_reader_t *p_dvdread,
+                       dvd_type_t type, const dvdread_ops_t *video_ops )
+{
+    demux_t      *p_demux = (demux_t*)p_this;
+    demux_sys_t  *p_sys;
+    ifo_handle_t *p_vmg_file;
 
     /* Ifo allocation & initialisation */
     if( !( p_vmg_file = ifoOpen( p_dvdread, 0 ) ) )
