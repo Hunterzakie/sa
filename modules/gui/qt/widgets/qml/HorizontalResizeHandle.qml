@@ -93,6 +93,8 @@ MouseArea {
     Rectangle {
         id: resizeHoverLine
 
+        readonly property bool active: root.highlight
+
         anchors {
             top: parent.top
             bottom: parent.bottom
@@ -101,6 +103,15 @@ MouseArea {
 
         width: VLCStyle.resizeHandleBorder
         color: theme.accent
-        visible: root.highlight
+
+        opacity: active ? 1 : 0
+        visible: active || opacity > 0
+
+        Behavior on opacity {
+            OpacityAnimator {
+                duration: VLCStyle.duration_veryLong
+                easing.type: Easing.InOutSine
+            }
+        }
     }
 }
