@@ -1182,11 +1182,9 @@ static picture_t *ConvertRGBAAndBlend(vout_thread_sys_t *vout, picture_t *pic,
 
     es_format_t src = sys->spu_blend->fmt_out;
     es_format_t dst = src;
-    dst.video.i_chroma = VLC_CODEC_RGBA;
+    dst.i_codec = dst.video.i_chroma = VLC_CODEC_RGBA;
 
-    filter_chain_Reset(filterc, &src,
-                       NULL /* TODO output video context of blender */,
-                       &dst);
+    filter_chain_Reset(filterc, &src, picture_GetVideoContext(pic), &dst);
 
     if (filter_chain_AppendConverter(filterc, &dst) != VLC_SUCCESS)
     {
