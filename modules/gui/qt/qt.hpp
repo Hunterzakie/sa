@@ -43,7 +43,7 @@
 #include <QtGlobal>
 #endif
 
-static_assert(QT_VERSION >= QT_VERSION_CHECK(6, 8, 3), "With static Qt, the Qt version must be greater than or equal to what we provide in the contribs.");
+static_assert(QT_VERSION >= QT_VERSION_CHECK(6, 12, 0), "With static Qt, the Qt version must be greater than or equal to what we provide in the contribs.");
 #endif
 
 #include <QString>
