@@ -196,6 +196,7 @@ typedef struct
     es_out_id_t *es;
     date_t       pts;
 
+    unsigned track; /**< Track number, 1-based */
     unsigned start; /**< Track first sector */
     unsigned length; /**< Track total sectors */
     unsigned position; /**< Current offset within track sectors */
@@ -239,6 +240,67 @@ static int Demux(demux_t *demux)
     return VLC_DEMUXER_SUCCESS;
 }
 
+static void DemuxGetMeta(demux_t *demux, vlc_meta_t *meta)
+{
+    demux_sys_t *sys = demux->p_sys;
+    vlc_meta_t **cdtextv;
+    int cdtextc;
+
+    if (ioctl_GetCdText(VLC_OBJECT(demux), sys->vcddev, &cdtextv, &cdtextc) == 0)
+    {
+        /* [0] describes the disc and [n] the n-th track, the same indexing
+         * ReadDir() uses. */
+        const vlc_meta_t *disc = (cdtextc > 0) ? cdtextv[0] : NULL;
+        const vlc_meta_t *tk = (sys->track < (unsigned) cdtextc)
+                             ? cdtextv[sys->track] : NULL;
+        const char *p;
+
+        if (disc != NULL)
+        {
+            if ((p = vlc_meta_Get(disc, vlc_meta_Title)) != NULL)
+                vlc_meta_Set(meta, vlc_meta_Album, p);
+            if ((p = vlc_meta_Get(disc, vlc_meta_Artist)) != NULL)
+                vlc_meta_Set(meta, vlc_meta_AlbumArtist, p);
+            if ((p = vlc_meta_Get(disc, vlc_meta_Genre)) != NULL)
+                vlc_meta_Set(meta, vlc_meta_Genre, p);
+            if ((p = vlc_meta_Get(disc, vlc_meta_Description)) != NULL)
+                vlc_meta_Set(meta, vlc_meta_Description, p);
+        }
+
+        if (tk != NULL)
+        {
+            if ((p = vlc_meta_Get(tk, vlc_meta_Title)) != NULL)
+                vlc_meta_Set(meta, vlc_meta_Title, p);
+            if ((p = vlc_meta_Get(tk, vlc_meta_Artist)) != NULL)
+                vlc_meta_Set(meta, vlc_meta_Artist, p);
+        }
+
+        for (int i = 0; i < cdtextc; i++)
+        {
+            if (cdtextv[i] != NULL)
+                vlc_meta_Delete(cdtextv[i]);
+        }
+        free(cdtextv);
+    }
+
+    /* Same label ReadDir() falls back to, so the two ways of reaching one
+     * track agree on what it is called. */
+    if (vlc_meta_Get(meta, vlc_meta_Title) == NULL)
+    {
+        char *name;
+
+        if (likely(asprintf(&name, _("Audio CD - Track %02u"), sys->track) != -1))
+        {
+            vlc_meta_Set(meta, vlc_meta_Title, name);
+            free(name);
+        }
+    }
+
+    char num[4];
+    if (snprintf(num, sizeof (num), "%u", sys->track) < 4)
+        vlc_meta_Set(meta, vlc_meta_TrackNumber, num);
+}
+
 static int DemuxControl(demux_t *demux, int query, va_list args)
 {
     demux_sys_t *sys = demux->p_sys;
@@ -267,6 +329,10 @@ static int DemuxControl(demux_t *demux, int query, va_list args)
             sys->position = lround(va_arg(args, double) * sys->length);
             date_Set(&sys->pts, VLC_TICK_0);
             date_Increment(&sys->pts, sys->position);
+            break;
+
+        case DEMUX_GET_META:
+            DemuxGetMeta(demux, va_arg(args, vlc_meta_t *));
             break;
 
         case DEMUX_GET_LENGTH:
@@ -361,6 +427,7 @@ static int DemuxOpen(vlc_object_t *obj, vcddev_t *dev, unsigned track)
 
     demux->p_sys = sys;
     sys->vcddev = dev;
+    sys->track = track;
     sys->start = var_InheritInteger(obj, "cdda-first-sector");
     sys->length = var_InheritInteger(obj, "cdda-last-sector") - sys->start;
 
