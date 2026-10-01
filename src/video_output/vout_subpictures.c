@@ -45,6 +45,7 @@
 #include "../clock/clock.h"
 
 // #define DISABLE_PRERENDER
+// #define DISABLE_CACHED_POSITION
 
 /*****************************************************************************
  * Local prototypes
@@ -129,7 +130,9 @@ struct spu_private_t {
      */
     int secondary_margin;
     int secondary_alignment;       /**< Force alignment for secondary subs */
+#ifndef DISABLE_CACHED_POSITION
     subtitles_positions_vector subs_pos;
+#endif
 
     video_palette_t palette;              /**< force palette of subpicture */
 
@@ -638,6 +641,7 @@ static void SpuAreaMoveInside(spu_area_t *area, const unsigned boundary_width,
         *area = spu_area_unscaled(a, area->scale);
 }
 
+#ifndef DISABLE_CACHED_POSITION
 static void subtitles_positions_StartUpdate(subtitles_positions_vector *subs)
 {
     struct subtitle_position_cache *pos;
@@ -726,6 +730,7 @@ static void subtitles_positions_AddRelativeRegion(subtitles_positions_vector *su
     write->key.i_max_width = region->i_max_width;
     write->key.i_max_height = region->i_max_height;
 }
+#endif // !DISABLE_CACHED_POSITION
 
 /**
  * Place a region
@@ -1385,7 +1390,9 @@ static vlc_render_subpicture *SpuRenderSubpictures(spu_t *spu,
                                           vlc_tick_t render_subtitle_date,
                                           bool external_scale)
 {
+#ifndef DISABLE_CACHED_POSITION
     spu_private_t *sys = container_of(spu, spu_private_t, spu);
+#endif
 
     /* Count the number of regions and subtitle regions */
     size_t subtitle_region_count = 0;
@@ -1417,7 +1424,9 @@ static vlc_render_subpicture *SpuRenderSubpictures(spu_t *spu,
     spu_area_t *subtitle_area;
     size_t subtitle_area_count = 0;
 
+#ifndef DISABLE_CACHED_POSITION
     subtitles_positions_StartUpdate(&sys->subs_pos);
+#endif
 
     if (unlikely(subtitle_region_count > ARRAY_SIZE(subtitle_area_buffer)))
         subtitle_area = calloc(subtitle_region_count, sizeof(*subtitle_area));
@@ -1509,9 +1518,10 @@ static vlc_render_subpicture *SpuRenderSubpictures(spu_t *spu,
             /* Check scale validity */
             assert(scale.w != 0 && scale.h != 0);
 
+            subpicture_t forced_subpic = *subpic;
+#ifndef DISABLE_CACHED_POSITION
             bool cached_is_in_window;
             int cached_alignment;
-            subpicture_t forced_subpic = *subpic;
             struct subtitle_position_cache *cache_pos = NULL;
             if (subpic->b_subtitle && !region->b_absolute)
             {
@@ -1528,6 +1538,7 @@ static vlc_render_subpicture *SpuRenderSubpictures(spu_t *spu,
                     region->b_in_window = true;
                 }
             }
+#endif
 
             /* */
             output_last_ptr = SpuRenderRegion(spu, &area,
@@ -1546,6 +1557,7 @@ static vlc_render_subpicture *SpuRenderSubpictures(spu_t *spu,
                 output_last_ptr->place.y += video_position->y;
             }
 
+#ifndef DISABLE_CACHED_POSITION
             if (cache_pos != NULL)
             {
                 region->b_absolute = false;
@@ -1554,6 +1566,7 @@ static vlc_render_subpicture *SpuRenderSubpictures(spu_t *spu,
                 assert(area.x == cache_pos->x);
                 assert(area.y == cache_pos->y);
             }
+#endif
 
             vlc_vector_push(&output->regions, output_last_ptr);
 
@@ -1564,7 +1577,9 @@ static vlc_render_subpicture *SpuRenderSubpictures(spu_t *spu,
                 {
                     if (!external_scale)
                         area = spu_area_unscaled(area, scale);
+#ifndef DISABLE_CACHED_POSITION
                     subtitles_positions_AddRelativeRegion(&sys->subs_pos, subpic, region, &area, cache_pos);
+#endif
                 }
             }
         }
@@ -1574,7 +1589,9 @@ static vlc_render_subpicture *SpuRenderSubpictures(spu_t *spu,
     if (subtitle_area != subtitle_area_buffer)
         free(subtitle_area);
 
+#ifndef DISABLE_CACHED_POSITION
     subtitles_positions_FinishUpdate(&sys->subs_pos);
+#endif
 
     return output;
 }
@@ -1914,8 +1931,9 @@ static void spu_Cleanup(spu_t *spu)
     for (size_t i = 0; i < sys->channels.size; ++i)
         spu_channel_Clean(sys, &sys->channels.data[i]);
 
+#ifndef DISABLE_CACHED_POSITION
     vlc_vector_destroy(&sys->subs_pos);
-
+#endif
     vlc_vector_destroy(&sys->channels);
 
 #ifndef DISABLE_PRERENDER
@@ -1985,8 +2003,9 @@ spu_t *spu_Create(vlc_object_t *object, vout_thread_t *vout)
 
     sys->secondary_alignment = var_InheritInteger(spu,
                                                   "secondary-sub-alignment");
+#ifndef DISABLE_CACHED_POSITION
     vlc_vector_init(&sys->subs_pos);
-
+#endif
     sys->source_chain_update = NULL;
     sys->filter_chain_update = NULL;
     vlc_mutex_init(&sys->filter_chain_lock);
