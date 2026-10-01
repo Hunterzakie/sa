@@ -1315,9 +1315,9 @@ static int  ParseSSA( vlc_object_t *p_obj, subs_properties_t *p_props,
             }
 
             p_subtitle->i_start = vlc_tick_from_HMS( h1, m1, s1 ) +
-                                  VLC_TICK_FROM_MS( c1 * 10 ) + VLC_TICK_0;
+                                  VLC_TICK_FROM_MS( VLC_CLIP( c1, 0, 99 ) * 10 ) + VLC_TICK_0;
             p_subtitle->i_stop  = vlc_tick_from_HMS( h2, m2, s2 ) +
-                                  VLC_TICK_FROM_MS( c2 * 10 ) + VLC_TICK_0;
+                                  VLC_TICK_FROM_MS( VLC_CLIP( c2, 0, 99 ) * 10 ) + VLC_TICK_0;
             p_subtitle->psz_text = psz_text;
             return VLC_SUCCESS;
         }
@@ -1532,7 +1532,7 @@ static int ParseDVDSubtitle(vlc_object_t *p_obj, subs_properties_t *p_props,
                     &h1, &m1, &s1, &c1 ) == 4 )
         {
             p_subtitle->i_start = vlc_tick_from_HMS( h1, m1, s1 ) +
-                                  VLC_TICK_FROM_MS( c1 * 10 ) + VLC_TICK_0;
+                                  VLC_TICK_FROM_MS( c1 * INT64_C(10) ) + VLC_TICK_0;
             p_subtitle->i_stop = -1;
             break;
         }
@@ -1607,8 +1607,8 @@ static int ParseMPL2(vlc_object_t *p_obj, subs_properties_t *p_props,
         if( sscanf( s, "[%d][] %[^\r\n]", &i_start, psz_text ) == 2 ||
             sscanf( s, "[%d][%d] %[^\r\n]", &i_start, &i_stop, psz_text ) == 3)
         {
-            p_subtitle->i_start = VLC_TICK_0 + VLC_TICK_FROM_MS(i_start * 100);
-            p_subtitle->i_stop  = i_stop >= 0 ? VLC_TICK_0 + VLC_TICK_FROM_MS(i_stop  * 100) : VLC_TICK_INVALID;
+            p_subtitle->i_start = VLC_TICK_0 + VLC_TICK_FROM_MS(i_start * INT64_C(100));
+            p_subtitle->i_stop  = i_stop >= 0 ? VLC_TICK_0 + VLC_TICK_FROM_MS(i_stop * INT64_C(100)) : VLC_TICK_INVALID;
             break;
         }
         free( psz_text );
@@ -2135,17 +2135,17 @@ static vlc_tick_t ParseRealTime( const char *psz )
     if( sscanf( psz, "%d:%d:%d.%d", &h, &m, &s, &f ) == 4 )
     {
         return vlc_tick_from_HMS( h, m, s )
-               + VLC_TICK_FROM_MS(f * 10) + VLC_TICK_0;
+               + VLC_TICK_FROM_MS(f * INT64_C(10)) + VLC_TICK_0;
     }
     if( sscanf( psz, "%d:%d.%d", &m, &s, &f ) == 3 )
     {
         return vlc_tick_from_HMS( 0, m, s )
-               + VLC_TICK_FROM_MS(f * 10) + VLC_TICK_0;
+               + VLC_TICK_FROM_MS(f * INT64_C(10)) + VLC_TICK_0;
     }
     if( sscanf( psz, "%d.%d", &s, &f ) == 2 )
     {
         return vlc_tick_from_sec( s )
-               + VLC_TICK_FROM_MS(f * 10) + VLC_TICK_0;
+               + VLC_TICK_FROM_MS(f * INT64_C(10)) + VLC_TICK_0;
     }
     if( sscanf( psz, "%d:%d", &m, &s ) == 2 )
     {
