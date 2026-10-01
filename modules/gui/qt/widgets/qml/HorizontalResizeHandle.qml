@@ -35,7 +35,13 @@ MouseArea {
 
     property bool atRight: true
 
+    property alias handleVisual: handleVisual
+
     property int _previousX
+
+    readonly property ColorContext colorContext: ColorContext {
+        id: theme
+    }
 
     cursorShape: Qt.SplitHCursor
     width: VLCStyle.resizeHandleWidth
@@ -64,4 +70,17 @@ MouseArea {
             maximumWidth)
     }
 
+    Rectangle {
+        id: handleVisual
+
+        anchors {
+            top: parent.top
+            bottom: parent.bottom
+            left: root.atRight ? undefined : parent.left
+            right: root.atRight ? parent.right: undefined
+        }
+
+        width: VLCStyle.border
+        color: theme.separator
+    }
 }

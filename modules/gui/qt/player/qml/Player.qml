@@ -1144,6 +1144,8 @@ FocusScope {
                 atRight: false
                 currentWidth: playlistpopup.width
 
+                handleVisual.visible: false
+
                 maximumWidth: playlistView.maximumWidth
                 minimumWidth: playlistView.minimumWidth
 

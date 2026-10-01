@@ -288,14 +288,6 @@ Widgets.PageExt {
             }
         }
 
-        Rectangle {
-            Layout.fillHeight: true
-
-            implicitWidth: VLCStyle.border
-            color: artistList.colorContext.separator
-            visible: artistList.visible
-        }
-
         MusicArtist {
             id: albumSubView
 
