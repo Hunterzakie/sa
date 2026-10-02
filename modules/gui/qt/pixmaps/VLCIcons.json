@@ -62,7 +62,7 @@
         {"key":"repeat_all", "path": "./icons/ic_fluent_arrow_repeat_all.svg"},
         {"key":"repeat_one", "path": "./icons/ic_fluent_arrow_repeat_1.svg"},
         {"key":"search", "path": "./icons/ic_fluent_search.svg"},
-        {"key":"settings", "path": "./icons/ic_fluent_settings_48_regular.svg"},
+        {"key":"settings", "path": "./icons/ic_fluent_settings.svg"},
         {"key":"shuffle", "path": "./icons/ic_fluent_arrow_shuffle.svg"},
         {"key":"skip_back", "path": "./icons/ic_fluent_skip_back_10.svg"},
         {"key":"skip_for", "path": "./icons/ic_fluent_skip_forward_10.svg"},

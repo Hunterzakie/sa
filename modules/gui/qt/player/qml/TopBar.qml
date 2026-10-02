@@ -265,7 +265,7 @@ FocusScope{
 
             visible: (root._showTopBar && root.resumeVisible === false)
 
-            implicitHeight: VLCStyle.icon_banner + VLCStyle.margin_xxsmall * 2
+            implicitHeight: VLCStyle.icon_topbar + VLCStyle.margin_xxsmall * 2
             implicitWidth: backBtn.implicitWidth + logo.implicitWidth + VLCStyle.margin_xxsmall
 
             Widgets.IconToolButton {
@@ -275,7 +275,7 @@ FocusScope{
                 anchors.left: parent.left
 
                 objectName: "IconToolButton"
-                font.pixelSize: VLCStyle.icon_banner
+                font.pixelSize: VLCStyle.icon_topbar
                 text: VLCIcons.back
                 description: qsTr("Back")
 
@@ -437,7 +437,7 @@ FocusScope{
             visible: !root.showToolbar
             enabled: visible
             focus: visible
-            font.pixelSize: VLCStyle.icon_banner
+            font.pixelSize: VLCStyle.icon_topbar
 
             width: VLCStyle.bannerButton_width
             height: VLCStyle.bannerButton_height
@@ -480,7 +480,7 @@ FocusScope{
 
             anchors.verticalCenter: parent.verticalCenter
             objectName: ControlListModel.PLAYLIST_BUTTON
-            font.pixelSize: VLCStyle.icon_banner
+            font.pixelSize: VLCStyle.icon_topbar
             text: VLCIcons.playlist
             description: qsTr("Play Queue")
 

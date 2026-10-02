@@ -74,7 +74,7 @@ FocusScope {
 
         anchors.fill: parent
 
-        font.pixelSize: VLCStyle.icon_banner
+        font.pixelSize: VLCStyle.icon_normal
 
         text: VLCIcons.search
         description: qsTr("Filter")

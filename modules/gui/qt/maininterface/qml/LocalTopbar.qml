@@ -97,7 +97,7 @@ T.ToolBar {
                 id: navigationButtonsRow
 
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: VLCStyle.margin_normal
+                spacing: VLCStyle.margin_xsmall
 
                 Navigation.parentItem: root
                 Navigation.rightItem: playqueueButtonsTop
@@ -112,7 +112,7 @@ T.ToolBar {
 
                     AccessibleCompat.id: "sidebarToggleButton"
 
-                    font.pixelSize: VLCStyle.icon_banner
+                    font.pixelSize: VLCStyle.icon_topbar
                     height: VLCStyle.bannerButton_height
                     width: VLCStyle.bannerButton_width
 
@@ -125,7 +125,7 @@ T.ToolBar {
                 Widgets.IconToolButton {
                     id: historyBack
 
-                    font.pixelSize: VLCStyle.icon_banner
+                    font.pixelSize: VLCStyle.icon_topbar
                     text: VLCIcons.back
                     description: qsTr("Previous")
 
@@ -150,8 +150,6 @@ T.ToolBar {
                 Widgets.BannerCone {
                     id: logo
 
-                    sourceSize.width: VLCStyle.bannerButton_height
-                    sourceSize.height: VLCStyle.bannerButton_height
                     color: theme.accent
                 }
             }
@@ -179,7 +177,7 @@ T.ToolBar {
                 id: playqueueButtonsTopRow
 
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: VLCStyle.margin_normal
+                spacing: VLCStyle.margin_xsmall
 
                 Navigation.parentItem: root
                 Navigation.leftItem: navigationButtons
@@ -187,7 +185,7 @@ T.ToolBar {
                 Widgets.IconToolButton {
                     id: playlistBtn
 
-                    font.pixelSize: VLCStyle.icon_banner
+                    font.pixelSize: VLCStyle.icon_topbar
                     text: VLCIcons.playlist
                     description: qsTr("Playlist")
 
@@ -256,7 +254,7 @@ T.ToolBar {
                     id: menuBtn
 
                     visible: !MainCtx.hasToolbarMenu
-                    font.pixelSize: VLCStyle.icon_banner
+                    font.pixelSize: VLCStyle.icon_topbar
                     text: VLCIcons.more
                     description: qsTr("Menu")
                     width: VLCStyle.bannerButton_width
