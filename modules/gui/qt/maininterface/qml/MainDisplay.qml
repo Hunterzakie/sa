@@ -574,12 +574,18 @@ FocusScope {
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
+            anchors.leftMargin: sidebar.width
 
             height: parent.height - g_mainDisplay.displayMargin
 
             visible: VLCStyle.isScreenSmall && (playlistLoader.shown || (sidebar.visible && (sidebar.state === "expanded")))
             color: "black"
             opacity: 0.4
+
+            Component.onCompleted: {
+                if (smallScreenOverlay.topLeftRadius !== undefined) // TODO: Directly set when minimum Qt is 6.7
+                    smallScreenOverlay.topLeftRadius = Qt.binding(() => topLeftCornerBackground.visible ? VLCStyle.mainView_topLeftRadius : 0.0)
+            }
 
             MouseArea {
                 anchors.fill: parent
