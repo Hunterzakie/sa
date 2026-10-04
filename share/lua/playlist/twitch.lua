@@ -310,7 +310,7 @@ local function preroll_items(master_url, channel, meta)
         path    = variant,
         name    = meta.name .. " [ad]",
         options = item_options({
-            ":adaptive-livedelay=60000"
+            ":adaptive-livedelay=60000",
             string.format(":run-time=%.2f", run),
         }),
     })
