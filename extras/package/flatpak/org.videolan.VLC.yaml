@@ -48,9 +48,6 @@ cleanup-commands:
   - rm -f /app/lib/vlc/plugins/plugins.dat
   - /app/libexec/vlc/vlc-cache-gen /app/lib/vlc/plugins
 build-options:
-  build-args:
-    # test
-    - --share=network
   env:
     V: '1'
 modules:
