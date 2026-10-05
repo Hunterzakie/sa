@@ -412,6 +412,11 @@ debian-meson:
 .flatpak-common:
     extends: .base-template
     variables:
+        # The runner default is to not fetch submodules at all
+        GIT_SUBMODULE_STRATEGY: recursive
+        # We pin an older shared-modules commit, so we can't shallow-clone it.
+        # The repo is tiny (<1MB) so a full clone is cheap.
+        GIT_SUBMODULE_DEPTH: 0
         FLATPAK_BRANCH: 4.0.x
         MANIFEST_PATH: extras/package/flatpak/org.videolan.VLC.yaml
     script:
