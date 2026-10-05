@@ -420,7 +420,7 @@ debian-meson:
         FLATPAK_BRANCH: 4.0.x
         MANIFEST_PATH: extras/package/flatpak/org.videolan.VLC.yaml
     script:
-        - flatpak-builder-lint --exceptions manifest ${MANIFEST_PATH}
+        - flatpak-builder-lint --exceptions --user-exceptions extras/package/flatpak/linter-exceptions.json manifest ${MANIFEST_PATH}
         - flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
         - flatpak-builder --default-branch ${FLATPAK_BRANCH} --user --install-deps-from=flathub --disable-rofiles-fuse --disable-updates --force-clean --ccache --mirror-screenshots-url=https://dl.flathub.org/media/ build-${HOST_ARCH} ${MANIFEST_PATH}
     cache:
