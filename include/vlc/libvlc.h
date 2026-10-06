@@ -315,7 +315,7 @@ LIBVLC_API void libvlc_log_get_context(const libvlc_log_t *ctx,
  * This function retrieves meta-information about a log message:
  * - the type name of the VLC object emitting the message,
  * - the object header if any, and
- * - a temporaly-unique object identifier.
+ * - a temporally-unique object identifier.
  *
  * This information is mainly meant for <b>manual</b> troubleshooting.
  *
@@ -328,7 +328,7 @@ LIBVLC_API void libvlc_log_get_context(const libvlc_log_t *ctx,
  * \param ctx message context (as passed to the @ref libvlc_log_cb callback)
  * \param name object name storage (or NULL) [OUT]
  * \param header object header (or NULL) [OUT]
- * \param id temporarily-unique object identifier (or 0) [OUT]
+ * \param id temporally-unique object identifier (or 0) [OUT]
  * \warning The returned module name and source code file name, if non-NULL,
  * are only valid until the logging callback returns.
  *

@@ -148,7 +148,7 @@ typedef struct libvlc_dialog_cbs
      *
      * @param p_data opaque pointer for the callback
      * @param p_id id of the dialog
-     * @param f_position osition of the progress bar (between 0.0 and 1.0)
+     * @param f_position position of the progress bar (between 0.0 and 1.0)
      * @param psz_text new text of the progress dialog
      */
     void (*pf_update_progress)(void *p_data, libvlc_dialog_id *p_id,

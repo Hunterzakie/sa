@@ -67,7 +67,7 @@ typedef struct libvlc_renderer_item_t libvlc_renderer_item_t;
 /**
  * Hold a renderer item, i.e. creates a new reference
  *
- * This functions need to called from the libvlc_renderer_discoverer_cbs::on_item_added
+ * This function needs to be called from the libvlc_renderer_discoverer_cbs::on_item_added
  * callback if the libvlc user wants to use this item after. (for display or
  * for passing it to the mediaplayer for example).
  *

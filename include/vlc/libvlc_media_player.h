@@ -535,7 +535,7 @@ struct libvlc_media_player_cbs
 
     /**
      * Callback prototype that notify when the next frame, following a call to
-     * `libvlc_media_player_next_frame()`, is about to displayed.
+     * `libvlc_media_player_next_frame()`, is about to be displayed.
      *
      * \note Optional (can be NULL),
      * available since version 0
@@ -920,7 +920,7 @@ typedef void (*libvlc_video_display_cb)(void *opaque, void *picture);
  * \note
  * For each pixels plane, the scanline pitch must be bigger than or equal to
  * the number of bytes per pixel multiplied by the pixel width.
- * Similarly, the number of scanlines must be bigger than of equal to
+ * Similarly, the number of scanlines must be bigger than or equal to
  * the pixel height.
  * Furthermore, we recommend that pitches and lines be multiple of 32
  * to not break assumptions that might be held by optimized code
@@ -1195,7 +1195,7 @@ typedef bool (*libvlc_video_makeCurrent_cb)(void* opaque, bool enter);
  *
  * \param[in] opaque private pointer set on the opaque parameter of @a libvlc_video_output_setup_cb()
  * \param fct_name name of the opengl function to load
- * \return a pointer to the named OpenGL function the NULL otherwise
+ * \return a pointer to the named OpenGL function or NULL otherwise
  * \version LibVLC 4.0.0 or later
  */
 typedef void* (*libvlc_video_getProcAddress_cb)(void* opaque, const char* fct_name);
@@ -1248,7 +1248,7 @@ typedef enum libvlc_video_engine_t {
      *  - 'ANativeWindow_fromSurface': from a JAVA SurfaceView
      *  - 'AImageReader_getWindow()': from an 'AImageReader' created with the
      *  following arguments: \verbatim
-     AImageReader_newWithUsage(1, 1 AIMAGE_FORMAT_PRIVATE,
+     AImageReader_newWithUsage(1, 1, AIMAGE_FORMAT_PRIVATE,
                                AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE,
                                maxImages, &reader);
      \endverbatim
@@ -1458,7 +1458,7 @@ libvlc_video_set_anw_callbacks( libvlc_media_player_t *mp,
  * @protocol VLCPictureInPictureMediaControlling <NSObject>
  * - (void)play;
  * - (void)pause;
- * - (void)seekBy:(int64_t)offset completion:(dispatch_block_t)completion;;
+ * - (void)seekBy:(int64_t)offset completion:(dispatch_block_t)completion;
  * - (int64_t)mediaLength;
  * - (int64_t)mediaTime;
  * - (BOOL)isMediaSeekable;
@@ -1504,7 +1504,7 @@ LIBVLC_API void libvlc_media_player_set_nsobject ( libvlc_media_player_t *p_mi, 
  * Get the NSView handler previously set with libvlc_media_player_set_nsobject().
  *
  * \param p_mi the Media Player
- * \return the NSView handler or 0 if none where set
+ * \return the NSView handler or 0 if none were set
  */
 LIBVLC_API void * libvlc_media_player_get_nsobject ( libvlc_media_player_t *p_mi );
 
@@ -1558,7 +1558,7 @@ LIBVLC_API void libvlc_media_player_set_xwindow(libvlc_media_player_t *p_mi,
  * audio-only input).
  *
  * \param p_mi the Media Player
- * \return an X window ID, or 0 if none where set.
+ * \return an X window ID, or 0 if none were set.
  */
 LIBVLC_API uint32_t libvlc_media_player_get_xwindow ( libvlc_media_player_t *p_mi );
 
@@ -2166,7 +2166,7 @@ libvlc_media_player_get_track_from_id( libvlc_media_player_t *p_mi,
 /**
  * Select a track
  *
- * This will unselected the current track.
+ * This will unselect the current track.
  *
  * \version LibVLC 4.0.0 and later.
  *
@@ -2705,7 +2705,7 @@ LIBVLC_API int libvlc_video_set_spu_delay( libvlc_media_player_t *p_mi, libvlc_t
  *
  * \param p_mi the media player
  * \param[out] titles address to store an allocated array of title descriptions
- *             descriptions (must be freed with libvlc_title_descriptions_release()
+ *             (must be freed with libvlc_title_descriptions_release()
  *             by the caller)
  *
  * \return the number of titles (-1 on error)
@@ -2733,7 +2733,7 @@ LIBVLC_API
  * \param p_mi the media player
  * \param i_chapters_of_title index of the title to query for chapters (uses current title if set to -1)
  * \param[out] pp_chapters address to store an allocated array of chapter descriptions
- *             descriptions (must be freed with libvlc_chapter_descriptions_release()
+ *             (must be freed with libvlc_chapter_descriptions_release()
  *             by the caller)
  *
  * \return the number of chapters (-1 on error)
@@ -2823,7 +2823,7 @@ void libvlc_video_set_crop_window(libvlc_media_player_t *mp,
  * \param left number of sample columns to crop on the left
  * \param right number of sample columns to crop on the right
  * \param top number of sample rows to crop on the top
- * \param bottom number of sample rows to corp on the bottom
+ * \param bottom number of sample rows to crop on the bottom
  *
  * \version LibVLC 4.0.0 and later
  */
@@ -2849,7 +2849,7 @@ LIBVLC_API int libvlc_video_get_teletext( libvlc_media_player_t *p_mi );
  * This function can also be used to send a teletext key.
  *
  * \param p_mi the media player
- * \param i_page teletex page number requested. This value can be 0 to disable
+ * \param i_page teletext page number requested. This value can be 0 to disable
  * teletext, a number in the range ]0;1000[ to show the requested page, or a
  * \ref libvlc_teletext_key_t. 100 is the default teletext page.
  */
@@ -2897,7 +2897,7 @@ int libvlc_video_take_snapshot( libvlc_media_player_t *p_mi, unsigned num,
  *
  * If \p modep is not NULL, it will be set to a heap-allocated nul-terminated
  * character string indicating the current deinterlacing algorithm name.
- * If no algorithm is selected or if allocation fails, it be set to NULL.
+ * If no algorithm is selected or if allocation fails, it will be set to NULL.
  * The value should be freed with the C run-time's free() function to avoid
  * leaking.
  *
@@ -3132,7 +3132,7 @@ void libvlc_audio_output_list_release( libvlc_audio_output_t *p_list );
 
 /**
  * Selects an audio output module.
- * \note Any change will take be effect only after playback is stopped and
+ * \note Any change will take effect only after playback is stopped and
  * restarted. Audio output cannot be changed while playing.
  *
  * \param p_mi media player
