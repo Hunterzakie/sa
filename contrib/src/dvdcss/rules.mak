@@ -9,6 +9,11 @@ ifeq ($(call need_pkg,"libdvdcss"),)
 PKGS_FOUND += dvdcss
 endif
 
+ifdef HAVE_ANDROID
+DEPS_dvdcss = laser $(DEPS_laser)
+DVDCSS_CONF := -Denable_laser=true
+endif
+
 # $(TARBALLS)/libdvdcss-$(LIBDVDCSS_GITVERSION).tar.xz:
 # 	$(call download_git,$(LIBDVDCSS_GITURL),$(LIBDVDCSS_BRANCH),$(LIBDVDCSS_GITVERSION))
 
@@ -25,11 +30,12 @@ $(TARBALLS)/libdvdcss-$(DVDCSS_VERSION).tar.bz2:
 dvdcss: libdvdcss-$(DVDCSS_VERSION).tar.bz2 .sum-dvdcss
 # dvdcss: libdvdcss-$(LIBDVDCSS_GITVERSION).tar.xz .sum-dvdcss
 	$(UNPACK)
+	$(APPLY) $(SRC)/dvdcss/0001-Issue-CSS-key-commands-through-the-laser-contrib.patch
 	$(MOVE)
 
 .dvdcss: dvdcss crossfile.meson
 	$(REQUIRE_GPL)
 	$(MESONCLEAN)
-	$(MESON)
+	$(MESON) $(DVDCSS_CONF)
 	+$(MESONBUILD)
 	touch $@
