@@ -1,0 +1,176 @@
+From 73a0f1d3da18d2f74af44941423617f53814eefc Mon Sep 17 00:00:00 2001
+From: Pierre Bogdanovscky <pierrebog@gmail.com>
+Date: Thu, 17 Sep 2026 22:00:00 +0200
+Subject: [PATCH] Allow a stream open to name the device it reads from
+
+A DVD opened through the stream callbacks cannot say which device it is
+reading from, so a reader that needs to send ioctls there has nowhere to
+send them. Add DVDOpenStream3() and DVDOpenStreamAudio2(), which pass the
+name to dvdinput_open() as its location; css_open() now tests the
+callbacks before the target and hands the name to dvdcss_open_stream2(),
+dropping it where libdvdcss has no such entry point. Existing callers pass
+NULL and are unaffected.
+---
+ meson.build              |  4 ++++
+ src/dvd_input.c          | 34 +++++++++++++++++++++++++++-------
+ src/dvd_reader.c         | 17 ++++++++++++++++-
+ src/dvdread/dvd_reader.h | 14 ++++++++++++++
+ 4 files changed, 61 insertions(+), 8 deletions(-)
+
+diff --git a/meson.build b/meson.build
+index 9449d40..40399ff 100644
+--- a/meson.build
++++ b/meson.build
+@@ -105,6 +105,10 @@ if libdvdcss_dependency.found()
+   if cc.has_header('dvdcss/dvdcpxm.h', dependencies: libdvdcss_dependency)
+     cdata.set('HAVE_DVDCSS_DVDCPXM_H', 1)
+   endif
++  if cc.has_header_symbol('dvdcss/dvdcss.h', 'dvdcss_open_stream2',
++                          dependencies: libdvdcss_dependency)
++    cdata.set('HAVE_DVDCSS_OPEN_STREAM2', 1)
++  endif
+ endif
+ # Compiler flag tests
+ 
+diff --git a/src/dvd_input.c b/src/dvd_input.c
+index eef86e0..85188a8 100644
+--- a/src/dvd_input.c
++++ b/src/dvd_input.c
+@@ -62,6 +62,10 @@ int         (*dvdinput_init)  (dvd_input_t, uint8_t* mkb) = NULL;
+ # include <dvdcss/dvdcss.h>
+ # define DVDcss_open_stream(a, b) \
+     dvdcss_open_stream((void*)(a), (dvdcss_stream_cb*)(b))
++# ifdef HAVE_DVDCSS_OPEN_STREAM2
++#  define DVDcss_open_stream2(a, b, c) \
++    dvdcss_open_stream2((const char*)(a), (void*)(b), (dvdcss_stream_cb*)(c))
++# endif
+ # define DVDcss_open(a) dvdcss_open((char*)(a))
+ # define DVDcss_close   dvdcss_close
+ # define DVDcss_seek    dvdcss_seek
+@@ -87,6 +91,8 @@ int         (*dvdinput_init)  (dvd_input_t, uint8_t* mkb) = NULL;
+ typedef struct dvdcss_s *dvdcss_t;
+ typedef struct dvdcss_stream_cb dvdcss_stream_cb;
+ static dvdcss_t (*DVDcss_open_stream) (void *, dvdcss_stream_cb *);
++static dvdcss_t (*DVDcss_open_stream2) (const char *, void *,
++                                        dvdcss_stream_cb *);
+ static dvdcss_t (*DVDcss_open)  (const char *);
+ static int      (*DVDcss_close) (dvdcss_t);
+ static int      (*DVDcss_seek)  (dvdcss_t, int, int);
+@@ -162,18 +168,29 @@ static dvd_input_t css_open(void *priv, dvd_logger_cb *logcb,
+     return NULL;
+   }
+ 
+-  /* Really open it with libdvdcss */
+-  if(target)
+-      dev->dvdcss = DVDcss_open(target);
+-  else if(priv && stream_cb) {
++  /* Really open it with libdvdcss. The stream test comes first: a stream open
++   * may also name a device, and the callbacks still carry every sector. */
++  if(priv && stream_cb) {
+ #ifdef HAVE_DVDCSS_DVDCSS_H
++# ifdef HAVE_DVDCSS_OPEN_STREAM2
++      dev->dvdcss = DVDcss_open_stream2(target, priv,
++                                        (dvdcss_stream_cb *)stream_cb);
++# else
+       dev->dvdcss = DVDcss_open_stream(priv, (dvdcss_stream_cb *)stream_cb);
++# endif
+ #else
+-      dev->dvdcss = DVDcss_open_stream ?
+-                    DVDcss_open_stream(priv, (dvdcss_stream_cb *)stream_cb) :
+-                    NULL;
++      if(DVDcss_open_stream2)
++          dev->dvdcss = DVDcss_open_stream2(target, priv,
++                                            (dvdcss_stream_cb *)stream_cb);
++      else if(DVDcss_open_stream)
++          dev->dvdcss = DVDcss_open_stream(priv,
++                                           (dvdcss_stream_cb *)stream_cb);
++      else
++          dev->dvdcss = NULL;
+ #endif
+   }
++  else if(target)
++      dev->dvdcss = DVDcss_open(target);
+   if(dev->dvdcss == NULL) {
+     DVDReadLog(priv, logcb, DVD_LOGGER_LEVEL_ERROR,
+                "Could not open %s with libdvdcss.", target);
+@@ -487,6 +504,9 @@ int dvdinput_setup(void *priv, dvd_logger_cb *logcb, dvd_type_t dvda_flag)
+     /* hybrid discs encrypt video tracks with css*/
+     DVDcss_open_stream = (dvdcss_t (*)(void *, dvdcss_stream_cb *))
+       dlsym(dvdcss_library, U_S "dvdcss_open_stream");
++    /* NULL against an older libdvdcss; css_open() falls back. */
++    DVDcss_open_stream2 = (dvdcss_t (*)(const char *, void *, dvdcss_stream_cb *))
++      dlsym(dvdcss_library, U_S "dvdcss_open_stream2");
+     DVDcss_open = (dvdcss_t (*)(const char*))
+       dlsym(dvdcss_library, U_S "dvdcss_open");
+     DVDcss_close = (int (*)(dvdcss_t))
+diff --git a/src/dvd_reader.c b/src/dvd_reader.c
+index 77d51a7..86f5559 100644
+--- a/src/dvd_reader.c
++++ b/src/dvd_reader.c
+@@ -485,7 +485,7 @@ static dvd_reader_t *DVDOpenCommon( void *priv,
+   if( priv != NULL && stream_cb != NULL )
+   {
+     have_css = dvdinput_setup( ctx->priv, &ctx->logcb, type );
+-    ctx->rd = DVDOpenImageFile( ctx, NULL, stream_cb, have_css );
++    ctx->rd = DVDOpenImageFile( ctx, ppath, stream_cb, have_css );
+     if(!ctx->rd)
+         return DVDFreeContext(ctx);
+     cpxm_init_condition( ctx, type, have_css );
+@@ -827,6 +827,14 @@ dvd_reader_t *DVDOpenStream2( void *priv, const dvd_logger_cb *logcb,
+   return DVDOpenCommon( priv, logcb, NULL, stream_cb, type_flag, NULL );
+ }
+ 
++dvd_reader_t *DVDOpenStream3( void *priv, const dvd_logger_cb *logcb,
++                              const char *ptarget,
++                              dvd_reader_stream_cb *stream_cb )
++{
++  dvd_type_t type_flag = DVDProbeType( NULL, NULL, stream_cb );
++  return DVDOpenCommon( priv, logcb, ptarget, stream_cb, type_flag, NULL );
++}
++
+ dvd_reader_t *DVDOpenAudio( void *priv, const dvd_logger_cb *logcb,
+                             const char *ppath )
+ {
+@@ -839,6 +847,13 @@ dvd_reader_t *DVDOpenStreamAudio( void *priv, const dvd_logger_cb *logcb,
+   return DVDOpenCommon( priv, logcb, NULL, stream_cb, DVD_A, NULL );
+ }
+ 
++dvd_reader_t *DVDOpenStreamAudio2( void *priv, const dvd_logger_cb *logcb,
++                                   const char *ptarget,
++                                   dvd_reader_stream_cb *stream_cb )
++{
++  return DVDOpenCommon( priv, logcb, ptarget, stream_cb, DVD_A, NULL );
++}
++
+ dvd_reader_t *DVDOpenVideoRecording( void *priv, const dvd_logger_cb *logcb,
+                                      const char *ppath )
+ {
+diff --git a/src/dvdread/dvd_reader.h b/src/dvdread/dvd_reader.h
+index 4896c25..63d8030 100644
+--- a/src/dvdread/dvd_reader.h
++++ b/src/dvdread/dvd_reader.h
+@@ -165,10 +165,24 @@ DVDREAD_API dvd_reader_t *DVDOpenStream( void *, dvd_reader_stream_cb * );
+ DVDREAD_API dvd_reader_t *DVDOpen2( void *, const dvd_logger_cb *, const char *);
+ DVDREAD_API dvd_reader_t *DVDOpenStream2( void *, const dvd_logger_cb *, dvd_reader_stream_cb *);
+ 
++/**
++ * Same as DVDOpenStream2, but naming the device the stream reads from.
++ *
++ * @param priv is a private handle
++ * @param logcb is a custom logger callback struct, or NULL if none needed
++ * @param target names the device the reader sends ioctls to, or NULL for none
++ * @param stream_cb is a struct containing seek and read functions
++ * @return If successful a read handle is returned. Otherwise 0 is returned.
++ *
++ * dvd = DVDOpenStream3(priv, logcb, target, &stream_cb);
++ */
++DVDREAD_API dvd_reader_t *DVDOpenStream3( void *, const dvd_logger_cb *, const char *, dvd_reader_stream_cb *);
++
+ /* in the case the the type was autodetected, can check with dvd->dvd_type */
+ /* To explicitly open the disc as DVD-Audio */
+ DVDREAD_API dvd_reader_t *DVDOpenAudio( void *, const dvd_logger_cb *, const char *);
+ DVDREAD_API dvd_reader_t *DVDOpenStreamAudio( void *, const dvd_logger_cb *, dvd_reader_stream_cb *);
++DVDREAD_API dvd_reader_t *DVDOpenStreamAudio2( void *, const dvd_logger_cb *, const char *, dvd_reader_stream_cb *);
+ 
+ /* To explicitly open the disc as DVD-VR*/
+ DVDREAD_API dvd_reader_t *DVDOpenVideoRecording( void *, const dvd_logger_cb *, const char *);
