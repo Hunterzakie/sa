@@ -650,6 +650,11 @@ option('bluray',
     value: 'auto',
     description: 'Blu-ray input module (libbluray)')
 
+option('laser',
+    type: 'feature',
+    value: 'auto',
+    description: 'Android USB optical drive disc classification and access (liblaser)')
+
 option('shout',
     type: 'feature',
     value: 'auto',

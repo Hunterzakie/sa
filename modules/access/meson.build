@@ -322,6 +322,15 @@ endif
 ## Optical media
 #
 
+# Android USB optical drive support (contrib liblaser)
+laser_dep = dependency('liblaser', version: '>= 0.2.1',
+                       required: get_option('laser')
+                           .require(host_system == 'android',
+                                    error_message: 'liblaser is only used on Android'))
+have_laser = laser_dep.found()
+laser_deps = have_laser ? [laser_dep] : []
+laser_flags = have_laser ? ['-DHAVE_LASER'] : []
+
 # VCD and CD-DA access module
 if get_option('vcd_module')
     vcd_cdda_flags = []
@@ -433,6 +442,15 @@ if libbluray_dep.found()
     endif
 endif
 
+# Disc classification and playback for USB optical drives on Android
+if have_laser
+    vlc_modules += {
+        'name' : 'laser',
+        'sources' : files('laser.c'),
+        'dependencies' : [laser_dep],
+        'plugin_dir' : 'access',
+    }
+endif
 
 ## Digital TV
 

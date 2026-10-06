@@ -312,6 +312,15 @@ liblibbluray_plugin_la_LDFLAGS = $(AM_LDFLAGS) $(access_RPATH)
 access_PLUGINS += $(LTLIBlibbluray)
 EXTRA_LTLIBRARIES += liblibbluray_plugin.la
 
+# Disc classification for USB optical drives on Android
+liblaser_plugin_la_SOURCES = access/laser.c
+liblaser_plugin_la_CFLAGS = $(AM_CFLAGS) $(LASER_CFLAGS)
+liblaser_plugin_la_LIBADD = $(LASER_LIBS)
+liblaser_plugin_la_LDFLAGS = $(AM_LDFLAGS) $(access_RPATH)
+if HAVE_LASER
+access_PLUGINS += liblaser_plugin.la
+endif
+
 ### Digital TV ###
 
 libdtv_plugin_la_SOURCES = \

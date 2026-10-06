@@ -2424,6 +2424,13 @@ dnl
 PKG_ENABLE_MODULES_VLC([BLURAY], [libbluray], [libbluray >= 1.1.0], (libbluray for Blu-ray disc support ) )
 
 dnl
+dnl  Android USB optical drive disc classification and access
+dnl
+PKG_ENABLE_MODULES_VLC([LASER], [], [liblaser >= 0.2.1], [Android USB optical drive disc classification and access], [auto])
+AM_CONDITIONAL([HAVE_LASER],
+  [test "${enable_laser}" = "yes" && test "${VENDOR}" = "android"])
+
+dnl
 dnl  OpenCV wrapper and example filters
 dnl
 AC_ARG_ENABLE(opencv, [AS_HELP_STRING([--enable-opencv], [OpenCV (computer vision) filter (default auto)])])
