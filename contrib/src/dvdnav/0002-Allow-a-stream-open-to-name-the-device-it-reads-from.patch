@@ -1,0 +1,133 @@
+From 7447f2bede872b0ba4865c47b7e98baae22d3a36 Mon Sep 17 00:00:00 2001
+From: Pierre Bogdanovscky <pierrebog@gmail.com>
+Date: Fri, 18 Sep 2026 10:00:00 +0200
+Subject: [PATCH] Allow a stream open to name the device it reads from
+
+Forward to libdvdread the device name a caller gives, so a DVD opened
+through the stream callbacks can still say which device a reader should send
+its ioctls to. Add dvdnav_open_stream3(), and in vm_reset() test the
+callbacks before the path, so an open naming both reads its sectors through
+the callbacks while the name goes to DVDOpenStream3(). The path is kept
+only for a path-based open, so dvdnav_path() still returns a filesystem path
+or nothing. Existing callers pass NULL and are unaffected.
+---
+ src/dvdnav.c        | 12 ++++++++++--
+ src/dvdnav/dvdnav.h |  9 +++++++++
+ src/meson.build     | 12 +++++++++++-
+ src/vm/vm.c         | 20 ++++++++++++++------
+ 4 files changed, 44 insertions(+), 9 deletions(-)
+
+diff --git a/src/dvdnav.c b/src/dvdnav.c
+index f24c5d3..c3f1205 100644
+--- a/src/dvdnav.c
++++ b/src/dvdnav.c
+@@ -178,8 +178,9 @@ static dvdnav_status_t dvdnav_open_common(dvdnav_t** dest,
+     goto fail;
+   }
+ 
+-  /* Set the path. */
+-  if(path != NULL)
++  /* Path-based opens only: a stream open may pass a device identifier here,
++   * which is not a path dvdnav_path() could return. */
++  if(path != NULL && stream_cb == NULL)
+   {
+     this->path = strdup(path);
+     if(!this->path)
+@@ -233,6 +234,13 @@ dvdnav_status_t dvdnav_open_stream2(dvdnav_t** dest,
+   return dvdnav_open_common(dest, priv, logcb, NULL, stream_cb);
+ }
+ 
++dvdnav_status_t dvdnav_open_stream3(dvdnav_t** dest,
++                                    void *priv,const dvdnav_logger_cb *logcb,
++                                    const char *target,
++                                    dvdnav_stream_cb *stream_cb) {
++  return dvdnav_open_common(dest, priv, logcb, target, stream_cb);
++}
++
+ dvdnav_status_t dvdnav_close(dvdnav_t *this) {
+ 
+ #ifdef LOG_DEBUG
+diff --git a/src/dvdnav/dvdnav.h b/src/dvdnav/dvdnav.h
+index 8e04742..03a74dd 100644
+--- a/src/dvdnav/dvdnav.h
++++ b/src/dvdnav/dvdnav.h
+@@ -120,6 +120,15 @@ DVDNAV_API dvdnav_status_t dvdnav_open_stream2(dvdnav_t **dest,
+                                     void *priv, const dvdnav_logger_cb *,
+                                     dvdnav_stream_cb *stream_cb);
+ 
++/*
++ * Same as dvdnav_open_stream2, but "target" names the device libdvdread sends
++ * its ioctls to. NULL for none.
++ */
++DVDNAV_API dvdnav_status_t dvdnav_open_stream3(dvdnav_t **dest,
++                                    void *priv, const dvdnav_logger_cb *,
++                                    const char *target,
++                                    dvdnav_stream_cb *stream_cb);
++
+ DVDNAV_API dvdnav_status_t dvdnav_dup(dvdnav_t **dest, dvdnav_t *src);
+ DVDNAV_API dvdnav_status_t dvdnav_free_dup(dvdnav_t * _this);
+ 
+diff --git a/src/meson.build b/src/meson.build
+index 670884a..29827fa 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -27,6 +27,16 @@ else
+     api_export_flags = '-DDVDNAV_API_EXPORT'
+ endif
+ 
++cc = meson.get_compiler('c')
++if dvdread_dependency.type_name() == 'internal'
++    dvdread_has_open_stream3 = false
++else
++    dvdread_has_open_stream3 = cc.has_header_symbol('dvdread/dvd_reader.h',
++                                                    'DVDOpenStream3',
++                                                    dependencies: dvdread_dependency)
++endif
++dvdread_open_stream3_flags = dvdread_has_open_stream3 ? ['-DHAVE_DVDREAD_OPEN_STREAM3'] : []
++
+ # The final libdvdnav library
+ libdvdnav = library('dvdnav', dvdnav_src,
+     include_directories: dvdnav_inc_dirs,
+@@ -34,7 +44,7 @@ libdvdnav = library('dvdnav', dvdnav_src,
+         dvdread_dependency,
+         thread_dependency,
+     ],
+-    c_args: [api_export_flags],
++    c_args: [api_export_flags, dvdread_open_stream3_flags],
+     gnu_symbol_visibility: 'hidden',
+     version: dvdnav_soname_version,
+     install: true,
+diff --git a/src/vm/vm.c b/src/vm/vm.c
+index 9276c91..522aad8 100644
+--- a/src/vm/vm.c
++++ b/src/vm/vm.c
+@@ -426,15 +426,23 @@ int vm_reset(vm_t *vm, const char *dvdroot,
+     dvd_logger_cb dvdread_logcb = { .pf_log = dvd_reader_logger_handler };
+     /* Only install log handler if we have one ourself */
+     dvd_logger_cb *p_dvdread_logcb = vm->logcb.pf_log ? &dvdread_logcb : NULL;
+-    if(dvdroot)
+-        vm->dvd = DVDOpen2(vm, p_dvdread_logcb, dvdroot);
+-    else if(vm->priv && vm->dvdstreamcb.pf_read)
++    /* The stream test comes first: a stream open may also name a device, and
++     * the callbacks still carry every sector. */
++    if(vm->priv && vm->dvdstreamcb.pf_read)
++# ifdef HAVE_DVDREAD_OPEN_STREAM3
++        vm->dvd = DVDOpenStream3(vm, p_dvdread_logcb, dvdroot,
++                                 &vm->dvdstreamcb);
++# else
+         vm->dvd = DVDOpenStream2(vm, p_dvdread_logcb, &vm->dvdstreamcb);
++# endif
++    else if(dvdroot)
++        vm->dvd = DVDOpen2(vm, p_dvdread_logcb, dvdroot);
+ #else
+-      if(dvdroot)
+-          vm->dvd = DVDOpen(dvdroot);
+-      else if(vm->priv && vm->dvdstreamcb.pf_read)
++      /* Same order; this libdvdread cannot carry the name, so it is dropped. */
++      if(vm->priv && vm->dvdstreamcb.pf_read)
+           vm->dvd = DVDOpenStream(vm, &vm->dvdstreamcb);
++      else if(dvdroot)
++          vm->dvd = DVDOpen(dvdroot);
+ #endif
+     if(!vm->dvd) {
+       Log0(vm, "vm: failed to open/read the DVD");
