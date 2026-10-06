@@ -125,7 +125,7 @@ libvlc_renderer_item_icon_uri(const libvlc_renderer_item_t *p_item);
  *
  * \version LibVLC 3.0.0 or later
  *
- * \return bitwise flag: capabilities of the renderer, see
+ * \return bitwise flag: capabilities of the renderer
  */
 LIBVLC_API int
 libvlc_renderer_item_flags(const libvlc_renderer_item_t *p_item);

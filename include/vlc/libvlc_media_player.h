@@ -1138,6 +1138,7 @@ typedef struct libvlc_video_output_cfg_t
  * \param[in] opaque private pointer set on the opaque parameter of @a libvlc_video_output_setup_cb()
  * \param[in] cfg configuration of the video that will be rendered
  * \param[out] output configuration describing with how the rendering is setup
+ * \return true on success
  * \version LibVLC 4.0.0 or later
  *
  * \note the configuration device for Direct3D9 is the IDirect3DDevice9 that VLC
