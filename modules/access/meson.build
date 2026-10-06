@@ -376,9 +376,15 @@ endif
 # DVD with navigation (dvdnav) access
 dvdnav_dep = dependency('dvdnav', version: '>= 6.0.0', required: get_option('dvdnav'))
 if dvdnav_dep.found()
+    dvdnav_has_open_stream3 = cc.has_header_symbol('dvdnav/dvdnav.h',
+                                                   'dvdnav_open_stream3',
+                                                   dependencies: dvdnav_dep)
+    dvdnav_open_stream3_flags = dvdnav_has_open_stream3 ? ['-DHAVE_DVDNAV_OPEN_STREAM3'] : []
+
     vlc_modules += {
         'name' : 'dvdnav',
         'sources' : files('dvdnav.c'),
+        'c_args' : dvdnav_open_stream3_flags,
         'dependencies' : [
             dvdnav_dep,
             (host_system == 'darwin') ? [corefoundation_dep, iokit_dep] : []
