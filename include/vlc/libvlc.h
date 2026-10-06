@@ -373,6 +373,7 @@ LIBVLC_API void libvlc_log_unset( libvlc_instance_t *p_instance );
  * This function is thread-safe: it will wait for any pending callbacks
  * invocation to complete.
  *
+ * \param p_instance libvlc instance
  * \param cb callback function pointer
  * \param data opaque data pointer for the callback function
  *
@@ -381,7 +382,6 @@ LIBVLC_API void libvlc_log_unset( libvlc_instance_t *p_instance );
  *
  * \warning A deadlock may occur if this function is called from the callback.
  *
- * \param p_instance libvlc instance
  * \version LibVLC 2.1.0 or later
  */
 LIBVLC_API void libvlc_log_set( libvlc_instance_t *p_instance,

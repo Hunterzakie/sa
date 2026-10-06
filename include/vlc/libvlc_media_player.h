@@ -1837,8 +1837,8 @@ LIBVLC_API double libvlc_media_player_get_position( libvlc_media_player_t *p_mi 
  * This might not work depending on the underlying input format and protocol.
  *
  * \param p_mi the Media Player
- * \param b_fast prefer fast seeking or precise seeking
  * \param f_pos the position in the range [0;1]
+ * \param b_fast prefer fast seeking or precise seeking
  * \return 0 on success, -1 on error
  */
 LIBVLC_API int libvlc_media_player_set_position( libvlc_media_player_t *p_mi,
@@ -2900,7 +2900,7 @@ int libvlc_video_take_snapshot( libvlc_media_player_t *p_mi, unsigned num,
  * The value should be freed with the C run-time's free() function to avoid
  * leaking.
  *
- * \param mpi media player instance
+ * \param mp media player instance
  * \param modep storage space for hold the mode name (or NULL) [OUT]
  * \retval -1 deinterlacing is selected automatically
  * \retval 0 deinterlacing is forcefully disabled
@@ -3060,7 +3060,7 @@ LIBVLC_API void libvlc_video_set_adjust_float( libvlc_media_player_t *p_mi,
  *
  * This changes how the source is mapped to the output w.r.t. 360 playback.
  *
- * \param p_mi libvlc media player instance
+ * \param player libvlc media player instance
  * \param projection_mode the considered projection mode for the source
  * \version LibVLC 4.0.0 and later.
  */
@@ -3073,7 +3073,7 @@ libvlc_video_set_projection_mode(libvlc_media_player_t *player,
  *
  * Remove the effects from previous call to libvlc_video_set_projection_mode.
  *
- * \param p_mi libvlc media player instance
+ * \param player libvlc media player instance
  * \version LibVLC 4.0.0 and later.
  */
 LIBVLC_API void
