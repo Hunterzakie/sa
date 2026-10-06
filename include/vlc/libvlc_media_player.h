@@ -110,7 +110,7 @@ typedef struct libvlc_audio_output_device_t
  */
 typedef enum libvlc_video_marquee_option_t {
     libvlc_marquee_Enable = 0,
-    libvlc_marquee_Text,                  /** string argument */
+    libvlc_marquee_Text,                  /**< string argument */
     libvlc_marquee_Color,
     libvlc_marquee_Opacity,
     libvlc_marquee_Position,
@@ -1022,19 +1022,19 @@ void libvlc_video_set_format_callbacks( libvlc_media_player_t *mp,
 
 typedef struct libvlc_video_setup_device_cfg_t
 {
-    bool hardware_decoding; /** set if D3D11_CREATE_DEVICE_VIDEO_SUPPORT is needed for D3D11 */
+    bool hardware_decoding; /**< set if D3D11_CREATE_DEVICE_VIDEO_SUPPORT is needed for D3D11 */
 } libvlc_video_setup_device_cfg_t;
 
 typedef struct libvlc_video_setup_device_info_t
 {
     union libvlc_video_setup_device_data {
         struct {
-            void *device_context; /** ID3D11DeviceContext* */
-            void *context_mutex; /** Windows Mutex HANDLE to protect ID3D11DeviceContext usage */
+            void *device_context; /**< ID3D11DeviceContext* */
+            void *context_mutex; /**< Windows Mutex HANDLE to protect ID3D11DeviceContext usage */
         } d3d11;
         struct {
-            void *device;         /** IDirect3D9* */
-            int  adapter;         /** Adapter to use with the IDirect3D9* */
+            void *device;         /**< IDirect3D9* */
+            int  adapter;         /**< Adapter to use with the IDirect3D9* */
         } d3d9;
     } u;
 } libvlc_video_setup_device_info_t;
@@ -1777,8 +1777,6 @@ void libvlc_audio_set_format_callbacks( libvlc_media_player_t *mp,
 LIBVLC_API
 void libvlc_audio_set_format( libvlc_media_player_t *mp, const char *format,
                               unsigned rate, unsigned channels );
-
-/** \bug This might go away ... to be replaced by a broader system */
 
 /**
  * Get the current movie length (in us).
@@ -3547,7 +3545,7 @@ typedef enum libvlc_media_player_role {
     libvlc_role_Animation, /**< Embedded animation (e.g. in web page) */
     libvlc_role_Production, /**< Audio editing/production */
     libvlc_role_Accessibility, /**< Accessibility */
-    libvlc_role_Test /** Testing */
+    libvlc_role_Test /**< Testing */
 #define libvlc_role_Last libvlc_role_Test
 } libvlc_media_player_role_t;
 
@@ -3801,7 +3799,7 @@ LIBVLC_API void libvlc_media_player_lock( libvlc_media_player_t *mp );
  *
  * \see libvlc_media_player_lock
  *
- * \param mp media player object locked using /ref libvlc_media_player_lock
+ * \param mp media player object locked using \ref libvlc_media_player_lock
  * \version LibVLC 4.0.0 or later
  */
 LIBVLC_API void libvlc_media_player_unlock( libvlc_media_player_t *mp );
@@ -3817,7 +3815,7 @@ LIBVLC_API void libvlc_media_player_unlock( libvlc_media_player_t *mp );
  * \warning this function must not be called from any libvlc callbacks and
  * events. The lock should be held only one time before waiting.
  *
- * \param mp media player object locked using /ref libvlc_media_player_lock
+ * \param mp media player object locked using \ref libvlc_media_player_lock
  * \version LibVLC 4.0.0 or later
  */
 LIBVLC_API void libvlc_media_player_wait( libvlc_media_player_t *mp );
@@ -3828,7 +3826,7 @@ LIBVLC_API void libvlc_media_player_wait( libvlc_media_player_t *mp );
  * \note this is equivalent to pthread_cond_broadcast() with the
  * libvlc_media_player_t internal condition variable.
  *
- * \param mp media player object locked using /ref libvlc_media_player_lock
+ * \param mp media player object locked using \ref libvlc_media_player_lock
  * \version LibVLC 4.0.0 or later
  */
 LIBVLC_API void libvlc_media_player_signal( libvlc_media_player_t *mp );
