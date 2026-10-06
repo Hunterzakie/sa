@@ -151,9 +151,16 @@ static vcddev_t *DiscOpen(vlc_object_t *obj, const char *location,
         if (dec == NULL)
             return NULL;
 
-        if (unlikely(asprintf(&devpath, "/dev/%s", dec) == -1))
-            devpath = NULL;
-        free(dec);
+#ifdef HAVE_LASER
+        if (ioctl_IsLaserLocation(dec))
+            devpath = dec;
+        else
+#endif
+        {
+            if (unlikely(asprintf(&devpath, "/dev/%s", dec) == -1))
+                devpath = NULL;
+            free(dec);
+        }
 #else
         (void) location;
         return NULL;

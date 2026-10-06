@@ -272,14 +272,23 @@ if HAVE_GCRYPT
 libcdda_plugin_la_CFLAGS += $(GCRYPT_CFLAGS)
 libcdda_plugin_la_LIBADD += $(GCRYPT_LIBS)
 endif
+if HAVE_LASER
+libcdda_plugin_la_CFLAGS += -DHAVE_LASER $(LASER_CFLAGS)
+libcdda_plugin_la_LIBADD += $(LASER_LIBS)
+endif
 EXTRA_LTLIBRARIES += libcdda_plugin.la
 access_PLUGINS += $(LTLIBcdda)
 
 libvcd_plugin_la_SOURCES = access/vcd/vcd.c access/vcd/cdrom.c access/vcd/cdrom.h access/vcd/cdrom_internals.h
+libvcd_plugin_la_CFLAGS = $(AM_CFLAGS)
 libvcd_plugin_la_LDFLAGS = $(AM_LDFLAGS) $(access_RPATH)
 if HAVE_DARWIN
 libvcd_plugin_la_LIBADD = -liconv
 libvcd_plugin_la_LDFLAGS += -Wl,-framework,IOKit,-framework,CoreFoundation
+endif
+if HAVE_LASER
+libvcd_plugin_la_CFLAGS += -DHAVE_LASER $(LASER_CFLAGS)
+libvcd_plugin_la_LIBADD = $(LASER_LIBS)
 endif
 EXTRA_LTLIBRARIES += libvcd_plugin.la
 access_PLUGINS += $(LTLIBvcd)

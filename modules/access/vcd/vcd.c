@@ -220,10 +220,21 @@ static int Open( vlc_object_t *p_this )
 {
     stream_t     *p_access = (stream_t *)p_this;
     access_sys_t *p_sys;
-    if( p_access->psz_filepath == NULL )
+
+    const char *psz_source = p_access->psz_filepath;
+
+    /* A laser location names the drive where a device path would be, and
+     * there is no device path to name it with. */
+#ifdef HAVE_LASER
+    if( psz_source == NULL
+     && ioctl_IsLaserLocation( p_access->psz_location ) )
+        psz_source = p_access->psz_location;
+#endif
+
+    if( psz_source == NULL )
         return VLC_EGENERIC;
 
-    char *psz_dup = ToLocaleDup( p_access->psz_filepath );
+    char *psz_dup = ToLocaleDup( psz_source );
 
     char *psz;
     int i_title = 0;

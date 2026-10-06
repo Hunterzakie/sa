@@ -34,6 +34,12 @@ struct vcddev_s
 
     /* Section used in vcd device mode */
 
+#ifdef HAVE_LASER
+    /* USB optical drive token, or -1. Unlike i_device_handle, never closed
+     * here: the descriptor belongs to the caller. */
+    int    i_laser_token;
+#endif
+
 #ifdef _WIN32
     HANDLE h_device_handle;                         /* vcd device descriptor */
 #elif defined( __OS2__ )

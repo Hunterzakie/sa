@@ -25,6 +25,7 @@
 #define VLC_CDROM_H
 
 #include <assert.h>
+#include <stdbool.h>
 
 enum {
     CDDA_TYPE = 0,
@@ -152,6 +153,10 @@ typedef struct entries_sect_s
 /*****************************************************************************
  * Prototypes
  *****************************************************************************/
+#ifdef HAVE_LASER
+bool      ioctl_IsLaserLocation( const char * );
+#endif
+
 vcddev_t *ioctl_Open         ( vlc_object_t *, const char * );
 void      ioctl_Close        ( vlc_object_t *, vcddev_t * );
 vcddev_toc_t * ioctl_GetTOC  ( vlc_object_t *, const vcddev_t * );

@@ -333,7 +333,7 @@ laser_flags = have_laser ? ['-DHAVE_LASER'] : []
 
 # VCD and CD-DA access module
 if get_option('vcd_module')
-    vcd_cdda_flags = []
+    vcd_cdda_flags = laser_flags
 
     if cc.has_header_symbol('linux/cdrom.h', 'struct cdrom_msf0')
         needed_vcd_unix_headers_present = true
@@ -364,7 +364,7 @@ if get_option('vcd_module')
             ),
             'c_args' : vcd_cdda_flags,
             'link_with' : vlc_json_lib,
-            'dependencies' : [vcd_cdda_darwin_deps, gcrypt_dep],
+            'dependencies' : [vcd_cdda_darwin_deps, gcrypt_dep, laser_deps],
             'plugin_dir' : 'access',
         }
 
@@ -375,7 +375,7 @@ if get_option('vcd_module')
                 'vcd/cdrom.c',
             ),
             'c_args' : vcd_cdda_flags,
-            'dependencies' : [vcd_cdda_darwin_deps],
+            'dependencies' : [vcd_cdda_darwin_deps, laser_deps],
             'plugin_dir' : 'access',
         }
 
