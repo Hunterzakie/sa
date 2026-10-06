@@ -470,20 +470,17 @@ static int OpenCommon( demux_t *p_demux,
 
     if( vlc_stream_Seek( p_demux->s, p_sys->i_stream_offset ) )
     {
-        free( p_sys );
-        return VLC_EGENERIC;
+        goto error;
     }
 
     if( p_sys->codec.pf_init( p_demux ) )
     {
-        free( p_sys );
-        return VLC_EGENERIC;
+        goto error;
     }
 
     if( vlc_stream_Seek( p_demux->s, p_sys->i_stream_offset ) )
     {
-        free( p_sys );
-        return VLC_EGENERIC;
+        goto error;
     }
 
     msg_Dbg( p_demux, "detected format %4.4s", (const char*)&p_sys->codec.i_codec );
@@ -494,8 +491,7 @@ static int OpenCommon( demux_t *p_demux,
     p_sys->p_packetizer = demux_PacketizerNew( VLC_OBJECT(p_demux), &fmt, p_sys->codec.psz_name );
     if( !p_sys->p_packetizer )
     {
-        free( p_sys );
-        return VLC_EGENERIC;
+        goto error;
     }
 
     es_format_t *p_fmt = &p_sys->p_packetizer->fmt_out;
@@ -526,6 +522,25 @@ static int OpenCommon( demux_t *p_demux,
     }
 
     return VLC_SUCCESS;
+
+error:
+    for( size_t i = 0; i < p_sys->chapters.i_count; i++ )
+        vlc_seekpoint_Delete( p_sys->chapters.p_entry[i].p_seekpoint );
+    TAB_CLEAN( p_sys->chapters.i_count, p_sys->chapters.p_entry );
+    for( size_t i = 0; i < p_sys->sylt.i_count; i++ )
+    {
+        sylt_track_t *p_tk = &p_sys->sylt.p_track[i];
+        for( size_t j = 0; j < p_tk->i_count; j++ )
+            free( p_tk->p_entry[j].psz_text );
+        TAB_CLEAN( p_tk->i_count, p_tk->p_entry );
+        free( p_tk->psz_language );
+    }
+    TAB_CLEAN( p_sys->sylt.i_count, p_sys->sylt.p_track );
+    if( p_sys->p_meta )
+        vlc_meta_Delete( p_sys->p_meta );
+    free( p_sys->mllt.p_bits );
+    free( p_sys );
+    return VLC_EGENERIC;
 }
 static int OpenAudio( vlc_object_t *p_this )
 {
