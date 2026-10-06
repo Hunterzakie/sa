@@ -2394,6 +2394,15 @@ dnl
 dnl dvdread module: check for libdvdread
 dnl
 PKG_ENABLE_MODULES_VLC([DVDREAD], [], [dvdread >= 6.0.0], [dvdread input module], [auto])
+AS_IF([test "${enable_dvdread}" != "no"], [
+  VLC_SAVE_FLAGS
+  CFLAGS="${CFLAGS} ${DVDREAD_CFLAGS}"
+  AC_CHECK_DECL([DVDOpenStream3],
+    [AC_DEFINE([HAVE_DVDREAD_OPEN_STREAM3], [1],
+      [Define to 1 if libdvdread has DVDOpenStream3.])],
+    [], [[#include <dvdread/dvd_reader.h>]])
+  VLC_RESTORE_FLAGS
+])
 
 dnl
 dnl libdvdnav plugin

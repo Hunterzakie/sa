@@ -364,7 +364,20 @@ static int DemuxOpenCommon( vlc_object_t *p_this, const char *psz_shortcut,
         return VLC_EGENERIC;
     }
 
-#if DVDREAD_VERSION >= DVDREAD_VERSION_CODE(6, 1, 0)
+#ifdef HAVE_DVDREAD_OPEN_STREAM3
+    /* psz_location is the drive's registry token on a laser MRL. */
+    const char *psz_target = p_demux->psz_location;
+
+    dvd_logger_cb cbs = { .pf_log = DvdReadLog };
+    dvd_reader_t *p_dvdread;
+# ifdef DVDREAD_HAS_DVDAUDIO
+    if( type == DVD_A )
+        p_dvdread = DVDOpenStreamAudio2( p_demux, &cbs, psz_target,
+                                         &stream_cb );
+    else
+# endif
+        p_dvdread = DVDOpenStream3( p_demux, &cbs, psz_target, &stream_cb );
+#elif DVDREAD_VERSION >= DVDREAD_VERSION_CODE(6, 1, 0)
     dvd_logger_cb cbs = { .pf_log = DvdReadLog };
     dvd_reader_t *p_dvdread;
 # ifdef DVDREAD_HAS_DVDAUDIO

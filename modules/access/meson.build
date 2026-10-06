@@ -390,9 +390,15 @@ endif
 # DVD access
 dvdread_dep = dependency('dvdread', version: '>= 6.0.0', required: get_option('dvdread'))
 if dvdread_dep.found()
+    dvdread_has_open_stream3 = cc.has_header_symbol('dvdread/dvd_reader.h',
+                                                    'DVDOpenStream3',
+                                                    dependencies: dvdread_dep)
+    dvdread_open_stream3_flags = dvdread_has_open_stream3 ? ['-DHAVE_DVDREAD_OPEN_STREAM3'] : []
+
     vlc_modules += {
         'name' : 'dvdread',
         'sources' : files('dvdread.c', 'dvdread_video.c', 'dvdread_audio.c', 'dvdread_vr.c'),
+        'c_args' : dvdread_open_stream3_flags,
         'dependencies' : [
             dvdread_dep,
             (host_system == 'darwin') ? [corefoundation_dep, iokit_dep] : []
