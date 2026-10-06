@@ -178,14 +178,15 @@ LIBVLC_API void
 libvlc_dialog_set_callbacks(libvlc_instance_t *p_instance,
                             const libvlc_dialog_cbs *p_cbs, void *p_data);
 
-/*
-* Register callback in order to handle VLC error messages
-*
-* @version LibVLC 4.0.0 and later.
-*
-* @param p_cbs a pointer to callback, or NULL to unregister callback.
-* @param p_data opaque pointer for the callback
-*/
+/**
+ * Register callback in order to handle VLC error messages
+ *
+ * @version LibVLC 4.0.0 and later.
+ *
+ * @param p_instance the libvlc instance to attach the error callback to
+ * @param p_cbs a pointer to callback, or NULL to unregister callback.
+ * @param p_data opaque pointer for the callback
+ */
 LIBVLC_API void
 libvlc_dialog_set_error_callback(libvlc_instance_t *p_instance,
                                  libvlc_dialog_error_cbs p_cbs, void *p_data);
@@ -194,6 +195,9 @@ libvlc_dialog_set_error_callback(libvlc_instance_t *p_instance,
  * Associate an opaque pointer with the dialog id
  *
  * @version LibVLC 3.0.0 and later.
+ *
+ * @param p_id id of the dialog
+ * @param p_context opaque pointer to associate with the dialog
  */
 LIBVLC_API void
 libvlc_dialog_set_context(libvlc_dialog_id *p_id, void *p_context);
@@ -202,6 +206,9 @@ libvlc_dialog_set_context(libvlc_dialog_id *p_id, void *p_context);
  * Return the opaque pointer associated with the dialog id
  * \see libvlc_dialog_set_context
  * @version LibVLC 3.0.0 and later.
+ *
+ * @param p_id id of the dialog
+ * @return the opaque pointer set with libvlc_dialog_set_context(), or NULL
  */
 LIBVLC_API void *
 libvlc_dialog_get_context(libvlc_dialog_id *p_id);
