@@ -447,7 +447,9 @@ libvlc_parser_task_new_parse(libvlc_parser_t *parser,
  * must be kept alive (and not modified) by the caller until libvlc_thumbnailer_cbs.on_ended
  * is called for the returned task handle.
  * \param cbs_opaque an opaque pointer to be passed to the callbacks
- * \return NULL in case of error, or a task handle owned by the caller
+ * \return NULL in case of error, or a task handle owned by the caller. It must
+ * be released with libvlc_parser_task_release(), whether or not it is
+ * submitted.
  * \version LibVLC 4.0.0 or later
  */
 LIBVLC_API libvlc_parser_task *
@@ -473,7 +475,7 @@ libvlc_parser_task_new_thumbnail(libvlc_parser_t *parser,
  * reference. It keeps owning the handle and must release it.
  *
  * \param parser the parser the task was created from
- * \param task a task that has not been submitted yet
+ * \param task a task that has not yet been successfully submitted
  * \return 0 on success, -1 on error
  * \version LibVLC 4.0.0 or later
  */
@@ -493,7 +495,7 @@ libvlc_parser_submit(libvlc_parser_t *parser, libvlc_parser_task *task);
  *   with libvlc_parser_status_cancelled status, and for thumbnailing, the `on_ended`
  *   callback will be triggered with a NULL picture.
  *
- * - If the request is already in a terminated state (finished, cancelled, error, timeout),
+ * - If the request has already ended (done, failed, cancelled or timed out),
  *   or it was never submitted, the call is a no-op and no callback will be invoked.
  * \version libvlc 4.0.0 or later
  */
@@ -508,6 +510,7 @@ LIBVLC_API size_t libvlc_parser_cancel_request(libvlc_parser_t *parser,
  *
  * \note The returned media is held by the task, it must not be
  * released by the caller.
+ * \version LibVLC 4.0.0 or later
  */
 LIBVLC_API libvlc_media_t *
 libvlc_parser_task_get_media(libvlc_parser_task *task);
@@ -529,6 +532,8 @@ libvlc_parser_task_get_media(libvlc_parser_task *task);
  *
  * - If called on an active request, it doesn't cancel the task,
  *   use libvlc_parser_cancel_request() for that.
+ *
+ * \version LibVLC 4.0.0 or later
  */
 LIBVLC_API void libvlc_parser_task_release(libvlc_parser_task *task);
 
