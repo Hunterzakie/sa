@@ -40,6 +40,8 @@ ListView {
     property var isDropAcceptableFunc
     property var acceptDropFunc
 
+    property bool useCompactDropFooter: false
+
     property Component defaultScrollBar: Component {
         ScrollBarExt { }
     }
@@ -232,7 +234,9 @@ ListView {
             id: footerItem
 
             implicitWidth: root.contentWidth
-            implicitHeight: Math.max(VLCStyle.icon_normal, root.height - y - (root.headerItem?.height ?? 0))
+            implicitHeight: root.useCompactDropFooter
+                            ? VLCStyle.border
+                            : Math.max(VLCStyle.icon_normal, root.height - y - (root.headerItem?.height ?? 0))
 
             property alias firstItemIndicatorVisible: firstItemIndicator.visible
 

@@ -79,7 +79,7 @@ T.Control {
 
     hoverEnabled: true
 
-    verticalPadding: VLCStyle.margin_xxxsmall
+    verticalPadding: VLCStyle.margin_xxsmall + VLCStyle.margin_xxxsmall
 
     leftPadding: VLCStyle.margin_normal
 
@@ -275,13 +275,15 @@ T.Control {
 
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.leftMargin: VLCStyle.margin_large
-            spacing: VLCStyle.margin_xxxsmall
+            Layout.leftMargin: VLCStyle.margin_small
+            Layout.rightMargin: VLCStyle.margin_small
+            spacing: 0
 
             Widgets.ListLabel {
                 id: textInfo
 
                 Layout.fillWidth: true
+                Layout.bottomMargin: textArtist.visible ? 0 : MainCtx.dp(1, scale);
 
                 font.weight: delegate.isCurrent ? Font.Bold : Font.DemiBold
                 text: delegate.title || qsTr("Unknown Title")
@@ -291,9 +293,12 @@ T.Control {
             Widgets.ListSubtitleLabel {
                 id: textArtist
 
+                visible: text != ""
+
                 Layout.fillWidth: true
 
                 text: delegate.artist || (delegate.title.length === 0 ? delegate.url : "")
+                font.pixelSize: VLCStyle.fontSize_caption
                 color: theme.fg.primary
             }
         }
@@ -302,6 +307,7 @@ T.Control {
             id: textDuration
 
             text: delegate.duration.formatHMS()
+            font.pixelSize: VLCStyle.fontSize_caption
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             color: theme.fg.primary

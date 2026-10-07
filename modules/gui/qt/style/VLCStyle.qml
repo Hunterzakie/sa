@@ -29,6 +29,7 @@ QtObject {
     readonly property FontMetrics fontMetrics_xxsmall  : FontMetrics { font.pixelSize: MainCtx.dp(6, scale);  }
     readonly property FontMetrics fontMetrics_xsmall   : FontMetrics { font.pixelSize: MainCtx.dp(8, scale);  }
     readonly property FontMetrics fontMetrics_small    : FontMetrics { font.pixelSize: MainCtx.dp(10, scale); }
+    readonly property FontMetrics fontMetrics_caption  : FontMetrics { font.pixelSize: MainCtx.dp(11, scale); }
     readonly property FontMetrics fontMetrics_normal   : FontMetrics { font.pixelSize: MainCtx.dp(12, scale); }
     readonly property FontMetrics fontMetrics_large    : FontMetrics { font.pixelSize: MainCtx.dp(14, scale); }
     readonly property FontMetrics fontMetrics_xlarge   : FontMetrics { font.pixelSize: MainCtx.dp(16, scale); }
@@ -69,6 +70,7 @@ QtObject {
 
     readonly property int fontSize_xsmall: fontMetrics_xsmall.font.pixelSize
     readonly property int fontSize_small:  fontMetrics_small.font.pixelSize
+    readonly property int fontSize_caption: fontMetrics_caption.font.pixelSize
     readonly property int fontSize_normal: fontMetrics_normal.font.pixelSize
     readonly property int fontSize_large:  fontMetrics_large.font.pixelSize
     readonly property int fontSize_xlarge: fontMetrics_xlarge.font.pixelSize
@@ -77,6 +79,7 @@ QtObject {
 
     readonly property int fontHeight_xsmall: Math.ceil(fontMetrics_xsmall.lineSpacing)
     readonly property int fontHeight_small:  Math.ceil(fontMetrics_small.lineSpacing)
+    readonly property int fontHeight_caption: Math.ceil(fontMetrics_caption.lineSpacing)
     readonly property int fontHeight_normal: Math.ceil(fontMetrics_normal.lineSpacing)
     readonly property int fontHeight_large:  Math.ceil(fontMetrics_large.lineSpacing)
     readonly property int fontHeight_xlarge: Math.ceil(fontMetrics_xlarge.lineSpacing)
@@ -121,7 +124,7 @@ QtObject {
     readonly property int icon_actionButton: icon_normal
     readonly property int icon_PIP: icon_normal
     readonly property int icon_CSD: icon_small
-    readonly property int icon_playlistArt: MainCtx.dp(32, scale)
+    readonly property int icon_playlistArt: MainCtx.dp(36, scale)
 
     readonly property int play_cover_small: MainCtx.dp(24, scale)
     readonly property int play_cover_normal: MainCtx.dp(48, scale)

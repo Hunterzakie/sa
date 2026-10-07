@@ -258,7 +258,7 @@ T.Pane {
         Item {
             // Spacer
 
-            implicitHeight: VLCStyle.margin_xsmall
+            implicitHeight: VLCStyle.margin_xsmall + VLCStyle.margin_xxxsmall
         }
 
         RowLayout {
@@ -266,13 +266,15 @@ T.Pane {
 
             Layout.fillHeight: false
             Layout.leftMargin: VLCStyle.margin_normal
-            Layout.rightMargin: Math.max(listView.ScrollBar.vertical.width, VLCStyle.margin_normal)
+            Layout.rightMargin: VLCStyle.margin_normal
+            Layout.bottomMargin: VLCStyle.margin_xxsmall
 
-            spacing: VLCStyle.margin_large
+            spacing: VLCStyle.margin_small
 
             Widgets.IconLabel {
                 // play queue cover column
                 Layout.preferredWidth: VLCStyle.icon_playlistArt
+                Layout.preferredHeight: VLCStyle.tableHeaderText_height
 
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
@@ -304,6 +306,7 @@ T.Pane {
 
             Widgets.IconLabel {
                 Layout.preferredWidth: durationMetric.width
+                Layout.preferredHeight: VLCStyle.tableHeaderText_height
 
                 text: VLCIcons.time
                 color: theme.fg.secondary
@@ -330,6 +333,8 @@ T.Pane {
 
             Layout.fillWidth: true
             Layout.fillHeight: true
+
+            useCompactDropFooter: true
 
             selectionModel: ListSelectionModel {
                 model: listView.model
