@@ -24,6 +24,7 @@
 #include "vlc_player.h"
 
 #import <vlc_configuration.h>
+#import <vlc_lyrics.h>
 #import <vlc_modules.h>
 #import <vlc_url.h>
 
@@ -83,6 +84,7 @@ NSString *VLCPlayerListOfVideoOutputThreadsChanged = @"VLCPlayerListOfVideoOutpu
 NSString *VLCPlayerVolumeChanged = @"VLCPlayerVolumeChanged";
 NSString *VLCPlayerMuteChanged = @"VLCPlayerMuteChanged";
 NSString * const VLCPlayerLyricsAvailableChanged = @"VLCPlayerLyricsAvailableChanged";
+NSString * const VLCPlayerLyricsChanged = @"VLCPlayerLyricsChanged";
 NSString * const VLCPlayerShowLyricsChanged = @"VLCPlayerShowLyricsChanged";
 
 NSString * const VLCPlayerShowLyricsKey = @"VLCPlayerShowLyricsKey";
@@ -153,6 +155,7 @@ const CGFloat VLCVolumeDefault = 1.;
 - (void)programSelectionChanged:(int)selectedID;
 - (void)ABLoopStateChanged:(enum vlc_player_abloop)abLoopState;
 - (void)metaDataChangedForInput:(input_item_t *)inputItem;
+- (void)lyricsFound:(vlc_lyrics_t *)p_lyrics forMedia:(input_item_t *)p_mediaItem;
 - (void)voutListUpdated;
 
 /* video */
@@ -436,6 +439,25 @@ static void cb_player_item_meta_changed(vlc_player_t * __unused p_player,
     });
 }
 
+static void cb_player_media_attachments_added(vlc_player_t * __unused p_player,
+                                              input_item_t *p_mediaItem,
+                                              input_attachment_t *const *pp_attachments,
+                                              size_t i_attachments,
+                                              void *p_data)
+{
+    for (size_t i = 0; i < i_attachments; i++) {
+        vlc_lyrics_t * const p_lyrics = vlc_lyrics_FromAttachment(pp_attachments[i]);
+        if (!p_lyrics)
+            continue;
+
+        input_item_Hold(p_mediaItem);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            VLCPlayerController *playerController = (__bridge VLCPlayerController *)p_data;
+            [playerController lyricsFound:p_lyrics forMedia:p_mediaItem];
+        });
+    }
+}
+
 static void cb_player_vout_changed(vlc_player_t * __unused p_player,
                                    enum vlc_player_vout_action __unused action,
                                    vout_thread_t * __unused p_vout,
@@ -558,6 +580,7 @@ static const struct vlc_player_cbs player_callbacks = {
     .on_media_meta_changed = cb_player_item_meta_changed,
     .on_media_epg_changed = NULL,
     .on_media_subitems_changed = NULL,
+    .on_media_attachments_added = cb_player_media_attachments_added,
     .on_vout_changed = cb_player_vout_changed,
     .on_cork_changed = NULL,
 };
@@ -842,19 +865,54 @@ static int BossCallback(vlc_object_t *p_this,
 
 - (void)metaDataChangedForInput:(input_item_t *)inputItem
 {
-    NSString *syltData = nil;
-    if (_currentMedia) {
-        syltData = [_currentMedia extraMetaForKey:@"sylt-data"];
+    [_defaultNotificationCenter postNotificationName:VLCPlayerMetadataChangedForCurrentMedia
+                                              object:self];
+}
+
+- (void)lyricsFound:(vlc_lyrics_t *)p_lyrics forMedia:(input_item_t *)p_mediaItem
+{
+    /* only synchronized lyrics are shown: take the first such track of the
+     * current media, ignoring a media replaced while opening */
+    const BOOL wanted = p_mediaItem == _currentMedia.vlcInputItem
+                     && _lyricsEntries.count == 0;
+    const struct vlc_lyrics_track *track = NULL;
+    const size_t trackCount = wanted ? vlc_lyrics_GetTrackCount(p_lyrics) : 0;
+    for (size_t i = 0; i < trackCount && track == NULL; i++) {
+        const struct vlc_lyrics_track * const candidate = vlc_lyrics_GetTrack(p_lyrics, i);
+        if (candidate->synchronized) {
+            track = candidate;
+        }
     }
 
-    const BOOL lyricsAvailable = (syltData && syltData.length > 0);
+    NSMutableArray<NSDictionary<NSString *, id> *> * const entries = [NSMutableArray array];
+    for (size_t i = 0; track != NULL && i < track->count; i++) {
+        [entries addObject:@{
+            @"time": @(MS_FROM_VLC_TICK(track->lines[i].time)),
+            @"text": toNSStr(track->lines[i].text)
+        }];
+    }
+
+    /* the attachments callback handed over both references */
+    vlc_lyrics_Release(p_lyrics);
+    input_item_Release(p_mediaItem);
+
+    if (entries.count > 0) {
+        [self updateLyricsEntries:[entries copy]];
+    }
+}
+
+- (void)updateLyricsEntries:(NSArray<NSDictionary<NSString *, id> *> *)entries
+{
+    _lyricsEntries = entries;
+
+    const BOOL lyricsAvailable = entries.count > 0;
     if (_lyricsAvailable != lyricsAvailable) {
         _lyricsAvailable = lyricsAvailable;
         [_defaultNotificationCenter postNotificationName:VLCPlayerLyricsAvailableChanged
                                                   object:self];
     }
 
-    [_defaultNotificationCenter postNotificationName:VLCPlayerMetadataChangedForCurrentMedia
+    [_defaultNotificationCenter postNotificationName:VLCPlayerLyricsChanged
                                               object:self];
 }
 
@@ -871,17 +929,8 @@ static int BossCallback(vlc_object_t *p_this,
 {
     _currentMedia = [[VLCInputItem alloc] initWithInputItem:newMediaItem];
 
-    NSString *syltData = nil;
-    if (_currentMedia) {
-        syltData = [_currentMedia extraMetaForKey:@"sylt-data"];
-    }
-
-    const BOOL lyricsAvailable = (syltData && syltData.length > 0);
-    if (_lyricsAvailable != lyricsAvailable) {
-        _lyricsAvailable = lyricsAvailable;
-        [_defaultNotificationCenter postNotificationName:VLCPlayerLyricsAvailableChanged
-                                                  object:self];
-    }
+    /* the new media sends its own lyrics once it is opened */
+    [self updateLyricsEntries:@[]];
 
     [_defaultNotificationCenter postNotificationName:VLCPlayerCurrentMediaItemChanged object:self];
 }

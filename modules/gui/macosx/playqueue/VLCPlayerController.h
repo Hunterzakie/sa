@@ -249,6 +249,12 @@ extern NSString *VLCPlayerMuteChanged;
 extern NSString * const VLCPlayerLyricsAvailableChanged;
 
 /**
+ * Listen to VLCPlayerLyricsChanged to be notified when the lyrics of the current media change
+ * @note the affected player object will be the object of the notification
+ */
+extern NSString * const VLCPlayerLyricsChanged;
+
+/**
  * Listen to VLCPlayerShowLyricsChanged to be notified if the show lyrics user preference changes
  * @note the affected player object will be the object of the notification
  */
@@ -367,6 +373,12 @@ extern const CGFloat VLCVolumeDefault;
  * indicates if the currently playing media has synchronized lyrics available
  */
 @property (readonly) BOOL lyricsAvailable;
+
+/**
+ * synchronized lyrics of the currently playing media, as dictionaries holding
+ * the time in milliseconds ("time") and the text ("text") of each line
+ */
+@property (readonly) NSArray<NSDictionary<NSString *, id> *> *lyricsEntries;
 
 /**
  * the current player state
