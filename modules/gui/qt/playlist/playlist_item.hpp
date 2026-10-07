@@ -57,6 +57,13 @@ public:
     Q_PROPERTY(QUrl artwork READ getArtwork CONSTANT  FINAL)
     Q_PROPERTY(VLCDuration duration READ getDuration CONSTANT  FINAL)
     Q_PROPERTY(QUrl url READ getUrl CONSTANT  FINAL)
+    Q_PROPERTY(QString trackNumber READ getTrackNumber CONSTANT FINAL)
+    Q_PROPERTY(QString genre READ getGenre CONSTANT FINAL)
+    Q_PROPERTY(QString description READ getDescription CONSTANT FINAL)
+    Q_PROPERTY(QString trackId READ getTrackId CONSTANT FINAL)
+    Q_PROPERTY(QString rating READ getRating CONSTANT FINAL)
+    Q_PROPERTY(QString discNumber READ getDiscNumber CONSTANT FINAL)
+    Q_PROPERTY(QString date READ getDate CONSTANT FINAL)
 
     PlaylistItem(vlc_playlist_item_t *item = nullptr);
 
@@ -90,6 +97,19 @@ public:
 
     QUrl getUrl() const;
 
+    QString getTrackNumber() const;
+
+    QString getGenre() const;
+
+    QString getDescription() const;
+
+    QString getTrackId() const;
+
+    QString getRating() const;
+
+    QString getDiscNumber() const;
+
+    QString getDate() const;
 
     void sync();
 
@@ -104,6 +124,13 @@ private:
         QString artist;
         QString album;
         QUrl artwork;
+        QString trackNumber;
+        QString genre;
+        QString description;
+        QString trackId;
+        QString rating;
+        QString discNumber;
+        QString date;
 
         VLCDuration duration;
 

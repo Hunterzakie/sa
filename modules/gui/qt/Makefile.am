@@ -367,6 +367,8 @@ libqt_plugin_la_SOURCES = \
 	util/sgmanipulator.cpp \
 	util/sgmanipulator.hpp \
 	util/pointingtooltipattached.hpp \
+	util/selectableqmlpropertymap.cpp \
+	util/selectableqmlpropertymap.hpp \
 	widgets/native/animators.cpp \
 	widgets/native/animators.hpp \
 	widgets/native/customwidgets.cpp widgets/native/customwidgets.hpp \
@@ -531,6 +533,7 @@ nodist_libqt_plugin_la_SOURCES = \
 	util/textureproviderindirection.moc.cpp \
 	util/sgmanipulator.moc.cpp \
 	util/pointingtooltipattached.moc.cpp \
+	util/selectableqmlpropertymap.moc.cpp \
 	widgets/native/animators.moc.cpp \
 	widgets/native/csdthemeimage.moc.cpp \
 	widgets/native/customwidgets.moc.cpp \
@@ -1256,6 +1259,7 @@ libqml_module_playlist_a_CXXFLAGS = $(libqt_plugin_la_CXXFLAGS)
 libqml_module_playlist_a_CPPFLAGS = $(libqt_plugin_la_CPPFLAGS)
 libqml_module_playlist_a_QML = \
 	playlist/qml/PlaylistDelegate.qml \
+	playlist/qml/PlaylistDetailedDelegate.qml \
 	playlist/qml/PlaylistPane.qml \
 	playlist/qml/PlaylistDetachedWindow.qml
 libqml_module_playlist_a_Singleton_QML =

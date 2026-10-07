@@ -294,7 +294,14 @@ PlaylistListModel::roleNames() const
         { ArtistRole , QByteArrayLiteral("artist") },
         { AlbumRole  , QByteArrayLiteral("album") },
         { ArtworkRole, QByteArrayLiteral("artwork") },
-        { UrlRole, QByteArrayLiteral("url") }
+        { UrlRole, QByteArrayLiteral("url") },
+        { TrackNumberRole, QByteArrayLiteral("trackNumber") },
+        { GenreRole, QByteArrayLiteral("genre") },
+        { DescriptionRole, QByteArrayLiteral("description") },
+        { TrackIdRole, QByteArrayLiteral("trackId")},
+        { RatingRole, QByteArrayLiteral("rating") },
+        { DiscNumberRole, QByteArrayLiteral("discNumber") },
+        { DateRole, QByteArrayLiteral("date") }
     };
 }
 
@@ -507,6 +514,20 @@ PlaylistListModel::data(const QModelIndex &index, int role) const
         return d->m_items[row].getUrl();
     case PlaylistListModel::PreparsedRole:
         return d->m_items[row].preparsed();
+    case TrackNumberRole:
+        return d->m_items[row].getTrackNumber();
+    case GenreRole:
+        return d->m_items[row].getGenre();
+    case DescriptionRole:
+        return d->m_items[row].getDescription();
+    case TrackIdRole:
+        return d->m_items[row].getTrackId();
+    case RatingRole:
+        return d->m_items[row].getRating();
+    case DiscNumberRole:
+        return d->m_items[row].getDiscNumber();
+    case DateRole:
+        return d->m_items[row].getDate();
     default:
         return {};
     }

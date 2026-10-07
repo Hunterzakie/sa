@@ -110,6 +110,7 @@ class VLCIcons : public QObject {
     Q_PROPERTY(QChar medialibrary_remove MEMBER medialibrary_remove CONSTANT FINAL)
     Q_PROPERTY(QChar regex MEMBER regex CONSTANT FINAL)
     Q_PROPERTY(QChar ic_fluent_text_change_case_24_regular MEMBER ic_fluent_text_change_case_24_regular CONSTANT FINAL)
+    Q_PROPERTY(QChar ic_fluent_apps_list_detail_24_regular MEMBER ic_fluent_apps_list_detail_24_regular CONSTANT FINAL)
 
 
 public:
@@ -216,6 +217,7 @@ public:
     static constexpr inline QChar medialibrary_remove{ u'\ue05d' };
     static constexpr inline QChar regex{ u'\ue05e' };
     static constexpr inline QChar ic_fluent_text_change_case_24_regular{ u'\ue05f' };
+    static constexpr inline QChar ic_fluent_apps_list_detail_24_regular{ u'\ue060' };
 
 };
 
