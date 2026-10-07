@@ -39,7 +39,7 @@ int vlc_memfd(void)
 {
     int fd;
 #ifdef HAVE_MEMFD_CREATE
-    fd = memfd_create(PACKAGE_NAME"-memfd", MFD_CLOEXEC | MFD_ALLOW_SEALING);
+    fd = memfd_create(PACKAGE"-memfd", MFD_CLOEXEC | MFD_ALLOW_SEALING);
     if (fd != -1 || errno != ENOSYS)
         return fd;
 #endif
@@ -51,7 +51,7 @@ int vlc_memfd(void)
 
     /* Fallback to POSIX implementation if O_TMPFILE is not supported (errno is
      * EISDIR, or EOPNOTSUPP, cf. man open(2). */
-    char bufpath[] = "/tmp/"PACKAGE_NAME"XXXXXX";
+    char bufpath[] = "/tmp/"PACKAGE"XXXXXX";
     fd = vlc_mkstemp(bufpath);
     if (fd != -1)
         unlink(bufpath);

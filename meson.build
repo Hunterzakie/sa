@@ -1019,7 +1019,7 @@ cdata.set('LIBVLC_ABI_MINOR', libvlc_abi_version_minor)
 cdata.set('LIBVLC_ABI_MICRO', libvlc_abi_version_micro)
 
 cdata.set_quoted('PACKAGE',             vlc_package_name)
-cdata.set_quoted('PACKAGE_NAME',        vlc_package_name)
+cdata.set_quoted('PACKAGE_NAME',        meson.project_name())
 cdata.set_quoted('PACKAGE_STRING',      f'@vlc_package_name@ @vlc_version@')
 cdata.set_quoted('COPYRIGHT_YEARS',     vlc_copyright_years)
 cdata.set_quoted('COPYRIGHT_MESSAGE',   f'Copyright © @vlc_copyright_years@ the VideoLAN team')

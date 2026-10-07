@@ -62,7 +62,7 @@
 /* Cache filename */
 #define CACHE_NAME "plugins.dat"
 /* Magic for the cache filename */
-#define CACHE_STRING "cache "PACKAGE_NAME" "PACKAGE_VERSION
+#define CACHE_STRING "cache "PACKAGE" "PACKAGE_VERSION
 
 
 static int vlc_cache_load_immediate(void *out, block_t *in, size_t size)

@@ -383,7 +383,7 @@ int (config_SaveConfigFile) (libvlc_int_t *p_this)
 
     fprintf( file,
         "\xEF\xBB\xBF###\n"
-        "###  "PACKAGE_NAME" "PACKAGE_VERSION"\n"
+        "###  "PACKAGE" "PACKAGE_VERSION"\n"
         "###\n"
         "\n"
         "###\n"

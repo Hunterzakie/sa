@@ -90,7 +90,7 @@ const char *module_gettext (const module_t *m, const char *str)
         return "";
 #ifdef ENABLE_NLS
     const char *domain = m->plugin->textdomain;
-    return dgettext ((domain != NULL) ? domain : PACKAGE_NAME, str);
+    return dgettext ((domain != NULL) ? domain : PACKAGE, str);
 #else
     (void)m;
     return str;
