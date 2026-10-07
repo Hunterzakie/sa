@@ -79,18 +79,13 @@ ListView {
     keyNavigationEnabled: false
     keyNavigationWraps: false
 
-    ScrollBar.vertical: {
-        // By default vertical scroll bar is only used when the orientation is vertical.
-        if (root.defaultScrollBar && (root.orientation === ListView.Vertical))
-            return root.defaultScrollBar.createObject() // rely on JS/QML engine's garbage collection
-        return null
-    }
-    ScrollBar.horizontal: {
-        // By default horizontal scroll bar is only used when the orientation is horizontal.
-        if (root.defaultScrollBar && (root.orientation === ListView.Horizontal))
-            return root.defaultScrollBar.createObject() // rely on JS/QML engine's garbage collection
-        return null
-    }
+    // By default vertical scroll bar is only used when the orientation is vertical.
+    ScrollBar.vertical: Helpers.createJSManagedObjectOrInvokeGc(defaultScrollBar,
+                                                                (orientation === ListView.Vertical))
+
+    // By default horizontal scroll bar is only used when the orientation is horizontal.
+    ScrollBar.horizontal: Helpers.createJSManagedObjectOrInvokeGc(defaultScrollBar,
+                                                                  (orientation === ListView.Horizontal))
 
     flickableDirection: Flickable.AutoFlickIfNeeded
 
@@ -722,14 +717,9 @@ ListView {
     property Component implicitFlickableScrollHandler: DefaultFlickableScrollHandler { }
 
     // NOTE: This property can be set to null to prevent using a scroll handler:
-    property FlickableScrollHandler scrollHandler: {
-        if (interactive) {
-            // JS ownership:
-            return implicitFlickableScrollHandler.createObject(null, { target: root })
-        } else {
-            return null
-        }
-    }
+    property FlickableScrollHandler scrollHandler: Helpers.createJSManagedObjectOrInvokeGc(implicitFlickableScrollHandler,
+                                                                                           interactive,
+                                                                                           { target: root })
 
     // FIXME: This is probably not useful anymore.
     Connections {

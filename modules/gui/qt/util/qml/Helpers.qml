@@ -150,6 +150,29 @@ QtObject {
         return (obj?.length !== undefined) ?? false
     }
 
+    // This function is useful to be used in a property binding, such as:
+    //
+    // property Component implicitComponent : Object { } // By default `Object` type, but can be a derived type
+    // property Object object: createJSManagedObjectOrInvokeGc(implicitComponent, condition, initialParameters)
+    //
+    // This pattern has the following advantages:
+    // - Whenever `implicitComponent`, `condition`, or `initialParameters` change, a new object is created and
+    //   the stale one is destroyed automatically (with a delayed call) by the JS engine's garbage collection.
+    // - If `object` is set to `null`, no object is created. It can be set to `null` immediately where the type
+    //   is reused, in which case the object would never be created, or it can be set to `null` at some arbitrary
+    //   time in which case if it was created, the object would be destroyed (provided it is not referenced
+    //   anywhere else).
+    function createJSManagedObjectOrInvokeGc(component : Component, create : bool, initialParameters = {}) : QtObject {
+        // Make sure the JS engine destroys the stale object in case
+        // component or parameters change, or when create is false:
+        Qt.callLater(gc) // `QJSEngine::GarbageCollectionExtension` is installed by default
+
+        if (create && component)
+            return component.createObject(null, initialParameters) // JS ownership
+        else
+            return null
+    }
+
     // Similar to Item::contains(), but accepts area (rectangle):
     function itemIntersects(item: Item, area: rect) : bool {
         if (!item)

@@ -63,14 +63,9 @@ GridView {
     property Component implicitFlickableScrollHandler: DefaultFlickableScrollHandler { }
 
     // NOTE: This property can be set to null to prevent using a scroll handler:
-    property FlickableScrollHandler scrollHandler: {
-        if (interactive) {
-            // JS ownership:
-            return implicitFlickableScrollHandler.createObject(null, { target: root })
-        } else {
-            return null
-        }
-    }
+    property FlickableScrollHandler scrollHandler: Helpers.createJSManagedObjectOrInvokeGc(implicitFlickableScrollHandler,
+                                                                                           interactive,
+                                                                                           { target: root })
 
     DropArea {
         id: dropArea
