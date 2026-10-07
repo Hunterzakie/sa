@@ -56,6 +56,14 @@ FocusScope {
 
     on_EffectiveModelChanged: root._effectiveModel.sortCriteria = root.sort.criteria
 
+    Component.onCompleted: {
+        History.viewProp.nonUniformTopLeftCorner = true
+    }
+
+    Component.onDestruction: {
+        History.viewProp.nonUniformTopLeftCorner = false
+    }
+
     Connections {
         target: root.sort
 
