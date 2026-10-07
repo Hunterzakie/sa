@@ -164,7 +164,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
     {
         PWSTR copath;
         if( S_OK != SHGetKnownFolderPath(&FOLDERID_RoamingAppData, KF_FLAG_CREATE, 0, &copath) )
-            fprintf( stderr, "Can't open the vlc conf PATH\n" );
+            fprintf( stderr, "Can't open the " PACKAGE " conf PATH\n" );
         else
         {
             const size_t pathlen = wcslen( copath );
