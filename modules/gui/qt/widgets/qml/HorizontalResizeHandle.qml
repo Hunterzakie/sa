@@ -46,7 +46,7 @@ MouseArea {
         id: theme
     }
 
-    cursorShape: Qt.SplitHCursor
+    cursorShape: enabled ? Qt.SplitHCursor : undefined
     width: VLCStyle.resizeHandleWidth
     acceptedButtons: Qt.LeftButton
     preventStealing: true
