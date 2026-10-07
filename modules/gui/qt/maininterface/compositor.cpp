@@ -284,7 +284,7 @@ bool CompositorVideo::commonGUICreateImpl(QWindow* window, CompositorVideo::Flag
     assert(m_mainCtx);
     assert(window);
 
-    m_videoSurfaceProvider = std::make_unique<VideoSurfaceProvider>(canDoThreadedSurfaceUpdates());
+    m_videoSurfaceProvider = std::make_unique<VideoSurfaceProvider>(m_mainCtx, canDoThreadedSurfaceUpdates());
     m_mainCtx->setVideoSurfaceProvider(m_videoSurfaceProvider.get());
 
     const QQuickWindow *const quickWindow = this->quickWindow();

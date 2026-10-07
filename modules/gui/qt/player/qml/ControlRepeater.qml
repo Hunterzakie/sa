@@ -34,12 +34,22 @@ Repeater {
     ///incomming signal to request all menu and popup to close
     signal forceUnlock()
 
+    readonly property int effectiveCount: _effectiveCount
+    property int _effectiveCount: 0
+
     // NOTE: We apply the 'navigation chain' after adding the item.
     onItemAdded: (index, item) => {
         item.applyNavigation()
+
+        ++repeater._effectiveCount
     }
 
     onItemRemoved: (index, item) => {
+        --repeater._effectiveCount
+
+        if (!item)
+            return
+
         // NOTE: We update the 'navigation chain' after removing the item.
         item.removeNavigation()
 
