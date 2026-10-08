@@ -3,7 +3,7 @@
     <assemblyIdentity
         version="1.0.0.0"
         processorArchitecture="@MANIFEST_ARCH@"
-        name="VideoLAN.VLC"
+        name="VideoLAN.@PACKAGE_NAME@"
         type="win32"
     />
     <asmv3:application>
