@@ -216,6 +216,34 @@ vlc_lyrics_track_FindLine(const struct vlc_lyrics_track *track,
 VLC_API ssize_t
 vlc_lyrics_line_FindWord(const struct vlc_lyrics_line *line, vlc_tick_t time);
 
+/**
+ * Wrap a lyrics object into an attachment
+ *
+ * Lyrics travel through VLC as attachments, from the demuxer that found them
+ * (see DEMUX_GET_ATTACHMENTS) to the interfaces showing them. The attachment
+ * holds a reference to the lyrics object itself: it carries no data, so the
+ * lyrics do not reach a preparser running in another process.
+ *
+ * @param lyrics a finished lyrics object
+ * @return a new attachment, or NULL on allocation error
+ */
+VLC_API input_attachment_t *
+vlc_lyrics_ToAttachment(vlc_lyrics_t *lyrics) VLC_USED;
+
+/**
+ * Get the lyrics carried by an attachment
+ *
+ * Any attachment can be passed: only the ones created by
+ * vlc_lyrics_ToAttachment() carry lyrics, whatever the MIME type of the
+ * others, so an attachment read from a file is never taken for lyrics.
+ *
+ * @param attachment a valid attachment
+ * @return a new reference to the lyrics, to release with vlc_lyrics_Release(),
+ * or NULL if the attachment carries none
+ */
+VLC_API vlc_lyrics_t *
+vlc_lyrics_FromAttachment(const input_attachment_t *attachment) VLC_USED;
+
 /** @} */
 
 #ifdef __cplusplus

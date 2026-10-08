@@ -32,6 +32,8 @@
 #include <vlc_lyrics.h>
 #include <vlc_vector.h>
 
+#include "../input/attachment.h"
+
 struct lyrics_track_priv
 {
     struct vlc_lyrics_track pub;
@@ -420,4 +422,31 @@ vlc_lyrics_line_FindWord(const struct vlc_lyrics_line *line, vlc_tick_t time)
 
     return lyrics_FindTime(line->words, line->word_count,
                            sizeof (*line->words), time);
+}
+
+/* Releases the lyrics of an attachment, and tells such attachments apart */
+static void
+lyrics_ReleaseAttached(void *lyrics)
+{
+    vlc_lyrics_Release(lyrics);
+}
+
+input_attachment_t *
+vlc_lyrics_ToAttachment(vlc_lyrics_t *lyrics)
+{
+    input_attachment_t *attachment =
+        input_attachment_NewObject("lyrics", "application/x-vlc-lyrics", NULL,
+                                   lyrics, lyrics_ReleaseAttached);
+    if (attachment != NULL)
+        vlc_lyrics_Hold(lyrics);
+    return attachment;
+}
+
+vlc_lyrics_t *
+vlc_lyrics_FromAttachment(const input_attachment_t *attachment)
+{
+    vlc_lyrics_t *lyrics =
+        input_attachment_GetObject(attachment, lyrics_ReleaseAttached);
+
+    return lyrics != NULL ? vlc_lyrics_Hold(lyrics) : NULL;
 }

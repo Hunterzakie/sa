@@ -23,6 +23,7 @@
 #endif
 
 #include <vlc_common.h>
+#include <vlc_input.h>
 #include <vlc_lyrics.h>
 
 #include "../../libvlc/test.h"
@@ -433,6 +434,52 @@ static void test_many_lines(void)
     vlc_lyrics_Release(lyrics);
 }
 
+static void test_attachment(void)
+{
+    vlc_lyrics_t *lyrics = vlc_lyrics_New();
+    assert(lyrics != NULL);
+    ssize_t idx = vlc_lyrics_GetOrCreateTrack(lyrics, "eng", NULL, true);
+    assert(idx >= 0);
+    assert(vlc_lyrics_AddLine(lyrics, idx, "hey", VLC_TICK_0) == VLC_SUCCESS);
+    assert(vlc_lyrics_Finish(lyrics));
+
+    input_attachment_t *attachment = vlc_lyrics_ToAttachment(lyrics);
+    assert(attachment != NULL);
+    /* The lyrics hide behind an empty buffer */
+    assert(attachment->i_data == 0);
+
+    /* The attachment keeps the lyrics alive on its own */
+    vlc_lyrics_Release(lyrics);
+
+    /* The very same lyrics come out, with a reference of their own */
+    vlc_lyrics_t *attached = vlc_lyrics_FromAttachment(attachment);
+    assert(attached == lyrics);
+    vlc_input_attachment_Release(attachment);
+
+    assert(vlc_lyrics_GetTrackCount(attached) == 1);
+    assert(strcmp(vlc_lyrics_GetTrack(attached, 0)->lines[0].text, "hey") == 0);
+    vlc_lyrics_Release(attached);
+}
+
+static void test_attachment_foreign(void)
+{
+    /* Data claiming to be lyrics, as a file could carry, holding what could
+     * pass for a pointer */
+    void *ptr = &ptr;
+    input_attachment_t *forged =
+        vlc_input_attachment_New("lyrics", "application/x-vlc-lyrics", NULL,
+                                 &ptr, sizeof (ptr));
+    assert(forged != NULL);
+    assert(vlc_lyrics_FromAttachment(forged) == NULL);
+    vlc_input_attachment_Release(forged);
+
+    input_attachment_t *cover =
+        vlc_input_attachment_New("cover", "image/png", NULL, NULL, 0);
+    assert(cover != NULL);
+    assert(vlc_lyrics_FromAttachment(cover) == NULL);
+    vlc_input_attachment_Release(cover);
+}
+
 int main(void)
 {
     test_init();
@@ -449,6 +496,8 @@ int main(void)
     test_words_rejected();
     test_refcount();
     test_many_lines();
+    test_attachment();
+    test_attachment_foreign();
 
     return 0;
 }

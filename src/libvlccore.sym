@@ -638,6 +638,8 @@ vlc_lyrics_Finish
 vlc_lyrics_GetTrackCount
 vlc_lyrics_GetTrack
 vlc_lyrics_track_FindLine
+vlc_lyrics_ToAttachment
+vlc_lyrics_FromAttachment
 vlc_ml_instance_get
 vlc_ml_get
 vlc_ml_control
