@@ -57,7 +57,14 @@ void SGManipulator::setBlending(const QVariant& blending)
 
 void SGManipulator::resetBlending()
 {
+    if (!m_blending)
+        return;
+
     m_blending.reset();
+
+    emit blendingChanged({});
+
+    update();
 }
 
 QSGNode *SGManipulator::updatePaintNode(QSGNode *, UpdatePaintNodeData *data)
