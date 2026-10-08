@@ -233,6 +233,8 @@ Widgets.PageExt {
                     sortOrder: root.sort.order
                     searchPattern: root.search.pattern
 
+                    chunkSize: VLCStyle.gridView_maxNbItemPerRow_wide
+
                     // FIXME: Make limit 0 load no items, instead of loading all items.
                     limit: MainCtx.gridView ? Math.max(continueWatchingRow.currentItem?.nbItemPerRow ?? null, 1) : 5
                 }
@@ -315,6 +317,8 @@ Widgets.PageExt {
                     sortOrder: root.sort.order
                     searchPattern: root.search.pattern
 
+                    chunkSize: VLCStyle.gridView_maxNbItemPerRow_square
+
                     // FIXME: Make limit 0 load no items, instead of loading all items.
                     limit: MainCtx.gridView ? Math.max(favoritesRow.currentItem?.nbItemPerRow ?? null, 1) : 5
                 }
@@ -388,6 +392,8 @@ Widgets.PageExt {
                     sortCriteria: root.sort.criteria || "insertion"
                     sortOrder: root.sort.order
                     searchPattern: root.search.pattern
+
+                    chunkSize: VLCStyle.gridView_maxNbItemPerRow_wide
 
                     // FIXME: Make limit 0 load no items, instead of loading all items.
                     limit: MainCtx.gridView ? Math.max(newVideoRow.currentItem?.nbItemPerRow ?? null, 1) : 5
@@ -468,6 +474,8 @@ Widgets.PageExt {
                     sortCriteria: root.sort.criteria || "insertion"
                     sortOrder: root.sort.order
                     searchPattern: root.search.pattern
+
+                    chunkSize: VLCStyle.gridView_maxNbItemPerRow_square
 
                     // FIXME: Make limit 0 load no items, instead of loading all items.
                     limit: MainCtx.gridView ? Math.max(newMusicRow.currentItem?.nbItemPerRow ?? null, 1) : 5
