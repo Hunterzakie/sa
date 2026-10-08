@@ -26,10 +26,14 @@
 #include <vlc_input.h>
 #include <vlc_atomic.h>
 
+#include "attachment.h"
+
 struct input_attachment_priv
 {
     input_attachment_t a;
     vlc_atomic_rc_t rc;
+    /* Releases the object p_data points to, or NULL when it points to data */
+    void (*release)(void *);
 };
 
 static struct input_attachment_priv* input_attachment_priv( input_attachment_t* a )
@@ -47,11 +51,40 @@ void vlc_input_attachment_Release( input_attachment_t *a )
     if( !vlc_atomic_rc_dec( &p->rc ) )
         return;
 
-    free( a->p_data );
+    if( p->release != NULL )
+        p->release( a->p_data );
+    else
+        free( a->p_data );
     free( a->psz_description );
     free( a->psz_mime );
     free( a->psz_name );
     free( p );
+}
+
+/* Create an attachment without any data, nor any object */
+static struct input_attachment_priv *
+vlc_input_attachment_NewCommon( const char *psz_name, const char *psz_mime,
+                                const char *psz_description )
+{
+    struct input_attachment_priv *a = (struct input_attachment_priv *)malloc( sizeof (*a) );
+    if( unlikely(a == NULL) )
+        return NULL;
+
+    vlc_atomic_rc_init( &a->rc );
+    a->release = NULL;
+    a->a.psz_name = strdup( psz_name ? psz_name : "" );
+    a->a.psz_mime = strdup( psz_mime ? psz_mime : "" );
+    a->a.psz_description = strdup( psz_description ? psz_description : "" );
+    a->a.i_data = 0;
+    a->a.p_data = NULL;
+
+    if( unlikely(a->a.psz_name == NULL || a->a.psz_mime == NULL
+              || a->a.psz_description == NULL) )
+    {
+        vlc_input_attachment_Release( &a->a );
+        return NULL;
+    }
+    return a;
 }
 
 input_attachment_t *vlc_input_attachment_New( const char *psz_name,
@@ -60,26 +93,50 @@ input_attachment_t *vlc_input_attachment_New( const char *psz_name,
                                               const void *p_data,
                                               size_t i_data )
 {
-    struct input_attachment_priv *a = (struct input_attachment_priv *)malloc( sizeof (*a) );
+    struct input_attachment_priv *a =
+        vlc_input_attachment_NewCommon( psz_name, psz_mime, psz_description );
     if( unlikely(a == NULL) )
         return NULL;
 
-    vlc_atomic_rc_init( &a->rc );
-    a->a.psz_name = strdup( psz_name ? psz_name : "" );
-    a->a.psz_mime = strdup( psz_mime ? psz_mime : "" );
-    a->a.psz_description = strdup( psz_description ? psz_description : "" );
     a->a.i_data = i_data;
     a->a.p_data = malloc( i_data );
-    if( i_data > 0 && likely(a->a.p_data != NULL) )
-        memcpy( a->a.p_data, p_data, i_data );
-
-    if( unlikely(a->a.psz_name == NULL || a->a.psz_mime == NULL
-              || a->a.psz_description == NULL || (i_data > 0 && a->a.p_data == NULL)) )
+    if( unlikely(i_data > 0 && a->a.p_data == NULL) )
     {
         vlc_input_attachment_Release( &a->a );
         return NULL;
     }
+    if( i_data > 0 )
+        memcpy( a->a.p_data, p_data, i_data );
     return &a->a;
+}
+
+input_attachment_t *input_attachment_NewObject( const char *psz_name,
+                                               const char *psz_mime,
+                                               const char *psz_description,
+                                               void *p_object,
+                                               void (*pf_release)( void * ) )
+{
+    assert( pf_release != NULL );
+
+    struct input_attachment_priv *a =
+        vlc_input_attachment_NewCommon( psz_name, psz_mime, psz_description );
+    if( unlikely(a == NULL) )
+        return NULL;
+
+    a->a.p_data = p_object;
+    a->release = pf_release;
+    return &a->a;
+}
+
+void *input_attachment_GetObject( const input_attachment_t *a,
+                                  void (*pf_release)( void * ) )
+{
+    const struct input_attachment_priv* p =
+        container_of( a, const struct input_attachment_priv, a );
+
+    if( pf_release == NULL || p->release != pf_release )
+        return NULL;
+    return a->p_data;
 }
 
 input_attachment_t *vlc_input_attachment_Hold( input_attachment_t *a )
