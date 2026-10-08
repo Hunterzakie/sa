@@ -34,7 +34,7 @@ SGManipulator::SGManipulator(QQuickItem *parent)
     });
 }
 
-QJSValue SGManipulator::blending() const
+QVariant SGManipulator::blending() const
 {
     if (m_blending)
         return *m_blending;
@@ -42,9 +42,10 @@ QJSValue SGManipulator::blending() const
         return {};
 }
 
-void SGManipulator::setBlending(const QJSValue& blending)
+void SGManipulator::setBlending(const QVariant& blending)
 {
-    if ((!m_blending && blending.isNull()) || (m_blending == blending.toBool()))
+    assert(blending.typeId() == QMetaType::Bool);
+    if (m_blending == blending.toBool())
         return;
 
     m_blending = blending.toBool();

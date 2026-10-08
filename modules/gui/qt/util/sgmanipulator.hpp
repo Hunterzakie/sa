@@ -19,7 +19,7 @@
 #define SGMANIPULATOR_H
 
 #include <QQuickItem>
-#include <QJSValue>
+#include <QVariant>
 
 #include <optional>
 
@@ -41,19 +41,19 @@ class SGManipulator : public QQuickItem
     // This is not really expensive, but still avoid constant updates if possible:
     Q_PROPERTY(bool constantUpdate MEMBER m_constantUpdate NOTIFY constantUpdateChanged FINAL)
 
-    Q_PROPERTY(QJSValue blending READ blending WRITE setBlending RESET resetBlending NOTIFY blendingChanged FINAL)
+    Q_PROPERTY(QVariant blending READ blending WRITE setBlending RESET resetBlending NOTIFY blendingChanged FINAL)
 
     QML_ELEMENT
 
 public:
     explicit SGManipulator(QQuickItem* parent = nullptr);
 
-    QJSValue blending() const;
-    void setBlending(const QJSValue& blending);
+    QVariant blending() const;
+    void setBlending(const QVariant& blending);
     void resetBlending();
 
 signals:
-    void blendingChanged(const QJSValue&);
+    void blendingChanged(const QVariant&);
     void constantUpdateChanged(bool);
 
 protected:
