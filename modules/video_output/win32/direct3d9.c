@@ -90,7 +90,7 @@ static void Close(vout_display_t *);
 /* The latest option in the selection list: used for loading a shader file. */
 #define SELECTED_SHADER_FILE N_("HLSL File")
 
-#define D3D9_HELP N_("Recommended video output for Windows Vista and later versions")
+#define D3D9_HELP N_("Recommended video output for Windows 7")
 
 vlc_module_begin ()
     set_shortname("Direct3D9")
