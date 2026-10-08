@@ -13,6 +13,7 @@ nsi_conf.set('HAVE_ARM64_TRUE',  host_machine.cpu_family() == 'aarch64' or host_
 nsi_conf.set('HAVE_ARM64_FALSE', host_machine.cpu_family() == 'aarch64' or host_machine.cpu() == 'arm64' ? ';' : '')
 nsi_conf.set('PROGRAMFILES', have_win64 ? 'PROGRAMFILES64' : 'PROGRAMFILES')
 nsi_conf.set('HAVE_NLS_TRUE', nsi_conf.get('ENABLE_NLS', 0) == 1 ? '' : ';')
+nsi_conf.set('PACKAGE', vlc_package_name)
 nsi_conf.set('PACKAGE_NAME', meson.project_name())
 nsi_conf.set('PACKAGE_FULL_NAME', vlc_package_full_name)
 nsi_conf.set('PACKAGE_VENDOR',  vlc_package_vendor)

@@ -1207,6 +1207,7 @@ if host_system == 'windows'
     rc_conf.merge_from(cdata)
     rc_conf.set('VERSION', vlc_version)
     rc_conf.set('COPYRIGHT_YEARS', vlc_copyright_years)
+    rc_conf.set('PACKAGE', vlc_package_name)
     rc_conf.set('PACKAGE_FULL_NAME', vlc_package_full_name)
     rc_conf.set('PACKAGE_VENDOR',  vlc_package_vendor)
 endif

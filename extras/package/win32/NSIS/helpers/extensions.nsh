@@ -31,9 +31,9 @@ Function RegisterExtension
   WriteRegStr HKCR "${PRODUCT_CODENAME}$R0\shell" "" "Open"
   WriteRegStr HKCR "${PRODUCT_CODENAME}$R0\shell\Open" "" "$(ShellAssociation_Play)"
   WriteRegStr HKCR "${PRODUCT_CODENAME}$R0\shell\Open" "MultiSelectModel" "Player"
-  WriteRegStr HKCR "${PRODUCT_CODENAME}$R0\shell\Open\command" "" '"$INSTDIR\vlc.exe" --started-from-file "%1"'
-  WriteRegStr HKCR "${PRODUCT_CODENAME}$R0\DefaultIcon" "" '"$INSTDIR\vlc.exe",0'
-  WriteRegStr HKCR "Applications\vlc.exe\SupportedTypes" $0 ""
+  WriteRegStr HKCR "${PRODUCT_CODENAME}$R0\shell\Open\command" "" '"$INSTDIR\${PRODUCT_EXECUTABLE}" --started-from-file "%1"'
+  WriteRegStr HKCR "${PRODUCT_CODENAME}$R0\DefaultIcon" "" '"$INSTDIR\${PRODUCT_EXECUTABLE}",0'
+  WriteRegStr HKCR "Applications\${PRODUCT_EXECUTABLE}\SupportedTypes" $0 ""
 
   ${If} ${AtLeastWinVista}
     WriteRegStr HKLM "Software\Clients\Media\${PRODUCT_CODENAME}\Capabilities\FileAssociations" "$R0" "${PRODUCT_CODENAME}$R0"
@@ -45,8 +45,8 @@ Function RegisterSkinExtension
   WriteRegStr HKCR "${PRODUCT_CODENAME}$R0" "" "${PRODUCT_CODENAME} skin file ($R0)"
   WriteRegStr HKCR "${PRODUCT_CODENAME}$R0\shell" "" "Open"
   WriteRegStr HKCR "${PRODUCT_CODENAME}$R0\shell\Open" "" ""
-  WriteRegStr HKCR "${PRODUCT_CODENAME}$R0\shell\Open\command" "" '"$INSTDIR\vlc.exe" -Iskins --skins2-last "%1"'
-  WriteRegStr HKCR "${PRODUCT_CODENAME}$R0\DefaultIcon" "" '"$INSTDIR\vlc.exe",0'
+  WriteRegStr HKCR "${PRODUCT_CODENAME}$R0\shell\Open\command" "" '"$INSTDIR\${PRODUCT_EXECUTABLE}" -Iskins --skins2-last "%1"'
+  WriteRegStr HKCR "${PRODUCT_CODENAME}$R0\DefaultIcon" "" '"$INSTDIR\${PRODUCT_EXECUTABLE}",0'
 
   ${If} ${AtLeastWinVista}
     WriteRegStr HKLM "Software\Clients\Media\${PRODUCT_CODENAME}\Capabilities\FileAssociations" "$R0" "${PRODUCT_CODENAME}$R0"
@@ -292,14 +292,14 @@ FunctionEnd
 ; Generic function for adding the context menu for one ext.
 !macro AddContextMenuExt EXT
   WriteRegStr HKCR ${EXT}\shell\PlayWith${PRODUCT_CODENAME} "" "$(ContextMenuEntry_PlayWith)"
-  WriteRegStr HKCR ${EXT}\shell\PlayWith${PRODUCT_CODENAME} "Icon" '"$INSTDIR\vlc.exe",0'
+  WriteRegStr HKCR ${EXT}\shell\PlayWith${PRODUCT_CODENAME} "Icon" '"$INSTDIR\${PRODUCT_EXECUTABLE}",0'
   WriteRegStr HKCR ${EXT}\shell\PlayWith${PRODUCT_CODENAME} "MultiSelectModel" "Player"
-  WriteRegStr HKCR ${EXT}\shell\PlayWith${PRODUCT_CODENAME}\command "" '"$INSTDIR\vlc.exe" --started-from-file --no-playlist-enqueue "%1"'
+  WriteRegStr HKCR ${EXT}\shell\PlayWith${PRODUCT_CODENAME}\command "" '"$INSTDIR\${PRODUCT_EXECUTABLE}" --started-from-file --no-playlist-enqueue "%1"'
 
   WriteRegStr HKCR ${EXT}\shell\AddToPlaylist${PRODUCT_CODENAME} "" "$(ContextMenuEntry_AddToPlaylist)"
-  WriteRegStr HKCR ${EXT}\shell\AddToPlaylist${PRODUCT_CODENAME} "Icon" '"$INSTDIR\vlc.exe",0'
+  WriteRegStr HKCR ${EXT}\shell\AddToPlaylist${PRODUCT_CODENAME} "Icon" '"$INSTDIR\${PRODUCT_EXECUTABLE}",0'
   WriteRegStr HKCR ${EXT}\shell\AddToPlaylist${PRODUCT_CODENAME} "MultiSelectModel" "Player"
-  WriteRegStr HKCR ${EXT}\shell\AddToPlaylist${PRODUCT_CODENAME}\command "" '"$INSTDIR\vlc.exe" --started-from-file --playlist-enqueue "%1"'
+  WriteRegStr HKCR ${EXT}\shell\AddToPlaylist${PRODUCT_CODENAME}\command "" '"$INSTDIR\${PRODUCT_EXECUTABLE}" --started-from-file --playlist-enqueue "%1"'
 !macroend
 
 !macro AddContextMenu TYPE EXT
