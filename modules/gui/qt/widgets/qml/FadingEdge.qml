@@ -32,6 +32,17 @@ Item {
     // which results lower memory consumption:
     property alias backgroundColor: backgroundRect.color
 
+    // Set this property to `true` if beneath the
+    // target Qt Quick Scene has uniform background.
+    // In other words, when background color is not
+    // opaque, but it has nothing to blend in to.
+    // This is an optimization hint that eliminates
+    // layering, which helps lowering video memory
+    // consumption. This property does not have an
+    // effect if `useLayering` is set, since then
+    // then this optimization is not relevant:
+    property bool uniformBackdrop: false
+
     property Item sourceItem
 
     property real beginningMargin
@@ -56,13 +67,14 @@ Item {
     // size intended, which may increase greatly depending on the fraction
     // of the display scale. Also note that if the QML item size is fractional
     // itself, it is ceiled regardless of the display scale or this property.
+    // This property is not relevant when `useLayering` is not set.
     property bool pixelAlignedForDPR: true
 
     readonly property bool effectCompatible: (GraphicsInfo.shaderType === GraphicsInfo.RhiShader)
 
-    readonly property bool implicitClipping: !!_shaderEffect?.visible
+    readonly property bool implicitClipping: !!_shaderEffect?.visible && !!_shaderEffectSource?.visible
 
-    property bool useLayering: effectCompatible && (enforceClipping || backgroundColor.a < 1.0)
+    property bool useLayering: effectCompatible && (enforceClipping || (!uniformBackdrop && backgroundColor.a < 1.0))
 
     // Sometimes `Item::clip` may not be suitable to use with item views,
     // this includes, but not limited to, when display margins are set.
@@ -95,6 +107,14 @@ Item {
         }
     }
 
+    onUniformBackdropChanged: {
+        if (uniformBackdrop) {
+            if (!_shaderEffect) {
+                _shaderEffect = shaderEffectComponent.createObject(positionerParent)
+            }
+        }
+    }
+
     Rectangle {
         id: backgroundRect
 
@@ -118,7 +138,7 @@ Item {
         implicitWidth: root.fadeSize
 
         // NOTE: `OpacityAnimator` updates the opacity once the animation finishes.
-        visible: (opacity > 0.0 || enabled) && !root.useLayering
+        visible: (opacity > 0.0 || enabled) && !root.useLayering && !root._shaderEffect?.visible
 
         opacity: enabled ? 1.0 : 0.0
 
@@ -264,9 +284,12 @@ Item {
 
             id: effect
 
-            anchors.fill: root._shaderEffectSource
+            anchors.fill: root.useLayering ? (root._shaderEffectSource ?? undefined) : undefined
 
-            readonly property Item source: root._shaderEffectSource
+            implicitWidth: (parent.width + (root.orientation === Qt.Horizontal ? (root.beginningMargin + root.endMargin) : 0))
+            implicitHeight: (parent.height + (root.orientation === Qt.Vertical ? (root.beginningMargin + root.endMargin) : 0))
+
+            readonly property Item source: root.useLayering ? root._shaderEffectSource : null
 
             readonly property bool vertical: (root.orientation === Qt.Vertical)
             readonly property real normalFadeSize: root.fadeSize / (vertical ? height : width)
@@ -275,7 +298,7 @@ Item {
             property real endFadeSize: root.enableEndFade ? normalFadeSize : 0
             readonly property real endFadePos: 1.0 - endFadeSize
 
-            visible: root.useLayering &&
+            visible: (root.useLayering || root.uniformBackdrop) &&
                      (root.enforceClipping ||
                       ((root.enableBeginningFade || root.enableEndFade) ||
                        (beginningFadeSize > 0 || endFadeSize > 0)))
@@ -330,7 +353,25 @@ Item {
             vertexShader: "qrc:///shaders/FadingEdge%1.vert.qsb".arg(vertical ? "Y" : "X")
 
             // TODO: Dithering is not necessary if background color is not dark.
-            fragmentShader: "qrc:///shaders/FadingEdge.frag.qsb"
+            fragmentShader: root.useLayering ? "qrc:///shaders/FadingEdge.frag.qsb"
+                                             : "qrc:///shaders/FadingEdge_nonsampling.frag.qsb"
+
+            SGManipulator {
+                visible: !root.useLayering
+
+                ps.blendConstant: Qt.rgba(root.backgroundColor.r * root.backgroundColor.a,
+                                          root.backgroundColor.g * root.backgroundColor.a,
+                                          root.backgroundColor.b * root.backgroundColor.a,
+                                          root.backgroundColor.a)
+
+                ps.blendEnable: true
+
+                ps.srcColor: GraphicsPipelineState.ConstantColor
+                ps.dstColor: GraphicsPipelineState.OneMinusSrcColor
+
+                vertexShader: ":/shaders/FadingEdge%1.vert.qsb".arg(effect.vertical ? "Y" : "X")
+                fragmentShader: ":/shaders/FadingEdge_nonsampling.frag.qsb"
+            }
         }
     }
 }
