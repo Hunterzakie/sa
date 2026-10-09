@@ -77,7 +77,7 @@ endif
 	## Copy libbluray jar
 	-cp -a "$(CONTRIB_DIR)"/share/java/libbluray*.jar $@/Contents/Frameworks/plugins/
 	## Install binary
-	cp "$(macos_destdir)$(prefix)/bin/vlc" $@/Contents/MacOS/$(PACKAGE_NAME)
+	cp "$(macos_destdir)$(prefix)/bin/$(PACKAGE)" $@/Contents/MacOS/$(PACKAGE_NAME)
 	install_name_tool -rpath "$(libdir)" "@executable_path/../Frameworks/" $@/Contents/MacOS/$(PACKAGE_NAME)
 	cp "$(macos_destdir)$(pkglibexecdir)/vlc-preparser" $@/Contents/MacOS/
 	install_name_tool -rpath "$(libdir)" "@executable_path/../Frameworks/" $@/Contents/MacOS/vlc-preparser
