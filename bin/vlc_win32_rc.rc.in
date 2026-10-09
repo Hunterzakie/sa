@@ -18,7 +18,7 @@ BEGIN
       VALUE "CompanyName", "@PACKAGE_VENDOR@"
       VALUE "ProductName", "@PACKAGE_FULL_NAME@"
       VALUE "ProductVersion", VERSION_NUMBER_STR
-      VALUE "InternalName", "@PACKAGE@"
+      VALUE "InternalName", "@PACKAGE_NAME@"
       VALUE "OriginalFilename", "@PACKAGE@.exe"
       VALUE "FileVersion", "@VERSION@"
       VALUE "FileDescription", "@PACKAGE_FULL_NAME@"
