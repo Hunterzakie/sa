@@ -152,7 +152,7 @@ package-translations:
 	echo "	exit 1" >>"$(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION)/convert.po.sh"
 	echo "fi" >>"$(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION)/convert.po.sh"
 	echo "" >>"$(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION)/convert.po.sh"
-	echo 'msgfmt --statistics -o vlc.mo $$1' >>"$(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION)/convert.po.sh"
+	echo 'msgfmt --statistics -o $(PACKAGE).mo $$1' >>"$(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION)/convert.po.sh"
 
 	$(AMTAR) chof - $(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION) \
 	  | GZIP=$(GZIP_ENV) gzip -c >$(srcdir)/$(PACKAGE_TARNAME)-translations-$(VERSION).tar.gz
