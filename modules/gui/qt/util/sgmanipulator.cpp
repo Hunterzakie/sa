@@ -85,7 +85,7 @@ public:
 class QSGMaterialProxy : public QSGMaterial
 {
     QSGMaterial * const m_target;
-    const bool m_ownsTarget;
+    bool m_ownsTarget;
 
     QPointer<GraphicsPipelineState> m_graphicsPipelineState;
     QString m_vertexShader;
@@ -94,6 +94,7 @@ class QSGMaterialProxy : public QSGMaterial
     QSGMaterialType *m_type = nullptr;
 
     friend class QSGMaterialShaderProxy;
+    friend class SGManipulator;
 
 public:
     explicit QSGMaterialProxy(QSGMaterial *target, bool ownsTarget = true)
@@ -400,6 +401,10 @@ SGManipulator::SGManipulator(QQuickItem *parent)
         m_shaderFileNameDirty = true;
         update();
     });
+
+    connect(this, &QQuickItem::visibleChanged, this, [this]() {
+        update();
+    });
 }
 
 QVariant SGManipulator::blending() const
@@ -464,6 +469,8 @@ QSGNode *SGManipulator::updatePaintNode(QSGNode *, UpdatePaintNodeData *data)
         break;
     }
 
+    const bool visible = isVisible();
+
     if (targetNode)
     {
         if (targetGeometryNode)
@@ -474,7 +481,7 @@ QSGNode *SGManipulator::updatePaintNode(QSGNode *, UpdatePaintNodeData *data)
             // WARNING: Qt explicitly sets the material pointer to 1 with software and OpenVG modes:
             if (material && material != reinterpret_cast<QSGMaterial*>(1))
             {
-                if (m_blending)
+                if (visible && m_blending)
                 {
                     if (*m_blending != material->flags().testFlag(QSGMaterial::Blending))
                     {
@@ -484,18 +491,17 @@ QSGNode *SGManipulator::updatePaintNode(QSGNode *, UpdatePaintNodeData *data)
                     }
                 }
 
-                if (!m_fragmentShader.isEmpty() && !m_vertexShader.isEmpty())
-                {
-                    const bool materialIsAlreadyProxy = dynamic_cast<QSGMaterialProxy*>(material);
+                auto proxyMaterial = dynamic_cast<QSGMaterialProxy*>(material);
 
-                    QSGMaterialProxy *proxyMaterial;
-                    if (!materialIsAlreadyProxy)
+                if (visible && !m_fragmentShader.isEmpty() && !m_vertexShader.isEmpty())
+                {
+                    if (!proxyMaterial)
                     {
-                        const bool ownsMaterial = (targetGeometryNode->flags() & QSGNode::OwnsMaterial);
-                        if (ownsMaterial)
+                        m_targetWasOwningMaterial = (targetGeometryNode->flags() & QSGNode::OwnsMaterial);
+                        if (m_targetWasOwningMaterial)
                             targetGeometryNode->setFlag(QSGNode::OwnsMaterial, false); // To prevent destroying the target material
 
-                        proxyMaterial = new QSGMaterialProxy(material, ownsMaterial);
+                        proxyMaterial = new QSGMaterialProxy(material, m_targetWasOwningMaterial);
                         proxyMaterial->setGraphicsPipelineState(m_ps);
                         proxyMaterial->setShaderFileNames(m_vertexShader,
                                                           m_fragmentShader);
@@ -528,6 +534,20 @@ QSGNode *SGManipulator::updatePaintNode(QSGNode *, UpdatePaintNodeData *data)
 
                         materialChangeMade = true;
                     }
+                }
+                else if (!visible && proxyMaterial)
+                {
+                    assert(targetGeometryNode->flags().testFlag(QSGNode::OwnsMaterial));
+                    assert(proxyMaterial->m_target);
+
+                    proxyMaterial->m_ownsTarget = false;
+                    // The node will delete the proxy material since it owns the material,
+                    // we don't need to delete ourselves:
+                    targetGeometryNode->setMaterial(proxyMaterial->m_target); // Restore the old material
+
+                    targetGeometryNode->setFlag(QSGNode::OwnsMaterial, m_targetWasOwningMaterial);
+
+                    materialChangeMade = true;
                 }
 
                 if (materialChangeMade)

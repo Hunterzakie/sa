@@ -498,7 +498,6 @@ class SGManipulator : public QQuickItem
     Q_PROPERTY(GraphicsPipelineState* ps READ ps CONSTANT FINAL)
 
     // These must be set for ps to be respected:
-    // Note that once they are set, it is not allowed to clear them afterward.
     Q_PROPERTY(QString vertexShader MEMBER m_vertexShader NOTIFY vertexShaderChanged FINAL)
     Q_PROPERTY(QString fragmentShader MEMBER m_fragmentShader NOTIFY fragmentShaderChanged FINAL)
 
@@ -542,6 +541,7 @@ private:
     mutable QPointer<GraphicsPipelineState> m_ps;
     QString m_vertexShader;
     QString m_fragmentShader;
+    bool m_targetWasOwningMaterial = false;
 
     bool m_shaderFileNameDirty = false;
     bool m_psDirty = false;
