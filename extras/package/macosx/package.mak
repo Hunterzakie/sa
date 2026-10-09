@@ -112,7 +112,7 @@ else !HAVE_DMGBUILD
 	## Symlink to Applications so users can easily drag-and-drop the App to it
 	$(LN_S) -f /Applications "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)/"
 	## Create DMG
-	hdiutil create -srcfolder "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)" -volname "VLC" \
+	hdiutil create -srcfolder "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)" -volname "$(PACKAGE_NAME)" \
 		-format UDBZ -fs HFS+ -o "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION).dmg"
 	## Cleanup
 	rm -rf "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)"
