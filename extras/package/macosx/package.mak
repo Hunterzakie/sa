@@ -22,7 +22,7 @@ macos-install:
 
 # VLC.app for packaging and giving it to your friends
 # use package-macosx to get a nice dmg
-VLC.app: macos-install
+$(PACKAGE_NAME).app: macos-install
 	rm -Rf $@
 	## Copy Contents
 	cp -R "$(macos_destdir)$(datadir)/macosx/" $@
@@ -77,8 +77,8 @@ endif
 	## Copy libbluray jar
 	-cp -a "$(CONTRIB_DIR)"/share/java/libbluray*.jar $@/Contents/Frameworks/plugins/
 	## Install binary
-	cp "$(macos_destdir)$(prefix)/bin/vlc" $@/Contents/MacOS/VLC
-	install_name_tool -rpath "$(libdir)" "@executable_path/../Frameworks/" $@/Contents/MacOS/VLC
+	cp "$(macos_destdir)$(prefix)/bin/vlc" $@/Contents/MacOS/$(PACKAGE_NAME)
+	install_name_tool -rpath "$(libdir)" "@executable_path/../Frameworks/" $@/Contents/MacOS/$(PACKAGE_NAME)
 	cp "$(macos_destdir)$(pkglibexecdir)/vlc-preparser" $@/Contents/MacOS/
 	install_name_tool -rpath "$(libdir)" "@executable_path/../Frameworks/" $@/Contents/MacOS/vlc-preparser
 	## Generate plugin cache
@@ -97,18 +97,18 @@ package-macosx-sdk: macos-install
 	tar -cf - --exclude "share/macosx" -C "$(macos_destdir)" . \
 		| gzip -c > "$(top_builddir)/$(PACKAGE_TARNAME)-macos-sdk-$(VERSION).tar.gz"
 
-package-macosx: VLC.app
+package-macosx: $(PACKAGE_NAME).app
 	rm -f "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION).dmg"
 if HAVE_DMGBUILD
 	@echo "Packaging fancy DMG using dmgbuild"
 	cd "$(top_srcdir)/extras/package/macosx/dmg" && dmgbuild -s "dmg_settings.py" \
-		-D app="$(abs_top_builddir)/VLC.app" "$(PACKAGE_FULL_NAME)" "$(abs_top_builddir)/$(PACKAGE_TARNAME)-$(VERSION).dmg"
+		-D app="$(abs_top_builddir)/$(PACKAGE_NAME).app" "$(PACKAGE_FULL_NAME)" "$(abs_top_builddir)/$(PACKAGE_TARNAME)-$(VERSION).dmg"
 else !HAVE_DMGBUILD
 	@echo "Packaging non-fancy DMG"
 	## Create directory for DMG contents
 	mkdir -p "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)"
 	## Copy contents
-	cp -Rp "$(top_builddir)/VLC.app" "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)/VLC.app"
+	cp -Rp "$(top_builddir)/$(PACKAGE_NAME).app" "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)/$(PACKAGE_NAME).app"
 	## Symlink to Applications so users can easily drag-and-drop the App to it
 	$(LN_S) -f /Applications "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)/"
 	## Create DMG
@@ -118,10 +118,10 @@ else !HAVE_DMGBUILD
 	rm -rf "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)"
 endif
 
-package-macosx-zip: VLC.app
+package-macosx-zip: $(PACKAGE_NAME).app
 	rm -f "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION).zip"
 	mkdir -p $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)/Goodies/
-	cp -Rp $(top_builddir)/VLC.app $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)/VLC.app
+	cp -Rp $(top_builddir)/$(PACKAGE_NAME).app $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)/$(PACKAGE_NAME).app
 	cd $(srcdir); cp -R AUTHORS COPYING README.md THANKS NEWS $(abs_top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)/Goodies/
 	zip -r -y -9 $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION).zip $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)
 	rm -rf "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)"
@@ -129,12 +129,12 @@ package-macosx-zip: VLC.app
 package-macosx-release:
 	rm -f "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release.zip"
 	mkdir -p $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release
-	cp -Rp $(top_builddir)/VLC.app $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release/
+	cp -Rp $(top_builddir)/$(PACKAGE_NAME).app $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release/
 	cp $(srcdir)/extras/package/macosx/dmg/* $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release/
 	cp "$(srcdir)/extras/package/macosx/codesign.sh" $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release/
 	cp "$(srcdir)/extras/package/macosx/vlc-hardening.entitlements" $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release/
 	cp "$(top_builddir)/macos-install/$(pkglibexecdir)/vlc-cache-gen" $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release/
-	install_name_tool -add_rpath "@executable_path/VLC.app/Contents/Frameworks" $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release/vlc-cache-gen
+	install_name_tool -add_rpath "@executable_path/$(PACKAGE_NAME).app/Contents/Frameworks" $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release/vlc-cache-gen
 	zip -r -y -9 $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release.zip $(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release
 	rm -rf "$(top_builddir)/$(PACKAGE_TARNAME)-$(VERSION)-release"
 
