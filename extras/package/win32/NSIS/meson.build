@@ -5,13 +5,14 @@ makensis = find_program('makensis', required: nsis_required)
 
 nsi_conf = configuration_data()
 nsi_conf.merge_from(cdata)
-nsi_conf.set('BUILD_LUA_TRUE', lua_dep.found() and get_option('lua').allowed() ? '' : '#')
-nsi_conf.set('BUILD_SKINS_TRUE', skins2_feasible ? '' : '#')
-nsi_conf.set('HAVE_WIN64_TRUE',  have_win64 ? '' : '#')
-nsi_conf.set('HAVE_WIN64_FALSE', have_win64 ? '#' : '')
-nsi_conf.set('HAVE_ARM64_TRUE',  host_machine.cpu_family() == 'aarch64' or host_machine.cpu() == 'arm64' ? '' : '#')
-nsi_conf.set('HAVE_ARM64_FALSE', host_machine.cpu_family() == 'aarch64' or host_machine.cpu() == 'arm64' ? '#' : '')
+nsi_conf.set('BUILD_LUA_TRUE', lua_dep.found() and get_option('lua').allowed() ? '' : ';')
+nsi_conf.set('BUILD_SKINS_TRUE', skins2_feasible ? '' : ';')
+nsi_conf.set('HAVE_WIN64_TRUE',  have_win64 ? '' : ';')
+nsi_conf.set('HAVE_WIN64_FALSE', have_win64 ? ';' : '')
+nsi_conf.set('HAVE_ARM64_TRUE',  host_machine.cpu_family() == 'aarch64' or host_machine.cpu() == 'arm64' ? '' : ';')
+nsi_conf.set('HAVE_ARM64_FALSE', host_machine.cpu_family() == 'aarch64' or host_machine.cpu() == 'arm64' ? ';' : '')
 nsi_conf.set('PROGRAMFILES', have_win64 ? 'PROGRAMFILES64' : 'PROGRAMFILES')
+nsi_conf.set('HAVE_NLS_TRUE', nsi_conf.get('ENABLE_NLS', 0) == 1 ? '' : ';')
 
 nsProcess_cargs = ['-D_UNICODE=1', '-DUNICODE=1']
 if not have_win64
@@ -57,6 +58,7 @@ vlc_nsi = configure_file(
   input: 'vlc.win32.nsi.in',
   output: 'vlc.win32.nsi',
   configuration: nsi_conf,
+  format: 'cmake@',
   install: true,
   install_dir: '.',
 )
@@ -65,6 +67,7 @@ spad_nsi = configure_file(
   input: 'spad.nsi.in',
   output: 'spad.nsi',
   configuration: nsi_conf,
+  format: 'cmake@',
   install: true,
   install_dir: '.',
 )
