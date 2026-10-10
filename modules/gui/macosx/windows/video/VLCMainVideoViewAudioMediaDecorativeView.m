@@ -72,6 +72,10 @@
                            selector:@selector(playerLyricsPreferenceChanged:)
                                name:VLCPlayerShowLyricsChanged
                              object:nil];
+    [notificationCenter addObserver:self
+                           selector:@selector(playerLyricsChanged:)
+                               name:VLCPlayerLyricsChanged
+                             object:nil];
 
     [self updateCoverArt];
     [self updateLyricsData];
@@ -84,6 +88,11 @@
 }
 
 - (void)playerLyricsPreferenceChanged:(NSNotification *)notification
+{
+    [self updateLyricsData];
+}
+
+- (void)playerLyricsChanged:(NSNotification *)notification
 {
     [self updateLyricsData];
 }
@@ -131,37 +140,12 @@
     VLCPlayerController * const playerController =
         VLCMain.sharedInstance.playQueueController.playerController;
 
-    NSString *syltData = nil;
-    if (playerController.showLyrics && playerController.lyricsAvailable) {
-        syltData = [playerController.currentMedia extraMetaForKey:@"sylt-data"];
+    NSArray<NSDictionary<NSString *, id> *> *entries = nil;
+    if (playerController.showLyrics) {
+        entries = playerController.lyricsEntries;
     }
 
-    if (!syltData || syltData.length == 0) {
-        self.lyricsEntries = @[];
-        self.currentLyricIndex = -1;
-        [self.lyricsTableView reloadData];
-        self.lyricsScrollView.hidden = YES;
-        self.foregroundCoverArtView.hidden = NO;
-        return;
-    }
-
-    NSMutableArray * const entries = [NSMutableArray array];
-    NSArray<NSString *> * const rawEntries = [syltData componentsSeparatedByString:@"\x1E"];
-    for (NSString * const rawEntry in rawEntries) {
-        if (rawEntry.length == 0) {
-            continue;
-        }
-        NSArray<NSString *> * const parts = [rawEntry componentsSeparatedByString:@"\x1F"];
-        if (parts.count >= 2) {
-            NSDictionary<NSString *, id> * const entry = @{
-                @"time": @([parts[0] longLongValue]),
-                @"text": parts[1]
-            };
-            [entries addObject:entry];
-        }
-    }
-
-    self.lyricsEntries = [entries copy];
+    self.lyricsEntries = entries ?: @[];
     self.currentLyricIndex = -1;
     [self.lyricsTableView reloadData];
 

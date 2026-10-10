@@ -30,6 +30,7 @@
 #include <vlc_strings.h>        /* vlc_strfplayer */
 #include <vlc_aout.h>           /* audio_output_t */
 #include <vlc_es.h>
+#include <vlc_iso_lang.h>
 #include <vlc_cxx_helpers.hpp>
 #include <vlc_vout.h>
 #include <vlc_preparser.h>
@@ -43,7 +44,10 @@
 #include <QWriteLocker>
 #endif
 
+#include <algorithm>
 #include <cassert>
+#include <cmath>
+#include <limits>
 
 #define POSITION_MIN_UPDATE_INTERVAL VLC_TICK_FROM_MS(15)
 
@@ -56,6 +60,10 @@ using SharedEsId = ::vlc::vlc_shared_data_ptr<vlc_es_id_t,
 using SharedTitleList = ::vlc::vlc_shared_data_ptr<vlc_player_title_list,
                                                    &vlc_player_title_list_Hold,
                                                    &vlc_player_title_list_Release>;
+
+using SharedLyrics = ::vlc::vlc_shared_data_ptr<vlc_lyrics_t,
+                                                &vlc_lyrics_Hold,
+                                                &vlc_lyrics_Release>;
 
 PlayerControllerPrivate::~PlayerControllerPrivate()
 {
@@ -198,64 +206,183 @@ void PlayerControllerPrivate::UpdateMeta( input_item_t *p_item )
             m_album   = vlc_meta_Get(p_item->p_meta, vlc_meta_Album);
             m_artwork = vlc_meta_Get(p_item->p_meta, vlc_meta_ArtworkURL);
 
-            /* Capture the raw sylt-data buffer; the entry list is built on
-             * first read so we don't pay for it when lyrics are never shown.
-             * Later meta refreshes may not carry sylt-data again, so keep the
-             * cached buffer until the current media changes. */
-            const char *psz_sylt_data = vlc_meta_GetExtra( p_item->p_meta, "sylt-data" );
-            if (!psz_sylt_data)
-                psz_sylt_data = vlc_meta_GetExtra( p_item->p_meta, "uslt-data" );
-
-            if (psz_sylt_data != NULL)
-            {
-                QByteArray newRaw( psz_sylt_data );
-                const auto hash = qHash(newRaw);
-                if (!m_syltRaw || hash != m_syltRaw->second)
-                {
-                    m_syltRaw = qMakePair(std::move( newRaw ), hash);
-                    m_syltLyrics.reset();
-                }
-            }
         }
-    }
-
-    if (m_syltRaw) {
-        emit q->hasLyricsChanged(true);
-        emit q->syltLyricsChanged();
     }
 
     emit q->currentMetaChanged( p_item  );
 }
 
-QList<TimedText>
-PlayerControllerPrivate::syltLyrics() const
+ssize_t
+PlayerControllerPrivate::selectedLyricsTrackIdx() const
 {
-    if (!m_syltLyrics.has_value())
+    const qsizetype count = m_lyricsTracks.size();
+
+    if (m_lyricsTrack >= 0 && m_lyricsTrack < count)
+        return m_lyricsTrack;
+
+    ssize_t fallback = -1;
+
+    for (qsizetype i = 0; i < count; ++i)
+    {
+        if (m_lyricsTracks[i]->synchronized)
+            return i;
+        if (fallback < 0)
+            fallback = i;
+    }
+    return fallback;
+}
+
+const vlc_lyrics_track *
+PlayerControllerPrivate::selectedLyricsTrack() const
+{
+    const ssize_t idx = selectedLyricsTrackIdx();
+    return idx < 0 ? nullptr : m_lyricsTracks[idx];
+}
+
+QStringList
+PlayerControllerPrivate::lyricsTrackNames() const
+{
+    QStringList names;
+    names.reserve( m_lyricsTracks.size() );
+
+    for (const vlc_lyrics_track *track : m_lyricsTracks)
+    {
+        QString name = (track->description && *track->description)
+                     ? qfu( track->description ) : qtr( "Lyrics" );
+
+        if (strcmp( track->language, VLC_LYRICS_LANGUAGE_UNKNOWN ) != 0)
+        {
+            const iso639_lang_t * const lang =
+                vlc_find_iso639( track->language, false );
+            const QString language = lang ? qfut( lang->psz_eng_name )
+                                          : qfu( track->language );
+            name = QStringLiteral( "%1 - %2" ).arg( language, name );
+        }
+        names.push_back( name );
+    }
+    return names;
+}
+
+QList<TimedText>
+PlayerControllerPrivate::lyricsLines() const
+{
+    if (!m_lyricsLines.has_value())
     {
         QList<TimedText> lyrics;
+        const vlc_lyrics_track *track = selectedLyricsTrack();
 
-        if (m_syltRaw)
+        if (track != nullptr)
         {
-            assert(!m_syltRaw->first.isEmpty());
-            const QString sylt = QString::fromUtf8(m_syltRaw->first);
-            m_syltRaw->first.clear();
+            lyrics.reserve( track->count );
+            for (size_t i = 0; i < track->count; ++i)
+                lyrics.push_back( TimedText( qfu( track->lines[i].text ),
+                                             VLCTime( track->lines[i].time ) ) );
+        }
+        m_lyricsLines = std::move( lyrics );
+    }
+    return *m_lyricsLines;
+}
 
-            const auto entries = QStringView( sylt ).split( QChar( 0x1E ), Qt::SkipEmptyParts );
+void PlayerControllerPrivate::updateCurrentLyric()
+{
+    Q_Q(PlayerController);
 
-            for (const QStringView &entry : entries)
+    const vlc_lyrics_track *track = m_time.valid() ? selectedLyricsTrack()
+                                                   : nullptr;
+    const vlc_tick_t now = m_time.toVLCTick();
+
+    int index = -1;
+    if (track != nullptr && track->synchronized)
+    {
+        index = static_cast<int>( vlc_lyrics_track_FindLine( track, now ) );
+    }
+    else if (track != nullptr)
+        /* Plain lyrics are current for the whole playback */
+        index = 0;
+
+    int sungChars = -1;
+    vlc_tick_t nextTransition = -1;
+    if (track != nullptr && track->synchronized)
+    {
+        if (index < 0)
+            /* Before the first line, that line is the next transition. */
+            nextTransition = track->lines[0].time;
+        else
+        {
+            if (static_cast<size_t>( index ) + 1 < track->count)
+                nextTransition = track->lines[index + 1].time;
+
+            const vlc_lyrics_line *line = &track->lines[index];
+            if (line->word_count > 0)
             {
-                const qsizetype sep = entry.indexOf( QChar( 0x1F ) );
-                if (sep <= 0)
-                    continue;
+                const ssize_t word = vlc_lyrics_line_FindWord( line, now );
 
-                const vlc_tick_t time =
-                    VLC_TICK_FROM_MS( entry.first( sep ).toLongLong() );
-                lyrics.push_back( TimedText( entry.sliced( sep + 1 ).toString(), VLCTime( time ) ) );
+                /* The core counts bytes in the UTF-8 line; QML counts QString
+                 * characters. */
+                sungChars = word < 0 ? 0
+                    : QString::fromUtf8( line->text,
+                                         line->words[word].offset
+                                         + line->words[word].length ).size();
+
+                const size_t nextWord = word + 1;
+                if (nextWord < line->word_count
+                 && (nextTransition < 0
+                  || line->words[nextWord].time < nextTransition))
+                    nextTransition = line->words[nextWord].time;
             }
-            m_syltLyrics = std::move( lyrics );
         }
     }
-    return *m_syltLyrics;
+
+    if (index != m_currentLyricIndex)
+    {
+        m_currentLyricIndex = index;
+        emit q->currentLyricIndexChanged( index );
+        emit q->currentLyricChanged();
+    }
+
+    if (sungChars != m_currentLyricSungChars)
+    {
+        m_currentLyricSungChars = sungChars;
+        emit q->currentLyricSungCharsChanged( sungChars );
+    }
+
+    m_lyricsTimer.stop();
+    if (nextTransition >= 0
+     && m_playing_status == PlayerController::PLAYING_STATE_PLAYING
+     && m_player_time.system_date != VLC_TICK_MAX
+     && m_player_time.rate > 0)
+    {
+        constexpr double maxMs = std::numeric_limits<int>::max();
+
+        const double delayMs = std::ceil( (nextTransition - now)
+                                          / m_player_time.rate / 1000. );
+
+        m_lyricsTimer.start(
+            static_cast<int>( std::clamp( delayMs, 5., maxMs ) ) ); /* min 5ms to avoid having too much updates */
+    }
+}
+
+void PlayerControllerPrivate::resetLyrics()
+{
+    m_lyricsTimer.stop();
+
+    Q_Q(PlayerController);
+
+    if (m_lyricsTracks.isEmpty() && m_currentLyricIndex == -1)
+        return;
+
+    m_lyrics.clear();
+    m_lyricsTracks.clear();
+    m_lyricsLines.reset();
+    m_currentLyricIndex = -1;
+    m_currentLyricSungChars = -1;
+    m_lyricsTrack = -1;
+    emit q->hasLyricsChanged( false );
+    emit q->lyricsChanged();
+    emit q->lyricsTrackChanged( -1 );
+    emit q->currentLyricIndexChanged( -1 );
+    emit q->currentLyricSungCharsChanged( -1 );
+    emit q->currentLyricChanged();
 }
 
 void PlayerControllerPrivate::UpdateInfo( input_item_t *p_item )
@@ -346,13 +473,7 @@ static  void on_player_current_media_changed(vlc_player_t *, input_item_t *new_m
                 that->m_currentItem.reset(nullptr);
             }
 
-            that->m_syltRaw.reset();
-            that->m_syltLyrics.reset();
-            that->m_currentLyricIndex = -1;
-            emit that->q_func()->hasLyricsChanged(false);
-            emit that->q_func()->syltLyricsChanged();
-            emit that->q_func()->currentLyricIndexChanged(-1);
-            emit that->q_func()->currentLyricChanged();
+            that->resetLyrics();
             emit that->q_func()->inputChanged(false);
         });
         return;
@@ -362,13 +483,14 @@ static  void on_player_current_media_changed(vlc_player_t *, input_item_t *new_m
     that->callAsync([that,newMediaPtr] () {
         PlayerController* q = that->q_func();
 
-        that->m_syltRaw.reset();
-        that->m_syltLyrics.reset();
-        that->m_currentLyricIndex = -1;
-        emit q->hasLyricsChanged(false);
-        emit q->syltLyricsChanged();
-        emit q->currentLyricIndexChanged(-1);
-        emit q->currentLyricChanged();
+        /* The clock of the previous media must not leak into this one:
+         * events the new input sends before its first timer point (its
+         * lyrics, for one) would be evaluated against it. Leave the time
+         * invalid and the point paused until that first point lands. */
+        that->m_time = VLCTime();
+        that->m_player_time.system_date = VLC_TICK_MAX;
+
+        that->resetLyrics();
 
         that->UpdateArt( newMediaPtr.get() );
         that->UpdateMeta( newMediaPtr.get() );
@@ -465,16 +587,7 @@ static void on_player_state_changed(vlc_player_t *, enum vlc_player_state state,
             emit q->infoChanged( NULL );
             emit q->currentMetaChanged( (input_item_t *)NULL );
 
-            if (that->m_syltRaw || that->m_currentLyricIndex != -1)
-            {
-                that->m_syltRaw.reset();
-                that->m_syltLyrics.reset();
-                that->m_currentLyricIndex = -1;
-                emit q->hasLyricsChanged( false );
-                emit q->syltLyricsChanged();
-                emit q->currentLyricIndexChanged( -1 );
-                emit q->currentLyricChanged();
-            }
+            that->resetLyrics();
 
             that->m_hasPrograms =false;
             emit q->hasProgramsChanged( false );
@@ -491,6 +604,7 @@ static void on_player_state_changed(vlc_player_t *, enum vlc_player_state state,
         }
         }
         emit q->playingStateChanged( that->m_playing_status );
+        that->updateCurrentLyric();
     });
 }
 
@@ -612,6 +726,56 @@ static void on_player_program_selection_changed(vlc_player_t *, int unselected, 
     that->callAsync([that,unselected,selected] (){
         that->m_programList.updateProgramSelection(unselected, false);
         that->m_programList.updateProgramSelection(selected, true);
+    });
+}
+
+static void on_player_media_attachments_added(vlc_player_t *, input_item_t *media,
+                                              input_attachment_t *const *array,
+                                              size_t count, void *data)
+{
+    PlayerControllerPrivate* that = static_cast<PlayerControllerPrivate*>(data);
+
+    QList<SharedLyrics> lyrics;
+    for (size_t i = 0; i < count; ++i)
+    {
+        vlc_lyrics_t *found = vlc_lyrics_FromAttachment( array[i] );
+        if (found != nullptr)
+            lyrics.push_back( SharedLyrics( found, false ) );
+    }
+    if (lyrics.isEmpty())
+        return;
+
+    msg_Dbg( that->p_intf, "on_player_media_attachments_added");
+
+    SharedInputItem sharedMedia( media );
+
+    that->callAsync([that,sharedMedia,lyrics] () {
+        PlayerController* q = that->q_func();
+
+        /* Ignore the attachments of a media replaced while opening */
+        if (sharedMedia != that->m_currentItem)
+            return;
+
+        for (const SharedLyrics &found : lyrics)
+        {
+            that->m_lyrics.push_back( found );
+            for (size_t i = 0; i < vlc_lyrics_GetTrackCount( found.get() ); ++i)
+                that->m_lyricsTracks.push_back( vlc_lyrics_GetTrack( found.get(), i ) );
+        }
+        that->m_lyricsLines.reset();
+        that->m_currentLyricIndex = -1;
+        that->m_currentLyricSungChars = -1;
+
+        emit q->hasLyricsChanged( true );
+        emit q->lyricsChanged();
+        emit q->lyricsTrackChanged( q->getLyricsTrack() );
+        emit q->currentLyricIndexChanged( -1 );
+        emit q->currentLyricSungCharsChanged( -1 );
+        emit q->currentLyricChanged();
+
+        if (that->m_player_time.system_date != VLC_TICK_MAX)
+            that->interpolateTime( vlc_tick_now() );
+        that->updateCurrentLyric();
     });
 }
 
@@ -1065,6 +1229,7 @@ static void on_player_timer_paused(vlc_tick_t system_date, void *data)
         // And stop the timers.
         that->m_position_timer.stop();
         that->m_time_timer.stop();
+        that->m_lyricsTimer.stop();
     });
 }
 
@@ -1145,6 +1310,7 @@ static const struct vlc_player_cbs player_cbs = [] {
     cbs.on_media_meta_changed = on_player_media_meta_changed;
     cbs.on_media_epg_changed = on_player_media_epg_changed;
     cbs.on_media_subitems_changed = on_player_subitems_changed;
+    cbs.on_media_attachments_added = on_player_media_attachments_added;
     cbs.on_vout_changed = on_player_vout_changed;
     cbs.on_cork_changed = on_player_corks_changed;
     cbs.on_playback_restore_queried = on_player_playback_restore_queried;
@@ -1226,6 +1392,9 @@ PlayerControllerPrivate::PlayerControllerPrivate(PlayerController *playercontrol
     m_time_timer.setSingleShot( true );
     m_time_timer.setTimerType( Qt::PreciseTimer );
 
+    m_lyricsTimer.setSingleShot( true );
+    m_lyricsTimer.setTimerType( Qt::PreciseTimer );
+
     // Initialise fullscreen to match the player state
     m_fullscreen = vlc_player_vout_IsFullscreen( m_player );
 
@@ -1256,6 +1425,11 @@ PlayerController::PlayerController( qt_intf_t *_p_intf )
 {
     connect( &d_ptr->m_position_timer, &QTimer::timeout, this, &PlayerController::updatePositionFromTimer );
     connect( &d_ptr->m_time_timer, &QTimer::timeout, this, &PlayerController::updateTimeFromTimer );
+    connect( &d_ptr->m_lyricsTimer, &QTimer::timeout, this, [this]() {
+        Q_D(PlayerController);
+        d->interpolateTime( vlc_tick_now() );
+        d->updateCurrentLyric();
+    } );
 }
 
 PlayerController::~PlayerController()
@@ -1877,26 +2051,7 @@ void PlayerController::updateTime(vlc_tick_t system_now, bool forceUpdate)
         d->m_remainingTime = VLCDuration();
     emit remainingTimeChanged(d->m_remainingTime);
 
-    if (d->m_syltRaw.has_value() && d->m_time.valid())
-    {
-        const auto& lyrics = d->syltLyrics();
-        int currentIndex = -1;
-        const vlc_tick_t currentTime = d->m_time.toVLCTick();
-
-        for (int i = 0; i < lyrics.size(); ++i)
-        {
-            if ((lyrics[i].time().toVLCTick() - 1) > currentTime)
-                break;
-            currentIndex = i;
-        }
-
-        if (currentIndex != d->m_currentLyricIndex)
-        {
-            d->m_currentLyricIndex = currentIndex;
-            emit currentLyricIndexChanged( currentIndex );
-            emit currentLyricChanged();
-        }
-    }
+    d->updateCurrentLyric();
 
     if (system_now != VLC_TICK_INVALID
      && d->m_player_time.system_date != VLC_TICK_MAX
@@ -2318,7 +2473,7 @@ TimedText PlayerController::getCurrentLyric() const
     Q_D(const PlayerController);
     if (d->m_currentLyricIndex < 0)
         return {};
-    const auto& lyrics = d->syltLyrics();
+    const auto& lyrics = d->lyricsLines();
     if (d->m_currentLyricIndex >= lyrics.size())
         return {};
     return lyrics[d->m_currentLyricIndex];
@@ -2327,19 +2482,101 @@ TimedText PlayerController::getCurrentLyric() const
 bool PlayerController::hasLyrics() const
 {
     Q_D(const PlayerController);
-    return d->m_syltRaw.has_value();
+    return !d->m_lyricsTracks.isEmpty();
 }
 
-QList<TimedText> PlayerController::getSyltLyrics() const
+QList<TimedText> PlayerController::getLyrics() const
 {
     Q_D(const PlayerController);
-    return d->syltLyrics();
+    return d->lyricsLines();
+}
+
+QStringList PlayerController::getLyricsTracks() const
+{
+    Q_D(const PlayerController);
+    return d->lyricsTrackNames();
+}
+
+int PlayerController::getLyricsTrack() const
+{
+    Q_D(const PlayerController);
+    return static_cast<int>( d->selectedLyricsTrackIdx() );
+}
+
+void PlayerController::setLyricsTrack( int index )
+{
+    Q_D(PlayerController);
+
+    const int count = static_cast<int>( d->m_lyricsTracks.size() );
+    if (index < -1 || index >= count)
+        return;
+
+    const int previous = getLyricsTrack();
+    d->m_lyricsTrack = index;
+    if (getLyricsTrack() == previous)
+        return;
+
+    d->m_lyricsLines.reset();
+    d->m_currentLyricIndex = -1;
+    d->m_currentLyricSungChars = -1;
+
+    emit lyricsTrackChanged( getLyricsTrack() );
+    emit lyricsChanged();
+    emit currentLyricIndexChanged( -1 );
+    emit currentLyricSungCharsChanged( -1 );
+    emit currentLyricChanged();
+
+    if (d->m_player_time.system_date != VLC_TICK_MAX)
+        d->interpolateTime( vlc_tick_now() );
+    d->updateCurrentLyric();
 }
 
 int PlayerController::getCurrentLyricIndex() const
 {
     Q_D(const PlayerController);
     return d->m_currentLyricIndex;
+}
+
+int PlayerController::getCurrentLyricSungChars() const
+{
+    Q_D(const PlayerController);
+    return d->m_currentLyricSungChars;
+}
+
+static QString escapeMarkup( QStringView str )
+{
+    const QString escaped = str.toString().toHtmlEscaped();
+
+    /* `StyledText` folds runs of spaces, `PlainText` does not. Keeping all but
+     * the last one non-breaking makes a marked-up string occupy exactly the
+     * width of the plain one, while still offering that last space for line
+     * breaking. */
+    QString markup;
+    markup.reserve( escaped.size() );
+    for (qsizetype i = 0; i < escaped.size(); ++i)
+    {
+        if (escaped[i] == ' ' && i + 1 < escaped.size() && escaped[i + 1] == ' ')
+            markup += QLatin1String( "&nbsp;" );
+        else
+            markup += escaped[i];
+    }
+    return markup;
+}
+
+/* Lyrics are highlighted as they are sung with markup rather than with an
+ * overlay clipped to a width, because the text may wrap and only its layout
+ * knows where it breaks. */
+QString PlayerController::colorizePrefix( const QString &text, int count,
+                                          const QColor &color )
+{
+    const qsizetype sung = std::clamp<qsizetype>( count, 0, text.size() );
+    if (sung == 0)
+        return escapeMarkup( text );
+
+    return QStringLiteral( "<font color=\"%1\">%2</font>%3" )
+        .arg( color.name( QColor::HexArgb ),
+              escapeMarkup( QStringView( text ).first( sung ) ),
+              escapeMarkup( QStringView( text ).sliced( sung ) ) );
 }
 
 #undef PRIMITIVETYPE_GETTER

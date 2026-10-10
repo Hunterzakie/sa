@@ -989,7 +989,9 @@ static void toJSON_input_attachment(struct serdes_sys *sys,
     json_stringify(number, sys, "i_data", (*a)->i_data);
     if (sys->bin_data) {
         json_stringify_last(null, sys, "p_data", NULL);
-        vlc_vector_push_all(&sys->attach_data , (*a)->p_data, (*a)->i_data);
+        if ((*a)->i_data > 0)
+            vlc_vector_push_all(&sys->attach_data , (*a)->p_data,
+                                (*a)->i_data);
     } else {
         char *b64 = vlc_b64_encode_binary((*a)->p_data, (*a)->i_data);
         json_stringify_last(string, sys, "p_data", b64);

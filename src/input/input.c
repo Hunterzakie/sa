@@ -3289,19 +3289,11 @@ static void AppendAttachment( input_thread_t *p_input, int i_new,
 }
 
 /*****************************************************************************
- * InputUpdateMeta: merge p_item meta data with p_meta taking care of
- * arturl and locking issue.
+ * InputUpdateAttachments: add the attachments of a demuxer that are not
+ * there yet
  *****************************************************************************/
-static void InputUpdateMeta( input_thread_t *p_input, demux_t *p_demux )
+static void InputUpdateAttachments( input_thread_t *p_input, demux_t *p_demux )
 {
-    vlc_meta_t *p_meta = vlc_meta_New();
-    if( unlikely(p_meta == NULL) )
-        return;
-
-    demux_Control( p_demux, DEMUX_GET_META, p_meta );
-
-    /* If metadata changed, then the attachments might have changed.
-       We need to update them in case they contain album art. */
     input_attachment_t **attachment;
     int i_attachment;
 
@@ -3329,6 +3321,21 @@ static void InputUpdateMeta( input_thread_t *p_input, demux_t *p_demux )
         AppendAttachment( p_input, nb_new, attachment );
         vlc_mutex_unlock( &priv->p_item->lock );
     }
+}
+
+/*****************************************************************************
+ * InputUpdateMeta: merge p_item meta data with p_meta taking care of
+ * arturl and locking issue.
+ *****************************************************************************/
+static void InputUpdateMeta( input_thread_t *p_input, demux_t *p_demux )
+{
+    vlc_meta_t *p_meta = vlc_meta_New();
+    if( unlikely(p_meta == NULL) )
+        return;
+
+    demux_Control( p_demux, DEMUX_GET_META, p_meta );
+
+    InputUpdateAttachments( p_input, p_demux );
 
     es_out_ControlSetMeta(&input_priv(p_input)->p_es_out->out, p_meta);
     vlc_meta_Delete( p_meta );
@@ -3634,7 +3641,11 @@ static int input_SlaveSourceAdd( input_thread_t *p_input,
         InputUpdateMeta( p_input, p_source->p_demux );
     }
     else
+    {
         p_source->b_slave_sub = true;
+
+        InputUpdateAttachments( p_input, p_source->p_demux );
+    }
 
     TAB_APPEND( priv->i_slave, priv->slave, p_source );
 

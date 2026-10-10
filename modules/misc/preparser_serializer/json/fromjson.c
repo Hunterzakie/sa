@@ -1101,6 +1101,9 @@ fromJSON_input_attachment(struct serdes_sys *sys,
         return;
     }
 
+    if (i_data == 0)
+        return;
+
     void *data = malloc(i_data);
     if (data == NULL) {
         *error = true;

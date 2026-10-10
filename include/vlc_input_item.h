@@ -176,7 +176,7 @@ enum slave_priority
 #define SLAVE_SPU_EXTENSIONS \
     "aqt", "ass",  "cdg", \
     "dks", "idx", "jss", \
-    "mpl2", "mpsub", "pjs", \
+    "lrc", "mpl2", "mpsub", "pjs", \
     "psb", "rt", "sami", "sbv", \
     "scc", "smi", "srt", \
     "ssa",  "stl", "sub", \
