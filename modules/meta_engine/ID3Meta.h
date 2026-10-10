@@ -72,31 +72,54 @@ static bool ID3TextTagHandler( const uint8_t *p_buf, size_t i_buf,
     return (psz != NULL);
 }
 
+/**
+ * Handle a WXXX (User defined URL link) ID3v2 frame.
+ *
+ * Only frames whose description starts with "artworkURL_" are
+ * recognized; the URL portion is stored as vlc_meta_ArtworkURL.
+ */
 static bool ID3LinkFrameTagHandler( const uint8_t *p_buf, size_t i_buf,
                                     vlc_meta_t *p_meta, bool *pb_updated )
 {
     if( i_buf > 13 && p_meta )
     {
-        const char *psz = (const char *)&p_buf[1];
-        size_t i_len = i_buf - 1;
-        size_t i_desclen = strnlen(psz, i_len);
-        if( i_desclen < i_len - 1 && i_desclen > 11 &&
-            !strncmp( "artworkURL_", psz, 11 ) )
+        const uint8_t *p_value;
+        size_t i_value;
+        char *psz_alloc;
+        const char *psz_desc = ID3ParseTextField( p_buf, i_buf,
+                                                  &p_value, &i_value,
+                                                  &psz_alloc );
+        if( psz_desc && i_value > 0 && !strncmp( "artworkURL_", psz_desc, 11 ) )
         {
-            const char *psz_old = vlc_meta_Get( p_meta, vlc_meta_ArtworkURL );
-            if( !psz_old || strncmp( psz_old, &psz[i_desclen], i_len - i_desclen ) )
+            /* WXXX URLs are ISO-8859-1 per the ID3v2 spec.
+             * vlc_meta requires UTF-8, so convert before storing.
+             */
+            char *psz_url = FromCharset( "ISO_8859-1", p_value, i_value );
+            if( psz_url )
             {
-                char *p_alloc = strndup(&psz[i_desclen + 1], i_len - i_desclen - 1);
-                vlc_meta_Set( p_meta, vlc_meta_ArtworkURL, p_alloc );
-                free( p_alloc );
-                *pb_updated = true;
+                const char *psz_old = vlc_meta_Get( p_meta, vlc_meta_ArtworkURL );
+                if( !psz_old || strcmp( psz_old, psz_url ) )
+                {
+                    vlc_meta_Set( p_meta, vlc_meta_ArtworkURL, psz_url );
+                    if( pb_updated )
+                        *pb_updated = true;
+                }
+                free( psz_url );
             }
         }
+        free( psz_alloc );
         return true;
     }
     return false;
 }
 
+/**
+ * Dispatch an ID3v2 frame to the right handler based on its tag.
+ *
+ *   WXXX -> ID3LinkFrameTagHandler (artwork URL)
+ *   TXXX -> store REPLAYGAIN_* keys as meta extras
+ *   Tnnn -> ID3TextTagHandler via the lookup table
+ */
 static bool ID3HandleTag( const uint8_t *p_buf, size_t i_buf,
                           uint32_t i_tag,
                           vlc_meta_t *p_meta, bool *pb_updated )
@@ -107,27 +130,28 @@ static bool ID3HandleTag( const uint8_t *p_buf, size_t i_buf,
     }
     else if( i_tag == VLC_FOURCC('T', 'X', 'X', 'X') )
     {
-        char *psz_key_alloc;
-        const char *psz_key = ID3TextConvert( p_buf, i_buf, &psz_key_alloc );
+        const uint8_t *p_value;
+        size_t i_value;
+        char *psz_alloc_key;
+        const char *psz_key = ID3ParseTextField( p_buf, i_buf,
+                                                 &p_value, &i_value,
+                                                 &psz_alloc_key );
         if( psz_key )
         {
-            const size_t i_len = strlen( psz_key ) + 2;
-            if( i_len < i_buf )
+            /* Only set those which are known as non binary */
+            if( i_value > 0 && !strncasecmp( psz_key, "REPLAYGAIN_", 11 ) )
             {
-                /* Only set those which are known as non binary */
-                if( !strncasecmp( psz_key, "REPLAYGAIN_", 11 ) )
+                /* The value uses the same encoding as the description. */
+                char *psz_alloc_val;
+                const char *psz_val = ID3TextConv( p_value, i_value,
+                                                   p_buf[0], &psz_alloc_val );
+                if( psz_val )
                 {
-                    char *psz_val_alloc;
-                    const char *psz_val = ID3TextConv( &p_buf[i_len], i_buf - i_len,
-                                                       p_buf[0], &psz_val_alloc );
-                    if( psz_val )
-                    {
-                        vlc_meta_SetExtra( p_meta, psz_key, psz_val );
-                        free( psz_val_alloc );
-                    }
+                    vlc_meta_SetExtra( p_meta, psz_key, psz_val );
+                    free( psz_alloc_val );
                 }
             }
-            free( psz_key_alloc );
+            free( psz_alloc_key );
             return (vlc_meta_GetExtraCount( p_meta ) > 0);
         }
     }

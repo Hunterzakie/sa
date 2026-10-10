@@ -126,6 +126,7 @@ endif
 if UPDATE_CHECK
 check_PROGRAMS += test_src_crypto_update
 endif
+check_PROGRAMS += test_libvlc_meta_id3
 if HAVE_TAGLIB
 check_PROGRAMS += test_libvlc_meta
 endif
@@ -211,6 +212,8 @@ test_libvlc_slaves_SOURCES = libvlc/slaves.c
 test_libvlc_slaves_LDADD = $(LIBVLCCORE) $(LIBVLC)
 test_libvlc_meta_SOURCES = libvlc/meta.c
 test_libvlc_meta_LDADD = $(LIBVLCCORE) $(LIBVLC)
+test_libvlc_meta_id3_SOURCES = libvlc/meta_id3.c
+test_libvlc_meta_id3_LDADD = $(LIBVLCCORE) $(LIBVLC)
 
 test_src_clock_clock_SOURCES = src/clock/clock.c \
 	../src/clock/clock.c \

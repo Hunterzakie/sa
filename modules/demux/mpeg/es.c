@@ -188,6 +188,31 @@ struct xing_info_s
     uint32_t i_music_length;
 };
 
+/**
+ * 16-bit ReplayGain field layout - bit numbering is MSB first:
+ *   bits 15..13: name       (0 = unset, 1 = radio / track, 2 = audiophile / album)
+ *   bits 12..10: originator (0 = unset, 1 = artist, 2 = user, 3 = model)
+ *   bit  9     : sign       (1 = negative)
+ *   bits 8..0  : magnitude  (gain in dB * 10)
+ *
+ * Convention places track gain at offset 15 and album gain at 17, but the
+ * spec defines the meaning per-field via name.
+ */
+static void ParseXingReplayGain( const uint8_t *p_data, struct xing_info_s *xing )
+{
+    const uint16_t v = GetWBE( p_data );
+    const unsigned name = (v >> 13) & 0x7;
+    const unsigned originator = (v >> 10) & 0x7;
+    if( name == 0 || originator == 0 )
+        return;
+
+    const float gain = (v & 0x1FF) / ((v & 0x200) ? -10.0f : 10.0f);
+    if( name == 1 )      /* radio / track */
+        xing->f_radio_replay_gain = gain;
+    else if( name == 2 ) /* audiophile / album */
+        xing->f_audiophile_replay_gain = gain;
+}
+
 static int ParseXing( const uint8_t *p_buf, size_t i_buf, struct xing_info_s *xing )
 {
     if( i_buf < XING_MIN_TAG_SIZE )
@@ -249,13 +274,10 @@ static int ParseXing( const uint8_t *p_buf, size_t i_buf, struct xing_info_s *xi
 
     xing->brmode  = p_fixed[9] & 0x0f; /* version upper / mode lower */
     uint32_t peak_signal  = GetDWBE( &p_fixed[11] );
-    xing->f_peak_signal = peak_signal / 8388608.0; /* pow(2, 23) */
-    uint16_t gain = GetWBE( &p_fixed[15] );
-    xing->f_radio_replay_gain = (gain & 0x1FF) / /* 9bits val stored x10 */
-                                ((gain & 0x200) ? -10.0 : 10.0); /* -sign bit on bit 6 */
-    gain = GetWBE( &p_fixed[17] );
-    xing->f_radio_replay_gain = (gain & 0x1FF) / /* 9bits val stored x10 */
-                                ((gain & 0x200) ? -10.0 : 10.0); /* -sign bit on bit 6 */
+    xing->f_peak_signal = peak_signal ? peak_signal / 8388608.0 /* pow(2, 23) */
+                                      : NAN; /* 0 == not measured */
+    ParseXingReplayGain( &p_fixed[15], xing );
+    ParseXingReplayGain( &p_fixed[17], xing );
     /* flags @19 */
     xing->bitrate_avg = (p_fixed[20] != 0xFF) ? p_fixed[20] : 0; /* clipped to 255, so it's unknown from there */
     xing->i_delay_samples = (p_fixed[21] << 4) | (p_fixed[22] >> 4); /* upper 12bits */
@@ -1755,19 +1777,23 @@ static int MpgaInit( demux_t *p_demux )
             p_sys->b_estimate_bitrate = false;
         }
 
-        if( isfinite(xing->f_radio_replay_gain) )
+        /* ID3 tags take precedence, so only fill slots ID3 parsing didn't set */
+        if( !p_sys->audio_replay_gain.pb_gain[AUDIO_REPLAY_GAIN_TRACK] &&
+            isfinite(xing->f_radio_replay_gain) )
         {
             p_sys->audio_replay_gain.pb_gain[AUDIO_REPLAY_GAIN_TRACK] = true;
             p_sys->audio_replay_gain.pf_gain[AUDIO_REPLAY_GAIN_TRACK] = xing->f_radio_replay_gain;
         }
 
-        if( isfinite(xing->f_peak_signal) )
+        if( !p_sys->audio_replay_gain.pb_peak[AUDIO_REPLAY_GAIN_TRACK] &&
+            isfinite(xing->f_peak_signal) )
         {
             p_sys->audio_replay_gain.pb_peak[AUDIO_REPLAY_GAIN_TRACK] = true;
             p_sys->audio_replay_gain.pf_peak[AUDIO_REPLAY_GAIN_TRACK] = xing->f_peak_signal;
         }
 
-        if( isfinite(xing->f_audiophile_replay_gain) )
+        if( !p_sys->audio_replay_gain.pb_gain[AUDIO_REPLAY_GAIN_ALBUM] &&
+            isfinite(xing->f_audiophile_replay_gain) )
         {
             p_sys->audio_replay_gain.pb_gain[AUDIO_REPLAY_GAIN_ALBUM] = true;
             p_sys->audio_replay_gain.pf_gain[AUDIO_REPLAY_GAIN_ALBUM] = xing->f_audiophile_replay_gain;
