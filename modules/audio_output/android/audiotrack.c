@@ -1357,6 +1357,12 @@ Play( aout_stream_t *stream, block_t *p_buffer, vlc_tick_t i_date )
     JNIEnv *env = NULL;
     aout_sys_t *p_sys = stream->sys;
 
+    if( p_buffer->i_buffer == 0 )
+    {
+        block_Release( p_buffer );
+        return;
+    }
+
     if( p_sys->b_passthrough && p_sys->fmt.i_format == VLC_CODEC_SPDIFB
      && ConvertFromIEC61937( stream, p_buffer ) != 0 )
     {
