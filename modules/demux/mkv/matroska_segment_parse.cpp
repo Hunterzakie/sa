@@ -1490,6 +1490,17 @@ void matroska_segment_c::ParseChapterAtom( int i_level, KaxChapterAtom *ca, chap
                         else
                             p_ccodec = new dvd_chapter_codec_c( vlc_object_logger( &vars.obj->sys.demuxer ), vars.obj->sys, *interepreter );
                     }
+                    else if ( p_codec_id->GetValue() == MATROSKA_CHAPTER_CODEC_MATROSKA_JS )
+                    {
+                       auto interpreter = vars.obj->sys.GetMatroskaJSInterpreter();
+                       if (unlikely(interpreter == nullptr))
+                            debug( vars, "failed to get the Matroska JS interpreter ");
+                       else
+                            p_ccodec = new matroska_js_codec_c(
+                            vlc_object_logger( &vars.obj->sys.demuxer ),
+                            vars.obj->sys, *interpreter
+                            );
+                    }
                     break;
                 }
             }
