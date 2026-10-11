@@ -513,3 +513,21 @@ libvlc_access_cache_la_SOURCES = access/cache.c access/cache.h
 libvlc_access_cache_la_LIBADD = $(LTLIBVLCCORE)
 libvlc_access_cache_la_LDFLAGS = -static
 noinst_LTLIBRARIES += libvlc_access_cache.la
+
+libaccess_cloudstorage_plugin_la_SOURCES = \
+	access/cloudstorage.cpp \
+	access/cloudstorage/access.h access/cloudstorage/access.cpp \
+	access/cloudstorage/token_cache.h access/cloudstorage/token_cache.cpp \
+	access/cloudstorage/google_api_handler.h access/cloudstorage/google_api_handler.cpp \
+	access/cloudstorage/cloudstorage_handler.h access/cloudstorage/cloudstorage_handler.cpp \
+	access/cloudstorage/provider_callback.h
+
+libaccess_cloudstorage_plugin_la_CPPFLAGS = $(CLOUDSTORAGE_CFLAGS) $(AM_CPPFLAGS)
+libaccess_cloudstorage_plugin_la_CXXFLAGS = $(AM_CXXFLAGS)
+
+libaccess_cloudstorage_plugin_la_LIBADD = $(CLOUDSTORAGE_LIBS) libvlc_http.la
+libaccess_cloudstorage_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(accessdir)'
+
+access_LTLIBRARIES += $(LTLIBaccess_cloudstorage)
+
+EXTRA_LTLIBRARIES += libaccess_cloudstorage_plugin.la

@@ -151,3 +151,14 @@ libudisks_plugin_la_LIBADD = $(SDBUS_LIBS)
 if HAVE_SDBUS
 sd_PLUGINS += libudisks_plugin.la
 endif
+
+libcloudstorage_sd_plugin_la_SOURCES = services_discovery/cloudstorage.cpp \
+	access/cloudstorage/services_discovery.cpp \
+	access/cloudstorage/services_discovery.h \
+	access/cloudstorage/token_cache.cpp \
+	access/cloudstorage/token_cache.h
+libcloudstorage_sd_plugin_la_CXXFLAGS = $(CLOUDSTORAGE_CFLAGS) $(AM_CXXFLAGS)
+libcloudstorage_sd_plugin_la_LIBADD = $(CLOUDSTORAGE_LIBS)
+libcloudstorage_sd_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(sddir)'
+sd_LTLIBRARIES += $(LTLIBcloudstorage_sd)
+EXTRA_LTLIBRARIES += libcloudstorage_sd_plugin.la
