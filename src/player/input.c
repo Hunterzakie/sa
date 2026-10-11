@@ -1020,7 +1020,7 @@ input_thread_Events(input_thread_t *input_thread,
             handled = vlc_player_input_HandleAtoBLoop(input, true);
             if (handled)
                 break;
-            if (player->play_and_pause)
+            if (input->play_and_pause)
             {
                 vlc_player_Pause(player);
                 handled = true;
@@ -1242,6 +1242,23 @@ vlc_player_input_GetSelectedTrackStringIds(struct vlc_player_input *input,
     return !first_track && vlc_memstream_close(&ms) == 0 ? ms.ptr : NULL;
 }
 
+static void
+vlc_player_input_InitOptions(struct vlc_player_input *input)
+{
+    vlc_player_t *player = input->player;
+
+
+    if (var_Type(input->thread, "input-repeat") != 0)
+        input->repeat = var_GetInteger(input->thread, "input-repeat");
+    else
+        input->repeat = player->repeat;
+
+    if (var_Type(input->thread, "play-and-pause") != 0)
+        input->play_and_pause = var_GetBool(input->thread, "play-and-pause");
+    else
+        input->play_and_pause = player->play_and_pause;
+}
+
 struct vlc_player_input *
 vlc_player_input_New(vlc_player_t *player, input_item_t *item)
 {
@@ -1310,14 +1327,15 @@ vlc_player_input_New(vlc_player_t *player, input_item_t *item)
         .cbs_data = input,
     };
 
-    input->repeat = player->repeat;
-
     input->thread = input_Create(player, item, &cfg);
     if (!input->thread)
     {
         free(input);
         return NULL;
     }
+
+    vlc_player_input_InitOptions(input);
+
     vlc_player_input_RestoreMlStates(input, false);
 
     if (player->video_string_ids)

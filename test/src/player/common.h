@@ -196,6 +196,9 @@ struct media_params
 
     const char *config;
     const char *discontinuities;
+
+    size_t options_count;
+    const char *const *options;
 };
 
 #define DEFAULT_MEDIA_PARAMS(param_length) { \
@@ -221,6 +224,8 @@ struct media_params
     .pts_delay = DEFAULT_PTS_DELAY, \
     .config = NULL, \
     .discontinuities = NULL, \
+    .options_count = 0, \
+    .options = NULL, \
 }
 
 #define DISABLE_VIDEO_OUTPUT (1 << 0)
@@ -817,6 +822,8 @@ create_mock_media(const char *name, const struct media_params *params)
     input_item_t *item = input_item_New(url, name);
     assert(item);
     free(url);
+    if (params->options_count > 0)
+        input_item_AddOptions(item, params->options_count, params->options, 0);
     return item;
 }
 

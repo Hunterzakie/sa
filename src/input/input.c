@@ -1299,17 +1299,6 @@ static int Init( input_thread_t * p_input )
     input_ChangeState( p_input, OPENING_S, VLC_TICK_INVALID );
     input_SendEventCache( p_input, 0.0 );
 
-    if( var_Type( vlc_object_parent(p_input), "meta-file" ) )
-    {
-        msg_Dbg( p_input, "Input is a meta file: disabling unneeded options" );
-        var_SetString( p_input, "sout", "" );
-        var_SetBool( p_input, "sout-all", false );
-        var_SetString( p_input, "input-slave", "" );
-        var_SetInteger( p_input, "input-repeat", 0 );
-        var_SetString( p_input, "sub-file", "" );
-        var_SetBool( p_input, "sub-autodetect-file", false );
-    }
-
     if( InitSout( p_input ) )
         goto error;
 
