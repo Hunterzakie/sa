@@ -53,7 +53,8 @@ typedef struct
     module_t *module; /**< Output plugin (or NULL if inactive) */
     bool bitexact;
 
-    vlc_aout_stream *main_stream;
+    vlc_aout_stream *_Atomic main_stream;
+    vlc_aout_stream *gapless_stream;
 
     struct
     {
@@ -64,7 +65,6 @@ typedef struct
 
     struct
     {
-        atomic_bool update;
         vlc_mutex_t lock;
         vlc_viewpoint_t value;
     } vp;
@@ -102,6 +102,7 @@ static inline aout_owner_t *aout_owner (audio_output_t *aout)
 aout_volume_t *aout_volume_New(vlc_object_t *, const audio_replay_gain_t *);
 #define aout_volume_New(o, g) aout_volume_New(VLC_OBJECT(o), g)
 int aout_volume_SetFormat(aout_volume_t *, vlc_fourcc_t);
+float aout_volume_GetVolume(aout_volume_t *);
 void aout_volume_SetVolume(aout_volume_t *, float);
 int aout_volume_Amplify(aout_volume_t *, block_t *);
 void aout_volume_Delete(aout_volume_t *);
@@ -160,18 +161,23 @@ struct vlc_aout_stream_cfg
     struct vlc_clock_t *clock;
     const char *str_id;
     const audio_replay_gain_t *replay_gain;
+    bool gapless;
 };
 
 vlc_aout_stream *vlc_aout_stream_New(audio_output_t *p_aout,
                                      const struct vlc_aout_stream_cfg *cfg);
 void vlc_aout_stream_Delete(vlc_aout_stream *);
 int vlc_aout_stream_Play(vlc_aout_stream *stream, block_t *block);
+bool vlc_aout_stream_TryGaplessHandoff(vlc_aout_stream *stream,
+                                       const block_t *block);
+
 void vlc_aout_stream_GetResetStats(vlc_aout_stream *stream, unsigned *, unsigned *);
 void vlc_aout_stream_ChangePause(vlc_aout_stream *stream, bool b_paused, vlc_tick_t i_date);
 void vlc_aout_stream_ChangeRate(vlc_aout_stream *stream, float rate);
 void vlc_aout_stream_ChangeDelay(vlc_aout_stream *stream, vlc_tick_t delay);
 void vlc_aout_stream_Flush(vlc_aout_stream *stream);
-void vlc_aout_stream_Drain(vlc_aout_stream *stream);
+bool vlc_aout_stream_Drain(vlc_aout_stream *stream, vlc_tick_t *gapless_seam);
+int vlc_aout_stream_GetDelay(vlc_aout_stream *stream, vlc_tick_t *delay);
 /* Contrary to other vlc_aout_stream_*() functions, this function can be called from
  * any threads */
 bool vlc_aout_stream_IsDrained(vlc_aout_stream *stream);
@@ -180,6 +186,7 @@ void vlc_aout_stream_NotifyTiming(vlc_aout_stream *stream, vlc_tick_t system_ts,
                                   vlc_tick_t audio_ts);
 void vlc_aout_stream_NotifyDrained(vlc_aout_stream *stream);
 void vlc_aout_stream_NotifyGain(vlc_aout_stream *stream, float gain);
+void vlc_aout_stream_RequestViewpointUpdate(vlc_aout_stream *stream);
 
 void vlc_aout_stream_RequestRestart(vlc_aout_stream *stream, unsigned);
 void vlc_aout_stream_RequestRetiming(vlc_aout_stream *stream, vlc_tick_t system_ts,

@@ -120,6 +120,11 @@ void aout_volume_SetVolume(aout_volume_t *vol, float factor)
     atomic_store_explicit(&vol->output_factor, factor, memory_order_relaxed);
 }
 
+float aout_volume_GetVolume(aout_volume_t *vol)
+{
+    return atomic_load_explicit(&vol->output_factor, memory_order_relaxed);
+}
+
 /**
  * Applies replay gain and software volume to an audio buffer.
  */

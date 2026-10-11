@@ -193,6 +193,7 @@ struct media_params
     bool null_names;
     bool report_length;
     vlc_tick_t pts_delay;
+    vlc_tick_t pts_offset;
 
     const char *config;
     const char *discontinuities;
@@ -219,6 +220,7 @@ struct media_params
     .null_names = false, \
     .report_length = true, \
     .pts_delay = DEFAULT_PTS_DELAY, \
+    .pts_offset = 0, \
     .config = NULL, \
     .discontinuities = NULL, \
 }
@@ -229,10 +231,13 @@ struct media_params
 #define DISABLE_AUDIO        (1 << 3)
 #define AUDIO_INSTANT_DRAIN  (1 << 4)
 #define CLOCK_MASTER_MONOTONIC (1 << 5)
+/* Assert mock-aout PTS continuity; only holds at rate 1 (scaletempo rechunks). */
+#define AUDIO_CHECK_CONTINUITY (1 << 6)
 
 struct ctx
 {
     int flags;
+    bool check_segments;
 
     libvlc_instance_t *vlc;
     vlc_player_t *player;
@@ -800,7 +805,7 @@ create_mock_media(const char *name, const struct media_params *params)
         "video_frame_rate=%u;video_frame_rate_base=%u;"
         "title_count=%zu;chapter_count=%zu;"
         "can_seek=%d;can_pause=%d;error=%d;null_names=%d;"
-        "report_length=%d;pts_delay=%"PRId64";"
+        "report_length=%d;pts_delay=%"PRId64";pts_offset=%"PRId64";"
         "config=%s;discontinuities=%s;attachment_count=%zu",
         params->track_count[VIDEO_ES], params->track_count[AUDIO_ES],
         params->track_count[SPU_ES], params->program_count,
@@ -809,7 +814,7 @@ create_mock_media(const char *name, const struct media_params *params)
         params->video_frame_rate, params->video_frame_rate_base,
         params->title_count, params->chapter_count,
         params->can_seek, params->can_pause, params->error, params->null_names,
-        params->report_length, params->pts_delay,
+        params->report_length, params->pts_delay, params->pts_offset,
         params->config ? params->config : "",
         params->discontinuities ? params->discontinuities : "",
         params->attachment_count);
@@ -1149,6 +1154,7 @@ test_end(struct ctx *ctx)
 
     player_set_rate(ctx, 1.0f);
     vlc_player_SetStartPaused(player, false);
+    vlc_player_SetGaplessEnabled(player, false);
     vlc_player_SetPlayAndPause(player, false);
     vlc_player_SetRepeatCount(player, 0);
 
@@ -1303,6 +1309,7 @@ PLAYER_REPORT_LIST
 
     *ctx = (struct ctx) {
         .flags = flags,
+        .check_segments = false,
         .vlc = vlc,
         .next_medias = VLC_VECTOR_INITIALIZER,
         .added_medias = VLC_VECTOR_INITIALIZER,

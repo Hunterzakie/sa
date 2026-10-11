@@ -114,6 +114,55 @@ static int input_SlaveSourceAdd( input_thread_t *, enum slave_type,
 static char *input_SubtitleFile2Uri( input_thread_t *, const char * );
 static void input_ChangeState( input_thread_t *p_input, int i_state, vlc_tick_t ); /* TODO fix name */
 
+static inline bool input_priv_IsPlaybackType(input_thread_private_t *priv)
+{
+    return priv->type == INPUT_TYPE_PLAYBACK || priv->type == INPUT_TYPE_GAPLESS;
+}
+
+void input_WakeGapless(input_thread_t *input, vlc_tick_t seam)
+{
+    /* Callers hold player->lock, and the buffering path takes es_out then
+     * player->lock: signalling es_out from here would invert that order. Push a
+     * control so it is signalled from this input thread. */
+    const input_control_param_t param = {
+        .gapless_seam = seam,
+    };
+    input_ControlPush(input, INPUT_CONTROL_WAKE_GAPLESS, &param);
+}
+
+void input_GaplessPromoted(input_thread_t *input)
+{
+    /* Signal directly, not through a control: this input thread can be waiting
+     * for PROMOTED itself during Init() and would never run it. */
+    input_thread_private_t *priv = input_priv(input);
+    vlc_mutex_lock(&priv->lock_gapless);
+    if (!(priv->gapless_status & (INPUT_GAPLESS_STATUS_PROMOTED
+                                | INPUT_GAPLESS_STATUS_ABORTED)))
+    {
+        input_resource_SetInput(priv->p_resource, input);
+        priv->gapless_status |= INPUT_GAPLESS_STATUS_PROMOTED;
+        vlc_cond_broadcast(&priv->wait_gapless);
+    }
+    vlc_mutex_unlock(&priv->lock_gapless);
+}
+
+int input_WaitGaplessStatus(input_thread_t *input,
+                            enum input_gapless_status wait_for)
+{
+    input_thread_private_t *priv = input_priv(input);
+
+    assert(wait_for == INPUT_GAPLESS_STATUS_STARTED
+        || wait_for == INPUT_GAPLESS_STATUS_PROMOTED);
+
+    vlc_mutex_lock(&priv->lock_gapless);
+    while (!(priv->gapless_status & (wait_for | INPUT_GAPLESS_STATUS_ABORTED)))
+        vlc_cond_wait(&priv->wait_gapless, &priv->lock_gapless);
+    int ret = priv->gapless_status & INPUT_GAPLESS_STATUS_ABORTED ? -1 : 0;
+    vlc_mutex_unlock(&priv->lock_gapless);
+
+    return ret;
+}
+
 /**
  * Start a input_thread_t created by input_Create.
  *
@@ -161,6 +210,11 @@ void input_Stop( input_thread_t *p_input )
     vlc_cond_signal( &sys->wait_control );
     vlc_mutex_unlock( &sys->lock_control );
     vlc_interrupt_kill( &sys->interrupt );
+
+    vlc_mutex_lock(&sys->lock_gapless);
+    sys->gapless_status = INPUT_GAPLESS_STATUS_ABORTED;
+    vlc_cond_broadcast(&sys->wait_gapless);
+    vlc_mutex_unlock(&sys->lock_gapless);
 }
 
 /**
@@ -238,6 +292,9 @@ input_thread_t * input_Create( vlc_object_t *p_parent, input_item_t *p_item,
         case INPUT_TYPE_THUMBNAILING:
             type_str = "thumbnailing ";
             break;
+        case INPUT_TYPE_GAPLESS:
+            type_str = "gapless ";
+            break;
         default:
             type_str = "playback";
             break;
@@ -303,7 +360,7 @@ input_thread_t * input_Create( vlc_object_t *p_parent, input_item_t *p_item,
     if( !p_item->p_stats )
         p_item->p_stats = calloc( 1, sizeof(*p_item->p_stats) );
 
-    if( priv->type != INPUT_TYPE_PLAYBACK )
+    if( !input_priv_IsPlaybackType( priv ) )
     {
         p_input->obj.logger = NULL;
         p_input->obj.no_interact = true;
@@ -326,13 +383,21 @@ input_thread_t * input_Create( vlc_object_t *p_parent, input_item_t *p_item,
         priv->p_resource = input_resource_Hold( cfg->resource );
     else
         priv->p_resource = input_resource_New( VLC_OBJECT( p_input ) );
-    input_resource_SetInput( priv->p_resource, p_input );
+
+    if (priv->type != INPUT_TYPE_GAPLESS)
+        input_resource_SetInput(priv->p_resource, p_input);
 
     /* Init control buffer */
     vlc_mutex_init( &priv->lock_control );
     vlc_cond_init( &priv->wait_control );
     priv->i_control = 0;
     vlc_interrupt_init(&priv->interrupt);
+
+    priv->gapless_status = priv->type == INPUT_TYPE_GAPLESS ?
+        INPUT_GAPLESS_STATUS_WAITING :
+        INPUT_GAPLESS_STATUS_STARTED | INPUT_GAPLESS_STATUS_PROMOTED;
+    vlc_mutex_init(&priv->lock_gapless);
+    vlc_cond_init(&priv->wait_gapless);
 
     /* Create Object Variables for private use only */
 
@@ -348,7 +413,7 @@ input_thread_t * input_Create( vlc_object_t *p_parent, input_item_t *p_item,
     input_item_SetESNowPlaying( p_item, NULL );
 
     /* */
-    if( priv->type == INPUT_TYPE_PLAYBACK && var_InheritBool( p_input, "stats" ) )
+    if( input_priv_IsPlaybackType( priv ) && var_InheritBool( p_input, "stats" ) )
         priv->stats = input_stats_Create();
     else
         priv->stats = NULL;
@@ -865,7 +930,7 @@ static void InitTitle( input_thread_t * p_input, bool had_titles )
     input_thread_private_t *priv = input_priv(p_input);
     input_source_t *p_master = priv->master;
 
-    if( priv->type != INPUT_TYPE_PLAYBACK )
+    if( !input_priv_IsPlaybackType( priv ) )
         return;
 
     vlc_mutex_lock( &priv->p_item->lock );
@@ -1411,7 +1476,7 @@ error:
         if( input_priv(p_input)->p_sout )
             input_resource_PutSout( input_priv(p_input)->p_resource,
                                     input_priv(p_input)->p_sout );
-        input_resource_SetInput( input_priv(p_input)->p_resource, NULL );
+        input_resource_ClearInputIfOwner( input_priv(p_input)->p_resource, p_input );
         if( input_priv(p_input)->p_resource )
         {
             input_resource_Release( input_priv(p_input)->p_resource );
@@ -1482,7 +1547,7 @@ static void End( input_thread_t * p_input )
     /* */
     input_resource_PutSout( input_priv(p_input)->p_resource,
                             input_priv(p_input)->p_sout );
-    input_resource_SetInput( input_priv(p_input)->p_resource, NULL );
+    input_resource_ClearInputIfOwner( input_priv(p_input)->p_resource, p_input );
     if( input_priv(p_input)->p_resource )
     {
         input_resource_Release( input_priv(p_input)->p_resource );
@@ -2609,6 +2674,18 @@ static bool Control( input_thread_t *p_input,
                                        param.vbi_transparency.enabled );
             break;
 
+        case INPUT_CONTROL_WAKE_GAPLESS:
+            assert(priv->type == INPUT_TYPE_GAPLESS);
+            priv->type = INPUT_TYPE_PLAYBACK;
+            es_out_PrivControl( priv->p_es_out_display, ES_OUT_PRIV_WAKE_GAPLESS,
+                                param.gapless_seam );
+
+            vlc_mutex_lock(&priv->lock_gapless);
+            priv->gapless_status |= INPUT_GAPLESS_STATUS_STARTED;
+            vlc_cond_broadcast(&priv->wait_gapless);
+            vlc_mutex_unlock(&priv->lock_gapless);
+            break;
+
         case INPUT_CONTROL_NAV_ACTIVATE:
         case INPUT_CONTROL_NAV_UP:
         case INPUT_CONTROL_NAV_DOWN:
@@ -3018,7 +3095,7 @@ static int InputSourceInit( input_source_t *in, input_thread_t *p_input,
 
     /* get attachment
      * FIXME improve for preparsing: move it after GET_META and check psz_arturl */
-    if( input_priv(p_input)->type == INPUT_TYPE_PLAYBACK )
+    if( input_priv_IsPlaybackType( input_priv(p_input) ) )
     {
         if( demux_Control( in->p_demux, DEMUX_GET_TITLE_INFO,
                            &in->title, &in->i_title,

@@ -53,6 +53,24 @@ enum input_type {
     INPUT_TYPE_PLAYBACK,
     INPUT_TYPE_PREPARSING,
     INPUT_TYPE_THUMBNAILING,
+    /* Preloaded behind a still playing input: Switched to
+     * INPUT_TYPE_PLAYBACK by INPUT_CONTROL_WAKE_GAPLESS. */
+    INPUT_TYPE_GAPLESS,
+};
+
+/* Status a gapless successor must reach before it can be perceived. */
+enum input_gapless_status
+{
+    /* Initial gapless state, waiting for predecessor drain */
+    INPUT_GAPLESS_STATUS_WAITING = 0,
+    /* After the predecessor starts draining, but before the seam: this input
+     * can push its first sample behind the predecessor ones, same aout */
+    INPUT_GAPLESS_STATUS_STARTED = 1 << 0,
+    /* After the seam, once the predecessor is fully stopped: this input owns
+     * the outputs, it can create a vout or drain the aout */
+    INPUT_GAPLESS_STATUS_PROMOTED = 1 << 1,
+    /* Any gapless error */
+    INPUT_GAPLESS_STATUS_ABORTED = 1 << 2,
 };
 
 /**
@@ -164,6 +182,9 @@ typedef enum input_event_type_e
     INPUT_EVENT_FRAME_NEXT_STATUS,
     /* frame-previous status */
     INPUT_EVENT_FRAME_PREVIOUS_STATUS,
+
+    INPUT_EVENT_GAPLESS_PRELOAD_REQUEST,
+    INPUT_EVENT_GAPLESS_HANDOFF_READY,
 } input_event_type_e;
 
 /**
@@ -364,6 +385,17 @@ struct vlc_input_event
         int frame_next_status;
         /* INPUT_EVENT_FRAME_PREVIOUS_STATUS */
         int frame_previous_status;
+        /* INPUT_EVENT_GAPLESS_PRELOAD_REQUEST */
+        struct {
+            bool next;
+        } gapless_preload;
+        /* INPUT_EVENT_GAPLESS_HANDOFF_READY */
+        struct {
+            bool ready;
+            /* Absolute date the predecessor's buffer empties and the
+             * successor's first sample is heard. */
+            vlc_tick_t seam_date;
+        } gapless_handoff;
     };
 };
 
@@ -489,6 +521,9 @@ typedef union
         int steps;
         bool failed;
     } frame_previous_seek;
+    /* System date when the predecessor buffer empties, i.e. when the first
+     * sample of this input is heard */
+    vlc_tick_t gapless_seam;
 } input_control_param_t;
 
 typedef struct
@@ -565,6 +600,11 @@ typedef struct input_thread_private_t
     vlc_cond_t  wait_control;
     size_t i_control;
     input_control_t control[INPUT_CONTROL_FIFO_SIZE];
+
+    /* Gapless status, cf. input_WaitGaplessStatus() */
+    vlc_mutex_t lock_gapless;
+    vlc_cond_t  wait_gapless;
+    enum input_gapless_status gapless_status;
 
     vlc_thread_t thread;
     vlc_interrupt_t interrupt;
@@ -645,7 +685,22 @@ enum input_control_e
 
     INPUT_CONTROL_SET_VBI_PAGE,
     INPUT_CONTROL_SET_VBI_TRANSPARENCY,
+
+    INPUT_CONTROL_WAKE_GAPLESS,
 };
+
+/* Called by the player when the predecessor armed the handoff. Switches this
+ * input to INPUT_TYPE_PLAYBACK. */
+void input_WakeGapless(input_thread_t *, vlc_tick_t seam);
+
+/* Called by the player when the predecessor is fully stopped. Takes over the
+ * input resources and signals PROMOTED. */
+void input_GaplessPromoted(input_thread_t *);
+
+/* Wait from decoder, for the STARTED or PROMOTED status, return 0, or -1 if
+ * aborted first. Called from the decoder threads, and from this input thread
+ * during Init(). */
+int input_WaitGaplessStatus(input_thread_t *, enum input_gapless_status wait_for);
 
 /* Internal helpers */
 
@@ -727,10 +782,10 @@ bool input_CanPaceControl(input_thread_t *input);
 /**
  * Calculates the duration of the item in an input thread.
  *
- * This function determines the duration of a track item based on the start and 
- * stop times stored in the input thread's private data. If the stop time is not 
- * set (i.e., equals zero), the function considers the given `duration` as the 
- * stop time and calculates the effective duration based on the start time. 
+ * This function determines the duration of a track item based on the start and
+ * stop times stored in the input thread's private data. If the stop time is not
+ * set (i.e., equals zero), the function considers the given `duration` as the
+ * stop time and calculates the effective duration based on the start time.
  * Otherwise, it calculates the duration using the set start and stop times.
  *
  * @param input   Pointer to the input_thread_t object.

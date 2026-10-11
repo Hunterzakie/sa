@@ -29,6 +29,25 @@ player_programs = \
 	test_src_player_tracks \
 	test_src_player_tracks_ids
 
+gapless_tests = \
+	test_src_player_gapless--success \
+	test_src_player_gapless--short_chain \
+	test_src_player_gapless--success_small_next \
+	test_src_player_gapless--large_frame \
+	test_src_player_gapless--pts_offset \
+	test_src_player_gapless--format_change \
+	test_src_player_gapless--short_delay \
+	test_src_player_gapless--recovery \
+	test_src_player_gapless--error_successor \
+	test_src_player_gapless--no_audio_successor \
+	test_src_player_gapless--av_successor \
+	test_src_player_gapless--av_chain \
+	test_src_player_gapless--short_successor \
+	test_src_player_gapless--av_predecessor \
+	test_src_player_gapless--video_predecessor \
+	test_src_player_gapless--abort_armed \
+	test_src_player_gapless--seek_near_end
+
 noinst_PROGRAMS =
 check_PROGRAMS = \
 	test_libvlc_core \
@@ -134,10 +153,15 @@ check_SCRIPTS = \
 	modules/lua/telnet.sh \
 	check_POTFILES.sh
 
+nodist_check_SCRIPTS = $(gapless_tests)
+CLEANFILES = $(gapless_tests) test_src_player_gapless$(EXEEXT)
+
 # Disabled tests:
-EXTRA_PROGRAMS = \
+extra_check_programs = \
 	test_src_input_stream_net \
 	$(NULL)
+
+EXTRA_PROGRAMS = $(extra_check_programs) test_src_player_gapless
 
 EXTRA_DIST = \
 	modules/lua/extensions/extensions.lua \
@@ -148,11 +172,16 @@ EXTRA_DIST = \
 	samples/meta.mp3 \
 	samples/subitems \
 	samples/slaves \
+	run-scenario.sh \
 	$(check_SCRIPTS)
 
 check_HEADERS = libvlc/test.h libvlc/media_utils.h libvlc/media_player.h
 
-TESTS = $(check_PROGRAMS) check_POTFILES.sh
+TESTS = $(check_PROGRAMS) $(gapless_tests) check_POTFILES.sh
+
+$(gapless_tests): $(srcdir)/run-scenario.sh \
+	test_src_player_gapless$(EXEEXT)
+	$(AM_V_GEN)$(INSTALL_SCRIPT) $(srcdir)/run-scenario.sh $@
 
 AM_CPPFLAGS = \
 	-DSRCDIR=\"$(srcdir)\" \
@@ -263,6 +292,10 @@ test_src_player_errors_LDADD = $(LIBVLCCORE) $(LIBVLC) $(LIBM)
 test_src_player_es_selection_SOURCES = src/player/common.h src/player/modules.c \
 	src/player/es_selection.c
 test_src_player_es_selection_LDADD = $(LIBVLCCORE) $(LIBVLC) $(LIBM)
+test_src_player_gapless_SOURCES = src/player/common.h src/player/modules.c \
+	src/player/gapless.c
+test_src_player_gapless_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/src
+test_src_player_gapless_LDADD = $(LIBVLCCORE) $(LIBVLC) $(LIBM)
 test_src_player_lifecycle_SOURCES = src/player/common.h src/player/modules.c \
 	src/player/lifecycle.c
 test_src_player_lifecycle_LDADD = $(LIBVLCCORE) $(LIBVLC) $(LIBM)
@@ -476,7 +509,7 @@ test_modules_stream_out_hls_subtitles_segmenter_SOURCES = \
 test_modules_stream_out_hls_subtitles_segmenter_LDADD = $(LIBVLCCORE) $(LIBVLC)
 
 checkall:
-	$(MAKE) check_PROGRAMS="$(check_PROGRAMS) $(EXTRA_PROGRAMS)" check
+	$(MAKE) check_PROGRAMS="$(check_PROGRAMS) $(extra_check_programs)" check
 
 checkplayer:
 	$(MAKE) check_PROGRAMS="$(player_programs)" check
@@ -600,7 +633,7 @@ vlc_demux_dec_run_LDFLAGS += -Xlinker -rpath -Xlinker "@executable_path/../src/.
 vlc_demux_dec_run_LDFLAGS += -Xlinker -rpath -Xlinker "@executable_path/../Frameworks/"
 endif
 vlc_demux_dec_run_LDADD = libvlc_demux_dec_run.la
-EXTRA_PROGRAMS += vlc-demux-run vlc-demux-dec-run
+extra_check_programs += vlc-demux-run vlc-demux-dec-run
 
 vlc_demux_libfuzzer_LDADD = libvlc_demux_run.la
 vlc_demux_dec_libfuzzer_SOURCES = vlc-demux-libfuzzer.c

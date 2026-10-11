@@ -44,6 +44,11 @@ struct vlc_input_decoder_callbacks {
                              vlc_tick_t pause_date,
                              void *userdata);
 
+    /* The aout armed the handoff while this decoder was draining (ready), or
+     * a flush cancelled a previously armed one (!ready). */
+    void (*on_gapless_handoff_ready)(vlc_input_decoder_t *decoder, bool ready,
+                                     vlc_tick_t seam, void *userdata);
+
     void (*on_thumbnail_ready)(vlc_input_decoder_t *decoder, picture_t *pic,
                                void *userdata);
 
@@ -65,6 +70,13 @@ struct vlc_input_decoder_callbacks {
     int (*get_attachments)(vlc_input_decoder_t *decoder,
                            input_attachment_t ***ppp_attachment,
                            void *userdata);
+
+    /* Block a gapless successor until it reaches wait_for: STARTED before its
+     * first sample plays, PROMOTED before it takes over the outputs or drains.
+     * Returns 0 once reached, -1 if aborted. */
+    int (*wait_gapless_status)(vlc_input_decoder_t *decoder,
+                               enum input_gapless_status wait_for,
+                               void *userdata);
 };
 
 struct vlc_input_decoder_cfg

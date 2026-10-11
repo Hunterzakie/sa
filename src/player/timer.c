@@ -120,6 +120,30 @@ vlc_player_SendTimerSourceUpdates(vlc_player_t *player,
     }
 }
 
+void
+vlc_player_RestoreTimerGapless(vlc_player_t *player, vlc_tick_t seam)
+{
+    vlc_mutex_lock(&player->timer.lock);
+    struct vlc_player_timer_source *source = &player->timer.best_source;
+    struct vlc_player_timer_point *point = &source->point;
+
+    /* The successor's first timing point can reach the timer well after the
+     * seam, leaving the slider pinned at the predecessor's end. Re-origin the
+     * predecessor's last point onto the seam, keeping its rate and length, so
+     * interpolation counts the successor up from 0 until then. */
+    if (seam != VLC_TICK_INVALID && point->system_date == VLC_TICK_INVALID
+     && !point->live)
+    {
+        player->timer.input_length = point->length;
+        point->ts = VLC_TICK_0;
+        point->position = 0.f;
+        point->system_date = seam;
+        if (!vlc_list_is_empty(&source->listeners))
+            vlc_player_SendTimerSourceUpdates(player, source, true, point);
+    }
+    vlc_mutex_unlock(&player->timer.lock);
+}
+
 static void
 vlc_player_SendSmpteTimerSourceUpdates(vlc_player_t *player,
                                        struct vlc_player_timer_source *source,

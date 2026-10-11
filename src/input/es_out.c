@@ -180,6 +180,9 @@ typedef struct
     input_thread_t *p_input;
     enum input_type input_type;
 
+    /* Kept to re-anchor the clock origin on the seam. */
+    vlc_tick_t gapless_buffering_duration;
+
     input_source_t *main_source;
 
     /* */
@@ -222,6 +225,7 @@ typedef struct
     bool        b_paused;
     bool        b_rebuffering;
     es_out_id_t *p_next_frame_es;
+    bool        b_gapless_next;
     vlc_tick_t  i_pause_date;
 
     /* Current preroll */
@@ -493,6 +497,18 @@ decoder_on_output_paused(vlc_input_decoder_t *decoder, bool paused,
 }
 
 static void
+decoder_on_gapless_handoff_ready(vlc_input_decoder_t *decoder, bool ready,
+                                 vlc_tick_t seam, void *userdata)
+{
+    (void) decoder;
+    es_out_id_t *id = userdata;
+    struct vlc_input_es_out *out = id->out;
+    es_out_sys_t *p_sys = PRIV(&out->out);
+
+    input_SendEventGaplessHandoffReady(p_sys->p_input, ready, seam);
+}
+
+static void
 decoder_on_thumbnail_ready(vlc_input_decoder_t *decoder, picture_t *pic, void *userdata)
 {
     (void) decoder;
@@ -667,10 +683,27 @@ decoder_get_attachments(vlc_input_decoder_t *decoder,
     return input_GetAttachments(p_sys->p_input, ppp_attachment);
 }
 
+static int
+decoder_wait_gapless_status(vlc_input_decoder_t *decoder,
+                            enum input_gapless_status wait_for, void *userdata)
+{
+    (void) decoder;
+
+    es_out_id_t *id = userdata;
+    struct vlc_input_es_out *out = id->out;
+    es_out_sys_t *p_sys = PRIV(&out->out);
+
+    if (!p_sys->p_input)
+        return 0;
+
+    return input_WaitGaplessStatus(p_sys->p_input, wait_for);
+}
+
 static const struct vlc_input_decoder_callbacks decoder_cbs = {
     .on_vout_started = decoder_on_vout_started,
     .on_vout_stopped = decoder_on_vout_stopped,
     .on_output_paused = decoder_on_output_paused,
+    .on_gapless_handoff_ready = decoder_on_gapless_handoff_ready,
     .on_thumbnail_ready = decoder_on_thumbnail_ready,
     .on_new_video_stats = decoder_on_new_video_stats,
     .on_new_audio_stats = decoder_on_new_audio_stats,
@@ -679,6 +712,7 @@ static const struct vlc_input_decoder_callbacks decoder_cbs = {
     .frame_previous_status = decoder_frame_previous_status,
     .frame_previous_seek = decoder_frame_previous_seek,
     .get_attachments = decoder_get_attachments,
+    .wait_gapless_status = decoder_wait_gapless_status,
 };
 
 /*****************************************************************************
@@ -823,6 +857,48 @@ static void ProgramDelete( es_out_pgrm_t *p_pgrm )
     input_source_Release( p_pgrm->source );
 
     free( p_pgrm );
+}
+
+static bool EsOutHasOnlyOneMasterAudioEs( es_out_sys_t *p_sys )
+{
+    es_out_id_t *es;
+    bool has_audio = false;
+
+    foreach_es_then_es_slaves(es)
+    {
+        if( EsIsSelected( es ) )
+        {
+            if( es->fmt.i_cat == AUDIO_ES && !has_audio
+             && es->p_pgrm->active_clock_source == VLC_CLOCK_MASTER_AUDIO )
+                has_audio = true;
+            else
+                return false;
+        }
+    }
+    return has_audio;
+}
+
+static void EsOutGaplessEventTimeChanged( es_out_sys_t *p_sys, vlc_tick_t time,
+                                          vlc_tick_t length )
+{
+    input_thread_t *p_input = p_sys->p_input;
+
+    /* Gapless is possible only if one AUDIO ES is selected and is the master
+     * source and if the input can be paced. */
+    bool b_gapless_next = false;
+    if( p_sys->input_type == INPUT_TYPE_PLAYBACK
+     && input_priv(p_input)->p_sout == NULL
+     && input_CanPaceControl( p_input )
+     && time != VLC_TICK_INVALID && length != VLC_TICK_INVALID
+     && length - time <= p_sys->i_pts_delay * 2
+     && EsOutHasOnlyOneMasterAudioEs( p_sys ) )
+        b_gapless_next = true;
+
+    if( b_gapless_next != p_sys->b_gapless_next )
+    {
+        p_sys->b_gapless_next = b_gapless_next;
+        input_SendEventGaplessPreloadRequest( p_input, p_sys->b_gapless_next );
+    }
 }
 
 static void EsOutTerminate(es_out_sys_t *p_sys)
@@ -1303,6 +1379,8 @@ static void EsOutDecodersStopBuffering(es_out_sys_t *p_sys, bool b_forced)
 
     /* */
     const vlc_tick_t i_current_date = EsOutIsPaused(p_sys) ? p_sys->i_pause_date : vlc_tick_now();
+
+    p_sys->gapless_buffering_duration = i_buffering_duration;
 
     const vlc_tick_t update = i_current_date - i_buffering_duration;
 
@@ -4280,6 +4358,7 @@ static int EsOutVaPrivControlLocked(es_out_sys_t *p_sys, input_source_t *source,
         {
             input_SendEventTimes(p_sys->p_input, 0.0, VLC_TICK_INVALID,
                                  i_normal_time, i_length, b_live);
+            EsOutGaplessEventTimeChanged(p_sys, VLC_TICK_0, i_length );
             return VLC_SUCCESS;
         }
 
@@ -4306,6 +4385,7 @@ static int EsOutVaPrivControlLocked(es_out_sys_t *p_sys, input_source_t *source,
 
         input_SendEventTimes(p_sys->p_input, f_position, i_time,
                              i_normal_time, i_length, b_live);
+        EsOutGaplessEventTimeChanged(p_sys, i_time, i_length );
         return VLC_SUCCESS;
     }
     case ES_OUT_PRIV_SET_JITTER:
@@ -4353,6 +4433,24 @@ static int EsOutVaPrivControlLocked(es_out_sys_t *p_sys, input_source_t *source,
                 input_SendEventVbiTransparency( p_sys->p_input, transp );
         }
         return ret;
+    }
+    case ES_OUT_PRIV_WAKE_GAPLESS:
+    {
+        vlc_tick_t seam = va_arg( args, vlc_tick_t );
+
+        p_sys->input_type = INPUT_TYPE_PLAYBACK;
+
+        /* Re-anchor the clock origin on the seam now, before any sample is
+         * heard, so pacing matches real playback. Arming the handoff requires
+         * buffering to be done, so b_buffering is always false here when seam
+         * is valid. */
+        if (!p_sys->b_buffering && seam != VLC_TICK_INVALID
+          && p_sys->p_pgrm != NULL)
+        {
+            vlc_tick_t update = seam - p_sys->gapless_buffering_duration;
+            input_clock_ChangeSystemOrigin(p_sys->p_pgrm->p_input_clock, update);
+        }
+        return VLC_SUCCESS;
     }
     default: vlc_assert_unreachable();
     }
@@ -4473,6 +4571,7 @@ input_EsOutNew(input_thread_t *p_input, input_source_t *main_source, float rate,
     p_sys->p_sout_record = NULL;
     p_sys->i_preroll_end = -1;
     p_sys->i_prev_stream_level = -1;
+    p_sys->b_gapless_next = false;
 
     return &p_sys->out;
 }

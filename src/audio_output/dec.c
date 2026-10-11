@@ -38,8 +38,14 @@
 #include "aout_internal.h"
 #include "clock/clock.h"
 #include "../libvlc.h"
+#include "misc/rcu.h"
 
 #define BLOCK_FLAG_CORE_PRIVATE_FILTERED (1 << BLOCK_FLAG_CORE_PRIVATE_SHIFT)
+
+/* Minimum buffer remaining at the seam to arm a gapless handoff: the time an
+ * armed successor needs to wake and push its first, already decoded, sample.
+ * The decoder drain postpone target must stay above it. */
+#define AOUT_GAPLESS_MIN_BUFFER VLC_TICK_FROM_MS(50)
 
 struct vlc_aout_stream
 {
@@ -47,9 +53,28 @@ struct vlc_aout_stream
     aout_volume_t *volume;
     aout_filters_t *filters;
     aout_filters_cfg_t filters_cfg;
+    atomic_bool output_failed;
 
     atomic_bool drained;
     _Atomic vlc_tick_t drain_deadline;
+
+    struct
+    {
+        bool pending;
+
+        /* Need owner lock. */
+        enum
+        {
+            GAPLESS_STATE_STARTED,
+            GAPLESS_STATE_ARMED,
+            GAPLESS_STATE_FAILED,
+        } state;
+        /* Need owner lock. Once a normal drain starts, reject successors until
+         * the output is flushed. */
+        bool normal_drain;
+        /* Need owner lock. */
+        bool unavailable;
+    } gapless;
 
     struct
     {
@@ -72,12 +97,14 @@ struct vlc_aout_stream
 
     struct
     {
-        vlc_mutex_t lock; /* Guard first_pts, last_drift, rate_system_ts,
-                             rate_audio_ts, system_ts, audio_ts */
+        vlc_mutex_t lock; /* Guard first_pts, first_play_date, last_drift,
+                             rate_system_ts, rate_audio_ts, system_ts, audio_ts,
+                             stitching_length, seam_system_ts */
 
         vlc_tick_t last_drift;
 
         vlc_tick_t first_pts;
+        vlc_tick_t first_play_date; /* Fallback before the first timing report */
         int64_t played_samples; /* Used for stream_GetDelay() emulation */
 
         vlc_tick_t rate_system_ts;
@@ -85,6 +112,8 @@ struct vlc_aout_stream
 
         vlc_tick_t system_ts;
         vlc_tick_t audio_ts;
+        vlc_tick_t stitching_length;
+        vlc_tick_t seam_system_ts;
 
         vlc_tick_t pause_date;
         float rate;
@@ -107,6 +136,7 @@ struct vlc_aout_stream
     audio_sample_format_t mixer_format;
 
     atomic_uchar restart;
+    atomic_bool viewpoint_update;
 
     atomic_uint buffers_lost;
     atomic_uint buffers_played;
@@ -120,6 +150,21 @@ static inline aout_owner_t *aout_stream_owner(vlc_aout_stream *stream)
 static inline audio_output_t *aout_stream_aout(vlc_aout_stream *stream)
 {
     return &stream->instance->output;
+}
+
+static bool aout_FormatEquals(const audio_sample_format_t *f1,
+                              const audio_sample_format_t *f2)
+{
+    return f1->i_format == f2->i_format
+        && f1->i_rate == f2->i_rate
+        && f1->i_physical_channels == f2->i_physical_channels
+        && f1->i_chan_mode == f2->i_chan_mode
+        && f1->channel_type == f2->channel_type
+        && f1->i_bytes_per_frame == f2->i_bytes_per_frame
+        && f1->i_frame_length == f2->i_frame_length
+        && f1->i_bitspersample == f2->i_bitspersample
+        && f1->i_blockalign == f2->i_blockalign
+        && f1->i_channels == f2->i_channels;
 }
 
 static inline struct vlc_tracer *aout_stream_tracer(vlc_aout_stream *stream)
@@ -156,17 +201,42 @@ static int stream_GetDelay(vlc_aout_stream *stream, vlc_tick_t *delay)
     return 0;
 }
 
+static int stream_GetDelayEstimate(vlc_aout_stream *stream, vlc_tick_t *delay)
+{
+    vlc_mutex_assert(&stream->timing.lock);
+    int ret = stream_GetDelay(stream, delay);
+    if (ret != 0
+     && stream->timing.first_play_date != VLC_TICK_INVALID)
+    {
+        /* A short stream can reach EOF before an asynchronous output reports
+         * timing. Fall back on the submitted playout schedule, without using it
+         * as a measured timing point. */
+        vlc_tick_t sent =
+            vlc_tick_from_samples(stream->timing.played_samples,
+                                  stream->mixer_format.i_rate);
+        vlc_tick_t end_date = stream->timing.first_play_date + sent;
+        vlc_tick_t now = vlc_tick_now();
+        *delay = end_date > now ? end_date - now : 0;
+        ret = 0;
+    }
+    return ret;
+}
+
+int vlc_aout_stream_GetDelay(vlc_aout_stream *stream, vlc_tick_t *delay)
+{
+    vlc_mutex_lock(&stream->timing.lock);
+    int ret = stream_GetDelayEstimate(stream, delay);
+    vlc_mutex_unlock(&stream->timing.lock);
+    return ret;
+}
+
 static bool stream_IsDrained(vlc_aout_stream *stream)
 {
-    audio_output_t *aout = aout_stream_aout(stream);
+    vlc_tick_t drain_deadline =
+        atomic_load_explicit(&stream->drain_deadline, memory_order_relaxed);
 
-    if (aout->drain == NULL)
-    {
-        vlc_tick_t drain_deadline =
-            atomic_load_explicit(&stream->drain_deadline, memory_order_relaxed);
-        return drain_deadline != VLC_TICK_INVALID
-            && vlc_tick_now() >= drain_deadline;
-    }
+    if (drain_deadline != VLC_TICK_INVALID)
+        return vlc_tick_now() >= drain_deadline;
     else
         return atomic_load_explicit(&stream->drained, memory_order_relaxed);
 }
@@ -174,8 +244,22 @@ static bool stream_IsDrained(vlc_aout_stream *stream)
 static int stream_StartDiscontinuity(vlc_aout_stream *stream, block_t *block)
 {
     audio_output_t *aout = aout_stream_aout(stream);
+    aout_owner_t *owner = aout_stream_owner(stream);
     struct vlc_tracer *tracer = aout_stream_tracer(stream);
     assert(!stream->discontinuity.draining);
+
+    /* Only the main stream may drain the module. A not-yet-promoted gapless
+     * successor can already be playing here, so give up the handoff instead. */
+    if (unlikely(atomic_load(&owner->main_stream) != stream))
+    {
+        vlc_mutex_lock(&owner->lock);
+        stream->gapless.state = GAPLESS_STATE_FAILED;
+        vlc_mutex_unlock(&owner->lock);
+        msg_Warn(aout, "gapless: discontinuity before the handoff, "
+                 "dropping a block");
+        block_Release(block);
+        return AOUT_DEC_SUCCESS;
+    }
 
     /* Changing timings of the stream module while playing is an intricate
      * task, therefore modules don't handle any PTS discontinuity.
@@ -195,7 +279,7 @@ static int stream_StartDiscontinuity(vlc_aout_stream *stream, block_t *block)
 
     msg_Dbg(aout, "discontinuity: at %"PRId64" us, draining output",
             block->i_pts);
-    vlc_aout_stream_Drain(stream);
+    vlc_aout_stream_Drain(stream, NULL);
     stream->discontinuity.draining = true;
 
     stream->discontinuity.fifo_first = NULL;
@@ -270,9 +354,12 @@ static void stream_ResetTimings(vlc_aout_stream *stream)
 
     vlc_mutex_lock(&stream->timing.lock);
     stream->timing.first_pts = VLC_TICK_INVALID;
+    stream->timing.first_play_date = VLC_TICK_INVALID;
     stream->timing.last_drift = VLC_TICK_INVALID;
     stream->timing.system_ts = VLC_TICK_INVALID;
     stream->timing.audio_ts = VLC_TICK_INVALID;
+    stream->timing.stitching_length = 0;
+    stream->timing.seam_system_ts = VLC_TICK_INVALID;
     vlc_mutex_unlock(&stream->timing.lock);
 
     stream->timing.pause_date = VLC_TICK_INVALID;
@@ -283,7 +370,7 @@ static void stream_Reset(vlc_aout_stream *stream)
 {
     aout_owner_t *owner = aout_stream_owner(stream);
 
-    if (stream->mixer_format.i_format)
+    if (!stream->output_failed)
     {
         vlc_audio_meter_Flush(&owner->meter);
 
@@ -325,6 +412,67 @@ static void stream_Reset(vlc_aout_stream *stream)
                           memory_order_relaxed);
 
     stream_ResetTimings(stream);
+}
+
+static int stream_InitGapless(vlc_aout_stream *stream,
+                              const audio_sample_format_t *format)
+{
+    aout_owner_t *owner = aout_stream_owner(stream);
+    audio_output_t *aout = aout_stream_aout(stream);
+
+    vlc_mutex_lock(&owner->lock);
+    /* main_stream can't change while locked */
+    vlc_aout_stream *main_stream = atomic_load(&owner->main_stream);
+    if (main_stream == NULL || main_stream->gapless.normal_drain
+     || main_stream->gapless.unavailable || main_stream->output_failed)
+    {
+        vlc_mutex_unlock(&owner->lock);
+        msg_Warn(aout, "gapless: predecessor stream unavailable, starting "
+                 "successor as a new output");
+        return VLC_EGENERIC;
+    }
+
+    assert(owner->gapless_stream == NULL);
+
+    if (stream->input_profile != main_stream->input_profile
+     || !aout_FormatEquals(format, &main_stream->input_format))
+    {
+        vlc_mutex_unlock(&owner->lock);
+        msg_Dbg(aout, "gapless: successor format differs from the current "
+                "output, starting it as a new output");
+        return VLC_EGENERIC;
+    }
+
+    stream->input_format = main_stream->input_format;
+    stream->filter_format = main_stream->filter_format;
+    stream->mixer_format = main_stream->mixer_format;
+    stream->filters_cfg = main_stream->filters_cfg;
+    if (!owner->bitexact)
+    {
+        stream->filters = aout_FiltersNewWithClock(VLC_OBJECT(aout),
+                                                   stream->sync.clock,
+                                                   &stream->filter_format,
+                                                   &stream->mixer_format,
+                                                   &stream->filters_cfg);
+        if (stream->filters == NULL)
+        {
+            vlc_mutex_unlock(&owner->lock);
+            return VLC_EGENERIC;
+        }
+    }
+    if (stream->volume != NULL && main_stream->volume != NULL)
+    {
+        aout_volume_SetVolume(stream->volume,
+                              aout_volume_GetVolume(main_stream->volume));
+        aout_volume_SetFormat(stream->volume, stream->mixer_format.i_format);
+    }
+    stream->gapless.unavailable = false;
+    owner->gapless_stream = stream;
+
+    vlc_mutex_unlock(&owner->lock);
+
+    msg_Dbg(aout, "gapless: successor stream initialized, reusing the output");
+    return VLC_SUCCESS;
 }
 
 /**
@@ -369,8 +517,15 @@ vlc_aout_stream * vlc_aout_stream_New(audio_output_t *p_aout,
     vlc_aout_stream *stream = malloc(sizeof(*stream));
     if (stream == NULL)
         return NULL;
-    stream->instance = aout_instance(p_aout);
 
+    stream->instance = aout_instance(p_aout);
+    atomic_init(&stream->output_failed, false);
+
+    stream->gapless.pending = cfg->gapless;
+    assert(atomic_load(&owner->main_stream) == NULL || cfg->gapless);
+    stream->gapless.state = GAPLESS_STATE_STARTED;
+    stream->gapless.normal_drain = false;
+    stream->gapless.unavailable = true;
     stream->volume = NULL;
     if (!owner->bitexact)
         stream->volume = aout_volume_New (p_aout, cfg->replay_gain);
@@ -397,13 +552,21 @@ vlc_aout_stream * vlc_aout_stream_New(audio_output_t *p_aout,
 
     atomic_init (&stream->buffers_lost, 0);
     atomic_init (&stream->buffers_played, 0);
-    atomic_store_explicit(&owner->vp.update, true, memory_order_relaxed);
+    atomic_init(&stream->viewpoint_update, true);
 
     atomic_init(&stream->drained, false);
     atomic_init(&stream->drain_deadline, VLC_TICK_INVALID);
 
     stream->filters = NULL;
     stream->filters_cfg = AOUT_FILTERS_CFG_INIT;
+
+    if (cfg->gapless)
+    {
+        if (stream_InitGapless(stream, p_format) != VLC_SUCCESS)
+            goto error;
+        return stream;
+    }
+
     if (aout_OutputNew(p_aout, stream, &stream->mixer_format, stream->input_profile,
                        &stream->filter_format, &stream->filters_cfg))
         goto error;
@@ -433,7 +596,156 @@ error:
         }
     }
 
+    /* aout_OutputNew() publishes main_stream before returning, so order the
+     * completed format setup with stream_InitGapless()'s locked copy. */
+    vlc_mutex_lock(&owner->lock);
+    stream->gapless.unavailable = false;
+    vlc_mutex_unlock(&owner->lock);
+
     return stream;
+}
+
+
+/* Deallocate all resources, without stopping the stream */
+static void vlc_aout_stream_Free(vlc_aout_stream *stream)
+{
+    audio_output_t *aout = aout_stream_aout(stream);
+
+    if (stream->filters != NULL)
+        aout_FiltersDelete(aout, stream->filters);
+
+    if (stream->volume != NULL)
+        aout_volume_Delete(stream->volume);
+
+    if (stream->discontinuity.draining)
+        stream_ResetDiscontinuity(stream);
+
+    free(stream);
+}
+
+bool vlc_aout_stream_TryGaplessHandoff(vlc_aout_stream *stream,
+                                       const block_t *block)
+{
+    /* Called by the successor vlc_input_decoder_t when a block is ready to be
+     * played. */
+    aout_owner_t *owner = aout_stream_owner(stream);
+    audio_output_t *aout = aout_stream_aout(stream);
+
+    if (!stream->gapless.pending)
+        return false;
+
+    vlc_mutex_lock(&owner->lock);
+
+    vlc_aout_stream *main_stream = atomic_load(&owner->main_stream);
+    assert(main_stream != NULL);
+
+    if (owner->gapless_stream == NULL)
+    {
+        /* The predecessor was deleted before this stream could produce its
+         * first sample, so it was promoted before it could arm. */
+        assert(main_stream == stream);
+        vlc_mutex_unlock(&owner->lock);
+        msg_Warn(aout, "gapless: promoted before the first sample, starting "
+                 "with a gap");
+        return false;
+    }
+
+    assert(stream == owner->gapless_stream);
+    if (stream->gapless.state == GAPLESS_STATE_FAILED)
+    {
+        vlc_mutex_unlock(&owner->lock);
+        msg_Warn(aout, "gapless: predecessor already gave up, starting the "
+                 "successor with a gap");
+        return false;
+    }
+    assert(stream->gapless.state == GAPLESS_STATE_STARTED);
+
+    if (main_stream->gapless.normal_drain || main_stream->gapless.unavailable)
+    {
+        /* The predecessor reached its drain before this stream could arm or is
+         * unavailable. */
+        stream->gapless.state = GAPLESS_STATE_FAILED;
+        vlc_mutex_unlock(&owner->lock);
+        msg_Warn(aout, "gapless: predecessor unavailable, starting the "
+            "successor with a gap");
+        return false;
+    }
+
+    /* Only handle streams starting at 0. Indeed, clock stitching
+     * requires a discontinuity, making gapless useless. */
+    bool armed = block->i_pts == VLC_TICK_0;
+    stream->gapless.state = armed ? GAPLESS_STATE_ARMED : GAPLESS_STATE_FAILED;
+
+    vlc_mutex_unlock(&owner->lock);
+
+    if (armed)
+        msg_Dbg(aout, "gapless: successor produced its first sample, ready for "
+                "the handoff");
+    else
+        msg_Warn(aout, "gapless: successor does not start at 0 (pts %"PRId64"), "
+                 "it needs a discontinuity, starting it with a gap",
+                 block->i_pts);
+
+    return armed;
+}
+
+static bool vlc_aout_stream_CompleteGaplessHandoff(vlc_aout_stream *stream)
+{
+    /* Called by the predecessor when stream is deleting */
+    aout_owner_t *owner = aout_stream_owner(stream);
+    audio_output_t *aout = aout_stream_aout(stream);
+
+    vlc_mutex_lock(&owner->lock);
+    vlc_aout_stream *main_stream = atomic_load(&owner->main_stream);
+
+    if (owner->gapless_stream == NULL)
+    {
+        assert(main_stream == stream || main_stream == NULL);
+        /* A late successor would otherwise be orphaned when the output is
+         * stopped. */
+        stream->gapless.unavailable = true;
+        vlc_mutex_unlock(&owner->lock);
+        return main_stream != NULL;
+    }
+
+    /* Unlikely: successor aborted before transition */
+    if (stream == owner->gapless_stream)
+    {
+        owner->gapless_stream = NULL;
+        vlc_mutex_unlock(&owner->lock);
+        msg_Warn(aout, "gapless: successor aborted before the handoff");
+        return false;
+    }
+
+    assert(main_stream == stream || main_stream == NULL);
+
+    vlc_aout_stream *successor = owner->gapless_stream;
+    bool output_failed = main_stream == NULL;
+    bool armed = !output_failed
+              && successor->gapless.state == GAPLESS_STATE_ARMED;
+    if (output_failed)
+    {
+        successor->output_failed = true;
+        successor->gapless.unavailable = true;
+        atomic_fetch_or_explicit(&successor->restart, AOUT_RESTART_OUTPUT,
+                                 memory_order_release);
+    }
+    /* Defer the required post-drain flush to the successor's decoder thread. */
+    if (!armed)
+        successor->gapless.state = GAPLESS_STATE_FAILED;
+    atomic_store_explicit(&owner->main_stream, successor,
+                          memory_order_release);
+    owner->gapless_stream = NULL;
+    vlc_mutex_unlock(&owner->lock);
+
+    if (armed)
+        msg_Dbg(aout, "gapless: predecessor done, successor promoted to main "
+                "stream");
+    else
+        msg_Warn(aout, "gapless: predecessor done, starting the successor "
+                 "with a gap");
+
+    return false;
 }
 
 /**
@@ -443,25 +755,45 @@ void vlc_aout_stream_Delete (vlc_aout_stream *stream)
 {
     audio_output_t *aout = aout_stream_aout(stream);
     aout_owner_t *owner = aout_stream_owner(stream);
+    bool was_main = atomic_load(&owner->main_stream) == stream;
+    bool stop = vlc_aout_stream_CompleteGaplessHandoff(stream);
 
-    if (stream->mixer_format.i_format)
+    if (!stream->output_failed)
     {
-        vlc_audio_meter_Reset(&owner->meter, NULL);
-        if (stream->filters)
-            aout_FiltersDelete (aout, stream->filters);
-        aout_OutputDelete (aout);
+        if (stop)
+        {
+            vlc_audio_meter_Reset(&owner->meter, NULL);
+            aout_OutputDelete(aout);
+        }
+        else
+        {
+            /* Wait for any output event callbacks to leave their RCU sections. */
+            vlc_rcu_synchronize();
 
+            int restart = atomic_exchange_explicit(&stream->restart, 0,
+                                                   memory_order_acquire);
+            /* Forward restart flags to the new owner */
+            if (restart != 0 && was_main)
+            {
+                vlc_mutex_lock(&owner->lock);
+                vlc_aout_stream *main_stream =
+                    atomic_load(&owner->main_stream);
+                if (main_stream != NULL)
+                {
+                    main_stream->gapless.state = GAPLESS_STATE_FAILED;
+                    main_stream->gapless.unavailable = true;
+                    atomic_fetch_or_explicit(&main_stream->restart, restart,
+                                             memory_order_release);
+                }
+                vlc_mutex_unlock(&owner->lock);
+            }
+        }
+        assert(stream->sync.clock != NULL);
         vlc_clock_Lock(stream->sync.clock);
         vlc_clock_Reset(stream->sync.clock);
         vlc_clock_Unlock(stream->sync.clock);
     }
-    if (stream->volume != NULL)
-        aout_volume_Delete(stream->volume);
-
-    if (stream->discontinuity.draining)
-        stream_ResetDiscontinuity(stream);
-
-    free(stream);
+    vlc_aout_stream_Free(stream);
 }
 
 static int stream_CheckReady (vlc_aout_stream *stream)
@@ -474,6 +806,12 @@ static int stream_CheckReady (vlc_aout_stream *stream)
                                            memory_order_acquire);
     if (unlikely(restart != 0))
     {
+        /* Make all successors fail after one restart, since
+         * `stream->mixer_format` might be modified from this call. */
+        vlc_mutex_lock(&owner->lock);
+        stream->gapless.unavailable = true;
+        vlc_mutex_unlock(&owner->lock);
+
         if (stream->filters)
         {
             aout_FiltersDelete (aout, stream->filters);
@@ -488,19 +826,22 @@ static int stream_CheckReady (vlc_aout_stream *stream)
                 vlc_tracer_TraceEvent(tracer, "RENDER", stream->str_id, "restart");
 
             msg_Dbg (aout, "restarting output...");
-            if (stream->mixer_format.i_format)
+            if (!stream->output_failed)
                 aout_OutputDelete (aout);
+            stream->output_failed = false;
             stream->filter_format = stream->mixer_format = stream->input_format;
             stream->filters_cfg = AOUT_FILTERS_CFG_INIT;
 
             stream_Reset(stream);
 
-            if (aout_OutputNew(aout, stream, &stream->mixer_format, stream->input_profile,
-                               &stream->filter_format, &stream->filters_cfg))
-                stream->mixer_format.i_format = 0;
+            stream->output_failed =
+                aout_OutputNew(aout, stream, &stream->mixer_format,
+                               stream->input_profile, &stream->filter_format,
+                               &stream->filters_cfg) != 0;
             if (stream->volume != NULL)
                 aout_volume_SetFormat(stream->volume,
-                                      stream->mixer_format.i_format);
+                                      stream->output_failed ? 0
+                                                            : stream->mixer_format.i_format);
 
             /* Notify the decoder that the aout changed in order to try a new
              * suitable codec (like an HDMI audio format). However, keep the
@@ -515,7 +856,7 @@ static int stream_CheckReady (vlc_aout_stream *stream)
         msg_Dbg (aout, "restarting filters...");
         stream->sync.resamp_type = AOUT_RESAMPLING_NONE;
 
-        if (stream->mixer_format.i_format && !owner->bitexact)
+        if (!stream->output_failed && !owner->bitexact)
         {
             stream->filters = aout_FiltersNewWithClock(VLC_OBJECT(aout),
                                                        stream->sync.clock,
@@ -525,19 +866,36 @@ static int stream_CheckReady (vlc_aout_stream *stream)
             if (stream->filters == NULL)
             {
                 aout_OutputDelete (aout);
-                stream->mixer_format.i_format = 0;
+                stream->output_failed = true;
             }
-            aout_FiltersSetClockDelay(stream->filters, stream->sync.delay);
+            else
+                aout_FiltersSetClockDelay(stream->filters,
+                                          stream->sync.delay);
         }
 
         vlc_audio_meter_Reset(&owner->meter,
-                              stream->mixer_format.i_format ? &stream->mixer_format : NULL);
+                              stream->output_failed ? NULL
+                                                    : &stream->mixer_format);
+
+        vlc_mutex_lock(&owner->lock);
+        vlc_aout_stream *successor = owner->gapless_stream;
+        if (successor != NULL && atomic_load(&owner->main_stream) == stream)
+        {
+            /* The successor mirrors this output configuration. Force it to
+             * rebuild after promotion rather than reuse stale formats or
+             * filters. */
+            successor->gapless.state = GAPLESS_STATE_FAILED;
+            successor->gapless.unavailable = true;
+            atomic_fetch_or_explicit(&successor->restart, restart,
+                                     memory_order_release);
+        }
+        vlc_mutex_unlock(&owner->lock);
 
         /* TODO: This would be a good time to call clean up any video output
          * left over by an audio visualization:
         input_resource_TerminatVout(MAGIC HERE); */
     }
-    return (stream->mixer_format.i_format) ? status : AOUT_DEC_FAILED;
+    return stream->output_failed ? AOUT_DEC_FAILED : status;
 }
 
 /**
@@ -561,6 +919,20 @@ static void stream_StopResampling(vlc_aout_stream *stream)
 
     stream->sync.resamp_type = AOUT_RESAMPLING_NONE;
     aout_FiltersAdjustResampling (stream->filters, 0);
+}
+
+static void stream_OutputPlay(vlc_aout_stream *stream, block_t *block,
+                              vlc_tick_t play_date)
+{
+    audio_output_t *aout = aout_stream_aout(stream);
+
+    stream->timing.played_samples += block->i_nb_samples;
+    aout->play(aout, block, play_date);
+
+    vlc_mutex_lock(&stream->timing.lock);
+    if (stream->timing.first_play_date == VLC_TICK_INVALID)
+        stream->timing.first_play_date = play_date;
+    vlc_mutex_unlock(&stream->timing.lock);
 }
 
 static void stream_Silence (vlc_aout_stream *stream, vlc_tick_t length, vlc_tick_t pts)
@@ -587,8 +959,7 @@ static void stream_Silence (vlc_aout_stream *stream, vlc_tick_t length, vlc_tick
        vlc_clock_ConvertToSystem(stream->sync.clock, system_now, pts,
                                  stream->sync.rate, NULL);
     vlc_clock_Unlock(stream->sync.clock);
-    stream->timing.played_samples += block->i_nb_samples;
-    aout->play(aout, block, system_pts);
+    stream_OutputPlay(stream, block, system_pts);
 }
 
 static void stream_HandleDrift(vlc_aout_stream *stream, vlc_tick_t drift,
@@ -769,6 +1140,14 @@ void vlc_aout_stream_NotifyTiming(vlc_aout_stream *stream, vlc_tick_t system_ts,
                                   vlc_tick_t audio_ts)
 {
     vlc_mutex_lock(&stream->timing.lock);
+    if (stream->timing.seam_system_ts != VLC_TICK_INVALID
+     && system_ts <= stream->timing.seam_system_ts)
+    {
+        /* A report queued before promotion can reach the successor after the
+         * main stream changes. */
+        vlc_mutex_unlock(&stream->timing.lock);
+        return;
+    }
 
     vlc_tick_t rate_audio_ts = stream->timing.rate_audio_ts;
     vlc_tick_t rate_system_ts = stream->timing.rate_system_ts;
@@ -786,6 +1165,11 @@ void vlc_aout_stream_NotifyTiming(vlc_aout_stream *stream, vlc_tick_t system_ts,
         audio_ts = rate_audio_ts + (system_ts - rate_system_ts)
                    * stream->timing.rate;
     }
+
+    if (audio_ts > stream->timing.stitching_length)
+        audio_ts -= stream->timing.stitching_length;
+
+    assert(audio_ts >= VLC_TICK_0);
 
     stream->timing.system_ts = system_ts;
     stream->timing.audio_ts = audio_ts;
@@ -822,7 +1206,20 @@ static vlc_tick_t stream_ClockConvert(vlc_aout_stream *stream,
 int vlc_aout_stream_Play(vlc_aout_stream *stream, block_t *block)
 {
     aout_owner_t *owner = aout_stream_owner(stream);
-    audio_output_t *aout = aout_stream_aout(stream);
+
+    if (unlikely(stream->gapless.pending))
+    {
+        stream->gapless.pending = false;
+
+        vlc_mutex_lock(&owner->lock);
+        bool failed_handoff = stream->gapless.state == GAPLESS_STATE_FAILED;
+        vlc_mutex_unlock(&owner->lock);
+
+        /* A failed handoff drained the shared output, and the aout API requires
+         * a flush before playing again. */
+        if (failed_handoff)
+            vlc_aout_stream_Flush(stream);
+    }
 
     assert (block->i_pts != VLC_TICK_INVALID);
     assert (stream->timing.pause_date == VLC_TICK_INVALID);
@@ -864,11 +1261,11 @@ int vlc_aout_stream_Play(vlc_aout_stream *stream, block_t *block)
         if (play_date == VLC_TICK_INVALID)
             return stream_StartDiscontinuity(stream, block);
 
-        if (atomic_load_explicit(&owner->vp.update, memory_order_relaxed))
+        if (atomic_exchange_explicit(&stream->viewpoint_update, false,
+                                     memory_order_acquire))
         {
             vlc_mutex_lock (&owner->vp.lock);
             aout_FiltersChangeViewpoint (stream->filters, &owner->vp.value);
-            atomic_store_explicit(&owner->vp.update, false, memory_order_relaxed);
             vlc_mutex_unlock (&owner->vp.lock);
         }
 
@@ -905,8 +1302,7 @@ int vlc_aout_stream_Play(vlc_aout_stream *stream, block_t *block)
 
     /* Output */
     stream->sync.played = true;
-    stream->timing.played_samples += block->i_nb_samples;
-    aout->play(aout, block, play_date);
+    stream_OutputPlay(stream, block, play_date);
 
     atomic_fetch_add_explicit(&stream->buffers_played, 1, memory_order_relaxed);
     return ret;
@@ -930,7 +1326,7 @@ void vlc_aout_stream_ChangePause(vlc_aout_stream *stream, bool paused, vlc_tick_
 {
     audio_output_t *aout = aout_stream_aout(stream);
 
-    if (stream->mixer_format.i_format)
+    if (!stream->output_failed)
     {
         struct vlc_tracer *tracer = aout_stream_tracer(stream);
         if (tracer != NULL)
@@ -986,20 +1382,36 @@ void vlc_aout_stream_ChangeDelay(vlc_aout_stream *stream, vlc_tick_t delay)
 void vlc_aout_stream_Flush(vlc_aout_stream *stream)
 {
     audio_output_t *aout = aout_stream_aout(stream);
+    aout_owner_t *owner = aout_stream_owner(stream);
 
     struct vlc_tracer *tracer = aout_stream_tracer(stream);
     if (tracer != NULL)
         vlc_tracer_TraceEvent(tracer, "RENDER", stream->str_id, "flushed");
 
-    if (stream->mixer_format.i_format)
+    /* Only the main stream owns the samples queued in the module */
+    if (unlikely(atomic_load(&owner->main_stream) != stream))
+        return;
+
+    if (!stream->output_failed)
         aout->flush(aout);
     stream_Reset(stream);
+
+    vlc_mutex_lock(&owner->lock);
+    if (atomic_load(&owner->main_stream) == stream)
+        stream->gapless.normal_drain = false;
+    vlc_mutex_unlock(&owner->lock);
 }
 
 void vlc_aout_stream_NotifyGain(vlc_aout_stream *stream, float gain)
 {
     if (stream->volume != NULL)
         aout_volume_SetVolume(stream->volume, gain);
+}
+
+void vlc_aout_stream_RequestViewpointUpdate(vlc_aout_stream *stream)
+{
+    atomic_store_explicit(&stream->viewpoint_update, true,
+                          memory_order_release);
 }
 
 void vlc_aout_stream_NotifyDrained(vlc_aout_stream *stream)
@@ -1016,12 +1428,138 @@ bool vlc_aout_stream_IsDrained(vlc_aout_stream *stream)
     return stream_IsDrained(stream);
 }
 
-void vlc_aout_stream_Drain(vlc_aout_stream *stream)
+static void stream_Drain(vlc_aout_stream *stream)
 {
     audio_output_t *aout = aout_stream_aout(stream);
 
-    if (!stream->mixer_format.i_format)
-        return;
+    if (aout->drain)
+    {
+        assert(!atomic_load_explicit(&stream->drained, memory_order_relaxed));
+
+        aout->drain(aout);
+    }
+    else
+    {
+        assert(atomic_load_explicit(&stream->drain_deadline,
+                                    memory_order_relaxed) == VLC_TICK_INVALID);
+
+        vlc_tick_t delay;
+        vlc_mutex_lock(&stream->timing.lock);
+        int ret = stream_GetDelayEstimate(stream, &delay);
+        vlc_mutex_unlock(&stream->timing.lock);
+
+        /* Without a delay, the deadline is now and
+         * vlc_aout_stream_IsDrained() returns true on the first call. */
+        vlc_tick_t drain_deadline = vlc_tick_now() + (ret == 0 ? delay : 0);
+
+        atomic_store_explicit(&stream->drain_deadline, drain_deadline,
+                              memory_order_relaxed);
+    }
+}
+
+static bool
+vlc_aout_stream_ArmGaplessHandoff(vlc_aout_stream *stream, vlc_tick_t *seam)
+{
+    /* Called by the predecessor when draining. */
+#define GAPLESS_FAIL_STR "gapless: transition failed, "
+    audio_output_t *aout = aout_stream_aout(stream);
+    aout_owner_t *owner = aout_stream_owner(stream);
+
+    vlc_mutex_lock(&owner->lock);
+    if (owner->gapless_stream == NULL)
+    {
+        stream->gapless.normal_drain = true;
+        vlc_mutex_unlock(&owner->lock);
+        return false;
+    }
+
+    /* Don't drain this stream if there is a successor. */
+    switch (owner->gapless_stream->gapless.state)
+    {
+        case GAPLESS_STATE_STARTED:
+            owner->gapless_stream->gapless.state = GAPLESS_STATE_FAILED;
+            stream->gapless.normal_drain = true;
+            vlc_mutex_unlock(&owner->lock);
+            msg_Warn(aout, GAPLESS_FAIL_STR
+                     "the next stream was not ready in time");
+            return false;
+        case GAPLESS_STATE_ARMED:
+            break;
+        case GAPLESS_STATE_FAILED:
+            stream->gapless.normal_drain = true;
+            vlc_mutex_unlock(&owner->lock);
+            msg_Warn(aout, GAPLESS_FAIL_STR
+                     "the next stream is incompatible");
+            return false;
+        default:
+            vlc_assert_unreachable();
+    }
+    assert(owner->gapless_stream != NULL);
+
+    /* Check if the aout delay allow a gapless transition */
+    vlc_tick_t delay;
+    vlc_mutex_lock(&stream->timing.lock);
+    int ret = stream_GetDelay(stream, &delay);
+    if (ret != 0 || delay < AOUT_GAPLESS_MIN_BUFFER)
+    {
+        vlc_mutex_unlock(&stream->timing.lock);
+        if (ret != 0)
+            msg_Warn(aout, GAPLESS_FAIL_STR "invalid delay");
+        else
+            msg_Warn(aout, GAPLESS_FAIL_STR "not enough buffer (%"PRId64" us) "
+                     "for a gapless transition", delay);
+
+        owner->gapless_stream->gapless.state = GAPLESS_STATE_FAILED;
+        stream->gapless.normal_drain = true;
+        vlc_mutex_unlock(&owner->lock);
+        return false;
+    }
+
+    /* The output is not stopped at the seam, so it keeps reporting timestamps
+     * on the predecessor timeline. The successor subtracts this offset to get
+     * back to its own timeline, starting at VLC_TICK_0. */
+    assert(stream->timing.first_pts != VLC_TICK_INVALID);
+    vlc_tick_t stitching_length =
+        stream->timing.first_pts - VLC_TICK_0
+        + vlc_tick_from_samples(stream->timing.played_samples,
+                                stream->mixer_format.i_rate)
+        + stream->timing.stitching_length;
+    vlc_mutex_unlock(&stream->timing.lock);
+
+    vlc_tick_t drain_deadline = vlc_tick_now() + delay;
+    vlc_mutex_lock(&owner->gapless_stream->timing.lock);
+    owner->gapless_stream->timing.stitching_length = stitching_length;
+    /* The successor first sample is played at the seam: seed this timing point,
+     * since reports before the seam are dropped. */
+    owner->gapless_stream->timing.seam_system_ts = drain_deadline;
+    owner->gapless_stream->timing.system_ts = drain_deadline;
+    owner->gapless_stream->timing.audio_ts = VLC_TICK_0;
+    vlc_mutex_unlock(&owner->gapless_stream->timing.lock);
+    vlc_mutex_unlock(&owner->lock);
+
+    /* Arm a drain deadline instead of draining now: the predecessor keeps
+     * playing its full buffered length, up to the seam. */
+    atomic_store_explicit(&stream->drain_deadline, drain_deadline,
+                          memory_order_relaxed);
+    if (seam != NULL)
+        *seam = drain_deadline;
+    msg_Dbg(aout, "gapless: handoff armed, seam in %"PRId64" us", delay);
+    return true;
+}
+
+bool vlc_aout_stream_Drain(vlc_aout_stream *stream, vlc_tick_t *gapless_seam)
+{
+    audio_output_t *aout = aout_stream_aout(stream);
+    aout_owner_t *owner = aout_stream_owner(stream);
+    if (gapless_seam != NULL)
+        *gapless_seam = VLC_TICK_INVALID;
+
+    if (stream->output_failed)
+        return false;
+
+    /* Only the main stream may drain the module: a gapless successor drains
+     * only once promoted (see the decoder PROMOTED wait). */
+    assert(stream == atomic_load(&owner->main_stream));
 
     if (unlikely(stream->discontinuity.draining))
     {
@@ -1035,7 +1573,7 @@ void vlc_aout_stream_Drain(vlc_aout_stream *stream)
                     ", losing %"PRId64 " us of audio", length); /* FIXME */
         }
         stream_ResetDiscontinuity(stream);
-        return;
+        return false;
     }
 
     struct vlc_tracer *tracer = aout_stream_tracer(stream);
@@ -1049,33 +1587,15 @@ void vlc_aout_stream_Drain(vlc_aout_stream *stream)
         if (block)
         {
             assert (block->i_pts != VLC_TICK_INVALID);
-            aout->play(aout, block, vlc_tick_now());
+            stream_OutputPlay(stream, block, vlc_tick_now());
         }
     }
 
-    if (aout->drain)
-    {
-        assert(!atomic_load_explicit(&stream->drained, memory_order_relaxed));
+    bool gapless = vlc_aout_stream_ArmGaplessHandoff(stream, gapless_seam);
+    if (gapless)
+        return gapless;
 
-        aout->drain(aout);
-    }
-    else
-    {
-        assert(atomic_load_explicit(&stream->drain_deadline,
-                                    memory_order_relaxed) == VLC_TICK_INVALID);
-
-        vlc_tick_t drain_deadline = vlc_tick_now();
-
-        vlc_tick_t delay;
-        vlc_mutex_lock(&stream->timing.lock);
-        if (stream_GetDelay(stream, &delay) == 0)
-            drain_deadline += delay;
-        vlc_mutex_unlock(&stream->timing.lock);
-
-        /* else the deadline is now, and vlc_aout_stream_IsDrained() will
-         * return true on the first call. */
-
-        atomic_store_explicit(&stream->drain_deadline, drain_deadline,
-                              memory_order_relaxed);
-    }
+    /* Normal drain, no gapless transition */
+    stream_Drain(stream);
+    return false;
 }

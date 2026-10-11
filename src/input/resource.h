@@ -40,6 +40,14 @@ enum input_resource_vout_state
 void input_resource_SetInput( input_resource_t *, input_thread_t * );
 
 /**
+ * Clear the associated input only if it is still the given one.
+ *
+ * A gapless successor can be cancelled while the predecessor remains the
+ * resource owner.
+ */
+void input_resource_ClearInputIfOwner( input_resource_t *, input_thread_t * );
+
+/**
  * \return the current audio output if any.
  * Use aout_Release() to drop the reference.
  */
@@ -48,7 +56,7 @@ audio_output_t *input_resource_HoldAout( input_resource_t * );
 /**
  * This function creates or recycles an audio output.
  */
-audio_output_t *input_resource_GetAout( input_resource_t * );
+audio_output_t *input_resource_GetAout( input_resource_t *, bool gapless );
 
 /**
  * This function retains or destroys an audio output.

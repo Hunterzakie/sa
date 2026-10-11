@@ -729,6 +729,21 @@ static inline void vlc_fifo_WaitCond(vlc_fifo_t *fifo, vlc_cond_t *condvar)
 }
 
 /**
+ * Waits on the FIFO up to a deadline.
+ *
+ * Like vlc_fifo_Wait() but with a time-out: returns when the FIFO is signalled
+ * or @c deadline is reached, whichever comes first.
+ *
+ * @return 0 if the FIFO was signalled, an error code on time-out.
+ */
+static inline int vlc_fifo_WaitTimeout(vlc_fifo_t *fifo, vlc_tick_t deadline)
+{
+    vlc_queue_t *q = vlc_fifo_queue(fifo);
+
+    return vlc_cond_timedwait(&q->wait, &q->lock, deadline);
+}
+
+/**
  * Queues a linked-list of blocks into a locked FIFO.
  *
  * @param fifo a fifo object locked with ::vlc_fifo_Lock()

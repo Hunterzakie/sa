@@ -183,6 +183,38 @@ vlc_tests += {
     'module_depends' : vlc_plugins_targets.keys()
 }
 
+gapless_player_tests = {
+    'success' : ['success'],
+    'short_chain' : ['short_chain'],
+    'success_small_next' : ['success_small_next'],
+    'large_frame' : ['large_frame'],
+    'pts_offset' : ['pts_offset'],
+    'format_change' : ['format_change'],
+    'short_delay' : ['short_delay'],
+    'recovery' : ['recovery'],
+    'error_successor' : ['error_successor'],
+    'no_audio_successor' : ['no_audio_successor'],
+    'av_successor' : ['av_successor'],
+    'short_successor' : ['short_successor'],
+    'av_predecessor' : ['av_predecessor'],
+    'video_predecessor' : ['video_predecessor'],
+    'abort_armed' : ['abort_armed'],
+    'seek_near_end' : ['seek_near_end'],
+}
+
+vlc_tests += {
+    'name' : 'test_src_player_gapless',
+    'sources' : files(
+        'player/common.h',
+        'player/modules.c',
+        'player/gapless.c'),
+    'include_directories' : include_directories('../../src'),
+    'suite' : ['src', 'test_src'],
+    'link_with' : [libvlc, libvlccore],
+    'module_depends' : vlc_plugins_targets.keys(),
+    'test_cases' : gapless_player_tests,
+}
+
 vlc_tests += {
     'name' : 'test_src_player_lifecycle',
     'sources' : files(
