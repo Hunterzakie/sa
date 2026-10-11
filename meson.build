@@ -871,6 +871,20 @@ if host_system != 'os/2'
         language: ['c'])
 endif
 
+if get_option('optimization') != '0'
+    add_project_arguments(cc.get_supported_arguments([
+        '-fno-math-errno', '-funsafe-math-optimizations',
+        '-fno-rounding-math', '-fno-signaling-nans', '-fcx-limited-range'
+    ]), language: ['c', 'cpp'])
+    if cc.has_argument('-funroll-loops')
+        add_project_arguments('-funroll-loops', language: ['c', 'objc'])
+    endif
+    if cpp.has_argument('-funroll-loops')
+        add_project_arguments('-funroll-loops', language: ['cpp'])
+    endif
+endif
+
+
 # Stack smashing protection (default enabled for optimized builds)
 if (get_option('ssp')
     .disable_auto_if(get_option('optimization') == '0')
@@ -913,6 +927,10 @@ if cc.has_link_argument('-Wl,--gc-sections')
 elif cc.has_link_argument('-Wl,-dead_strip')
     gc_sections_linkargs += '-Wl,-dead_strip'
 endif
+
+add_project_arguments(cc.get_supported_arguments([
+    '-fdata-sections', '-ffunction-sections'
+]), language: ['c', 'cpp'])
 endif
 
 # Check for struct sockaddr_storage type
