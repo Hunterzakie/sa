@@ -412,16 +412,13 @@ debian-meson:
 .flatpak-common:
     extends: .base-template
     variables:
-        # The runner default is to not fetch submodules at all
-        GIT_SUBMODULE_STRATEGY: recursive
-        # We pin an older shared-modules commit, so we can't shallow-clone it.
-        # The repo is tiny (<1MB) so a full clone is cheap.
-        GIT_SUBMODULE_DEPTH: 0
         FLATPAK_BRANCH: 4.0.x
         MANIFEST_PATH: extras/package/flatpak/org.videolan.VLC.yaml
     script:
-        - flatpak-builder-lint --exceptions --user-exceptions extras/package/flatpak/linter-exceptions.json manifest ${MANIFEST_PATH}
+        - flatpak-builder-lint --exceptions --exceptions-repo stable manifest ${MANIFEST_PATH}
         - flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+        - flatpak install --user -y --noninteractive flathub org.kde.Sdk//6.11
+        - flatpak --user --command="./extras/package/flatpak/prepare-sources.sh" --filesystem=host --share=network run org.kde.Sdk//6.11
         - flatpak-builder --default-branch ${FLATPAK_BRANCH} --user --install-deps-from=flathub --disable-rofiles-fuse --disable-updates --force-clean --ccache --mirror-screenshots-url=https://dl.flathub.org/media/ build-${HOST_ARCH} ${MANIFEST_PATH}
     cache:
         key: flatpak-ccache-${HOST_ARCH}
@@ -492,7 +489,7 @@ flatpak-repo:
         - flatpak build-export --metadata=metadata.debuginfo --files=files/lib/debug repo build-aarch64
         - ostree commit --repo=repo --canonical-permissions --branch=screenshots/x86_64 build-x86_64/files/share/app-info/media
         - ostree commit --repo=repo --canonical-permissions --branch=screenshots/aarch64 build-aarch64/files/share/app-info/media
-        - flatpak-builder-lint --exceptions repo repo || true
+        - flatpak-builder-lint --exceptions --exceptions-repo stable repo repo
     artifacts:
         paths:
           - repo
