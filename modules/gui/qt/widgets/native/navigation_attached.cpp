@@ -44,6 +44,28 @@ void NavigationAttached::defaultNavigationGeneric(QJSValue& jsCallback, QQuickIt
             return;
     }
 
+    class StackOverflowProtector
+    {
+        bool& m_guard;
+
+    public:
+        explicit StackOverflowProtector(bool& guard, const QObject* navigator, const QObject* navigatee)
+            : m_guard(guard)
+        {
+            if (guard)
+            {
+                qWarning() << navigator << ": Cyclic navigation detected, aborting to prevent stack overflow! Target:" << navigatee;
+                throw std::exception();
+            }
+
+            m_guard = true;
+        }
+
+        ~StackOverflowProtector()
+        {
+            m_guard = false;
+        }
+    };
 
     if (directionItem)
     {
@@ -57,13 +79,20 @@ void NavigationAttached::defaultNavigationGeneric(QJSValue& jsCallback, QQuickIt
         }
         else if (nextItem)
         {
-            (nextItem->*defaultNavFn)();
+            try {
+                StackOverflowProtector sop(m_isCurrent, parent(), directionItem);
+                (nextItem->*defaultNavFn)();
+            } catch (...) { }
         }
     }
     else if (m_parentItem)
     {
         NavigationAttached* parentNav = qobject_cast<NavigationAttached*>(qmlAttachedPropertiesObject<NavigationAttached>(m_parentItem));
-        (parentNav->*defaultNavFn)();
+
+        try {
+            StackOverflowProtector sop(m_isCurrent, parent(), parentNav);
+            (parentNav->*defaultNavFn)();
+        } catch (...) { }
     }
 }
 
