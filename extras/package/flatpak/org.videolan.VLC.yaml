@@ -101,7 +101,5 @@ modules:
         path: contrib.tar
       - type: patch
         path: vlc-appdata-manifest-url.patch
-      - type: patch
-        path: vlc-static-dirs-moc-includes.patch
       - type: file
         path: vlc.sh
