@@ -1,6 +1,0 @@
-{
-    "org.videolan.VLC": [
-        "finish-args-host-filesystem-access",
-        "module-vlc-source-git-branch"
-    ]
-}

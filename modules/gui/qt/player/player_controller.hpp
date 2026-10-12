@@ -33,6 +33,7 @@
 #include <QQuickWindow>
 #include <QQuickItem>
 #include <QQmlProperty>
+#include <QQmlPropertyValueSource>
 #include "player/input_models.hpp"
 #include "util/audio_device_model.hpp"
 #include "util/varchoicemodel.hpp"

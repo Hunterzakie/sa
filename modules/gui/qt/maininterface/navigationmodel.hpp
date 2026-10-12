@@ -21,6 +21,7 @@
 
 #include <QObject>
 #include <QQmlEngine>
+#include <QQmlParserStatus>
 #include <QAbstractListModel>
 
 class NavigationModelItem
