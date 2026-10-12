@@ -227,27 +227,17 @@ FocusScope {
         // TODO: "ControlListFilter"'s count......
         active: !!playerControlLayout.model && !!playerControlLayout.model.center && (playerControlLayout.model.center.count > 0)
 
-        Binding on width {
-            delayed: true
-            when: loaderCenter._componentCompleted
-            value: {
-                const item = loaderCenter.item
+        width: {
+            const item = loaderCenter.item
 
-                const minimumWidth = (item && item.Layout.minimumWidth > 0) ? item.Layout.minimumWidth : implicitWidth
-                const maximumWidth = (item && item.Layout.maximumWidth > 0) ? item.Layout.maximumWidth : implicitWidth
+            const minimumWidth = (item && item.Layout.minimumWidth > 0) ? item.Layout.minimumWidth : implicitWidth
+            const maximumWidth = (item && item.Layout.maximumWidth > 0) ? item.Layout.maximumWidth : implicitWidth
 
-                if ((loaderLeft.active && (loaderLeft.width > 0)) || (loaderRight.active && (loaderRight.width > 0))) {
-                    return minimumWidth
-                } else {
-                    return Math.min(loaderCenter.parent.width, maximumWidth)
-                }
+            if ((loaderLeft.active && loaderLeft.item) || (loaderRight.active && loaderRight.item)) {
+                return minimumWidth
+            } else {
+                return Math.min(loaderCenter.parent.width, maximumWidth)
             }
-        }
-
-        property bool _componentCompleted: false
-
-        Component.onCompleted: {
-            _componentCompleted = true
         }
 
         sourceComponent: ControlLayout {

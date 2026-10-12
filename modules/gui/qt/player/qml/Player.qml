@@ -62,6 +62,20 @@ FocusScope {
 
     property bool _keyPressed: false
 
+    // Use for the initial media load, to not load audio components
+    property int _lastKnownPlayerMode: -1
+
+    readonly property int effectivePlayerMode: {
+        // No video or audio tracks, means we don't know the type of media yet
+        if (Player.videoTracks.count === 0 && Player.audioTracks.count === 0)
+            return _lastKnownPlayerMode
+
+        // Video tracks identified before hasEmbededVideo changes
+        return (Player.videoTracks.count > 0 || MainCtx.hasEmbededVideo)
+                 ? PlayerControlbarModel.Videoplayer
+                 : PlayerControlbarModel.Audioplayer
+    }
+
     // Settings
 
     Accessible.role: Accessible.Client
@@ -98,6 +112,11 @@ FocusScope {
 
     on_ControlsUnderVideoChanged: {
         lockUnlockAutoHide(_controlsUnderVideo)
+    }
+
+    onEffectivePlayerModeChanged: {
+        if (effectivePlayerMode >= 0)
+            _lastKnownPlayerMode = effectivePlayerMode
     }
 
     // Functions
@@ -187,7 +206,18 @@ FocusScope {
             bottom: (MainCtx.hasEmbededVideo && rootPlayer._controlsUnderVideo) ? controlBar.top : parent.bottom
         }
 
-        sourceComponent: MainCtx.hasEmbededVideo ? videoComponent : audioComponent
+        sourceComponent: {
+            switch (rootPlayer.effectivePlayerMode){
+                case -1:
+                    return emptyComponent
+                case PlayerControlbarModel.Videoplayer:
+                    // Be careful for the case where video.tracks > 0 but hasEmbededVideo is still false
+                    // Without this check, in Wayland sometimes we can end up with the video being misplaced
+                    return MainCtx.hasEmbededVideo ? videoComponent : emptyComponent
+                case PlayerControlbarModel.Audioplayer:
+                    return audioComponent
+            }
+        }
 
         property int cursorShape
 
@@ -245,6 +275,16 @@ FocusScope {
                 } else {
                     lastActiveTranslation = Qt.vector2d(0, 0)
                 }
+            }
+        }
+
+        Component {
+            id: emptyComponent
+
+            // Avoids transparent window moment until video loads
+            Rectangle {
+                anchors.fill: parent
+                color: "black"
             }
         }
 
@@ -1328,8 +1368,7 @@ FocusScope {
 
         onRequestLockUnlockAutoHide: (lock) => rootPlayer.lockUnlockAutoHide(lock)
 
-        identifier: (Player.hasVideoOutput) ? PlayerControlbarModel.Videoplayer
-                                            : PlayerControlbarModel.Audioplayer
+        identifier: rootPlayer.effectivePlayerMode
 
         onHoveredChanged: rootPlayer.lockUnlockAutoHide(hovered)
 
