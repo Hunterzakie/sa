@@ -7,6 +7,6 @@ index 62bd7ee443..28fc24fd94 100644
      </screenshots>
      <content_rating type="oars-1.1" />
 +    <custom>
-+        <value key="flathub::manifest">https://code.videolan.org/videolan/vlc/-/blob/b0759eb52fa6fa08aa2cc72fe4f5e5cb900e9694/extras/package/flatpak/org.videolan.VLC.yaml</value>
++        <value key="flathub::manifest">https://code.videolan.org/videolan/vlc/-/blob/@GIT_HASH@/extras/package/flatpak/org.videolan.VLC.yaml</value>
 +    </custom>
  </component>
