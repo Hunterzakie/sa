@@ -59,6 +59,8 @@
 #include "dialogs/toolbar/controlbar_profile_model.hpp"
 #include "dialogs/help/help.hpp"
 
+#include <algorithm>
+
 #include <QKeyEvent>
 
 #include <QUrl>
@@ -82,6 +84,8 @@
 #include <QFileInfo>
 #endif
 
+#include <vlc_actions.h>
+#include <vlc_cxx_helpers.hpp>
 #include <vlc_interface.h>
 #include <vlc_preparser.h>
 
@@ -544,6 +548,14 @@ void MainCtx::sendHotkey(Qt::Key key , Qt::KeyboardModifiers modifiers)
 {
     QKeyEvent event(QEvent::KeyPress, key, modifiers );
     int vlckey = qtEventToVLCKey(&event);
+    if (!isPlayerView() && !isMinimalView())
+    {
+        uint_fast32_t *keys = nullptr;
+        size_t nbKeys = vlc_actions_get_keycodes(p_intf, "toggle-fullscreen", false, &keys);
+        auto keysGuard = vlc::wrap_carray(keys);
+        if (std::find(keys, keys + nbKeys, static_cast<uint_fast32_t>(vlckey)) != keys + nbKeys)
+            return;
+    }
     var_SetInteger(vlc_object_instance(p_intf), "key-pressed", vlckey);
 }
 
