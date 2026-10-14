@@ -44,21 +44,37 @@ NSString * const VLCLibraryVideoDataSourceDisplayedCollectionChangedNotification
 
 /**
  * Represents one row in the flattened table view model.
- * A row is either a section header or a media item within a section.
+ * A row is either a carousel, a section header, or a media item within a section.
  */
 @interface VLCLibraryVideoFlattenedRow : NSObject
+
+@property (readonly) BOOL isCarousel;
 @property (readonly) BOOL isHeader;
 @property (readonly) VLCMediaLibraryParentGroupType parentType;
-@property (readonly) NSInteger itemIndex; // -1 for header rows
+@property (readonly) NSInteger itemIndex; // -1 for header and carousel rows
+
++ (instancetype)carouselRow;
 + (instancetype)headerForGroup:(VLCMediaLibraryParentGroupType)group;
 + (instancetype)itemAtIndex:(NSInteger)index inGroup:(VLCMediaLibraryParentGroupType)group;
+
 @end
 
 @implementation VLCLibraryVideoFlattenedRow
 
++ (instancetype)carouselRow
+{
+    VLCLibraryVideoFlattenedRow * const row = [VLCLibraryVideoFlattenedRow new];
+    row->_isCarousel = YES;
+    row->_isHeader = NO;
+    row->_parentType = VLCMediaLibraryParentGroupTypeRecentVideos;
+    row->_itemIndex = -1;
+    return row;
+}
+
 + (instancetype)headerForGroup:(VLCMediaLibraryParentGroupType)group
 {
     VLCLibraryVideoFlattenedRow * const row = [VLCLibraryVideoFlattenedRow new];
+    row->_isCarousel = NO;
     row->_isHeader = YES;
     row->_parentType = group;
     row->_itemIndex = -1;
@@ -68,6 +84,7 @@ NSString * const VLCLibraryVideoDataSourceDisplayedCollectionChangedNotification
 + (instancetype)itemAtIndex:(NSInteger)index inGroup:(VLCMediaLibraryParentGroupType)group
 {
     VLCLibraryVideoFlattenedRow * const row = [VLCLibraryVideoFlattenedRow new];
+    row->_isCarousel = NO;
     row->_isHeader = NO;
     row->_parentType = group;
     row->_itemIndex = index;
@@ -217,13 +234,9 @@ NSString * const VLCLibraryVideoDataSourceDisplayedCollectionChangedNotification
 {
     NSMutableArray<VLCLibraryVideoFlattenedRow *> * const rows = [NSMutableArray array];
 
-    const NSUInteger recentsCount = _recentsArray.count;
-    if (recentsCount > 0) {
-        [rows addObject:[VLCLibraryVideoFlattenedRow headerForGroup:VLCMediaLibraryParentGroupTypeRecentVideos]];
-        for (NSUInteger i = 0; i < recentsCount; i++) {
-            [rows addObject:[VLCLibraryVideoFlattenedRow itemAtIndex:i
-                                                             inGroup:VLCMediaLibraryParentGroupTypeRecentVideos]];
-        }
+    // Recents are shown as a carousel row at the top of the table.
+    if (_recentsArray.count > 0) {
+        [rows addObject:[VLCLibraryVideoFlattenedRow carouselRow]];
     }
 
     const NSUInteger libraryCount = _libraryArray.count;
@@ -354,6 +367,14 @@ NSString * const VLCLibraryVideoDataSourceDisplayedCollectionChangedNotification
 
 #pragma mark - Public query methods
 
+- (BOOL)isCarouselRow:(NSInteger)row
+{
+    if (row < 0 || (NSUInteger)row >= _flattenedRows.count) {
+        return NO;
+    }
+    return _flattenedRows[row].isCarousel;
+}
+
 - (BOOL)isHeaderRow:(NSInteger)row
 {
     if (row < 0 || (NSUInteger)row >= _flattenedRows.count) {
@@ -425,7 +446,7 @@ NSString * const VLCLibraryVideoDataSourceDisplayedCollectionChangedNotification
 
 - (id<NSPasteboardWriting>)tableView:(NSTableView *)tableView pasteboardWriterForRow:(NSInteger)row
 {
-    if ([self isHeaderRow:row]) {
+    if ([self isHeaderRow:row] || [self isCarouselRow:row]) {
         return nil;
     }
     const id<VLCMediaLibraryItemProtocol> libraryItem = [self libraryItemAtRow:row forTableView:tableView];
@@ -441,7 +462,7 @@ NSString * const VLCLibraryVideoDataSourceDisplayedCollectionChangedNotification
 
     VLCLibraryVideoFlattenedRow * const flatRow = _flattenedRows[row];
 
-    if (flatRow.isHeader) {
+    if (flatRow.isHeader || flatRow.isCarousel) {
         return nil;
     }
 
@@ -462,7 +483,7 @@ NSString * const VLCLibraryVideoDataSourceDisplayedCollectionChangedNotification
     const NSUInteger rowCount = _flattenedRows.count;
     for (NSUInteger i = 0; i < rowCount; i++) {
         VLCLibraryVideoFlattenedRow * const flatRow = _flattenedRows[i];
-        if (flatRow.isHeader) {
+        if (flatRow.isHeader || flatRow.isCarousel) {
             continue;
         }
 

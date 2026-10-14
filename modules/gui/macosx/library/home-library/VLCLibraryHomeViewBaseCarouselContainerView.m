@@ -78,6 +78,11 @@
     [self setup];
 }
 
+- (BOOL)mouseDownCanMoveWindow
+{
+    return NO;
+}
+
 - (void)setup
 {
     [self setupView];
@@ -204,6 +209,12 @@
     const NSInteger numberOfItems = self.carouselView.numberOfItems;
     self.leftButton.hidden = currentItemIndex == 0;
     self.rightButton.hidden = currentItemIndex == numberOfItems - 1;
+}
+
+- (void)layout
+{
+    [super layout];
+    [self updateCarouselOffset];
 }
 
 - (void)resizeWithOldSuperviewSize:(NSSize)oldSize

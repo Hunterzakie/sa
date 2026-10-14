@@ -22,7 +22,19 @@
 
 #import "VLCLibraryVideoTableViewDelegate.h"
 
+#import "library/VLCLibraryDataTypes.h"
+#import "library/VLCLibraryHeaderView.h"
+#import "library/VLCLibraryRepresentedItem.h"
+#import "library/VLCLibrarySectionedTableViewDataSource.h"
+#import "library/VLCLibraryTableCellView.h"
+#import "library/VLCLibraryTableView.h"
+
+#import "library/home-library/VLCLibraryHomeViewVideoCarouselContainerView.h"
+
 #import "views/VLCUIUnits.h"
+
+@interface VLCLibraryVideoHeaderRowView : NSTableRowView
+@end
 
 @implementation VLCLibraryVideoTableViewDelegate
 
@@ -32,6 +44,133 @@
     if (self) {
         self.cellViewIdentifier = @"VLCVideoLibraryTableViewCellIdentifier";
         self.rowHeight = VLCUIUnits.videoLibraryTableViewRowHeight;
+    }
+    return self;
+}
+
+- (BOOL)isCarouselRow:(NSInteger)row
+         inDataSource:(NSObject<VLCLibrarySectionedTableViewDataSource> *)dataSource
+{
+    return [dataSource respondsToSelector:@selector(isCarouselRow:)] &&
+           [dataSource isCarouselRow:row];
+}
+
+#pragma mark - NSTableViewDelegate
+
+- (NSView *)tableView:(NSTableView *)tableView
+    viewForTableColumn:(NSTableColumn *)tableColumn
+                   row:(NSInteger)row
+{
+    if (![tableView.dataSource conformsToProtocol:@protocol(VLCLibrarySectionedTableViewDataSource)]) {
+        return [super tableView:tableView viewForTableColumn:tableColumn row:row];
+    }
+
+    NSObject<VLCLibrarySectionedTableViewDataSource> * const sectionedDataSource =
+        (NSObject<VLCLibrarySectionedTableViewDataSource> *)tableView.dataSource;
+
+    if ([self isCarouselRow:row inDataSource:sectionedDataSource]) {
+        return self.recentsCarouselView;
+    }
+
+    if ([sectionedDataSource isHeaderRow:row]) {
+        VLCLibraryHeaderView *headerView =
+            (VLCLibraryHeaderView *)[tableView makeViewWithIdentifier:VLCLibraryHeaderViewIdentifier
+                                                                               owner:self];
+        if (headerView == nil) {
+            headerView = [[VLCLibraryHeaderView alloc] initWithFrame:NSZeroRect];
+            headerView.identifier = VLCLibraryHeaderViewIdentifier;
+        }
+
+        NSString * const title = [sectionedDataSource titleForRow:row];
+        VLCLibraryRepresentedItem *representedItem = nil;
+        if ([sectionedDataSource respondsToSelector:@selector(representedItemForHeaderRow:)]) {
+            representedItem = [sectionedDataSource representedItemForHeaderRow:row];
+        }
+        [headerView updateWithRepresentedItem:representedItem
+                                fallbackTitle:title
+                               fallbackDetail:nil];
+        return headerView;
+    }
+
+    return [super tableView:tableView viewForTableColumn:tableColumn row:row];
+}
+
+- (CGFloat)tableView:(NSTableView *)tableView heightOfRow:(NSInteger)row
+{
+    if ([tableView.dataSource conformsToProtocol:@protocol(VLCLibrarySectionedTableViewDataSource)]) {
+        NSObject<VLCLibrarySectionedTableViewDataSource> * const sectionedDataSource =
+            (NSObject<VLCLibrarySectionedTableViewDataSource> *)tableView.dataSource;
+
+        if ([self isCarouselRow:row inDataSource:sectionedDataSource]) {
+            if (self.recentsCarouselView != nil) {
+                return self.recentsCarouselView.fittingSize.height;
+            }
+            return 1; // Must be > 0 to avoid NSTableView crash
+        }
+
+        if ([sectionedDataSource isHeaderRow:row]) {
+            return VLCLibraryHeaderViewHeight;
+        }
+    }
+
+    return VLCUIUnits.mediumTableViewRowHeight;
+}
+
+- (BOOL)tableView:(NSTableView *)tableView shouldSelectRow:(NSInteger)row
+{
+    if ([tableView.dataSource conformsToProtocol:@protocol(VLCLibrarySectionedTableViewDataSource)]) {
+        NSObject<VLCLibrarySectionedTableViewDataSource> * const sectionedDataSource =
+            (NSObject<VLCLibrarySectionedTableViewDataSource> *)tableView.dataSource;
+
+        if ([self isCarouselRow:row inDataSource:sectionedDataSource]) {
+            return NO;
+        }
+
+        return ![sectionedDataSource isHeaderRow:row];
+    }
+    return YES;
+}
+
+- (BOOL)tableView:(NSTableView *)tableView isGroupRow:(NSInteger)row
+{
+    if ([tableView.dataSource conformsToProtocol:@protocol(VLCLibrarySectionedTableViewDataSource)]) {
+        NSObject<VLCLibrarySectionedTableViewDataSource> * const sectionedDataSource =
+            (NSObject<VLCLibrarySectionedTableViewDataSource> *)tableView.dataSource;
+
+        if ([self isCarouselRow:row inDataSource:sectionedDataSource]) {
+            return YES;
+        }
+
+        return [sectionedDataSource isHeaderRow:row];
+    }
+    return NO;
+}
+
+- (NSTableRowView *)tableView:(NSTableView *)tableView rowViewForRow:(NSInteger)row
+{
+    if ([tableView.dataSource conformsToProtocol:@protocol(VLCLibrarySectionedTableViewDataSource)]) {
+        NSObject<VLCLibrarySectionedTableViewDataSource> * const sectionedDataSource =
+            (NSObject<VLCLibrarySectionedTableViewDataSource> *)tableView.dataSource;
+
+        if ([self isCarouselRow:row inDataSource:sectionedDataSource] ||
+            [sectionedDataSource isHeaderRow:row]) {
+            VLCLibraryVideoHeaderRowView * const rowView = [[VLCLibraryVideoHeaderRowView alloc] init];
+            return rowView;
+        }
+    }
+    return nil;
+}
+
+@end
+
+@implementation VLCLibraryVideoHeaderRowView
+
+- (instancetype)init
+{
+    self = [super init];
+    if (self) {
+        self.wantsLayer = YES;
+        self.layer.masksToBounds = NO;
     }
     return self;
 }

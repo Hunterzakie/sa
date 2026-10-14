@@ -41,6 +41,7 @@
 
 #import "library/audio-library/VLCLibraryAudioViewController.h"
 
+#import "library/home-library/VLCLibraryHomeViewVideoCarouselContainerView.h"
 #import "library/home-library/VLCLibraryHomeViewVideoContainerViewDataSource.h"
 
 #import "library/playlist-library/VLCLibraryPlaylistViewController.h"
@@ -66,6 +67,8 @@
     id<VLCMediaLibraryItemProtocol> _awaitingPresentingLibraryItem;
 
     NSArray<NSLayoutConstraint *> *_internalPlaceholderImageViewSizeConstraints;
+
+    VLCLibraryHomeViewVideoCarouselContainerView *_recentsCarouselView;
 }
 @end
 
@@ -156,6 +159,8 @@
     self.libraryVideoDataSource.libraryModel = VLCMain.sharedInstance.libraryController.libraryModel;
     self.libraryVideoDataSource.tableView = self.videoLibraryGroupSelectionTableView;
     self.libraryVideoDataSource.collectionView = self.videoLibraryCollectionView;
+
+    [self setupRecentsCarousel];
 }
 
 - (void)setupShowsDataSource
@@ -536,6 +541,24 @@
         [dataSource connect];
     }
     [self.libraryWindow hideLoadingOverlay];
+}
+
+#pragma mark - Recents carousel
+
+- (VLCLibraryHomeViewVideoCarouselContainerView *)recentsCarouselView
+{
+    return _recentsCarouselView;
+}
+
+- (void)setupRecentsCarousel
+{
+    if (_recentsCarouselView != nil) {
+        return;
+    }
+
+    _recentsCarouselView = [[VLCLibraryHomeViewVideoCarouselContainerView alloc] init];
+    _recentsCarouselView.videoGroup = VLCMediaLibraryParentGroupTypeRecentVideos;
+    _videoLibraryTableViewDelegate.recentsCarouselView = _recentsCarouselView;
 }
 
 @end
