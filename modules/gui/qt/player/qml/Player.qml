@@ -370,6 +370,25 @@ FocusScope {
                         lyricsLoader.item.lyricsSyncToPlayback = true
                 }
 
+                HoverHandler {
+                    property point _lastPosition
+
+                    onPointChanged: {
+                        // ignore hover events without real movement or the toolbars never hide
+                        const position = point.scenePosition
+                        if (position.x === _lastPosition.x && position.y === _lastPosition.y)
+                            return
+                        _lastPosition = position
+                        playerToolbarVisibilityFSM.mouseMove()
+                    }
+
+                    Binding on cursorShape {
+                        when: playerToolbarVisibilityFSM.started
+                            && !playerToolbarVisibilityFSM.isVisible
+                        value: Qt.BlankCursor
+                    }
+                }
+
                 // background image
                 Widgets.DualKawaseBlur {
                     id: blurredBackground

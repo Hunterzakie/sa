@@ -61,6 +61,9 @@ FSM {
     property int lockCount: 0 // Track the number of locks
     property int timeoutDuration: MainCtx.mouseHideTimeout
 
+    readonly property bool autoHide: MainCtx.hasEmbededVideo
+                                     || MainCtx.intfMainWindow.visibility === Window.FullScreen
+
     initialState: ((Player.isInteractive && MainCtx.hasEmbededVideo))
                   ? fsmHidden : fsmVisible
  
@@ -73,6 +76,8 @@ FSM {
         unlock: fsm.unlock,
         updateVideoEmbed: fsm.updateVideoEmbed,
     })
+
+    onAutoHideChanged: fsm.updateVideoEmbed()
  
     FSMState {
         id: fsmVisible
@@ -82,7 +87,7 @@ FSM {
         FSMState {
             id: fsmNormalVisible
 
-            initialState: MainCtx.hasEmbededVideo ? fsmVideoMode : fsmAudioMode
+            initialState: fsm.autoHide ? fsmVideoMode : fsmAudioMode
  
             transitions: ({
                 lock: {
@@ -96,7 +101,7 @@ FSM {
  
                 transitions: ({
                     updateVideoEmbed: {
-                        guard: () => MainCtx.hasEmbededVideo,
+                        guard: () => fsm.autoHide,
                         target: fsmVideoMode
                     }
                 })
@@ -118,7 +123,7 @@ FSM {
  
                 transitions: ({
                     updateVideoEmbed: {
-                        guard: () => !MainCtx.hasEmbededVideo,
+                        guard: () => !fsm.autoHide,
                         target: fsmAudioMode
                     },
                     askShow: {
@@ -192,7 +197,7 @@ FSM {
                 target: fsmVisible
             },
             updateVideoEmbed: {
-                guard: () => !MainCtx.hasEmbededVideo,
+                guard: () => !fsm.autoHide,
                 target: fsmVisible
             },
         })
