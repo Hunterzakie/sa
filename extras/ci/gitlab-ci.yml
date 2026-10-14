@@ -412,7 +412,7 @@ debian-meson:
 .flatpak-common:
     extends: .base-template
     variables:
-        FLATPAK_BRANCH: 4.0.x
+        FLATPAK_BRANCH: master
         MANIFEST_PATH: extras/package/flatpak/org.videolan.VLC.yaml
     script:
         - flatpak-builder-lint --exceptions --exceptions-repo stable manifest ${MANIFEST_PATH}
