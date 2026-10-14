@@ -945,6 +945,8 @@ libqt_plugin_la_RES = \
 	pixmaps/misc/wait2.svg \
 	pixmaps/misc/wait3.svg \
 	pixmaps/misc/wait4.svg \
+	pixmaps/misc/volume-slider-inside.svg \
+	pixmaps/misc/volume-slider-outside.svg \
 	pixmaps/placeholder/add_service.svg \
 	pixmaps/placeholder/noart.png \
 	pixmaps/placeholder/noart_album.svg \
