@@ -1,9 +1,9 @@
 /*****************************************************************************
- * VLCLibraryCarouselViewItemView.h: MacOS X interface module
+ * VLCLibraryRepresentedItemCollectionViewItem.h: MacOS X interface module
  *****************************************************************************
- * Copyright (C) 2023 VLC authors and VideoLAN
+ * Copyright (C) 2026 VLC authors and VideoLAN
  *
- * Authors: Claudio Cambra <developer@claudiocambra.com>
+ * Authors: Serhii Bykov <esphynox@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,31 +20,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
-#import <Cocoa/Cocoa.h>
-
-#import "views/iCarousel/iCarousel.h"
+#import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class VLCImageView;
-@class VLCLinearProgressIndicator;
 @class VLCLibraryRepresentedItem;
 
-@interface VLCLibraryCarouselViewItemView : NSView<iCarouselItemView>
+@protocol VLCLibraryRepresentedItemCollectionViewItem <NSObject>
 
-@property (readwrite, weak) IBOutlet VLCImageView *imageView;
-@property (readwrite, weak) IBOutlet NSTextField *annotationTextField;
-@property (readwrite, weak) IBOutlet VLCLinearProgressIndicator *progressIndicator;
-@property (readwrite, weak) IBOutlet NSButton *playButton;
-@property (readwrite, weak) IBOutlet NSTextField *titleTextField;
-@property (readwrite, weak) IBOutlet NSTextField *detailTextField;
-@property (readwrite, weak) IBOutlet NSBox *highlightBox;
-
-@property (readwrite, strong, nonatomic) VLCLibraryRepresentedItem *representedItem;
-
-@property (readwrite, nonatomic) BOOL selected;
-
-- (void)playRepresentedItem;
+@property (readwrite, strong, nonatomic, nullable) VLCLibraryRepresentedItem *representedItem;
 
 @end
 

@@ -25,8 +25,9 @@
 #import "extensions/NSFont+VLCAdditions.h"
 #import "extensions/NSString+Helpers.h"
 
-#import "library/VLCLibraryCarouselViewItemView.h"
-#import "library/VLCLibraryDataTypes.h"
+#import "library/VLCLibraryCollectionView.h"
+#import "library/VLCLibraryCollectionViewDelegate.h"
+#import "library/VLCLibraryCarouselCollectionViewItem.h"
 
 #import "library/home-library/VLCLibraryHomeViewVideoContainerViewDataSource.h"
 
@@ -43,13 +44,18 @@
 - (void)setup
 {
     [super setup];
+    self.collectionViewDelegate.itemsAspectRatio = VLCLibraryCollectionViewItemAspectRatioVideoItem;
+    self.collectionViewDelegate.staticItemSize = NSMakeSize(VLCUIUnits.carouselViewVideoItemViewWidth,
+                                                            VLCUIUnits.carouselViewItemViewHeight);
+    self.itemHeight = VLCUIUnits.carouselViewItemViewHeight;
     [self setupDataSource];
 }
 
 - (void)setupDataSource
 {
     _dataSource = [[VLCLibraryHomeViewVideoContainerViewDataSource alloc] init];
-    self.dataSource.carouselView = self.carouselView;
+    _dataSource.collectionViewItemIdentifier = VLCLibraryCarouselCollectionViewItemIdentifier;
+    self.dataSource.collectionView = self.collectionView;
     [self.dataSource setup];
 }
 
@@ -73,20 +79,6 @@
 
     VLCLibraryVideoCollectionViewGroupDescriptor * const descriptor = [[VLCLibraryVideoCollectionViewGroupDescriptor alloc] initWithVLCVideoLibraryGroup:group];
     [self setGroupDescriptor:descriptor];
-}
-
-- (void)presentLibraryItem:(id<VLCMediaLibraryItemProtocol>)libraryItem
-{
-    if (libraryItem == nil) {
-        return;
-    }
-
-    NSIndexPath * const indexPath = [self.dataSource indexPathForLibraryItem:libraryItem];
-    if (indexPath == nil) {
-        return;
-    }
-
-    [self.carouselView scrollToItemAtIndex:indexPath.item animated:YES];
 }
 
 @end
