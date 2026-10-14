@@ -248,6 +248,10 @@ MainCtx::MainCtx(qt_intf_t *_p_intf)
     /* and title of the Main Interface*/
     connect( THEMIM, &PlayerController::inputChanged, this, &MainCtx::onInputChanged );
     connect( THEMIM, &PlayerController::hasVideoOutputChanged, this, &MainCtx::onVOutChanged );
+    connect( THEMIM, &PlayerController::fullscreenChanged, this, [this](bool fs) {
+        if (!THEMIM->hasVideoOutput() && (!fs || isPlayerView()))
+            emit setInterfaceFullScreen(fs);
+    });
 
     /* END CONNECTS ON IM */
 

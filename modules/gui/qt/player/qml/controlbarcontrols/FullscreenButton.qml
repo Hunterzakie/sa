@@ -26,7 +26,6 @@ import VLC.Util
 Widgets.IconToolButton {
     id: fullScreenBtn
 
-    enabled: Player.hasVideoOutput
     text: Player.fullscreen ? VLCIcons.defullscreen :VLCIcons.fullscreen
     onClicked: Player.fullscreen = !Player.fullscreen
     description: qsTr("fullscreen")

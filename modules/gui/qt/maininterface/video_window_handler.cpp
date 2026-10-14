@@ -17,6 +17,7 @@
  *****************************************************************************/
 #include "video_window_handler.hpp"
 #include "mainctx.hpp"
+#include "player/player_controller.hpp"
 
 #include <QApplication>
 #include <QScreen>
@@ -188,6 +189,10 @@ void VideoWindowHandler::setVideoSize(unsigned int w, unsigned int h, Qt::Window
 void VideoWindowHandler::setVideoFullScreen( bool fs )
 {
     if (!m_window)
+        return;
+    // after a video is opened, its vout is kept cached by the core, so toggling
+    // fullscreen during audio would otherwise also set video fullscreen here
+    if (fs && !m_intf->p_mainPlayerController->hasVideoOutput())
         return;
     m_videoFullScreen = fs;
     if( fs )
