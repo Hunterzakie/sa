@@ -482,9 +482,19 @@ FocusScope {
                         colorSet: ColorContext.View
                     }
 
+                    property real _toolbarSpace: (!playerToolbarVisibilityFSM.started
+                                                  || playerToolbarVisibilityFSM.isVisible) ? 1 : 0
+
                     anchors.fill: parent
-                    anchors.topMargin: VLCStyle.margin_xsmall + audioFocusScope.topPadding
-                    anchors.bottomMargin: VLCStyle.margin_xsmall + audioFocusScope.bottomPadding
+                    anchors.topMargin: VLCStyle.margin_xsmall + audioFocusScope.topPadding * _toolbarSpace
+                    anchors.bottomMargin: VLCStyle.margin_xsmall + audioFocusScope.bottomPadding * _toolbarSpace
+
+                    Behavior on _toolbarSpace {
+                        NumberAnimation {
+                            duration: VLCStyle.duration_long
+                            easing.type: Easing.InOutSine
+                        }
+                    }
 
                     onWheel: (wheel) => {
                         wheel.accepted = true
