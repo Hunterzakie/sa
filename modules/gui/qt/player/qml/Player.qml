@@ -472,6 +472,12 @@ FocusScope {
                         wheelToVlc.qmlWheelEvent(wheel)
                     }
 
+                    onDoubleClicked: (mouse) => {
+                        if (mouse.button !== Qt.LeftButton)
+                            return
+                        Player.fullscreen = !Player.fullscreen
+                    }
+
                     TouchDragHandler {
                         wheelToVLCConverter: wheelToVlc
                     }
