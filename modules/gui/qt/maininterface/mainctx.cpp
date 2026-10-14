@@ -730,8 +730,12 @@ void MainCtx::setPlayerView(bool enable)
     if (m_mainInterfaceModes.testFlag(MAININTERFACE_MODE_PLAYER) == enable)
         return;
 
-    if (!enable && THEMIM->hasVideoOutput() && THEMIM->isFullscreen())
+    if (!enable && THEMIM->isFullscreen())
+    {
         THEMIM->setFullscreen(false);
+        if (!THEMIM->hasVideoOutput())
+            emit setInterfaceFullScreen(false);
+    }
 
     m_mainInterfaceModes.setFlag(MAININTERFACE_MODE_PLAYER, enable);
     emit mainInterfaceModesChanged(m_mainInterfaceModes);
