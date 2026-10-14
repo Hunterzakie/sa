@@ -40,6 +40,10 @@ layout(std140, binding = 0) uniform buf {
 
   float blurRadius;
   float radius;
+#ifdef HOLLOW
+  float xOffset;
+  float yOffset;
+#endif
   float compensationFactor;
 
   vec2 size;
@@ -106,8 +110,8 @@ void main()
     vec2 denormalCoord = size * qt_TexCoord0;
 
 #ifdef HOLLOW
-    if (denormalCoord.x >= compensatedOffset.x && denormalCoord.x <= (size.x - compensatedOffset.x) &&
-        denormalCoord.y >= compensatedOffset.y && denormalCoord.y <= (size.y - compensatedOffset.y))
+    if ((denormalCoord.x + xOffset) >= compensatedOffset.x && (denormalCoord.x + xOffset) <= (size.x - compensatedOffset.x) &&
+        (denormalCoord.y + yOffset) >= compensatedOffset.y && (denormalCoord.y + yOffset) <= (size.y - compensatedOffset.y))
       discard;
 #endif
 

@@ -74,7 +74,7 @@ Item {
         Binding {
             target: MainCtx
             property: "windowExtendedMargin"
-            value: _extendedFrameVisible ? (Qt.platform.pluginName.startsWith("wayland") ? 60 : 30) : 0
+            value: _extendedFrameVisible ? (Qt.platform.pluginName.startsWith("wayland") ? (64 * 3 + 32) : 30) : 0
         }
 
         Window.onWindowChanged: {
@@ -354,11 +354,22 @@ Item {
         }
     }
 
+    component CSDShadow : Widgets.RoundedRectangleShadow {
+        parent: g_mainInterface
+
+        visible: root._extendedFrameVisible && !MainCtx.platformHandlesShadowsWithCSD()
+
+        color: Qt.rgba(0.0, 0.0, 0.0, 0.07) // sg opacity < 1.0 force enables blending, so we adjust the color instead
+
+        // 2.0 (default) compensation factor makes clipping obvious, especially with white background
+        implicitCompensationFactor: 3.0
+    }
+
     //draw the window drop shadow ourselve when the windowing system doesn't
     //provide them but support extended frame
-    Widgets.RoundedRectangleShadow {
+    CSDShadow {
         id: effect
-        parent: g_mainInterface
+
         hollow: (z >= 0) || (Window.window && (Window.window.color.a < 1.0)) // the interface may be translucent if the window has backdrop blur
         // No need for blending, even if this is above everything (when there is depth buffer). This item does not need to be blended in the scene
         // graph. The system compositor is still going to respect the transparency when compositing the window. By disabling blending, this is treated
@@ -366,8 +377,22 @@ Item {
         // this item is quasi-opaque, the content pixels obscured by the shadow pixels are not painted), and at the same time not spend effort on
         // blending. Note that this optimization relies on hollow mode that discards the inner pixels, so the actual content area is still painted.
         blending: false
-        visible: _extendedFrameVisible && !MainCtx.platformHandlesShadowsWithCSD()
-        color: Qt.rgba(0.0, 0.0, 0.0, 0.5) // sg opacity < 1.0 force enables blending, so we adjust the color instead
+        color: Qt.rgba(0.0, 0.0, 0.0, (blurRadius >= 32 ? 0.07 : 0.5)) // sg opacity < 1.0 force enables blending, so we adjust the color instead
+
+        yOffset: ((blurRadius >= 32) ? (blurRadius / 2) : 0)
+
+        Widgets.ViewBlockingRectangle {
+            // This item covers the top area where the largest effect can not cover due to y-offset.
+            parent: root
+
+            visible: effect.hasDepthBuffer && (effect.z >= 0)
+            color: "transparent"
+
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            height: root.mapFromItem(effect.parent, effect.x, effect.y).y
+        }
 
         // If there is depth buffer, we enable hollow mode. The inner area is discarded, so we can do this:
         z: hasDepthBuffer ? 99 : -1
@@ -377,11 +402,10 @@ Item {
         // Blur radius can not be greater than (margin / compensationFactor), as in that case it would need bigger
         // size than the window to compensate. If you want bigger blur radius, either decrease the compensation
         // factor which can lead to visible clipping, or increase the window extended margin:
-        blurRadius: (MainCtx.windowExtendedMargin / effect.compensationFactor)
+        blurRadius: Math.min(64, (MainCtx.windowExtendedMargin / compensationFactor))
 
-        // 2.0 (default) compensation factor makes clipping obvious, especially with white background
-        implicitCompensationFactor: 3.0
-
+        // This is not moved to the inline component `CSDShadow` because we don't need to have multiple
+        // animators:
         compensationFactor: MainCtx.intfMainWindow.active ? (implicitCompensationFactor)
                                                           : (implicitCompensationFactor * 2)
 
@@ -390,6 +414,85 @@ Item {
             NumberAnimation {
                 duration: VLCStyle.duration_veryShort
             }
+        }
+
+        // WARNING: Largest shadow must be the bottom-most shadow for the depth buffer trick to work, even though
+        //          source-over blending is not commutative. This means that there will be slight deviation from
+        //          the shadow parameters we intended to replicate.
+
+        // https://tobiasahlin.com/blog/layered-smooth-box-shadows
+        // .blog-shadow-dreamy {
+        //     box-shadow: 0 1px 2px rgba(0,0,0,0.07),
+        //                 0 2px 4px rgba(0,0,0,0.07),
+        //                 0 4px 8px rgba(0,0,0,0.07),
+        //                 0 8px 16px rgba(0,0,0,0.07),
+        //                 0 16px 32px rgba(0,0,0,0.07),
+        //                 0 32px 64px rgba(0,0,0,0.07);
+        // }
+
+        CSDShadow {
+            z: effect.z + 0.1
+
+            blending: true
+            hollow: true
+
+            yOffset: 1
+            blurRadius: Math.min(2, (MainCtx.windowExtendedMargin / compensationFactor) / 32)
+            compensationFactor: effect.compensationFactor
+
+            visible: (blurRadius >= 1)
+        }
+
+        CSDShadow {
+            z: effect.z + 0.2
+
+            blending: true
+            hollow: true
+
+            yOffset: 2
+            blurRadius: Math.min(4, (MainCtx.windowExtendedMargin / compensationFactor) / 16)
+            compensationFactor: effect.compensationFactor
+
+            visible: (blurRadius >= 2)
+        }
+
+        CSDShadow {
+            z: effect.z + 0.3
+
+            blending: true
+            hollow: true
+
+            yOffset: 4
+            blurRadius: Math.min(8, (MainCtx.windowExtendedMargin / compensationFactor) / 8)
+            compensationFactor: effect.compensationFactor
+
+            visible: (blurRadius >= 4)
+        }
+
+        CSDShadow {
+            z: effect.z + 0.4
+
+            blending: true
+            hollow: true
+
+            yOffset: 8
+            blurRadius: Math.min(16, (MainCtx.windowExtendedMargin / compensationFactor) / 4)
+            compensationFactor: effect.compensationFactor
+
+            visible: (blurRadius >= 8)
+        }
+
+        CSDShadow {
+            z: effect.z + 0.5
+
+            blending: true
+            hollow: true
+
+            yOffset: 16
+            blurRadius: Math.min(32, (MainCtx.windowExtendedMargin / compensationFactor) / 2)
+            compensationFactor: effect.compensationFactor
+
+            visible: (blurRadius >= 16)
         }
     }
 }
