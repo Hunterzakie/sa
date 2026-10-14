@@ -33,6 +33,8 @@
 @interface VLCCoreDialogProvider ()
 {
     VLCErrorWindowController *_errorPanel;
+    vlc_dialog_id *_currentModalDialogID;
+    BOOL _invalidated;
 }
 
 - (void)displayErrorWithTitle:(NSString *)title
@@ -62,6 +64,14 @@
 - (void)updateDisplayedProgressDialog:(vlc_dialog_id *)dialogID
                              position:(float)position
                                  text:(NSString *)text;
+
+- (void)updateDisplayedProgressDialogWithInfo:(NSDictionary *)info;
+
+- (void)cancelDialog:(NSValue *)dialogIDValue;
+
+- (void)restoreModalDialog:(vlc_dialog_id *)previousModalDialogID;
+
+- (BOOL)dismissIfCancelledDialog:(vlc_dialog_id *)dialogID;
 
 @end
 
@@ -139,13 +149,16 @@ static void displayProgressCallback(void *p_data,
 {
     @autoreleasepool {
         VLCCoreDialogProvider *dialogProvider = (__bridge VLCCoreDialogProvider *)p_data;
+        NSString *title = toNSStr(psz_title);
+        NSString *text = toNSStr(psz_text);
+        NSString *cancelTitle = toNSStr(psz_cancel);
         dispatch_async(dispatch_get_main_queue(), ^{
             [dialogProvider displayProgressDialog:p_id
-                                            title:toNSStr(psz_title)
-                                             text:toNSStr(psz_text)
+                                            title:title
+                                             text:text
                                     indeterminate:b_indeterminate
                                          position:f_position
-                                      cancelTitle:toNSStr(psz_cancel)];
+                                      cancelTitle:cancelTitle];
         });
     }
 }
@@ -154,9 +167,13 @@ static void cancelCallback(void * __unused p_data,
                            vlc_dialog_id * __unused p_id)
 {
     @autoreleasepool {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [NSApp stopModalWithCode: 0];
-        });
+        VLCCoreDialogProvider *dialogProvider = (__bridge VLCCoreDialogProvider *)p_data;
+        /* NSModalPanelRunLoopMode: also deliver while runModalForWindow: is up. */
+        NSArray *modes = @[NSDefaultRunLoopMode, NSModalPanelRunLoopMode];
+        [dialogProvider performSelectorOnMainThread:@selector(cancelDialog:)
+                                         withObject:[NSValue valueWithPointer:p_id]
+                                      waitUntilDone:NO
+                                              modes:modes];
     }
 }
 
@@ -167,11 +184,17 @@ static void updateProgressCallback(void *p_data,
 {
     @autoreleasepool {
         VLCCoreDialogProvider *dialogProvider = (__bridge VLCCoreDialogProvider *)p_data;
-        dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0), ^{
-            [dialogProvider updateDisplayedProgressDialog:p_id
-                                                 position:f_value
-                                                     text:toNSStr(psz_text)];
-        });
+        /* NSModalPanelRunLoopMode: also deliver while runModalForWindow: is up. */
+        NSDictionary *info = @{
+            @"dialogID" : [NSValue valueWithPointer:p_id],
+            @"position" : @(f_value),
+            @"text"     : toNSStr(psz_text)
+        };
+        NSArray *modes = @[NSDefaultRunLoopMode, NSModalPanelRunLoopMode];
+        [dialogProvider performSelectorOnMainThread:@selector(updateDisplayedProgressDialogWithInfo:)
+                                         withObject:info
+                                      waitUntilDone:NO
+                                              modes:modes];
     }
 }
 
@@ -203,13 +226,24 @@ static void updateProgressCallback(void *p_data,
     return self;
 }
 
-- (void)dealloc
+/* Must run before the provider starts deallocating. */
+- (void)invalidate
 {
+    if (_invalidated)
+        return;
+    _invalidated = YES;
+
     msg_Dbg(getIntf(), "Deinitializing dialog provider");
 
     intf_thread_t *p_intf = getIntf();
     vlc_dialog_provider_set_callbacks(p_intf, NULL, NULL);
     vlc_dialog_provider_set_error_callback(p_intf, NULL, NULL);
+}
+
+- (void)dealloc
+{
+    /* Last resort: leaving the callbacks registered would be worse. */
+    [self invalidate];
 }
 
 -(void)awakeFromNib
@@ -239,6 +273,9 @@ static void updateProgressCallback(void *p_data,
                   username:(NSString *)username
                 askToStore:(BOOL)askToStore
 {
+    if ([self dismissIfCancelledDialog:dialogID])
+        return;
+
     [_authenticationTitleLabel setStringValue:title];
     _authenticationWindow.title = title;
     [_authenticationDescriptionLabel setStringValue:text];
@@ -250,7 +287,10 @@ static void updateProgressCallback(void *p_data,
     _authenticationStorePasswordCheckbox.state = NSOffState;
 
     [_authenticationWindow center];
+    vlc_dialog_id * const previousModalDialogID = _currentModalDialogID;
+    _currentModalDialogID = dialogID;
     NSInteger returnValue = [NSApp runModalForWindow:_authenticationWindow];
+    [self restoreModalDialog:previousModalDialogID];
     [_authenticationWindow close];
 
     username = _authenticationLoginTextField.stringValue;
@@ -281,6 +321,9 @@ static void updateProgressCallback(void *p_data,
             action1Text:(NSString *)action1Text
             action2Text:(NSString *)action2Text
 {
+    if ([self dismissIfCancelledDialog:dialogID])
+        return;
+
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:title];
     [alert setInformativeText:text];
@@ -301,7 +344,10 @@ static void updateProgressCallback(void *p_data,
             break;
     }
 
+    vlc_dialog_id * const previousModalDialogID = _currentModalDialogID;
+    _currentModalDialogID = dialogID;
     NSInteger returnValue = [alert runModal];
+    [self restoreModalDialog:previousModalDialogID];
     switch (returnValue) {
         case NSAlertFirstButtonReturn:
             vlc_dialog_id_post_action(dialogID, 1);
@@ -318,6 +364,36 @@ static void updateProgressCallback(void *p_data,
 
 }
 
+- (BOOL)dismissIfCancelledDialog:(vlc_dialog_id *)dialogID
+{
+    if (!vlc_dialog_is_cancelled(getIntf(), dialogID))
+        return NO;
+
+    vlc_dialog_id_dismiss(dialogID);
+    return YES;
+}
+
+/* The incoming id may already be freed and its address reused, so only compare
+ * it and let the core confirm the cancellation. */
+- (void)cancelDialog:(NSValue *)dialogIDValue
+{
+    if (_currentModalDialogID != [dialogIDValue pointerValue])
+        return;
+
+    if (vlc_dialog_is_cancelled(getIntf(), _currentModalDialogID))
+        [NSApp stopModalWithCode: 0];
+}
+
+/* The enclosing dialog may have been cancelled while this one was up. */
+- (void)restoreModalDialog:(vlc_dialog_id *)previousModalDialogID
+{
+    _currentModalDialogID = previousModalDialogID;
+
+    if (_currentModalDialogID != NULL &&
+        vlc_dialog_is_cancelled(getIntf(), _currentModalDialogID))
+        [NSApp stopModalWithCode: 0];
+}
+
 - (void)displayProgressDialog:(vlc_dialog_id *)dialogID
                         title:(NSString *)title
                          text:(NSString *)text
@@ -325,6 +401,9 @@ static void updateProgressCallback(void *p_data,
                      position:(float)position
                   cancelTitle:(NSString *)cancelTitle
 {
+    if ([self dismissIfCancelledDialog:dialogID])
+        return;
+
     _progressTitleLabel.stringValue = title;
     _progressWindow.title = title;
 
@@ -344,7 +423,10 @@ static void updateProgressCallback(void *p_data,
     [_progressIndicator startAnimation:self];
 
     [_progressWindow center];
+    vlc_dialog_id * const previousModalDialogID = _currentModalDialogID;
+    _currentModalDialogID = dialogID;
     [NSApp runModalForWindow:_progressWindow];
+    [self restoreModalDialog:previousModalDialogID];
     [_progressWindow close];
 
     [_progressIndicator stopAnimation:self];
@@ -352,10 +434,21 @@ static void updateProgressCallback(void *p_data,
     vlc_dialog_id_dismiss(dialogID);
 }
 
+- (void)updateDisplayedProgressDialogWithInfo:(NSDictionary *)info
+{
+    [self updateDisplayedProgressDialog:[info[@"dialogID"] pointerValue]
+                               position:[info[@"position"] floatValue]
+                                   text:info[@"text"]];
+}
+
 - (void)updateDisplayedProgressDialog:(vlc_dialog_id *)dialogID
                              position:(float)position
                                  text:(NSString *)text
 {
+    if (_currentModalDialogID != dialogID) {
+        return;
+    }
+
     if (!_progressIndicator.indeterminate) {
         _progressIndicator.doubleValue = position;
         _progressDescriptionLabel.stringValue = text;
