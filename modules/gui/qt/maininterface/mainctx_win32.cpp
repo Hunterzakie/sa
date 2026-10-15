@@ -961,6 +961,20 @@ void InterfaceWindowHandlerWin32::toggleWindowVisibility(bool _requestActivate)
 
 bool InterfaceWindowHandlerWin32::eventFilter(QObject* obj, QEvent* ev)
 {
+    if (ev->type() == QEvent::WindowStateChange)
+    {
+        const Qt::WindowStates newState = m_window->windowStates();
+        // with an auto-hidden taskbar, a maximized CSD window fills the
+        // screen and QWindowsWindow::isFullScreen_sys() adds Qt::WindowFullScreen.
+        // Drop it unless fullscreen was requested (__windowFullScreen)
+        if (newState.testFlags(Qt::WindowMaximized | Qt::WindowFullScreen)
+            && m_window->property("__windowFullScreen").toInt() == 0)
+        {
+            m_window->setWindowStates(newState & ~Qt::WindowFullScreen);
+            return true;
+        }
+    }
+
     bool ret = InterfaceWindowHandler::eventFilter(obj, ev);
     if (ret)
         return ret;
