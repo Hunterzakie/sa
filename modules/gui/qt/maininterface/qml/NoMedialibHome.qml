@@ -43,12 +43,16 @@ FocusScope {
 
         property int orientation: Qt.Vertical
 
+        property bool showCone: true
+
         property real spacing: VLCStyle.margin_large
 
-        implicitWidth: orientation === Qt.Vertical ? Math.max(cone.implicitWidth, buttons.implicitWidth)
-                                                   : cone.implicitWidth + spacing + buttons.implicitWidth
-        implicitHeight: orientation === Qt.Vertical ? cone.implicitHeight + spacing + buttons.implicitHeight
-                                                    : cone.implicitHeight
+        implicitWidth: showCone ? (orientation === Qt.Vertical ? Math.max(cone.implicitWidth, buttons.implicitWidth)
+                                                               : cone.implicitWidth + spacing + buttons.implicitWidth)
+                                : buttons.implicitWidth
+        implicitHeight: showCone ? (orientation === Qt.Vertical ? cone.implicitHeight + spacing + buttons.implicitHeight
+                                                                : cone.implicitHeight)
+                                 : buttons.implicitHeight
 
         states: [
             State {
@@ -76,23 +80,12 @@ FocusScope {
             State {
                 name: "horizontal"
                 AnchorChanges {
-                    target: cone
-
-                    anchors.horizontalCenter: undefined
-                    anchors.left: coneNButtons.left
-                }
-                AnchorChanges {
                     target: buttons
 
                     anchors.top: undefined
                     anchors.horizontalCenter: undefined
-                    anchors.left: cone.right
+                    anchors.left: coneNButtons.left
                     anchors.verticalCenter: coneNButtons.verticalCenter
-                }
-                PropertyChanges {
-                    target: buttons
-
-                    anchors.leftMargin: coneNButtons.spacing
                 }
             }
         ]
@@ -105,14 +98,18 @@ FocusScope {
 
             property real _eDPR: MainCtx.effectiveDevicePixelRatio(Window.window)
 
+            visible: coneNButtons.showCone
+
             sourceSize: Qt.size(0, orientation === Qt.Vertical ? VLCStyle.colWidth(1)
                                                                : buttons.implicitHeight * 1.618 * _eDPR) // 1.618 = golden ratio approximation
 
-            source: MainCtx.useXmasCone() ? "qrc:///logo/vlc48-xmas.png" // TODO: new xmas cone designs
-                                          : "qrc:///misc/cone.svg"
+            source: showCone ? (MainCtx.useXmasCone() ? "qrc:///logo/vlc48-xmas.png" // TODO: new xmas cone designs
+                                                      : "qrc:///misc/cone.svg")
+                             : ""
 
             Connections {
                 target: MainCtx
+                enabled: coneNButtons.showCone
 
                 function onIntfDevicePixelRatioChanged() {
                     // Update the DPR:
