@@ -41,6 +41,13 @@ NS_ASSUME_NONNULL_BEGIN
 @property (class, readonly) NSColor *VLCDarkSubtleBorderColor;
 @property (class, readonly) NSColor *VLCSubtleBorderColor;
 
+@property (class, readonly) NSColor *VLCActionButtonBackgroundColor;
+@property (class, readonly) NSColor *VLCActionButtonPressedBackgroundColor;
+@property (class, readonly) NSColor *VLCActionButtonPressedBorderColor;
+@property (class, readonly) NSColor *VLCDropTargetBackgroundColor;
+@property (class, readonly) NSColor *VLCDropTargetHighlightColor;
+@property (class, readonly) NSColor *VLCDropTargetBorderColor;
+
 @end
 
 NS_ASSUME_NONNULL_END

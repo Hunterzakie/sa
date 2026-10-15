@@ -103,4 +103,34 @@
     return [NSColor colorNamed:@"VLCSubtleBorderColor"];
 }
 
++ (NSColor *)VLCActionButtonBackgroundColor
+{
+    return [NSColor.VLCAccentColor colorWithAlphaComponent:0.04];
+}
+
++ (NSColor *)VLCActionButtonPressedBackgroundColor
+{
+    return [NSColor.VLCAccentColor colorWithAlphaComponent:0.16];
+}
+
++ (NSColor *)VLCActionButtonPressedBorderColor
+{
+    return [NSColor.VLCAccentColor colorWithAlphaComponent:0.55];
+}
+
++ (NSColor *)VLCDropTargetBackgroundColor
+{
+    return [NSColor.controlBackgroundColor colorWithAlphaComponent:0.5];
+}
+
++ (NSColor *)VLCDropTargetHighlightColor
+{
+    return [NSColor.VLCAccentColor colorWithAlphaComponent:0.08];
+}
+
++ (NSColor *)VLCDropTargetBorderColor
+{
+    return [NSColor.secondaryLabelColor colorWithAlphaComponent:0.5];
+}
+
 @end
