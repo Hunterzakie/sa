@@ -1063,7 +1063,8 @@ libqml_module_maininterface_a_QML = \
 	maininterface/qml/MainDisplay.qml \
 	maininterface/qml/SideNavigationPane.qml \
 	maininterface/qml/SideNavigationDelegate.qml \
-	maininterface/qml/NoMedialibHome.qml
+	maininterface/qml/NoMedialibHome.qml \
+	maininterface/qml/OpenFileSplitButton.qml
 
 if UPDATE_CHECK
 libqml_module_maininterface_a_QML += maininterface/qml/UpdatePane.qml
@@ -1356,6 +1357,7 @@ libqml_module_widgets_a_QML = \
 	widgets/qml/SearchBox.qml \
 	widgets/qml/SliderExt.qml \
 	widgets/qml/SortControl.qml \
+	widgets/qml/SplitButton.qml \
 	widgets/qml/SpinBoxExt.qml \
 	widgets/qml/StackViewExt.qml \
 	widgets/qml/PageLoader.qml \
