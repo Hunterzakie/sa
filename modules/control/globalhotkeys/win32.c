@@ -24,8 +24,6 @@
 # include "config.h"
 #endif
 
-#include <ctype.h>
-
 #define VLC_MODULE_LICENSE VLC_LICENSE_GPL_2_PLUS
 #include <vlc_common.h>
 #include <vlc_plugin.h>
@@ -239,8 +237,19 @@ static void *Thread( void *p_data )
                 HANDLE( MEDIA_NEXT_TRACK );
 
                 default:
-                    i_vk = toupper( (uint8_t)(i_key & ~KEY_MODIFIER) );
+                {
+                    uint_fast32_t key = i_key & ~KEY_MODIFIER;
+                    if( key > 0xffff )
+                        continue;
+                    SHORT vk = VkKeyScanW( key );
+                    if( vk == -1 )
+                        continue;
+                    i_vk = LOBYTE( vk );
+                    if( HIBYTE( vk ) & 1 ) i_keyMod |= MOD_SHIFT;
+                    if( HIBYTE( vk ) & 2 ) i_keyMod |= MOD_CONTROL;
+                    if( HIBYTE( vk ) & 4 ) i_keyMod |= MOD_ALT;
                     break;
+                }
             }
             if( !i_vk ) continue;
 
