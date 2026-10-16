@@ -3,6 +3,8 @@
 ###############################################################################
 
 AUTOMAKE_OPTIONS = subdir-objects
+EXTRA_LTLIBRARIES =
+XFAIL_TESTS =
 
 ###############################################################################
 # Unit/regression test
@@ -338,6 +340,26 @@ test_src_interface_dialog_LDADD = $(LIBVLCCORE) $(LIBVLC)
 test_src_media_source_LDADD = $(LIBVLCCORE) $(LIBVLC)
 test_src_media_source_SOURCES = src/media_source/media_source.c
 
+libvlc_src_modules_la_SOURCES = \
+		../src/config/core.c \
+		../src/misc/rcu.c \
+		../src/modules/entry.c \
+		../src/modules/modules.c \
+		../src/modules/bank.c
+libvlc_src_modules_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/src/
+EXTRA_LTLIBRARIES += libvlc_src_modules.la
+
+test_src_modules_entry_SOURCES = src/modules/entry.c
+test_src_modules_entry_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/src/
+test_src_modules_entry_LDADD = $(LIBVLCCORE) libvlc_src_modules.la
+check_PROGRAMS += test_src_modules_entry
+
+test_src_modules_entry_crash_SOURCES = src/modules/entry_crash.c
+test_src_modules_entry_crash_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/src/
+test_src_modules_entry_crash_LDADD = $(LIBVLCCORE) libvlc_src_modules.la
+check_PROGRAMS += test_src_modules_entry_crash
+XFAIL_TESTS += test_src_modules_entry_crash
+
 test_src_video_output_SOURCES = \
 	src/video_output/video_output.c \
 	src/video_output/video_output.h \
@@ -566,7 +588,7 @@ libvlc_demux_run_la_CPPFLAGS += -DHAVE_MATROSKA
 libvlc_demux_run_la_LIBADD += ../modules/libmkv_plugin.la
 endif
 endif
-EXTRA_LTLIBRARIES = libvlc_demux_run.la
+EXTRA_LTLIBRARIES += libvlc_demux_run.la
 
 libvlc_demux_dec_run_la_SOURCES = $(libvlc_demux_run_la_SOURCES) \
 	src/input/decoder.c src/input/decoder.h

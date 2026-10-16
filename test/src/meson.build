@@ -418,6 +418,12 @@ if host_system == 'darwin'
 endif
 
 vlc_tests += {
+    'name' : 'test_src_modules_entry',
+    'sources' : files('modules/entry.c', '../../src/modules/entry.c')
+    'suite' : ['src', 'test_src'],
+}
+
+vlc_tests += {
     'name' : 'test_src_interface_dialog',
     'sources' : files('interface/dialog.c'),
     'suite' : ['src', 'test_src'],

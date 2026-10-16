@@ -25,15 +25,20 @@
 
 # include <stdatomic.h>
 # include <vlc_plugin.h>
+# include <vlc_list.h>
 
 struct vlc_param;
+struct module_t;
 
 /** VLC plugin */
 typedef struct vlc_plugin_t
 {
     struct vlc_plugin_t *next;
-    module_t *module;
+    struct module_t *module;
     unsigned modules_count;
+
+    struct vlc_module_scope *current_scope;
+    struct vlc_list scopes;
 
     const char *textdomain; /**< gettext domain (or NULL) */
 
@@ -76,6 +81,7 @@ struct module_t
 {
     vlc_plugin_t *plugin; /**< Plug-in/library containing the module */
     module_t   *next;
+    struct vlc_module_scope *scope;
 
     /** Shortcuts to the module */
     unsigned    i_shortcuts;
