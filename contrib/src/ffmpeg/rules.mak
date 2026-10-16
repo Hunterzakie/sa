@@ -6,10 +6,10 @@
 
 ifndef USE_LIBAV
 FFMPEG_HASH=71fb6132637a2a430375c24afc381fff8b854fe7
-FFMPEG_MAJVERSION := 8.1
-FFMPEG_REVISION := 2
-FFMPEG_VERSION := $(FFMPEG_MAJVERSION).$(FFMPEG_REVISION)
-# FFMPEG_VERSION := $(FFMPEG_MAJVERSION)
+FFMPEG_MAJVERSION := 9.0
+FFMPEG_REVISION := 0
+# FFMPEG_VERSION := $(FFMPEG_MAJVERSION).$(FFMPEG_REVISION)
+FFMPEG_VERSION := $(FFMPEG_MAJVERSION)
 FFMPEG_BRANCH=release/$(FFMPEG_MAJVERSION)
 FFMPEG_URL := https://ffmpeg.org/releases/ffmpeg-$(FFMPEG_VERSION).tar.xz
 FFMPEG_GITURL := https://code.ffmpeg.org/FFmpeg/FFmpeg.git
@@ -260,6 +260,7 @@ ifdef USE_FFMPEG
 	$(APPLY) $(SRC)/ffmpeg/0001-bring-back-XP-support.patch
 	$(APPLY) $(SRC)/ffmpeg/0011-avcodec-videotoolboxenc-disable-calls-on-unsupported.patch
 	$(APPLY) $(SRC)/ffmpeg/avcodec-fix-compilation-visionos.patch
+	$(APPLY) $(SRC)/ffmpeg/0009-swscale-x86-use-HOSTCPPFLAGS-instead-of-CPPFLAGS-for.patch
 endif
 ifdef USE_LIBAV
 	$(APPLY) $(SRC)/ffmpeg/libav_gsm.patch
