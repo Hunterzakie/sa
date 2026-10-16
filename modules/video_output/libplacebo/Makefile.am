@@ -55,3 +55,15 @@ if HAVE_GLES2
 vout_PLUGINS += $(LTLIBplacebo_gles2)
 EXTRA_LTLIBRARIES += libplacebo_gles2_plugin.la
 endif
+
+### D3D11 ###
+libplacebo_d3d11_plugin_la_SOURCES = $(LIBPLACEBO_COMMONSOURCES) \
+				     video_output/libplacebo/instance_d3d11.c
+libplacebo_d3d11_plugin_la_CFLAGS = $(AM_CFLAGS) $(LIBPLACEBO_CFLAGS)
+libplacebo_d3d11_plugin_la_LIBADD = $(LIBPLACEBO_LIBS)
+libplacebo_d3d11_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(voutdir)'
+
+if HAVE_WIN32
+vout_LTLIBRARIES += $(LTLIBplacebo_d3d11)
+EXTRA_LTLIBRARIES += libplacebo_d3d11_plugin.la
+endif
