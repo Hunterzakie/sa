@@ -31,6 +31,7 @@
 #include <string>
 
 #include <map>
+#include <array>
 #include <set>
 #include <memory>
 
@@ -77,11 +78,78 @@ public:
 };
 
 struct demux_sys_t;
+class tracks_map_t : public std::map<mkv_track_t::track_id_t, std::unique_ptr<mkv_track_t>> {
+    
+        std::array<std::vector<mkv_track_t::track_id_t>, ES_CATEGORY_COUNT> tracks_by_cat;
+        std::array<bool, ES_CATEGORY_COUNT> contains_default_or_up;
+        uint8_t priority_score = UINT8_MAX; // Smallest  is higher priority.
+        
+        void put_track_priority_value(mkv_track_t *track){
+            if( unlikely( !track->b_enabled ) )
+                track->fmt.i_priority = ES_PRIORITY_NOT_SELECTABLE;
+            else if( track->b_forced )
+                track->fmt.i_priority = ES_PRIORITY_SELECTABLE_MIN + 2;
+            else if( track->b_default )
+                track->fmt.i_priority = ES_PRIORITY_SELECTABLE_MIN + 1;
+            else
+                track->fmt.i_priority = ES_PRIORITY_SELECTABLE_MIN;
+
+            /* Avoid multivideo tracks when unnecessary */
+            if( track->fmt.i_cat == VIDEO_ES )
+                track->fmt.i_priority--;
+
+        }
+
+    public:
+        using super = std::map<mkv_track_t::track_id_t, std::unique_ptr<mkv_track_t>>;
+
+        std::pair<super::iterator, bool> insert(super::value_type &&v) {
+            auto id = v.first;
+            uint8_t cat = v.second->fmt.i_cat;
+
+            if (cat == UNKNOWN_ES || v.second->codec.empty()) {
+                //FIXME: Add the Invalid Track Warning
+                return super::insert(std::move(v));
+            }
+
+            auto b_default = v.second->b_default;
+            auto b_forced = v.second->b_forced;
+            auto b_enabled = v.second->b_enabled;
+
+            tracks_by_cat[cat].push_back(id);
+            priority_score = cat < priority_score? cat: priority_score;
+            contains_default_or_up[cat] |= b_enabled && (b_default || b_forced);
+            printf("id: %d cat: %d\n", id, cat);
+            put_track_priority_value(v.second.get());
+
+            return super::insert(std::move(v));
+        }
+
+        mkv_track_t::track_id_t getPriorityTrack(){
+            if (priority_score == UINT8_MAX) return -1;
+            return tracks_by_cat[priority_score].front();
+        }
+
+
+        // Ensures there is a default audio or a video track
+        void ensureDefault(){
+            for (int i = 0; i < ES_CATEGORY_COUNT; i++) {
+                if ( !contains_default_or_up[i] ) {
+                    // SPU_ES to comply with previous version. Yeah it be more satisfying without it.
+                    if (!tracks_by_cat[i].empty() && (i == AUDIO_ES || i == VIDEO_ES)) { 
+                        auto track_id = tracks_by_cat[i].front();
+                        put_track_priority_value(super::at(track_id).get());
+                    }
+                }
+            }
+        }
+
+
+};
 
 class matroska_segment_c
 {
 public:
-    typedef std::map<mkv_track_t::track_id_t, std::unique_ptr<mkv_track_t>> tracks_map_t;
     typedef std::vector<Tag>            tags_t;
 
     matroska_segment_c( demux_sys_t &, matroska_iostream_c &, KaxSegment * );
