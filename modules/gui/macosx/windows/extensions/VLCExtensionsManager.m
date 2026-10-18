@@ -80,12 +80,12 @@
     }
     intf_thread_t *p_intf = getIntf();
 
-    vlc_mutex_lock(&p_extensions_manager->lock);
+    vlc_extensions_manager_Lock(p_extensions_manager);
 
     extension_t *p_ext = NULL;
     int i_ext = 0;
 
-    ARRAY_FOREACH(p_ext, p_extensions_manager->extensions) {
+    EXTENSIONS_FOREACH(p_ext, p_extensions_manager) {
         bool b_Active = extension_IsActivated(p_extensions_manager, p_ext);
 
         NSString *titleString = toNSStr(p_ext->psz_title);
@@ -155,7 +155,7 @@
         i_ext++;
     }
 
-    vlc_mutex_unlock(&p_extensions_manager->lock);
+    vlc_extensions_manager_Unlock(p_extensions_manager);
 }
 
 - (BOOL)loadExtensions
@@ -211,19 +211,19 @@
     uint16_t i_ext = MENU_GET_EXTENSION(identifier);
     uint16_t i_action = MENU_GET_ACTION(identifier);
 
-    vlc_mutex_lock(&p_extensions_manager->lock);
+    vlc_extensions_manager_Lock(p_extensions_manager);
 
-    if ((int) i_ext > p_extensions_manager->extensions.i_size) {
+    if ((int) i_ext > vlc_extensions_manager_CountExtensions(p_extensions_manager)) {
         msg_Dbg(p_intf, "can't trigger extension with wrong id %d",
                  (int) i_ext);
-        vlc_mutex_unlock(&p_extensions_manager->lock);
+        vlc_extensions_manager_Unlock(p_extensions_manager);
         return;
     }
 
-    extension_t *p_ext = ARRAY_VAL(p_extensions_manager->extensions, i_ext);
+    extension_t *p_ext = vlc_extensions_manager_GetExtension(p_extensions_manager, i_ext);
     assert(p_ext != NULL);
 
-    vlc_mutex_unlock(&p_extensions_manager->lock);
+    vlc_extensions_manager_Unlock(p_extensions_manager);
 
     if (i_action == 0) {
         msg_Dbg(p_intf, "activating or triggering extension '%s', id %d",
@@ -252,15 +252,15 @@
     //This is unlikely, but can happen if no extension modules can be loaded.
     if (p_extensions_manager == NULL)
         return;
-    vlc_mutex_lock(&p_extensions_manager->lock);
+    vlc_extensions_manager_Lock(p_extensions_manager);
 
     extension_t *p_ext;
-    ARRAY_FOREACH(p_ext, p_extensions_manager->extensions) {
+    EXTENSIONS_FOREACH(p_ext, p_extensions_manager) {
         if (extension_IsActivated(p_extensions_manager, p_ext))
             extension_PlayingChanged(p_extensions_manager, p_ext, state);
     }
 
-    vlc_mutex_unlock(&p_extensions_manager->lock);
+    vlc_extensions_manager_Unlock(p_extensions_manager);
 }
 
 - (void)metaChanged:(input_item_t *)p_input
@@ -268,13 +268,13 @@
     //This is unlikely, but can happen if no extension modules can be loaded.
     if (p_extensions_manager == NULL)
         return;
-    vlc_mutex_lock(&p_extensions_manager->lock);
+    vlc_extensions_manager_Lock(p_extensions_manager);
     extension_t *p_ext;
-    ARRAY_FOREACH(p_ext, p_extensions_manager->extensions) {
+    EXTENSIONS_FOREACH(p_ext, p_extensions_manager) {
         if (extension_IsActivated(p_extensions_manager, p_ext))
             extension_MetaChanged(p_extensions_manager, p_ext);
     }
-    vlc_mutex_unlock(&p_extensions_manager->lock);
+    vlc_extensions_manager_Unlock(p_extensions_manager);
 }
 
 - (void)dealloc

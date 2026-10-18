@@ -126,12 +126,12 @@ void ExtensionsManager::menu( QMenu *current )
         return;
     }
 
-    vlc_mutex_lock( &p_extensions_manager->lock );
+    vlc_extensions_manager_Lock( p_extensions_manager );
 
     QAction *action;
     extension_t *p_ext = NULL;
     int i_ext = 0;
-    ARRAY_FOREACH( p_ext, p_extensions_manager->extensions )
+    EXTENSIONS_FOREACH( p_ext, p_extensions_manager )
     {
         bool b_Active = extension_IsActivated( p_extensions_manager, p_ext );
 
@@ -198,7 +198,7 @@ void ExtensionsManager::menu( QMenu *current )
         i_ext++;
     }
 
-    vlc_mutex_unlock( &p_extensions_manager->lock );
+    vlc_extensions_manager_Unlock( p_extensions_manager );
 }
 
 void ExtensionsManager::openVLsub()
@@ -209,21 +209,21 @@ void ExtensionsManager::openVLsub()
         return;
     }
 
-    vlc_mutex_lock( &p_extensions_manager->lock );
+    vlc_extensions_manager_Lock( p_extensions_manager );
 
     extension_t *p_ext;
-    ARRAY_FOREACH( p_ext, p_extensions_manager->extensions )
+    EXTENSIONS_FOREACH( p_ext, p_extensions_manager )
     {
         const char *extensionName = p_ext->psz_shortdescription ? p_ext->psz_shortdescription: p_ext->psz_title;
         if ( !extensionName || strcmp( extensionName, "VLsub" ) )
             continue;
 
-        vlc_mutex_unlock( &p_extensions_manager->lock );
-        triggerMenu( MENU_MAP( 0, array_index_p_ext ) );
+        vlc_extensions_manager_Unlock( p_extensions_manager );
+        triggerMenu( MENU_MAP( 0, ext_index_p_ext ) );
         return;
     }
 
-    vlc_mutex_unlock( &p_extensions_manager->lock );
+    vlc_extensions_manager_Unlock( p_extensions_manager );
 }
 
 void ExtensionsManager::triggerMenu( int id )
@@ -231,20 +231,20 @@ void ExtensionsManager::triggerMenu( int id )
     uint16_t i_ext = MENU_GET_EXTENSION( id );
     uint16_t i_action = MENU_GET_ACTION( id );
 
-    vlc_mutex_lock( &p_extensions_manager->lock );
+    vlc_extensions_manager_Lock( p_extensions_manager );
 
-    if( (int) i_ext > p_extensions_manager->extensions.i_size )
+    if( (int) i_ext > vlc_extensions_manager_CountExtensions( p_extensions_manager ) )
     {
         msg_Dbg( p_intf, "can't trigger extension with wrong id %d",
                  (int) i_ext );
-        vlc_mutex_unlock( &p_extensions_manager->lock );
+        vlc_extensions_manager_Unlock( p_extensions_manager );
         return;
     }
 
-    extension_t *p_ext = ARRAY_VAL( p_extensions_manager->extensions, i_ext );
+    extension_t *p_ext = vlc_extensions_manager_GetExtension( p_extensions_manager, i_ext );
     assert( p_ext != NULL);
 
-    vlc_mutex_unlock( &p_extensions_manager->lock );
+    vlc_extensions_manager_Unlock( p_extensions_manager );
 
     if( i_action == 0 )
     {
@@ -298,10 +298,10 @@ void ExtensionsManager::playingChanged( PlayerController::PlayingState state )
     //This is unlikely, but can happen if no extension modules can be loaded.
     if ( p_extensions_manager == NULL )
         return ;
-    vlc_mutex_lock( &p_extensions_manager->lock );
+    vlc_extensions_manager_Lock( p_extensions_manager );
 
     extension_t *p_ext;
-    ARRAY_FOREACH( p_ext, p_extensions_manager->extensions )
+    EXTENSIONS_FOREACH( p_ext, p_extensions_manager )
     {
         if( extension_IsActivated( p_extensions_manager, p_ext ) )
         {
@@ -309,7 +309,7 @@ void ExtensionsManager::playingChanged( PlayerController::PlayingState state )
         }
     }
 
-    vlc_mutex_unlock( &p_extensions_manager->lock );
+    vlc_extensions_manager_Unlock( p_extensions_manager );
 }
 
 void ExtensionsManager::metaChanged( input_item_t* )
@@ -317,14 +317,14 @@ void ExtensionsManager::metaChanged( input_item_t* )
     //This is unlikely, but can happen if no extension modules can be loaded.
     if ( p_extensions_manager == NULL )
         return ;
-    vlc_mutex_lock( &p_extensions_manager->lock );
+    vlc_extensions_manager_Lock( p_extensions_manager );
     extension_t *p_ext;
-    ARRAY_FOREACH( p_ext, p_extensions_manager->extensions )
+    EXTENSIONS_FOREACH( p_ext, p_extensions_manager )
     {
         if( extension_IsActivated( p_extensions_manager, p_ext ) )
         {
             extension_MetaChanged( p_extensions_manager, p_ext );
         }
     }
-    vlc_mutex_unlock( &p_extensions_manager->lock );
+    vlc_extensions_manager_Unlock( p_extensions_manager );
 }

@@ -688,14 +688,14 @@ void ExtensionListModel::updateList()
     if( !p_mgr )
         return;
 
-    vlc_mutex_lock( &p_mgr->lock );
+    vlc_extensions_manager_Lock( p_mgr );
     extension_t *p_ext;
-    ARRAY_FOREACH( p_ext, p_mgr->extensions )
+    EXTENSIONS_FOREACH( p_ext, p_mgr )
     {
         ext = new ExtensionCopy( p_ext );
         extensions.append( ext );
     }
-    vlc_mutex_unlock( &p_mgr->lock );
+    vlc_extensions_manager_Unlock( p_mgr );
 
     emit dataChanged( index( 0 ), index( rowCount() - 1 ) );
 }
@@ -707,9 +707,9 @@ int ExtensionListModel::rowCount( const QModelIndex& ) const
     if( !p_mgr )
         return 0;
 
-    vlc_mutex_lock( &p_mgr->lock );
-    count = p_mgr->extensions.i_size;
-    vlc_mutex_unlock( &p_mgr->lock );
+    vlc_extensions_manager_Lock( p_mgr );
+    count = vlc_extensions_manager_CountExtensions( p_mgr );
+    vlc_extensions_manager_Unlock( p_mgr );
 
     return count;
 }

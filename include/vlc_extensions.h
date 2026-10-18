@@ -67,6 +67,9 @@ struct vlc_extensions_manager_operations {
     int (*set_input)(extensions_manager_t *, extension_t *, input_item_t *);
     int (*playing_changed)(extensions_manager_t *, extension_t *, int);
     int (*meta_changed)(extensions_manager_t *, extension_t *);
+
+    extension_t *(*get_extension)(extensions_manager_t *, uint16_t);
+    uint16_t (*count_extensions)(extensions_manager_t *);
 };
 
 /** Extensions manager object */
@@ -212,6 +215,48 @@ static inline int extension_MetaChanged( extensions_manager_t *p_mgr,
 #define extension_TriggerOnly( mgr, ext ) \
         vlc_extension_GetBool( mgr, ext, EXTENSION_TRIGGER_ONLY, false )
 
+/*****************************************************************************
+ * Extension management
+ * These functions are used to manage the extensions array.
+ ****************************************************************************/
+
+static inline void vlc_extensions_manager_Lock( extensions_manager_t *p_mgr )
+{
+    vlc_mutex_lock( &p_mgr->lock );
+}
+
+static inline void vlc_extensions_manager_Unlock( extensions_manager_t *p_mgr )
+{
+    vlc_mutex_unlock( &p_mgr->lock );
+}
+
+/** 
+ * Get the extension descriptor from its index
+ * Assumes the index is valid.
+ **/
+static inline extension_t *vlc_extensions_manager_GetExtension( extensions_manager_t *p_mgr,
+                                          uint16_t i_ext )
+{
+    if ( p_mgr->ops && p_mgr->ops->get_extension )
+        return p_mgr->ops->get_extension( p_mgr, i_ext );
+    else
+        return ARRAY_VAL( p_mgr->extensions, i_ext );
+}
+
+/** Get the number of extensions */
+static inline uint16_t vlc_extensions_manager_CountExtensions( extensions_manager_t *p_mgr )
+{
+    if ( p_mgr->ops && p_mgr->ops->count_extensions )
+        return p_mgr->ops->count_extensions( p_mgr );
+    else
+        return p_mgr->extensions.i_size;
+}
+
+#define EXTENSIONS_FOREACH( ext, mgr ) \
+    for (int ext_index_##ext = 0; \
+            ext_index_##ext < vlc_extensions_manager_CountExtensions(mgr) && \
+                ((ext) = vlc_extensions_manager_GetExtension((mgr), ext_index_##ext), 1); \
+            ++ext_index_##ext)
 
 /*****************************************************************************
  * Extension dialogs
