@@ -41,6 +41,16 @@ VideoWindowHandler::VideoWindowHandler(qt_intf_t* intf, QObject *parent)
              this, &VideoWindowHandler::setVideoFullScreen, Qt::QueuedConnection );
     connect( this, &VideoWindowHandler::askVideoOnTop,
              this, &VideoWindowHandler::setVideoOnTop, Qt::QueuedConnection );
+    connect( m_intf->p_mainPlayerController, &PlayerController::hasVideoOutputChanged, this, [this](bool hasVideo) {
+        if (!m_intf->p_mainPlayerController->isFullscreen())
+            return;
+        // set video fullscreen before clearing interface fullscreen
+        // or else the window leaves fullscreen in between
+        if (hasVideo)
+            setVideoFullScreen(true);
+        if (m_intf->p_mi)
+            emit m_intf->p_mi->setInterfaceFullScreen(!hasVideo);
+    });
 }
 
 void VideoWindowHandler::setWindow(QWindow* window)
