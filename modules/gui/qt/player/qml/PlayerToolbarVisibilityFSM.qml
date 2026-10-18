@@ -62,7 +62,8 @@ FSM {
     property int timeoutDuration: MainCtx.mouseHideTimeout
 
     readonly property bool autoHide: (MainCtx.hasEmbededVideo
-                                      || MainCtx.intfMainWindow.visibility === Window.FullScreen)
+                                      || (MainCtx.intfMainWindow.visibility === Window.FullScreen
+                                          && Player.playingState !== Player.PLAYING_STATE_PAUSED))
                                      && !playlistVisibility.isPlaylistVisible
 
     initialState: ((Player.isInteractive && MainCtx.hasEmbededVideo))
