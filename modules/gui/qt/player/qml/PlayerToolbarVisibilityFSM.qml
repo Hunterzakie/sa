@@ -61,8 +61,9 @@ FSM {
     property int lockCount: 0 // Track the number of locks
     property int timeoutDuration: MainCtx.mouseHideTimeout
 
-    readonly property bool autoHide: MainCtx.hasEmbededVideo
-                                     || MainCtx.intfMainWindow.visibility === Window.FullScreen
+    readonly property bool autoHide: (MainCtx.hasEmbededVideo
+                                      || MainCtx.intfMainWindow.visibility === Window.FullScreen)
+                                     && !playlistVisibility.isPlaylistVisible
 
     initialState: ((Player.isInteractive && MainCtx.hasEmbededVideo))
                   ? fsmHidden : fsmVisible
