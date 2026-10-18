@@ -270,6 +270,8 @@ libmacosx_plugin_la_SOURCES = \
 	gui/macosx/library/home-library/VLCLibraryHomeViewAudioCarouselContainerView.m \
 	gui/macosx/library/home-library/VLCLibraryHomeViewBaseCarouselContainerView.h \
 	gui/macosx/library/home-library/VLCLibraryHomeViewBaseCarouselContainerView.m \
+	gui/macosx/library/home-library/VLCLibraryHomeViewSectionHeaderView.h \
+	gui/macosx/library/home-library/VLCLibraryHomeViewSectionHeaderView.m \
 	gui/macosx/library/home-library/VLCLibraryHomeViewStackViewController.h \
 	gui/macosx/library/home-library/VLCLibraryHomeViewStackViewController.m \
 	gui/macosx/library/home-library/VLCLibraryHomeViewContainerView.h \
@@ -521,6 +523,8 @@ libmacosx_plugin_la_SOURCES = \
 	gui/macosx/views/VLCTrackingView.m \
 	gui/macosx/views/VLCUIUnits.h \
 	gui/macosx/views/VLCUIUnits.m \
+	gui/macosx/views/VLCVisualEffectView.h \
+	gui/macosx/views/VLCVisualEffectView.m \
 	gui/macosx/views/VLCVolumeSlider.h \
 	gui/macosx/views/VLCVolumeSlider.m \
 	gui/macosx/views/VLCVolumeSliderCell.h \
