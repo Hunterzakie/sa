@@ -288,6 +288,8 @@ libmacosx_plugin_la_SOURCES = \
 	gui/macosx/library/video-library/VLCLibraryMoviesDataSource.m \
 	gui/macosx/library/video-library/VLCLibraryShowEpisodeTableViewDelegate.h \
 	gui/macosx/library/video-library/VLCLibraryShowEpisodeTableViewDelegate.m \
+	gui/macosx/library/video-library/VLCLibraryShowsMasterTableViewDelegate.h \
+	gui/macosx/library/video-library/VLCLibraryShowsMasterTableViewDelegate.m \
 	gui/macosx/library/video-library/VLCLibraryShowsDataSource.h \
 	gui/macosx/library/video-library/VLCLibraryShowsDataSource.m \
 	gui/macosx/library/video-library/VLCLibraryVideoViewController.h \
@@ -615,6 +617,7 @@ libmacosx_plugin_la_XIB_SOURCES = \
 	gui/macosx/UI/VLCLibraryWindowSidebarRootView.xib \
 	gui/macosx/UI/VLCLibraryWindowTitlesView.xib \
 	gui/macosx/UI/VLCLibraryTableCellView.xib \
+	gui/macosx/UI/VLCLibraryShowTableCellView.xib \
 	gui/macosx/UI/VLCLibraryVideoTableCellView.xib \
 	gui/macosx/UI/VLCPlayQueueTableCellView.xib \
 	gui/macosx/UI/VLCLibraryCarouselCollectionViewItem.xib \
