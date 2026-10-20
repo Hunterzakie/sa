@@ -1130,7 +1130,7 @@ static int LoadGlyphs( filter_t *p_filter, paragraph_t *p_paragraph,
             {
                 p_bitmaps->coutline.p_glyph =
                     vlc_ftcache_GetOutlinedGlyph( p_sys->ftcache, p_run->p_faceid, i_glyph_index,
-                                                  &metrics, style_flags, i_stroker_radius,
+                                                  &metrics, p_style->i_style_flags, i_stroker_radius,
                                                   p_bitmaps->cglyph.p_glyph,
                                                   CreateOutlinedGlyph, p_filter,
                                                   &p_bitmaps->coutline.ref );
