@@ -218,8 +218,8 @@ static void SubpictureTextUpdate(subpicture_t *subpic,
 
         } else {
             /* FIXME it doesn't adapt on crop settings changes */
-            r->i_x = p_updtregion->origin.x * fmt_dst->i_width  / p_updtregion->extent.x;
-            r->i_y = p_updtregion->origin.y * fmt_dst->i_height / p_updtregion->extent.y;
+            r->i_x = p_updtregion->origin.x * subpic->i_original_picture_width  / p_updtregion->extent.x;
+            r->i_y = p_updtregion->origin.y * subpic->i_original_picture_height / p_updtregion->extent.y;
         }
 
         /* Add missing default style, if any, to all segments */
