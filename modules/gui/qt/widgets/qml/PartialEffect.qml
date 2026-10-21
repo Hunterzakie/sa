@@ -62,21 +62,20 @@ Item {
     property alias blending: sourceProxy.blending
 
     // Display scale may be a fractional size, but textures can not. Pixel aligned
-    // aligns the visual size to the nearest multiple of number, depending on
-    // the window/screen fraction, so that the layer texture can be displayed
-    // without stretching. For example, if the display scale is 1.25, the
-    // visual size would be aligned up to the nearest multiple of 4. Note that
-    // using this property is going to make the visual to deviate from the
-    // size intended, which may increase greatly depending on the fraction
-    // of the display scale. Also note that if the QML item size is fractional
-    // itself, it is ceiled regardless of the display scale or this property.
+    // aligns the visual size up to a whole number of device pixels, so that the
+    // layer texture can be displayed without stretching. For example, if the
+    // display scale is 1.6, a visual size of 101 would be aligned up to 101.25
+    // (162 device pixels). Note that using this property is going to make the
+    // visual to deviate from the size intended, by less than one device pixel.
+    // Also note that if the QML item size is fractional itself, it is ceiled
+    // regardless of the display scale or this property.
     // This setting applies to both the source and the effect visuals, but
     // is only relevant for the source visual if `sourceVisualRect` is
     // provided.
     property bool pixelAlignedForDPR: true
 
     property real _eDPR: MainCtx.effectiveDevicePixelRatio(Window.window) || 1.0
-    readonly property int _alignNumber: pixelAlignedForDPR ? Helpers.denominatorForFloat(_eDPR) : 1
+    readonly property real _alignDPR: pixelAlignedForDPR ? _eDPR : 1.0
 
     Connections {
         target: MainCtx
@@ -93,8 +92,8 @@ Item {
 
         x: root.sourceVisualRect.x
         y: root.sourceVisualRect.y
-        width: useSubTexture ? Helpers.alignUp(root.sourceVisualRect.width, root._alignNumber) : parent.width
-        height: useSubTexture ? Helpers.alignUp(root.sourceVisualRect.height, root._alignNumber) : parent.height
+        width: useSubTexture ? Helpers.alignUpToDevicePixel(root.sourceVisualRect.width, root._alignDPR) : parent.width
+        height: useSubTexture ? Helpers.alignUpToDevicePixel(root.sourceVisualRect.height, root._alignDPR) : parent.height
 
         smooth: false
 
@@ -144,8 +143,8 @@ Item {
 
         x: effectRect.x
         y: effectRect.y
-        width: Helpers.alignUp(effectRect.width, root._alignNumber)
-        height: Helpers.alignUp(effectRect.height, root._alignNumber)
+        width: Helpers.alignUpToDevicePixel(effectRect.width, root._alignDPR)
+        height: Helpers.alignUpToDevicePixel(effectRect.height, root._alignDPR)
 
         readonly property Item sourceItem: source?.sourceItem ?? source
 

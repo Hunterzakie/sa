@@ -83,6 +83,18 @@ QtObject {
         return Math.round(a / b) * b
     }
 
+    // Returns the smallest size, not smaller than `size`, that spans a whole
+    // number of device pixels with the given device pixel ratio, so that a
+    // texture with that many pixels can be displayed without stretching.
+    // To use when an item is displayed through a texture, such as a layer or
+    // a `ShaderEffectSource`: both the captured area and the item displaying
+    // the texture should get the aligned size.
+    function alignUpToDevicePixel(size : real, dpr : real) : real {
+        // Tolerate floating point error, so that an already aligned size
+        // is not extended by an extra pixel:
+        return Math.ceil(size * dpr - 0.001) / dpr
+    }
+
     // Currently only supports .25, .5, .75
     function denominatorForFloat(number : real) : int {
         const fraction = number % 1
