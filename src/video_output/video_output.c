@@ -935,6 +935,10 @@ static picture_t *ConvertRGB32AndBlend(vout_thread_t *vout, picture_t *pic,
         return NULL;
 
     es_format_t src = vout->p->spu_blend->fmt_out;
+    /* The blend filter's fmt_out has no sample aspect ratio, which the
+     * snapshot export treats as square pixels: take the picture's. */
+    src.video.i_sar_num = pic->format.i_sar_num;
+    src.video.i_sar_den = pic->format.i_sar_den;
     es_format_t dst = src;
     dst.video.i_chroma = VLC_CODEC_RGB32;
     video_format_FixRgb(&dst.video);
