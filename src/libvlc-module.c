@@ -829,10 +829,10 @@ static const char* const ppsz_restore_playback_desc[] = {
 #define SPU_FULL_LONGTEXT N_( \
     "Area to use to position and scale sub-pictures.")
 static const int ppsz_spu_fill_mode[] = {
-    VLC_SUBPICTURE_AREA_VIDEO, VLC_SUBPICTURE_AREA_WINDOW,
+    VLC_SUBPICTURE_AREA_VIDEO, VLC_SUBPICTURE_AREA_WINDOW, VLC_SUBPICTURE_AREA_VIDEO_CROP,
 };
 static const char * const ppsz_spu_fill_mode_text[] = {
-    N_("Inside Video"), N_("In Full Window"),
+    N_("Inside Video"), N_("In Full Window"), N_("Inside Cropped Video"),
 };
 
 #define SECONDARY_SUB_POSITION_TEXT N_("Position of secondary subtitles")

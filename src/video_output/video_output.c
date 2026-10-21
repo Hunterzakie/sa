@@ -1277,8 +1277,16 @@ static int PrerenderPicture(vout_thread_sys_t *sys, picture_t *filtered,
     const bool vd_does_blending = !do_snapshot &&
                                    vd->info.subpicture_chromas &&
                                    *vd->info.subpicture_chromas != 0;
-    const bool spu_in_full_window = vd->cfg->display.full_fill == VLC_SUBPICTURE_AREA_WINDOW &&
-                                    vd_does_blending;
+    const bool is_cropped =
+        // regular crop
+        vd->source->i_visible_width  < vd->fmt->i_visible_width ||
+        vd->source->i_visible_height < vd->fmt->i_visible_height ||
+        // fit mode cropping
+        vd->place->x < 0 || vd->place->y < 0;
+    const bool spu_in_full_window =
+        (vd->cfg->display.full_fill == VLC_SUBPICTURE_AREA_WINDOW && vd_does_blending) ||
+        (vd->cfg->display.full_fill == VLC_SUBPICTURE_AREA_VIDEO_CROP && is_cropped);
+
 
     //FIXME: Denying blending_before_converter if vd->source->orientation != ORIENT_NORMAL
     //will have the effect that snapshots miss the subpictures. We do this

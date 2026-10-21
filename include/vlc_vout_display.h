@@ -94,6 +94,7 @@ enum vlc_video_fitting {
 enum vlc_subpicture_area {
     VLC_SUBPICTURE_AREA_VIDEO = 0  /**< Use the video area to position subpictures */,
     VLC_SUBPICTURE_AREA_WINDOW = 1 /**< Use the whole window area to position subpictures */,
+    VLC_SUBPICTURE_AREA_VIDEO_CROP = 2 /**< Use the cropped video area to position subpictures */,
 };
 
 /**
