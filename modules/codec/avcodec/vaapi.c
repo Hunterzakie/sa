@@ -129,6 +129,17 @@ static int GetVaProfile(AVCodecContext *ctx, const es_format_t *fmt,
             return VLC_EGENERIC;
         count = 10;
         break;
+#if VA_CHECK_VERSION( 1, 8, 0 )
+    case AV_CODEC_ID_AV1:
+        if (ctx->profile == FF_PROFILE_AV1_MAIN)
+            i_profile = VAProfileAV1Profile0;
+        else if (ctx->profile == FF_PROFILE_AV1_HIGH)
+            i_profile = VAProfileAV1Profile1;
+        else
+            return VLC_EGENERIC;
+        count = 10;
+        break;
+#endif
     default:
         return VLC_EGENERIC;
     }
@@ -196,6 +207,18 @@ static int Create(vlc_va_t *va, AVCodecContext *ctx, const AVPixFmtDescriptor *d
     int i_vlc_chroma;
     if (GetVaProfile(ctx, fmt, &i_profile, &i_vlc_chroma, &count) != VLC_SUCCESS)
         goto error;
+
+    if (ctx->codec_id == AV_CODEC_ID_AV1)
+    {
+        VAConfigID config_id;
+        config_id = vlc_vaapi_CreateConfigChecked(VLC_OBJECT(va), va_dpy, i_profile,
+                VAEntrypointVLD, 0);
+
+        if (config_id == VA_INVALID_ID)
+            goto error;
+
+        vlc_vaapi_DestroyConfig(VLC_OBJECT(va), va_dpy, config_id);
+    }
 
     sys = malloc(sizeof *sys);
     if (unlikely(sys == NULL))
