@@ -63,9 +63,31 @@
 #include <QSignalMapper>
 #include <QFileDialog>
 #include <QUrl>
+#include <QProxyStyle>
+#include <QStyleOption>
+#include <QEvent>
+#include <QMouseEvent>
+#include <QListView>
+#include <QTreeView>
 
 #define I_OP_DIR_WINTITLE I_DIR_OR_FOLDER( N_("Open Directory"), \
                                            N_("Open Folder") )
+
+class VLCFileDialogProxyStyle : public QProxyStyle
+{
+public:
+    VLCFileDialogProxyStyle(QStyle *style = nullptr) : QProxyStyle(style) {}
+
+    int styleHint(QStyle::StyleHint hint, const QStyleOption *option, const QWidget *widget,
+                  QStyleHintReturn *returnData) const override
+    {
+        if (hint == QStyle::SH_ItemView_ActivateItemOnSingleClick) {
+            // false = double-click is required to activate
+            return false;
+        }
+        return QProxyStyle::styleHint(hint, option, widget, returnData);
+    }
+};
 
 DialogsProvider* DialogsProvider::instance = NULL;
 
@@ -121,10 +143,37 @@ QStringList DialogsProvider::getOpenURL( QWidget *parent,
                                          QString *selectedFilter )
 {
     QStringList res;
-    QList<QUrl> urls = QFileDialog::getOpenFileUrls( parent, caption, dir, filter, selectedFilter );
+    
+    // Create a QFileDialog instance to customize the behavior
+    QFileDialog *dialog = new QFileDialog(parent, caption, dir.toString(), filter);
+    if (selectedFilter)
+        dialog->selectNameFilter(*selectedFilter);
 
-    foreach( const QUrl& url, urls )
-        res.append( url.toEncoded() );
+    // Set the custom proxy style
+    VLCFileDialogProxyStyle *proxyStyle = new VLCFileDialogProxyStyle(dialog->style());
+    dialog->setStyle(proxyStyle);
+    dialog->setWindowFlags(dialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
+    // Same style applied to child views (directory and file views)
+    QList<QListView*> listViews = dialog->findChildren<QListView*>();
+    foreach(QListView* view, listViews) {
+        view->setStyle(proxyStyle);
+    }
+
+    QList<QTreeView*> treeViews = dialog->findChildren<QTreeView*>();
+    foreach(QTreeView* view, treeViews) {
+        view->setStyle(proxyStyle);
+    }
+
+    // Show the dialog and get results
+    if (dialog->exec() == QDialog::Accepted) {
+        QList<QUrl> urls = dialog->selectedUrls();
+        foreach( const QUrl& url, urls )
+            res.append( url.toEncoded() );
+    }
+
+    // Clean up
+    delete dialog;
 
     return res;
 }
