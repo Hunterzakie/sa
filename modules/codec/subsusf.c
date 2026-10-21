@@ -954,6 +954,9 @@ static subpicture_region_t *ParseUSFString( decoder_t *p_dec,
             psz_subtitle += strcspn( psz_subtitle, ">" );
         }
 
+        if( *psz_subtitle == 0 )
+            break;
+
         psz_subtitle++;
     }
 
