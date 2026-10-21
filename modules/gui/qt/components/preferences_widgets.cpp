@@ -635,6 +635,8 @@ void ModuleListConfigControl::checkbox_lists( module_t *p_parser )
 
     if ( !strcmp(module_name, "AMD VQ Enhancer"))
         module_shortcut = "amf_vqenhancer";
+    if ( !strcmp(module_shortcut, "lua"))
+        module_shortcut = "luaintf";
 
     checkbox_lists( qtr( module_name ),
                     help != NULL ? qtr( help ): "",
