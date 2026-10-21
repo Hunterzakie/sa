@@ -778,7 +778,10 @@ static int DeviceSelectLocked(audio_output_t *aout, const char *id)
     wchar_t *previous = (wchar_t *)(void*)atomic_exchange(&sys->device_name, (uintptr_t)(void*)selected_device_name);
     free(previous);
     if (unlikely(selected_device_name == NULL && new_string))
+    {
+        sys->device_status = DEVICE_ACQUISITION_FAILED;
         return -1;
+    }
 
     return DeviceRequestLocked(aout);
 }
@@ -933,7 +936,7 @@ static HRESULT MMSession(audio_output_t *aout, IMMDeviceEnumerator *it)
         }
     }
 
-    WakeConditionVariable(&sys->ready);
+    WakeAllConditionVariable(&sys->ready);
     vlc_sem_post(&sys->init_passed);
 
     if (FAILED(hr))
@@ -1212,6 +1215,9 @@ static int Start(audio_output_t *aout, audio_sample_format_t *restrict fmt)
 
     EnterMTA();
     EnterCriticalSection(&sys->lock);
+
+    while (sys->device_status == DEVICE_PENDING)
+        SleepConditionVariableCS(&sys->ready, &sys->lock, INFINITE);
 
     if ((atomic_exchange(&sys->default_device_changed, false) && DeviceRestartLocked(aout) != 0)
       || sys->dev == NULL)
