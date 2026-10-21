@@ -119,6 +119,11 @@ void SeekStyle::drawComplexControl( ComplexControl cc, const QStyleOptionComplex
                     #ifdef Q_OS_WIN
                         /* use accent color on windows dark mode */
                         foregroundBase = slideroptions->palette.color(QPalette::Highlight);
+                        /* Keep dark accents distinct from the grey groove. */
+                        if ( qGray( foregroundBase.rgb() ) < 128 )
+                            foregroundBase = QColor( ( foregroundBase.red() + 255 ) / 2,
+                                                     ( foregroundBase.green() + 255 ) / 2,
+                                                     ( foregroundBase.blue() + 255 ) / 2 );
                     #endif
                     /* adjust gradient dynamically based on accent */
                     int v = foregroundBase.value();
