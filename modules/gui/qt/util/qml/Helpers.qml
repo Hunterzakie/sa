@@ -95,22 +95,18 @@ QtObject {
         return Math.ceil(size * dpr - 0.001) / dpr
     }
 
-    // Currently only supports .25, .5, .75
+    // Returns the smallest integer `n` such that `number * n` is an integer.
+    // Denominators bigger than 10 are not considered, as aligning to them
+    // would deviate too much (for example, `PIPPlayer` position would move
+    // by steps that big when dragged), in which case 1 is returned.
     function denominatorForFloat(number : real) : int {
-        const fraction = number % 1
-
-        if (fraction === 0)
-            return 1
-        else if (compareFloat(fraction, 0.25))
-            return 4
-        else if (compareFloat(fraction, 0.50))
-            return 2
-        else if (compareFloat(fraction, 0.75))
-            return 4
-        else {
-            console.error("Can not find denominator for number", number, "!")
-            return 1
+        for (let n = 1; n <= 10; ++n) {
+            const product = number * n
+            // Tolerate floating point error:
+            if (Math.abs(product - Math.round(product)) < 0.001)
+                return n
         }
+        return 1
     }
 
     function isSortedIntegerArrayConsecutive(array : var) : bool {
