@@ -276,7 +276,7 @@ void MacOSXFactory::getMonitorInfo( int numScreen,
 }
 
 
-SkinsRect MacOSXFactory::getWorkArea() const
+SkinsRect MacOSXFactory::getWorkArea( const GenericWindow & ) const
 {
     @autoreleasepool {
         NSScreen *mainScreen = [NSScreen mainScreen];

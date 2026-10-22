@@ -330,37 +330,70 @@ void X11Factory::getDefaultGeometry( int* p_width, int* p_height ) const
 }
 
 
-SkinsRect X11Factory::getWorkArea() const
+SkinsRect X11Factory::getWorkArea( const GenericWindow &rWindow ) const
 {
-    // query Work Area if available from Window Manager
-    // otherwise, default to the whole screen
-    int x = 0, y = 0;
-    int w = getScreenWidth(), h = getScreenHeight();
-    if( m_pDisplay->m_net_workarea != None )
+    Display *pDpy = m_pDisplay->getDisplay();
+    Window root = DefaultRootWindow( pDpy );
+
+    int monX = 0, monY = 0;
+    int monW = getScreenWidth(), monH = getScreenHeight();
+
+    // Use existing monitor detection
+    getMonitorInfo( rWindow.getOSWindow(), &monX, &monY, &monW, &monH );
+
+    int workLeft   = monX;
+    int workTop    = monY;
+    int workRight  = monX + monW;
+    int workBottom = monY + monH;
+
+    Atom strutPartial = XInternAtom( pDpy, "_NET_WM_STRUT_PARTIAL", True );
+    Atom clientList   = XInternAtom( pDpy, "_NET_CLIENT_LIST", True );
+    int scrW = getScreenWidth();
+    int scrH = getScreenHeight();
+
+    if( strutPartial != None && clientList != None )
     {
-        Atom ret;
-        int i_format;
-        unsigned long i_items, i_bytesafter;
-        long *values;
-        if( XGetWindowProperty( m_pDisplay->getDisplay(),
-                                DefaultRootWindow( m_pDisplay->getDisplay() ),
-                                m_pDisplay->m_net_workarea,
-                                0, 16384, False, XA_CARDINAL,
-                                &ret, &i_format, &i_items, &i_bytesafter,
-                                (unsigned char **)&values ) == Success )
+        Atom type;
+        int fmt;
+        unsigned long n, after;
+        unsigned char *data = NULL;
+
+        if( XGetWindowProperty( pDpy, root, clientList, 0, (~0L), False,
+                                XA_WINDOW, &type, &fmt, &n, &after, &data ) == Success )
         {
-            if( values )
+            for( unsigned long i = 0; i < n; i++ )
             {
-                x = values[0];
-                y = values[1];
-                w = values[2];
-                h = values[3];
-                XFree( values );
+                Window w = ((Window*)data)[i];
+                Atom t2; int f2; unsigned long n2, a2;
+                unsigned char *sd = NULL;
+
+                if( XGetWindowProperty( pDpy, w, strutPartial, 0, 12, False,
+                                        XA_CARDINAL, &t2, &f2, &n2, &a2, &sd ) == Success )
+                {
+                    if( sd && f2 == 32 && n2 == 12 )
+                    {
+                        long *s = (long*)sd;
+                        if( s[0] > 0 && (int)s[0] > workLeft &&
+                            (int)s[4] < workBottom && (int)s[5] > workTop )
+                            workLeft = s[0];
+                        if( s[1] > 0 && scrW - (int)s[1] < workRight &&
+                            (int)s[6] < workBottom && (int)s[7] > workTop )
+                            workRight = scrW - s[1];
+                        if( s[2] > 0 && (int)s[2] > workTop &&
+                            (int)s[8] < workRight && (int)s[9] > workLeft )
+                            workTop = s[2];
+                        if( s[3] > 0 && scrH - (int)s[3] < workBottom &&
+                            (int)s[10] < workRight && (int)s[11] > workLeft )
+                            workBottom = scrH - s[3];
+                    }
+                    if( sd ) XFree( sd );
+                }
             }
+            if( data ) XFree( data );
         }
     }
-    msg_Dbg( getIntf(),"WorkArea: %ix%i at +%i+%i", w, h, x, y );
-    return SkinsRect( x, y, x + w, y + h );
+
+    return SkinsRect( workLeft, workTop, workRight, workBottom );
 }
 
 

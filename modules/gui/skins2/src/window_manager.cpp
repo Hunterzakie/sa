@@ -317,7 +317,7 @@ void WindowManager::maximize( TopWindow &rWindow )
                                rWindow.getTop() + rWindow.getHeight() );
 
     // maximise the window within the current screen (multiple screens allowed)
-    SkinsRect workArea = OSFactory::instance( getIntf() )->getWorkArea();
+    SkinsRect workArea = OSFactory::instance( getIntf() )->getWorkArea( rWindow );
 
     // Move the window
     startMove( rWindow );
@@ -484,10 +484,9 @@ void WindowManager::buildDependSet( WinSet_t &rWinSet,
 void WindowManager::checkAnchors( TopWindow *pWindow,
                                   int &xOffset, int &yOffset ) const
 {
-    (void)pWindow;
 
     // Check magnetism with screen edges first (actually it is the work area)
-    SkinsRect workArea = OSFactory::instance( getIntf() )->getWorkArea();
+    SkinsRect workArea = OSFactory::instance( getIntf() )->getWorkArea( *pWindow );
     // Iterate through the moving windows
     for( auto *moving : m_movingWindows )
     {
