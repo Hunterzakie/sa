@@ -71,6 +71,8 @@ static inline vlc_tick_t vlc_tick_from_sec(double secf)
     return (vlc_tick_t)(CLOCK_FREQ * secf); /* TODO use llround ? */
 }
 #else /* !__cplusplus */
+#include <stdckdint.h>
+
 static inline vlc_tick_t vlc_tick_from_seci(int64_t sec)
 {
     return CLOCK_FREQ * sec;
@@ -85,6 +87,11 @@ static inline vlc_tick_t vlc_tick_from_secf(double secf)
         double:  vlc_tick_from_secf(sec), \
         float:   vlc_tick_from_secf(sec), \
         default: vlc_tick_from_seci(sec) )
+
+static inline bool vlc_tick_from_seconds(vlc_tick_t *out, int64_t sec)
+{
+    return ckd_mul(out, CLOCK_FREQ, sec);
+}
 #endif /* !__cplusplus */
 
 /* seconds in floating point from vlc_tick_t */
@@ -121,45 +128,180 @@ static inline vlc_tick_t vlc_tick_from_frac(uint64_t num, uint64_t den)
 /*
  * vlc_tick_t <> milliseconds (ms) conversions
  */
-#if (CLOCK_FREQ % 1000) == 0
+#if CLOCK_FREQ == 1000
+#define VLC_TICK_FROM_MS(ms)  (ms)
+#define MS_FROM_VLC_TICK(vtk) (vtk)
+static inline bool vlc_tick_from_ms(vlc_tick_t *out, int64_t ms)
+{
+    *out = ms;
+    return false;
+}
+static inline bool vlc_tick_to_ms(int64_t *out, vlc_tick_t vtk)
+{
+    *out = vtk;
+    return false;
+}
+#elif (CLOCK_FREQ % 1000) == 0
 #define VLC_TICK_FROM_MS(ms)  ((CLOCK_FREQ / INT64_C(1000)) * (ms))
 #define MS_FROM_VLC_TICK(vtk) ((vtk) / (CLOCK_FREQ / INT64_C(1000)))
+static inline bool vlc_tick_from_ms(vlc_tick_t *out, int64_t ms)
+{
+    return ckd_mul(out, ms, CLOCK_FREQ / INT64_C(1000));
+}
+static inline bool vlc_tick_to_ms(int64_t *out, vlc_tick_t vtk)
+{
+    *out = vtk / (CLOCK_FREQ / (INT64_C(1000)));
+    return false;
+}
 #elif (1000 % CLOCK_FREQ) == 0
 #define VLC_TICK_FROM_MS(ms)  ((ms)  / (INT64_C(1000) / CLOCK_FREQ))
 #define MS_FROM_VLC_TICK(vtk) ((vtk) * (INT64_C(1000) / CLOCK_FREQ))
+static inline bool vlc_tick_from_ms(vlc_tick_t *out, int64_t ms)
+{
+    *out = ms / (INT64_C(1000) / CLOCK_FREQ);
+    return false;
+}
+static inline bool vlc_tick_to_ms(int64_t *out, vlc_tick_t vtk)
+{
+    return ckd_mul(out, vtk, INT64_C(1000) / CLOCK_FREQ);
+}
 #else /* rounded overflowing conversion */
 #define VLC_TICK_FROM_MS(ms)  (CLOCK_FREQ * (ms) / 1000)
 #define MS_FROM_VLC_TICK(vtk) ((vtk) * 1000 / CLOCK_FREQ)
+static inline bool vlc_tick_from_ms(vlc_tick_t *out, int64_t ms)
+{
+    if (ckd_mul(out, ms, CLOCK_FREQ))
+        return true;
+    *out = *out / INT64_C(1000);
+    return false;
+}
+static inline bool vlc_tick_to_ms(int64_t *out, vlc_tick_t vtk)
+{
+    if (ckd_mul(out, vtk, INT64_C(1000)))
+        return true;
+    *out = *out / CLOCK_FREQ;
+    return false;
+}
 #endif /* CLOCK_FREQ / 1000 */
 
 
 /*
  * vlc_tick_t <> microseconds (us) conversions
  */
-#if (CLOCK_FREQ % 1000000) == 0
+#if CLOCK_FREQ == 1000000
+#define VLC_TICK_FROM_US(us)  (us)
+#define US_FROM_VLC_TICK(vtk) (vtk)
+static inline bool vlc_tick_from_us(vlc_tick_t *tick, int64_t us)
+{
+    *tick = us;
+    return false;
+}
+static inline bool vlc_tick_to_us(int64_t *out, vlc_tick_t vtk)
+{
+    *out = vtk;
+    return false;
+}
+#elif (CLOCK_FREQ % 1000000) == 0
 #define VLC_TICK_FROM_US(us)    ((CLOCK_FREQ / INT64_C(1000000)) * (us))
 #define US_FROM_VLC_TICK(vtk)   ((vtk) / (CLOCK_FREQ / INT64_C(1000000)))
+static inline bool vlc_tick_from_us(vlc_tick_t *tick, int64_t us)
+{
+    return ckd_mul(tick, us, CLOCK_FREQ / INT64_C(1000000));
+}
+static inline bool vlc_tick_to_us(int64_t *out, vlc_tick_t vtk)
+{
+    *out = vtk / (CLOCK_FREQ / (INT64_C(1000000)));
+    return false;
+}
 #elif (1000000 % CLOCK_FREQ) == 0
 #define VLC_TICK_FROM_US(us)    ((us)  / (INT64_C(1000000) / CLOCK_FREQ))
 #define US_FROM_VLC_TICK(vtk)   ((vtk) * (INT64_C(1000000) / CLOCK_FREQ))
+static inline bool vlc_tick_from_us(vlc_tick_t *tick, int64_t us)
+{
+    *tick = us / (INT64_C(1000000) / CLOCK_FREQ);
+    return false;
+}
+static inline bool vlc_tick_to_us(int64_t *out, vlc_tick_t vtk)
+{
+    return ckd_mul(out, vtk, INT64_C(1000000) / CLOCK_FREQ);
+}
 #else /* rounded overflowing conversion */
 #define VLC_TICK_FROM_US(us)    (CLOCK_FREQ * (us) / INT64_C(1000000))
 #define US_FROM_VLC_TICK(vtk)   ((vtk) * INT64_C(1000000) / CLOCK_FREQ)
+static inline bool vlc_tick_from_us(vlc_tick_t *tick, int64_t us)
+{
+    if (ckd_mul(tick, us, CLOCK_FREQ))
+        return true;
+    *tick = *tick / INT64_C(1000000);
+    return false;
+}
+static inline bool vlc_tick_to_us(int64_t *out, vlc_tick_t vtk)
+{
+    if (ckd_mul(out, vtk, INT64_C(1000000)))
+        return true;
+    *out = *out / CLOCK_FREQ;
+    return false;
+}
 #endif /* CLOCK_FREQ / 1000000 */
 
 
 /*
  * vlc_tick_t <> nanoseconds (ns) conversions
  */
-#if (CLOCK_FREQ % 1000000000) == 0
+#if CLOCK_FREQ == 1000000000
+#define VLC_TICK_FROM_NS(ns)  (ns)
+#define NS_FROM_VLC_TICK(vtk) (vtk)
+static inline bool vlc_tick_from_ns(vlc_tick_t *out, int64_t ns)
+{
+    *out = ns;
+    return false;
+}
+static inline bool vlc_tick_to_ns(int64_t *out, vlc_tick_t vtk)
+{
+    *out = vtk;
+    return false;
+}
+#elif (CLOCK_FREQ % 1000000000) == 0
 #define VLC_TICK_FROM_NS(ns)    ((ns)  * (CLOCK_FREQ / (INT64_C(1000000000))))
 #define NS_FROM_VLC_TICK(vtk)   ((vtk) / (CLOCK_FREQ / (INT64_C(1000000000))))
+static inline bool vlc_tick_from_ns(vlc_tick_t *out, int64_t ns)
+{
+    return ckd_mul(out, ns, CLOCK_FREQ / INT64_C(1000000000));
+}
+static inline bool vlc_tick_to_ns(int64_t *out, vlc_tick_t vtk)
+{
+    *out = vtk / (CLOCK_FREQ / (INT64_C(1000000000)));
+    return false;
+}
 #elif (1000000000 % CLOCK_FREQ) == 0
 #define VLC_TICK_FROM_NS(ns)    ((ns)  / (INT64_C(1000000000) / CLOCK_FREQ))
 #define NS_FROM_VLC_TICK(vtk)   ((vtk) * (INT64_C(1000000000) / CLOCK_FREQ))
+static inline bool vlc_tick_from_ns(vlc_tick_t *out, int64_t ns)
+{
+    *out = ns / (INT64_C(1000000000) / CLOCK_FREQ);
+    return false;
+}
+static inline bool vlc_tick_to_ns(int64_t *out, vlc_tick_t vtk)
+{
+    return ckd_mul(out, vtk, INT64_C(1000000000) / CLOCK_FREQ);
+}
 #else /* rounded overflowing conversion */
 #define VLC_TICK_FROM_NS(ns)    (CLOCK_FREQ * (ns) / INT64_C(1000000000))
 #define NS_FROM_VLC_TICK(vtk)   ((vtk) * INT64_C(1000000000) / CLOCK_FREQ)
+static inline bool vlc_tick_from_ns(vlc_tick_t *out, int64_t ns)
+{
+    if (ckd_mul(out, ns, CLOCK_FREQ))
+        return true;
+    *out = *out / INT64_C(1000000000);
+    return false;
+}
+static inline bool vlc_tick_to_ns(int64_t *out, vlc_tick_t vtk)
+{
+    if (ckd_mul(out, vtk, INT64_C(1000000000)))
+        return true;
+    *out = *out / CLOCK_FREQ;
+    return false;
+}
 #endif /* CLOCK_FREQ / 1000000000 */
 
 
@@ -171,15 +313,60 @@ typedef int64_t msftime_t;
 #define MSFTIME_FROM_SEC(sec)       (INT64_C(10000000) * (sec))  /* seconds in msftime_t */
 #define MSFTIME_FROM_MS(sec)        (INT64_C(10000) * (sec))     /* milliseconds in msftime_t */
 
-#if (CLOCK_FREQ % 10000000) == 0
+#if CLOCK_FREQ == 10000000
+#define VLC_TICK_FROM_MSFTIME(msft)  (msft)
+#define MSFTIME_FROM_VLC_TICK(vtk) (vtk)
+static inline bool vlc_tick_from_msft(vlc_tick_t *out, int64_t msft)
+{
+    *out = msft;
+    return false;
+}
+static inline bool vlc_tick_to_msft(int64_t *out, vlc_tick_t vtk)
+{
+    *out = vtk;
+    return false;
+}
+#elif (CLOCK_FREQ % 10000000) == 0
 #define VLC_TICK_FROM_MSFTIME(msft) ((msft) * (CLOCK_FREQ / INT64_C(10000000))
 #define MSFTIME_FROM_VLC_TICK(vtk)  ((vtk)  / (CLOCK_FREQ / INT64_C(10000000))
+static inline bool vlc_tick_from_msft(vlc_tick_t *out, int64_t msft)
+{
+    return ckd_mul(out, msft, CLOCK_FREQ / INT64_C(10000000));
+}
+static inline bool vlc_tick_to_msft(int64_t *out, vlc_tick_t vtk)
+{
+    *out = vtk / (CLOCK_FREQ / INT64_C(10000000));
+    return false;
+}
 #elif (10000000 % CLOCK_FREQ) == 0
 #define VLC_TICK_FROM_MSFTIME(msft) ((msft) / (INT64_C(10000000) / CLOCK_FREQ))
 #define MSFTIME_FROM_VLC_TICK(vtk)  ((vtk)  * (INT64_C(10000000) / CLOCK_FREQ))
+static inline bool vlc_tick_from_msft(vlc_tick_t *out, int64_t msft)
+{
+    *out = msft / (INT64_C(10000000) / CLOCK_FREQ);
+    return false;
+}
+static inline bool vlc_tick_to_msft(int64_t *out, vlc_tick_t vtk)
+{
+    return ckd_mul(out, vtk, INT64_C(10000000) / CLOCK_FREQ);
+}
 #else /* rounded overflowing conversion */
 #define VLC_TICK_FROM_MSFTIME(msft) (CLOCK_FREQ * (msft) / INT64_C(10000000))
 #define MSFTIME_FROM_VLC_TICK(vtk)  ((vtk)  * INT64_C(10000000) / CLOCK_FREQ)
+static inline bool vlc_tick_from_msft(vlc_tick_t *out, int64_t msft)
+{
+    if (ckd_mul(&tick, msft, CLOCK_FREQ))
+        return true;
+    *out = *out / INT64_C(10000000);
+    return false;
+}
+static inline bool vlc_tick_to_msft(int64_t *out, vlc_tick_t vtk)
+{
+    if (ckd_mul(out, vtk, INT64_C(10000000))
+        return true;
+    *out = *out / CLOCK_FREQ;
+    return false;
+}
 #endif /* CLOCK_FREQ / 10000000 */
 
 #define vlc_tick_from_timeval(tv) \
