@@ -77,6 +77,79 @@ HostTimeToTick(struct aout_sys_common *p_sys, int64_t i_host_time)
     return VLC_TICK_FROM_NS(i_host_time * p_sys->tinfo.numer / p_sys->tinfo.denom);
 }
 
+/* Adaption of aout_CheckChannelReorder() to handle missing channels. */
+static unsigned
+CheckChannelReorderExt(const uint32_t *chans_out, uint32_t mask,
+                       uint8_t *restrict table, bool *restrict missing_table,
+                       size_t total_channel_count)
+{
+    static_assert(AOUT_CHAN_MAX <= (sizeof (mask) * CHAR_BIT), "Missing bits");
+
+    unsigned channels = 0;
+    assert(total_channel_count >= (unsigned) vlc_popcount(mask));
+
+    const uint32_t *chans_in = pi_vlc_chan_order_wg4;
+    assert(chans_out != NULL);
+
+    for (unsigned i = 0; chans_in[i] != 0; i++)
+    {
+        const uint32_t chan = chans_in[i];
+        if (!(mask & chan))
+            continue;
+
+        unsigned index = 0;
+        for (unsigned j = 0; chan != chans_out[j]; j++)
+            if (mask & chans_out[j] || missing_table[j])
+                index++;
+
+        table[channels++] = index;
+    }
+
+    if (total_channel_count > 0)
+        return channels;
+
+    for (unsigned i = 0; i < channels; i++)
+        if (table[i] != i)
+            return channels;
+    return 0;
+}
+
+/* Adaption of aout_ChannelReorder() to handle missing channels.
+ * The main differences are:
+ *  - The dst buf need to be allocated
+ *  - float only
+ *  - Put 0s for missing channels
+ */
+static void
+ChannelReorderExt(float *buf, size_t bytes, uint8_t channels,
+                  const float *src, uint8_t src_channels,
+                  const uint8_t *restrict chans_table,
+                  const bool *restrict missing_table)
+{
+    const size_t frames = (bytes / sizeof (float)) / channels;
+
+    for (size_t i = 0; i < frames; i++)
+    {
+        size_t chans_table_offset = 0;
+        for (size_t j = 0; j < channels; j++)
+        {
+            if (missing_table[j])
+            {
+                buf[j] = 0;
+                chans_table_offset++;
+            }
+            else
+            {
+                size_t chan_table_idx = j - chans_table_offset;
+                assert(chan_table_idx < src_channels);
+                buf[j] = src[chans_table[chan_table_idx]];
+            }
+        }
+        buf += channels;
+        src += src_channels;
+    }
+}
+
 static void
 ca_ClearOutBuffers(audio_output_t *p_aout)
 {
@@ -128,6 +201,9 @@ ca_Open(audio_output_t *p_aout)
     p_sys->p_out_chain = NULL;
     p_sys->pp_out_last = &p_sys->p_out_chain;
     p_sys->chans_to_reorder = 0;
+
+    p_sys->missing_table = NULL;
+    p_sys->channel_count = p_sys->total_channel_count = 0;
 
     p_aout->play = ca_Play;
     p_aout->pause = ca_Pause;
@@ -332,9 +408,36 @@ ca_Play(audio_output_t * p_aout, block_t * p_block, vlc_tick_t date)
 
     /* Do the channel reordering */
     if (p_sys->chans_to_reorder)
-       aout_ChannelReorder(p_block->p_buffer, p_block->i_buffer,
-                           p_sys->chans_to_reorder, p_sys->chan_table,
-                           VLC_CODEC_FL32);
+    {
+        if (p_sys->total_channel_count > 0)
+        {
+            /* The renderer expect more channels than VLC can handle. Realloc,
+             * reorder and put 0s to unknown channels */
+            block_t *new_block = NULL;
+            new_block = block_Alloc(p_block->i_buffer *
+                                    p_sys->total_channel_count /
+                                    p_sys->channel_count);
+            if (new_block == NULL)
+            {
+                block_Release(p_block);
+                return;
+            }
+            ChannelReorderExt((void *) new_block->p_buffer, new_block->i_buffer,
+                              p_sys->total_channel_count,
+                              (void *) p_block->p_buffer, p_sys->channel_count,
+                              p_sys->chan_table, p_sys->missing_table);
+
+            block_CopyProperties(new_block, p_block);
+
+            block_t *release = p_block;
+            p_block = new_block;
+            block_Release(release);
+        }
+        else
+            aout_ChannelReorder(p_block->p_buffer, p_block->i_buffer,
+                                p_sys->chans_to_reorder, p_sys->chan_table,
+                                VLC_CODEC_FL32);
+    }
 
     lock_lock(p_sys);
 
@@ -386,8 +489,22 @@ ca_Initialize(audio_output_t *p_aout, const audio_sample_format_t *fmt,
     p_sys->first_pts = VLC_TICK_INVALID;
 
     p_sys->i_rate = fmt->i_rate;
-    p_sys->i_bytes_per_frame = fmt->i_bytes_per_frame;
-    p_sys->i_frame_length = fmt->i_frame_length;
+
+    if (p_sys->total_channel_count > 0)
+    {
+        /* The renderer expect more channels than VLC can handle. Adapt
+         * i_bytes_per_frame that will be used for bytes<>frames<>ticks
+         * conversion. Clocks and timings calculation will be based on the new
+         * i_bytes_per_frame value. */
+        p_sys->i_bytes_per_frame = fmt->i_bitspersample / 8
+                                 * p_sys->total_channel_count;
+        p_sys->i_frame_length = 1;
+    }
+    else
+    {
+        p_sys->i_bytes_per_frame = fmt->i_bytes_per_frame;
+        p_sys->i_frame_length = fmt->i_frame_length;
+    }
 
     if (get_latency != NULL)
         p_sys->get_latency = get_latency;
@@ -649,8 +766,25 @@ MapOutputLayout(audio_output_t *p_aout, audio_sample_format_t *fmt,
                 fmt->i_physical_channels |= mapped_chan;
             }
             else
+            {
+                /* Allocate and initialize a table of missing channels, this
+                 * will be used when converting the data from VLC to the
+                 * renderer. */
+                if (p_sys->missing_table == NULL)
+                {
+                    p_sys->total_channel_count = outlayout->mNumberChannelDescriptions;
+                    p_sys->missing_table = calloc(p_sys->total_channel_count,
+                                                  sizeof(*p_sys->missing_table));
+                    if (p_sys->missing_table == NULL)
+                    {
+                        p_sys->total_channel_count = 0;
+                        return VLC_ENOMEM;
+                    }
+                }
+                p_sys->missing_table[i] = true;
                 msg_Dbg(p_aout, "found nonrecognized channel %d at index "
                         "%u", (int) chan, i);
+            }
         }
         if (fmt->i_physical_channels == 0)
         {
@@ -660,12 +794,23 @@ MapOutputLayout(audio_output_t *p_aout, audio_sample_format_t *fmt,
         }
         else
         {
-            p_sys->chans_to_reorder =
-                aout_CheckChannelReorder(NULL, chans_out,
-                                         fmt->i_physical_channels,
-                                         p_sys->chan_table);
-            if (p_sys->chans_to_reorder)
-                msg_Dbg(p_aout, "channel reordering needed");
+            if (p_sys->total_channel_count > 0)
+            {
+                p_sys->chans_to_reorder =
+                    CheckChannelReorderExt(chans_out, fmt->i_physical_channels,
+                                           p_sys->chan_table, p_sys->missing_table,
+                                           p_sys->total_channel_count);
+                msg_Dbg(p_aout, "advanced channel reordering needed");
+            }
+            else
+            {
+                p_sys->chans_to_reorder =
+                    aout_CheckChannelReorder(NULL, chans_out,
+                                             fmt->i_physical_channels,
+                                             p_sys->chan_table);
+                if (p_sys->chans_to_reorder)
+                    msg_Dbg(p_aout, "channel reordering needed");
+            }
         }
     }
 
@@ -714,8 +859,11 @@ au_Initialize(audio_output_t *p_aout, AudioUnit au, audio_sample_format_t *fmt,
         }
 
         desc.mFormatFlags = kAudioFormatFlagsNativeFloatPacked;
-        desc.mChannelsPerFrame = aout_FormatNbChannels(fmt);
         desc.mBitsPerChannel = 32;
+
+        p_sys->channel_count = aout_FormatNbChannels(fmt);
+        desc.mChannelsPerFrame = p_sys->total_channel_count > 0 ?
+            p_sys->total_channel_count : p_sys->channel_count;
     }
     else if (AOUT_FMT_SPDIF(fmt))
     {
@@ -732,7 +880,7 @@ au_Initialize(audio_output_t *p_aout, AudioUnit au, audio_sample_format_t *fmt,
 
         desc.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger |
                             kLinearPCMFormatFlagIsPacked; /* S16LE */
-        desc.mChannelsPerFrame = 2;
+        p_sys->channel_count = desc.mChannelsPerFrame = 2;
         desc.mBitsPerChannel = 16;
     }
     else
@@ -828,9 +976,15 @@ au_Initialize(audio_output_t *p_aout, AudioUnit au, audio_sample_format_t *fmt,
 void
 au_Uninitialize(audio_output_t *p_aout, AudioUnit au)
 {
+    struct aout_sys_common *p_sys = (struct aout_sys_common *) p_aout->sys;
+
     OSStatus err = AudioUnitUninitialize(au);
     if (err != noErr)
         ca_LogWarn("AudioUnitUninitialize failed");
+
+    free(p_sys->missing_table);
+    p_sys->missing_table = NULL;
+    p_sys->channel_count = p_sys->total_channel_count = 0;
 
     ca_Uninitialize(p_aout);
 }

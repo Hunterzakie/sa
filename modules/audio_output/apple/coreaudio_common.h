@@ -91,6 +91,9 @@ struct aout_sys_common
     unsigned int        i_frame_length;
     uint8_t             chans_to_reorder;
     uint8_t             chan_table[AOUT_CHAN_MAX];
+    bool               *missing_table;
+    unsigned            total_channel_count;
+    unsigned            channel_count;
     /* ca_TimeGet extra latency, in vlc ticks */
     vlc_tick_t          i_dev_latency_ticks;
     get_latency_cb      get_latency;
