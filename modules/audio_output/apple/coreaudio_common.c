@@ -90,27 +90,33 @@ ca_ClearOutBuffers(audio_output_t *p_aout)
 static inline void
 lock_init(struct aout_sys_common *p_sys)
 {
-    if (likely(os_unfair_lock_lock))
+#ifdef OS_UNFAIR_LOCK_DEFINED
+    if (__builtin_available(macOS 10.12, iOS 10, tvOS 10, watchOS 3, *))
         p_sys->lock.unfair = OS_UNFAIR_LOCK_INIT;
     else
+#endif
         vlc_mutex_init(&p_sys->lock.mutex);
 }
 
 static inline void
 lock_lock(struct aout_sys_common *p_sys)
 {
-    if (likely(os_unfair_lock_lock))
+#ifdef OS_UNFAIR_LOCK_DEFINED
+    if (__builtin_available(macOS 10.12, iOS 10, tvOS 10, watchOS 3, *))
         os_unfair_lock_lock(&p_sys->lock.unfair);
     else
+#endif
         vlc_mutex_lock(&p_sys->lock.mutex);
 }
 
 static inline void
 lock_unlock(struct aout_sys_common *p_sys)
 {
-    if (likely(os_unfair_lock_lock))
+#ifdef OS_UNFAIR_LOCK_DEFINED
+    if (__builtin_available(macOS 10.12, iOS 10, tvOS 10, watchOS 3, *))
         os_unfair_lock_unlock(&p_sys->lock.unfair);
     else
+#endif
         vlc_mutex_unlock(&p_sys->lock.mutex);
 }
 
@@ -157,12 +163,18 @@ ca_Render(audio_output_t *p_aout, uint64_t host_time,
     struct aout_sys_common *p_sys = (struct aout_sys_common *) p_aout->sys;
 
     vlc_tick_t host_delay_ticks = 0;
+#if (TARGET_OS_OSX    && defined(__MAC_10_12)   && __MAC_OS_X_VERSION_MAX_ALLOWED  >= __MAC_10_12) ||\
+    (TARGET_OS_IOS    && defined(__IPHONE_10_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0) || \
+    (TARGET_OS_TV     && defined(__TVOS_10_0)   && __TV_OS_VERSION_MAX_ALLOWED     >= __TVOS_10_0) || \
+    (TARGET_OS_WATCH  && defined(__WATCHOS_3_0) && __WATCH_OS_VERSION_MAX_ALLOWED  >= __WATCHOS_3_0)
+    if (__builtin_available(macOS 10.12, iOS 10, tvOS 10, watchOS 3, *)) // clock_gettime_nsec_np
     if (host_time != 0)
     {
         uint64_t now_nsec = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
         host_delay_ticks = HostTimeToTick(p_sys, host_time)
                          - VLC_TICK_FROM_NS(now_nsec);
     }
+#endif
     const vlc_tick_t bytes_ticks = BytesToTicks(p_sys, bytes);
 
     const vlc_tick_t now_ticks = vlc_tick_now();

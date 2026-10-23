@@ -47,6 +47,15 @@
 #define ca_LogErr(fmt) msg_Err(p_aout, fmt ", OSStatus: %d", (int) err)
 #define ca_LogWarn(fmt) msg_Warn(p_aout, fmt ", OSStatus: %d", (int) err)
 
+#if (TARGET_OS_OSX    && defined(__MAC_10_12)   && __MAC_OS_X_VERSION_MAX_ALLOWED  >= __MAC_10_12) ||\
+    (TARGET_OS_IOS    && defined(__IPHONE_10_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0) || \
+    (TARGET_OS_TV     && defined(__TVOS_10_0)   && __TV_OS_VERSION_MAX_ALLOWED     >= __TVOS_10_0) || \
+    (TARGET_OS_WATCH  && defined(__WATCHOS_3_0) && __WATCH_OS_VERSION_MAX_ALLOWED  >= __WATCHOS_3_0) || \
+    (TARGET_OS_VISION)
+// not defined in older SDKs
+#define OS_UNFAIR_LOCK_DEFINED 1
+#endif
+
 typedef vlc_tick_t (*get_latency_cb)(audio_output_t *);
 
 struct aout_sys_common
@@ -79,10 +88,12 @@ struct aout_sys_common
 
     union lock
     {
+#ifdef OS_UNFAIR_LOCK_DEFINED
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpartial-availability"
         os_unfair_lock  unfair;
 #pragma clang diagnostic pop
+#endif
         vlc_mutex_t     mutex;
     } lock;
 
