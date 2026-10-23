@@ -35,6 +35,7 @@ Q_MOC_INCLUDE( "dialogs/toolbar/controlbar_profile_model.hpp" )
 Q_MOC_INCLUDE( "util/csdbuttonmodel.hpp" )
 Q_MOC_INCLUDE( "playlist/playlist_controller.hpp" )
 Q_MOC_INCLUDE( "maininterface/mainctx_submodels.hpp" )
+Q_MOC_INCLUDE( "maininterface/pinned_items.hpp" )
 Q_MOC_INCLUDE( "maininterface/videosurface.hpp" )
 Q_MOC_INCLUDE( "medialibrary/medialib.hpp" )
 Q_MOC_INCLUDE( "player/player_controller.hpp" )
@@ -68,6 +69,7 @@ class MediaLib;
 class ColorSchemeModel;
 class VLCVarChoiceModel;
 class SidePanelCtx;
+class PinnedItems;
 #ifdef UPDATE_CHECK
 class UpdateModel;
 #endif
@@ -100,6 +102,7 @@ class MainCtx : public QObject
 
     Q_PROPERTY(double playerPlaylistWidth READ getPlayerPlaylistWidth WRITE setPlayerPlaylistWidth NOTIFY playerPlaylistWidthChanged FINAL)
     Q_PROPERTY(SidePanelCtx* playqueuePanel READ getPlayqueuePanel CONSTANT FINAL)
+    Q_PROPERTY(PinnedItems* pinnedItems READ getPinnedItems CONSTANT FINAL)
     Q_PROPERTY(SidePanelCtx* navigationPanel READ getNavigationPanel CONSTANT FINAL)
     Q_PROPERTY(double artistAlbumsWidth READ artistAlbumsWidth WRITE setArtistAlbumsWidth NOTIFY artistAlbumsWidthChanged FINAL)
     Q_PROPERTY(bool interfaceAlwaysOnTop READ isInterfaceAlwaysOnTop WRITE setInterfaceAlwaysOnTop NOTIFY interfaceAlwaysOnTopChanged FINAL)
@@ -133,6 +136,10 @@ class MainCtx : public QObject
     Q_PROPERTY(int mouseHideTimeout READ mouseHideTimeout NOTIFY mouseHideTimeoutChanged FINAL)
     Q_PROPERTY(bool albumSections READ albumSections WRITE setAlbumSections NOTIFY albumSectionsChanged FINAL)
     Q_PROPERTY(bool lyricsMode READ lyricsMode WRITE setLyricsMode NOTIFY lyricsModeChanged FINAL)
+    Q_PROPERTY(bool seekThumbnails READ seekThumbnails WRITE setSeekThumbnails NOTIFY seekThumbnailsChanged FINAL)
+    Q_PROPERTY(bool seekWaveform READ seekWaveform WRITE setSeekWaveform NOTIFY seekWaveformChanged FINAL)
+    Q_PROPERTY(bool playbackStatistics READ playbackStatistics WRITE setPlaybackStatistics NOTIFY playbackStatisticsChanged FINAL)
+    Q_PROPERTY(bool subtitleTimeline READ subtitleTimeline WRITE setSubtitleTimeline NOTIFY subtitleTimelineChanged FINAL)
     Q_PROPERTY(bool usingTouch READ usingTouch NOTIFY usingTouchChanged FINAL)
     Q_PROPERTY(CSDButtonModel *csdButtonModel READ csdButtonModel CONSTANT FINAL)
     Q_PROPERTY(MainInterfaceModes mainInterfaceModes READ getMainInterfaceModes NOTIFY mainInterfaceModesChanged FINAL)
@@ -224,6 +231,7 @@ public:
 
     inline QWindow::Visibility interfaceVisibility() const { return m_windowVisibility; }
     inline SidePanelCtx* getPlayqueuePanel() const { return m_playqueuePanel; }
+    inline PinnedItems* getPinnedItems() const { return m_pinnedItems; }
     inline SidePanelCtx* getNavigationPanel() const { return m_navigationPanel; }
     inline double getPlayerPlaylistWidth() const { return m_playerPlaylistWidth; }
     bool isInterfaceAlwaysOnTop() { return b_interfaceOnTop; }
@@ -240,6 +248,10 @@ public:
     inline Grouping grouping() const { return m_grouping; }
     inline bool albumSections() const { return m_albumSections; }
     inline bool lyricsMode() const { return m_lyricsMode; }
+    inline bool seekThumbnails() const { return m_seekThumbnails; }
+    inline bool seekWaveform() const { return m_seekWaveform; }
+    inline bool playbackStatistics() const { return m_playbackStatistics; }
+    inline bool subtitleTimeline() const { return m_subtitleTimeline; }
     inline ColorSchemeModel* getColorScheme() const { return m_colorScheme; }
     bool hasVLM() const;
     bool useClientSideDecoration() const;
@@ -444,6 +456,7 @@ protected:
     int                  i_notificationSetting = 0; /// Systray Notifications
     bool                 b_hideAfterCreation = false; /// --qt-start-minimized
     SidePanelCtx*   m_playqueuePanel = nullptr;
+    PinnedItems*    m_pinnedItems = nullptr;
     SidePanelCtx*   m_navigationPanel = nullptr;
     QWindow::Visibility  m_windowVisibility = QWindow::Windowed;
     bool                 b_interfaceOnTop = false;      ///keep UI on top
@@ -493,6 +506,10 @@ protected:
     bool m_albumSections = true;
 
     bool m_lyricsMode = true;
+    bool m_seekThumbnails = true;
+    bool m_seekWaveform = true;
+    bool m_playbackStatistics = false;
+    bool m_subtitleTimeline = false;
 
     bool m_usingTouch = false;
 
@@ -525,6 +542,10 @@ public slots:
     void setGrouping( Grouping );
     void setAlbumSections( bool );
     void setLyricsMode( bool );
+    void setSeekThumbnails( bool );
+    void setSeekWaveform( bool );
+    void setPlaybackStatistics( bool );
+    void setSubtitleTimeline( bool );
     void incrementIntfUserScaleFactor( bool increment);
     void setIntfUserScaleFactor( double );
     void setHasToolbarMenu( bool );
@@ -576,6 +597,12 @@ signals:
     void groupingChanged( Grouping );
     void albumSectionsChanged( bool );
     void lyricsModeChanged( bool );
+    void seekThumbnailsChanged( bool );
+    /// the accent color of the palette changed (qt-accent-color)
+    void accentColorChanged();
+    void seekWaveformChanged( bool );
+    void playbackStatisticsChanged( bool );
+    void subtitleTimelineChanged( bool );
     void colorSchemeChanged( QString );
     void useClientSideDecorationChanged();
     void hasToolbarMenuChanged();

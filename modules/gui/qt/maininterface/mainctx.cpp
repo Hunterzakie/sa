@@ -33,6 +33,7 @@
 
 #include "mainctx.hpp"
 #include "mainctx_submodels.hpp"
+#include "pinned_items.hpp"
 #include "medialibrary/mlhelper.hpp"
 
 #include "compositor.hpp"
@@ -189,6 +190,7 @@ MainCtx::MainCtx(qt_intf_t *_p_intf)
     m_sort = new SortCtx(this);
     m_search = new SearchCtx(this);
     m_playqueuePanel = new SidePanelCtx(this);
+    m_pinnedItems = new PinnedItems(getSettings(), this);
     m_navigationPanel = new SidePanelCtx(this);
 
     // getOSInfo();
@@ -264,14 +266,9 @@ MainCtx::MainCtx(qt_intf_t *_p_intf)
     /* Register callback for the intf-popupmenu variable */
     var_AddCallback( libvlc, "intf-popupmenu", PopupMenuCB, p_intf );
 
-    if( var_InheritBool( p_intf, "qt-privacy-ask") )
-    {
-        //postpone dialog call, as composition might not be ready yet
-        QMetaObject::invokeMethod(this, [](){
-            THEDP->firstRunDialog();
-        }, Qt::QueuedConnection);
-    }
-    else if (m_medialib)
+    // on the first run, the interface shows its onboarding (see Onboarding),
+    // which reloads the media library once the privacy choice is made
+    if( !var_InheritBool( p_intf, "qt-privacy-ask") && m_medialib )
     {
         QMetaObject::invokeMethod(m_medialib, &MediaLib::reload, Qt::QueuedConnection);
     }
@@ -338,6 +335,10 @@ MainCtx::~MainCtx()
         settings->setValue( "album-sections", m_albumSections );
 
         settings->setValue( "lyrics-mode", m_lyricsMode );
+        settings->setValue( "seek-thumbnails", m_seekThumbnails );
+        settings->setValue( "seek-waveform", m_seekWaveform );
+        settings->setValue( "playback-statistics", m_playbackStatistics );
+        settings->setValue( "subtitle-timeline", m_subtitleTimeline );
 
         /* Save the stackCentralW sizes */
         settings->endGroup();
@@ -493,6 +494,11 @@ void MainCtx::loadFromSettingsImpl(const bool callSignals)
     loadFromSettings(m_albumSections, "MainWindow/album-sections", true, this, &MainCtx::albumSectionsChanged);
 
     loadFromSettings(m_lyricsMode, "MainWindow/lyrics-mode", true, this, &MainCtx::lyricsModeChanged);
+
+    loadFromSettings(m_seekThumbnails, "MainWindow/seek-thumbnails", true, this, &MainCtx::seekThumbnailsChanged);
+    loadFromSettings(m_seekWaveform, "MainWindow/seek-waveform", true, this, &MainCtx::seekWaveformChanged);
+    loadFromSettings(m_playbackStatistics, "MainWindow/playback-statistics", false, this, &MainCtx::playbackStatisticsChanged);
+    loadFromSettings(m_subtitleTimeline, "MainWindow/subtitle-timeline", false, this, &MainCtx::subtitleTimelineChanged);
 
     const auto colorSchemeIndex = getSettings()->value( "MainWindow/color-scheme-index", 0 ).toInt();
     m_colorScheme->setCurrentIndex(colorSchemeIndex);
@@ -753,6 +759,42 @@ void MainCtx::setLyricsMode(bool enabled)
 
     m_lyricsMode = enabled;
     emit lyricsModeChanged(enabled);
+}
+
+void MainCtx::setSeekThumbnails(bool enabled)
+{
+    if (m_seekThumbnails == enabled)
+        return;
+
+    m_seekThumbnails = enabled;
+    emit seekThumbnailsChanged(enabled);
+}
+
+void MainCtx::setSeekWaveform(bool enabled)
+{
+    if (m_seekWaveform == enabled)
+        return;
+
+    m_seekWaveform = enabled;
+    emit seekWaveformChanged(enabled);
+}
+
+void MainCtx::setPlaybackStatistics(bool enabled)
+{
+    if (m_playbackStatistics == enabled)
+        return;
+
+    m_playbackStatistics = enabled;
+    emit playbackStatisticsChanged(enabled);
+}
+
+void MainCtx::setSubtitleTimeline(bool enabled)
+{
+    if (m_subtitleTimeline == enabled)
+        return;
+
+    m_subtitleTimeline = enabled;
+    emit subtitleTimelineChanged(enabled);
 }
 
 void MainCtx::setInterfaceAlwaysOnTop( bool on_top )

@@ -152,6 +152,11 @@ public:
                                               const QString& placeholder,
                                               bool* ok = nullptr);
 
+    /// asks for media files, returns their URLs (empty if cancelled)
+    Q_INVOKABLE QList<QUrl> getOpenMediaUrls(const QString& title);
+    /// asks for a folder, returns its URL (empty if cancelled)
+    Q_INVOKABLE QUrl getFolderUrl(const QString& title);
+
 protected:
     void customEvent( QEvent *) override;
 
@@ -216,6 +221,8 @@ public slots:
                                               const QMessageBox::StandardButton defaultButton = QMessageBox::NoButton,
                                               const QMessageBox::Icon icon = QMessageBox::NoIcon);
     void prefsDialog();
+    /// the preferences with every option, by module
+    void advancedPrefsDialog();
     void firstRunDialog();
     void extendedDialog();
     void synchroDialog();
@@ -288,6 +295,12 @@ public:
 signals:
     void releaseMouseEvents();
     void showToolbarEditorDialog();
+    void showKeyboardShortcutsDialog();
+    /// asks the interface for a dialog to open media: "network",
+    /// "clipboard", "capture", "convert" or "stream"
+    void showOpenMediaDialog(const QString &kind);
+    /// asks the interface for its preferences dialog
+    void showPreferencesDialog();
 
     //visiblity signal
     void openDialogVisibleChanged();

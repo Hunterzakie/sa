@@ -32,7 +32,8 @@ class VLCTick
     Q_GADGET
 public:
     enum FormatFlag {
-        SubSecondFormattedAsMS = 1
+        SubSecondFormattedAsMS = 1,
+        AlwaysShowHours = 2 // used by formatHMS()
     };
     Q_ENUM(FormatFlag)
 
@@ -82,7 +83,7 @@ public:
     Q_INVOKABLE int toMinutes() const;
     Q_INVOKABLE int toSeconds() const;
     Q_INVOKABLE int toHours()   const;
-    int toMilliseconds() const;
+    Q_INVOKABLE int toMilliseconds() const;
 
 protected:
     VLCTick(vlc_tick_t ticks);

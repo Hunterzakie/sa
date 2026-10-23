@@ -312,9 +312,12 @@ QtObject {
     readonly property url noArtAlbum: "qrc:///placeholder/noart_album.svg";
     readonly property url noArtArtist: "qrc:///placeholder/noart_artist.svg";
     readonly property url noArtArtistSmall: "qrc:///placeholder/noart_artist_small.svg";
-    readonly property url noArtAlbumCover: "qrc:///placeholder/noart_albumCover.svg";
-    readonly property url noArtArtistCover: "qrc:///placeholder/noart_artistCover.svg";
-    readonly property url noArtVideoCover: "qrc:///placeholder/noart_videoCover.svg";
+    readonly property url noArtAlbumCover: palette.isDark ? "qrc:///placeholder/noart_albumCover_dark.svg"
+                                                     : "qrc:///placeholder/noart_albumCover.svg";
+    readonly property url noArtArtistCover: palette.isDark ? "qrc:///placeholder/noart_artistCover_dark.svg"
+                                                     : "qrc:///placeholder/noart_artistCover.svg";
+    readonly property url noArtVideoCover: palette.isDark ? "qrc:///placeholder/noart_videoCover_dark.svg"
+                                                     : "qrc:///placeholder/noart_videoCover.svg";
 
     // New indicator
     readonly property url newIndicator: "qrc:///misc/new_indicator.svg";
@@ -326,6 +329,57 @@ QtObject {
     // Player control layout
     readonly property int controlLayoutHeight: MainCtx.dp(64, scale)
     readonly property int controlLayoutHeightPinned: MainCtx.dp(32, scale)
+    readonly property int controlLayoutHeightInline: MainCtx.dp(32, scale)
+    readonly property int controlBarInlinePadding: MainCtx.dp(11, scale)
+    readonly property int controlBarInlineSpacing: MainCtx.dp(20, scale)
+    // below this width the inline control bar falls back to a separate seek row
+    readonly property int controlBarInlineMinimumWidth: MainCtx.dp(640, scale)
+
+    // Seek bar (inline control bar)
+    readonly property int seekBar_height: MainCtx.dp(28, scale)
+    readonly property int seekBar_radius: MainCtx.dp(6, scale)
+    readonly property int seekBar_inset: MainCtx.dp(2, scale)
+    readonly property int seekBar_handleWidth: MainCtx.dp(8, scale)
+    readonly property int seekBar_handleRadius: MainCtx.dp(4, scale)
+    readonly property int seekBar_timeWidth: MainCtx.dp(76, scale)
+    readonly property int seekBar_timeFontSize: MainCtx.dp(15, scale)
+
+    // Play button (pill)
+    readonly property int playButton_width: MainCtx.dp(54, scale)
+    readonly property int playButton_height: MainCtx.dp(28, scale)
+    readonly property int playButton_radius: MainCtx.dp(6, scale)
+
+    // Player top bar and framed video (pinned controls)
+    readonly property int playerTopBar_height: MainCtx.dp(40, scale)
+    readonly property int playerTopBar_separatorHeight: MainCtx.dp(20, scale)
+    readonly property int videoFrame_inset: MainCtx.dp(10, scale)
+    readonly property int videoFrame_radius: MainCtx.dp(9, scale)
+
+    // Player settings sidebar
+    readonly property int settingsSidebar_width: MainCtx.dp(360, scale)
+    readonly property int settingsSection_radius: MainCtx.dp(6, scale)
+    readonly property int settingsSection_padding: MainCtx.dp(16, scale)
+
+    // thumbnail shown while hovering the seek bar
+    readonly property int seekPreview_width: MainCtx.dp(252, scale)
+    readonly property int seekPreview_padding: MainCtx.dp(10, scale)
+    readonly property int seekPreview_radius: MainCtx.dp(14, scale)
+    readonly property int seekPreview_imageRadius: MainCtx.dp(4, scale)
+    readonly property int settingsSlider_height: MainCtx.dp(16, scale)
+    readonly property int settingsSlider_inset: MainCtx.dp(2, scale)
+    readonly property int settingsSlider_radius: MainCtx.dp(4, scale)
+    readonly property int settingsSlider_handleWidth: MainCtx.dp(6, scale)
+    readonly property int settingsSlider_handleHeight: MainCtx.dp(20, scale)
+
+    // Compact library of the player
+    readonly property int compactLibrary_width: MainCtx.dp(320, scale)
+
+    // Music player
+    readonly property int musicCover_radius: MainCtx.dp(12, scale)
+
+    // Volume wedge
+    readonly property int volumeWedge_width: MainCtx.dp(88, scale)
+    readonly property int volumeWedge_height: MainCtx.dp(28, scale)
 
     // Scroll bar (size means width or height, depending on the orientation):
     readonly property real scrollBarInteractingSize: MainCtx.dp(8, scale)

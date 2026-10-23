@@ -106,10 +106,31 @@ T.Pane {
                 id: listView
 
                 Layout.fillWidth: true
-                Layout.fillHeight: true
+                // the pinned items follow the sections, the list scrolls when
+                // there is not enough room
+                Layout.preferredHeight: contentHeight
+                Layout.minimumHeight: Math.min(contentHeight, VLCStyle.buttonHeightNavigationPane * 3)
 
                 clip: !fadingEdge.implicitClipping && (height < contentHeight)
                 focus: true
+
+                // when all the rows fit, the list must not stay scrolled, as it
+                // may after the rows of a section are removed (once their
+                // animations are done)
+                Timer {
+                    id: unscrollTimer
+
+                    interval: VLCStyle.duration_long + 100
+
+                    onTriggered: {
+                        if (listView.height >= listView.contentHeight && listView.contentY !== listView.originY)
+                            listView.contentY = listView.originY
+                    }
+                }
+
+                onHeightChanged: unscrollTimer.restart()
+                onContentHeightChanged: unscrollTimer.restart()
+                onOriginYChanged: unscrollTimer.restart()
 
                 model: navigationModel
 
@@ -233,6 +254,76 @@ T.Pane {
                         }
                     }
                 }
+            }
+
+            // pages pinned by the user, such as playlists and folders
+            T.Label {
+                Layout.fillWidth: true
+                Layout.topMargin: VLCStyle.margin_small
+
+                visible: root.delegateShowText && pinnedRepeater.count > 0
+
+                leftPadding: root.safeAreaLeftMargin + VLCStyle.margin_small
+                text: qsTr("Pinned")
+                elide: Text.ElideRight
+                color: pinnedTheme.fg.secondary
+                font.pixelSize: VLCStyle.fontSize_small
+                font.weight: Font.DemiBold
+
+                readonly property ColorContext colorContext: ColorContext {
+                    id: pinnedTheme
+                    colorSet: ColorContext.Window
+                }
+            }
+
+            Repeater {
+                id: pinnedRepeater
+
+                model: MainCtx.pinnedItems.items
+
+                delegate: SideNavigationDelegate {
+                    id: pinnedDelegate
+
+                    required property var modelData
+                    required property int index
+
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: VLCStyle.buttonHeightNavigationPane
+
+                    leftPadding: root.safeAreaLeftMargin + VLCStyle.margin_xsmall
+                    rightPadding: root.safeAreaRightMargin
+
+                    leftInset: root.safeAreaLeftMargin + implicitLeftInset
+                    rightInset: root.safeAreaRightMargin + implicitRightInset
+
+                    iconTxt: modelData.icon
+                    text: modelData.title
+
+                    showText: root.delegateShowText
+
+                    onClicked: History.push(modelData.path, MainCtx.pinnedItems.pageProps(index))
+
+                    // right click to unpin
+                    TapHandler {
+                        acceptedButtons: Qt.RightButton
+                        onTapped: (eventPoint) => unpinMenu.popup([], eventPoint.globalPosition)
+                    }
+
+                    NativeMenu {
+                        id: unpinMenu
+
+                        actions: [{
+                            text: qsTr("Unpin from Sidebar"),
+                            action: () => MainCtx.pinnedItems.unpin(pinnedDelegate.modelData.key)
+                        }]
+
+                        onRequestData: (requestID) => setData(requestID, [])
+                    }
+                }
+            }
+
+            Item {
+                Layout.fillHeight: true
             }
 
             Loader {

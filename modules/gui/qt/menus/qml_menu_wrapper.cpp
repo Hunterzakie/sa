@@ -29,6 +29,8 @@
 #include "dialogs/dialogs_provider.hpp"
 #include "util/colorizedsvgicon.hpp"
 #include "maininterface/navigationmodel.hpp"
+#include "maininterface/pinned_items.hpp"
+#include "style/vlcicons.hpp"
 
 // Qt includes
 #include <QPainter>
@@ -648,12 +650,13 @@ bool QmlMenuPositioner::eventFilter(QObject * object, QEvent * event)
     // Bookmarks
     if (m_ctx->hasMediaLibrary())
     {
-	m_menu->addAction(qtr("&Manage"), THEDP, &DialogsProvider::bookmarksDialog )->setShortcut(QKeySequence("Ctrl+B"));
-        m_menu->addSeparator();
-
         MLBookmarkModel * bookmarks = new MLBookmarkModel(m_menu.get());
         bookmarks->setPlayer(m_player->getPlayer());
         bookmarks->setMl(m_ctx->getMediaLibrary());
+
+        m_menu->addAction(qtr("&Add Bookmark"), bookmarks, &MLBookmarkModel::add )->setShortcut(QKeySequence("Ctrl+B"));
+        m_menu->addAction(qtr("&Manage"), THEDP, &DialogsProvider::bookmarksDialog );
+        m_menu->addSeparator();
 
         helper = new ListMenuHelper(m_menu.get(), bookmarks, nullptr, m_menu.get());
 
@@ -883,6 +886,36 @@ void PlaylistListContextMenu::popup(const QModelIndexList & selected, QPoint pos
 
     connect(action, &QAction::triggered, this, &PlaylistListContextMenu::requestDeleteSelectedPlaylists);
 
+    // a playlist can be pinned to the side navigation
+    if (ids.count() == 1)
+    {
+        const QModelIndex index = selected.first();
+        const QString id = ids.first().value<MLItemId>().toString();
+        const QString name = m_model->data(index, MLPlaylistListModel::PLAYLIST_NAME).toString();
+        const QString key = QStringLiteral("playlist:") + id;
+
+        PinnedItems *pinned = m_ctx->getPinnedItems();
+
+        menu->addSeparator();
+
+        if (pinned->isPinned(key))
+        {
+            action = menu->addAction(qtr("Unpin from Sidebar"));
+            connect(action, &QAction::triggered, pinned, [pinned, key]() {
+                pinned->unpin(key);
+            });
+        }
+        else
+        {
+            action = menu->addAction(qtr("Pin to Sidebar"));
+            connect(action, &QAction::triggered, pinned, [pinned, key, id, name]() {
+                pinned->pin(key, name, VLCIcons::playlist,
+                            { QStringLiteral("playlists"), QStringLiteral("list") },
+                            { { QStringLiteral("parentId"), id }, { QStringLiteral("title"), name } });
+            });
+        }
+    }
+
     menu->popup(pos);
 }
 
@@ -1023,6 +1056,41 @@ void NetworkMediaContextMenu::popup(const QModelIndexList& selected, QPoint pos)
                 m_model->setData(m_model->index(idx.row()), !removeFromML, NetworkMediaModel::NETWORK_INDEXED);
             }
         });
+    }
+
+    // a folder can be pinned to the side navigation
+    if (selected.count() == 1)
+    {
+        const QModelIndex index = m_model->index(selected.first().row());
+        const int type = m_model->data(index, NetworkMediaModel::NETWORK_BASE_TYPE).toInt();
+        const QUrl url = m_model->data(index, NetworkMediaModel::NETWORK_BASE_MRL).toUrl();
+
+        if ((type == NetworkMediaModel::TYPE_DIRECTORY || type == NetworkMediaModel::TYPE_NODE) && url.isValid())
+        {
+            const QString name = m_model->data(index, NetworkMediaModel::NETWORK_BASE_NAME).toString();
+            const QString key = QStringLiteral("folder:") + url.toString();
+
+            PinnedItems *pinned = m_ctx->getPinnedItems();
+
+            menu->addSeparator();
+
+            if (pinned->isPinned(key))
+            {
+                action = menu->addAction(qtr("Unpin from Sidebar"));
+                connect(action, &QAction::triggered, pinned, [pinned, key]() {
+                    pinned->unpin(key);
+                });
+            }
+            else
+            {
+                action = menu->addAction(qtr("Pin to Sidebar"));
+                connect(action, &QAction::triggered, pinned, [pinned, key, url, name]() {
+                    pinned->pin(key, name, VLCIcons::folder,
+                                { QStringLiteral("network"), QStringLiteral("browse") },
+                                { { QStringLiteral("folderUrl"), url } });
+                });
+            }
+        }
     }
 
     menu->popup(pos);

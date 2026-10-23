@@ -28,6 +28,17 @@
 #include "player/player_controlbar_model.hpp"
 #include "player/control_list_model.hpp"
 #include "player/control_list_filter.hpp"
+#include "player/player_settings.hpp"
+#include "player/audio_waveform.hpp"
+#include "player/folder_media_model.hpp"
+#include "player/seek_thumbnailer.hpp"
+#include "player/playback_statistics.hpp"
+#include "player/subtitle_cues.hpp"
+#include "player/subtitle_matcher.hpp"
+#include "dialogs/hotkeys/hotkeys_model.hpp"
+#include "maininterface/onboarding.hpp"
+#include "dialogs/open/open_media_helper.hpp"
+#include "dialogs/preferences/preferences_model.hpp"
 #include "player/delay_estimator.hpp"
 
 #include "dialogs/toolbar/controlbar_profile_model.hpp"
@@ -232,6 +243,10 @@ void MainUI::registerQMLTypes()
         assert(dynamic_cast<MainCtxWin32*>(m_mainCtx));
         qmlRegisterAnonymousType<MainCtxWin32>(uri, versionMajor);
 #endif
+        qmlRegisterType<HotkeysModel>(uri, versionMajor, versionMinor, "HotkeysModel");
+        qmlRegisterType<Onboarding>(uri, versionMajor, versionMinor, "Onboarding");
+        qmlRegisterType<OpenMediaHelper>(uri, versionMajor, versionMinor, "OpenMediaHelper");
+        qmlRegisterType<PreferencesModel>(uri, versionMajor, versionMinor, "PreferencesModel");
         qmlRegisterTypesAndRevisions<SearchCtx>(uri, versionMajor);
         qmlRegisterTypesAndRevisions<SortCtx>(uri, versionMajor);
         qmlRegisterUncreatableType<UINotifier>(uri, versionMajor, versionMinor, "UINotifier", "");
@@ -316,7 +331,19 @@ void MainUI::registerQMLTypes()
         qmlRegisterSingletonInstance<PlayerController>(uri, versionMajor, versionMinor, "Player", m_intf->p_mainPlayerController);
         qmlRegisterTypesAndRevisions<TimedText>(uri, versionMajor);
         qmlRegisterType<PlayerHighResolutionTimeUpdater>(uri, versionMajor, versionMinor, "HighResolutionTimeUpdater");
-        qmlRegisterUncreatableMetaObject(VLCTickForeign::staticMetaObject, uri, versionMajor, versionMinor, "VLCTick", "Not Instantiable" );
+        qmlRegisterType<VideoAdjust>(uri, versionMajor, versionMinor, "VideoAdjust");
+        qmlRegisterType<AudioEqualizer>(uri, versionMajor, versionMinor, "AudioEqualizer");
+        qmlRegisterType<SubtitleStyle>(uri, versionMajor, versionMinor, "SubtitleStyle");
+        qmlRegisterType<PlayerPresets>(uri, versionMajor, versionMinor, "PlayerPresets");
+        qmlRegisterType<AudioWaveform>(uri, versionMajor, versionMinor, "AudioWaveform");
+        qmlRegisterType<FolderMediaModel>(uri, versionMajor, versionMinor, "FolderMediaModel");
+        qmlRegisterType<SeekThumbnailer>(uri, versionMajor, versionMinor, "SeekThumbnailer");
+        qmlRegisterType<PlaybackStatistics>(uri, versionMajor, versionMinor, "PlaybackStatistics");
+        qmlRegisterType<SubtitleCues>(uri, versionMajor, versionMinor, "SubtitleCues");
+        qmlRegisterType<SubtitleMatcher>(uri, versionMajor, versionMinor, "SubtitleMatcher");
+        qmlRegisterType<SubtitleLoader>(uri, versionMajor, versionMinor, "SubtitleLoader");
+        // the enums are declared by VLCTick itself, VLCTickForeign has none
+        qmlRegisterUncreatableMetaObject(VLCTick::staticMetaObject, uri, versionMajor, versionMinor, "VLCTick", "Not Instantiable" );
         qmlRegisterTypesAndRevisions<VLCDuration>(uri, versionMajor);
         qmlRegisterTypesAndRevisions<VLCTime>(uri, versionMajor);
 

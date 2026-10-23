@@ -28,7 +28,26 @@ import VLC.MainInterface
 T.ProgressBar {
     id: control
 
-    readonly property real _hoveredScalingFactor: 1.8
+    // thick rounded track with an inset progress fill and a bar shaped handle
+    property bool blockStyle: false
+
+    // peaks of the audio, from 0 to 1, drawn as bars instead of the progress
+    // fill in the block style
+    property var waveformPeaks: []
+
+    // generates the thumbnails shown while hovering, if any
+    property SeekThumbnailer seekThumbnailer: null
+
+    readonly property real _hoverPosition: hoverHandler.hovered ? Helpers.clamp(hoverHandler.point.position.x / control.width, 0., 1.)
+                                                                : -1.
+
+    on_HoverPositionChanged: {
+        if (seekThumbnailer && _hoverPosition >= 0.)
+            seekThumbnailer.request(_hoverPosition)
+    }
+    readonly property bool _hasWaveform: blockStyle && (waveformPeaks?.length ?? 0) > 0
+
+    readonly property real _hoveredScalingFactor: blockStyle ? 1.0 : 1.8
     property int barHeight: VLCStyle.dp(5, VLCStyle.scale)
     readonly property real _scaledBarHeight: control.barHeight * _hoveredScalingFactor
     readonly property real _scaledY: (-control.barHeight / 2) * (control._hoveredScalingFactor - 1)
@@ -42,6 +61,7 @@ T.ProgressBar {
     property real _tooltipPosition: (Widgets.PointingToolTipAttached.instance?.pos.x ?? 0.0) / width
 
     property color backgroundColor: theme.bg.primary
+    property color progressColor: blockStyle ? theme.bg.highlight : theme.fg.primary
     property real touchHandlerMargin: VLCStyle.touchHandlerMargin
 
     Keys.onRightPressed: Player.jumpFwd()
@@ -71,7 +91,9 @@ T.ProgressBar {
         onTriggered: control._isSeekPointsShown = false
     }
 
+    // the thumbnail preview shows the time itself
     Widgets.PointingToolTipAttached.visible: (hoverHandler.hovered || control.visualFocus || dragHandler.active)
+                                             && !thumbnailPreview.visible
 
     Widgets.PointingToolTipAttached.text: {
         if (!Widgets.PointingToolTipAttached.instance?.visible)
@@ -321,10 +343,11 @@ T.ProgressBar {
 
         Rectangle {
             id: sliderRect
-            visible: !Player.hasChapters
+            // the block style keeps a single track, the chapters are marked on it
+            visible: !Player.hasChapters || control.blockStyle
             color: control.backgroundColor
             anchors.fill: parent
-            radius: implicitHeight
+            radius: control.blockStyle ? VLCStyle.seekBar_radius : implicitHeight
         }
 
         Repeater {
@@ -333,9 +356,10 @@ T.ProgressBar {
             anchors.left: parent.left
             anchors.right: parent.right
             height: control.barHeight
-            visible: Player.hasChapters
+            visible: Player.hasChapters && !control.blockStyle
 
-            model: Player.chapters
+            // the delegates are not children of the repeater, hiding it is not enough
+            model: control.blockStyle ? null : Player.chapters
             Item {
                 Rectangle {
                     id: seekpointsRect
@@ -357,7 +381,7 @@ T.ProgressBar {
                     readonly property bool _hovered: hoverHandler.hovered &&
                                             (hoverHandler.point.position.x > x && hoverHandler.point.position.x < x+width)
 
-                    color: _currentChapter < 0 ? theme.fg.primary : control.backgroundColor
+                    color: _currentChapter < 0 ? control.progressColor : control.backgroundColor
                     width: sliderRect.width * seekpointsRect.endPosition - x - control._seekPointsDistance
                     x: sliderRect.width * seekpointsRect.startPosition
 
@@ -370,7 +394,7 @@ T.ProgressBar {
 
                         width: sliderRect.width * control.visualPosition - parent.x - control._seekPointsDistance
                         visible: parent._currentChapter === 0
-                        color: theme.fg.primary
+                        color: control.progressColor
 
                         // We use dynamic mutability group because time interpolation
                         // may induce rapid change:
@@ -429,11 +453,16 @@ T.ProgressBar {
 
         Rectangle {
             id: progressRect
-            width: control.visualPosition * parent.width
-            visible: !Player.hasChapters
-            color: theme.fg.primary
-            height: control.barHeight
-            radius: control._seekPointsRadius
+
+            readonly property real _inset: control.blockStyle ? VLCStyle.seekBar_inset : 0
+
+            x: _inset
+            y: _inset
+            width: control.visualPosition * (parent.width - 2 * _inset)
+            visible: (!Player.hasChapters || control.blockStyle) && !control._hasWaveform
+            color: control.progressColor
+            height: control.barHeight - 2 * _inset
+            radius: control.blockStyle ? VLCStyle.seekBar_handleRadius : control._seekPointsRadius
 
             // We use dynamic mutability group because time interpolation
             // may induce rapid change:
@@ -447,6 +476,83 @@ T.ProgressBar {
             }
         }
 
+        // waveform of the block style: the played part is drawn over the
+        // whole waveform, clipped at the current position
+        Item {
+            id: waveform
+
+            readonly property real _inset: VLCStyle.seekBar_inset * 2
+            readonly property real _step: width / Math.max(1, control.waveformPeaks.length)
+
+            visible: control._hasWaveform
+
+            x: _inset
+            y: VLCStyle.seekBar_inset
+            width: sliderRect.width - 2 * _inset
+            height: control.barHeight - 2 * VLCStyle.seekBar_inset
+
+            component WaveformBars: Repeater {
+                id: bars
+
+                property color color
+
+                model: control.waveformPeaks
+
+                delegate: Rectangle {
+                    required property int index
+                    required property real modelData
+
+                    x: index * waveform._step + (waveform._step - width) / 2
+                    width: Math.max(1, waveform._step * 0.6)
+                    // square root, so that the quiet parts remain visible
+                    height: Math.max(VLCStyle.dp(2, VLCStyle.scale), Math.sqrt(modelData) * (waveform.height - VLCStyle.dp(6, VLCStyle.scale)))
+                    y: (waveform.height - height) / 2
+
+                    color: bars.color
+                }
+            }
+
+            WaveformBars {
+                color: Qt.alpha(waveformTheme.fg.primary, 0.6)
+            }
+
+            Item {
+                width: control.visualPosition * waveform.width
+                height: waveform.height
+
+                clip: true
+
+                WaveformBars {
+                    color: theme.fg.primary
+                }
+            }
+
+            ColorContext {
+                id: waveformTheme
+                colorSet: ColorContext.Window
+            }
+        }
+
+        // chapter separators of the block style
+        Repeater {
+            model: (control.blockStyle && Player.hasChapters) ? Player.chapters : null
+
+            delegate: Rectangle {
+                required property var model
+
+                readonly property real _inset: VLCStyle.seekBar_inset
+
+                visible: (model.startPosition ?? 0) > 0
+
+                x: _inset + (model.startPosition ?? 0) * (sliderRect.width - 2 * _inset) - width / 2
+                y: _inset
+                width: VLCStyle.dp(2, VLCStyle.scale)
+                height: control.barHeight - 2 * _inset
+
+                color: Qt.lighter(control.backgroundColor, 2.5)
+            }
+        }
+
         Rectangle {
             id: bufferRect
             property int bufferAnimWidth: VLCStyle.dp(100, VLCStyle.scale)
@@ -456,10 +562,36 @@ T.ProgressBar {
             property bool display: false
             property bool buffering: Player.buffering > 0 && Player.buffering < 1
 
-            height: control.barHeight
+            // buffering briefly restarts from zero on every seek, only show the
+            // loading animation if it does not progress for a while
+            property bool waiting: false
+            readonly property bool _bufferingNotStarted: Player.buffering === 0
+
+            readonly property real _inset: control.blockStyle ? VLCStyle.seekBar_inset : 0
+
+            y: _inset
+            height: control.barHeight - 2 * _inset
             opacity: 0.4
             color: theme.fg.neutral //FIXME buffer color ?
-            radius: control.barHeight
+            radius: control.blockStyle ? VLCStyle.seekBar_handleRadius : control.barHeight
+
+            on_BufferingNotStartedChanged: {
+                if (_bufferingNotStarted) {
+                    waitingTimer.start()
+                } else {
+                    waitingTimer.stop()
+                    waiting = false
+                }
+            }
+
+            Component.onCompleted: waiting = _bufferingNotStarted
+
+            Timer {
+                id: waitingTimer
+                interval: VLCStyle.duration_humanMoment
+                repeat: false
+                onTriggered: bufferRect.waiting = true
+            }
 
             // TODO: Do not use `Binding` when minimum Qt is 6.12:
             Binding {
@@ -500,18 +632,18 @@ T.ProgressBar {
                         target: bufferRect
                         width: bufferAnimWidth
                         visible: false
-                        x: 0
+                        x: bufferRect._inset
                         animateLoading: false
                     }
                 },
                 State {
                     name: "buffering not started"
-                    when: control.visible && Player.buffering === 0
+                    when: control.visible && Player.buffering === 0 && bufferRect.waiting
                     PropertyChanges {
                         target: bufferRect
                         width: bufferAnimWidth
                         visible: true
-                        x: (bufferAnimPosition / bufferFrames) * (parent.width - bufferAnimWidth)
+                        x: bufferRect._inset + (bufferAnimPosition / bufferFrames) * (parent.width - 2 * bufferRect._inset - bufferAnimWidth)
                         animateLoading: true
                     }
                 },
@@ -520,9 +652,9 @@ T.ProgressBar {
                     when: control.visible && bufferRect.display
                     PropertyChanges {
                         target: bufferRect
-                        width: Player.buffering * parent.width
+                        width: Player.buffering * (parent.width - 2 * bufferRect._inset)
                         visible: true
-                        x: 0
+                        x: bufferRect._inset
                         animateLoading: false
                     }
                 },
@@ -531,9 +663,9 @@ T.ProgressBar {
                     when: control.visible && !bufferRect.display
                     PropertyChanges {
                         target: bufferRect
-                        width: Player.buffering * parent.width
+                        width: Player.buffering * (parent.width - 2 * bufferRect._inset)
                         visible: false
-                        x: 0
+                        x: bufferRect._inset
                         animateLoading: false
                     }
                 }
@@ -565,10 +697,105 @@ T.ProgressBar {
         }
     }
 
+    // thumbnail of the hovered position, with its time below
+    Rectangle {
+        id: thumbnailPreview
+
+        readonly property real _hoverX: Math.max(0, control._hoverPosition) * control.width
+
+        visible: !!control.seekThumbnailer && hoverHandler.hovered
+                 && thumbnailImage.status === Image.Ready
+
+        width: thumbnailImage.width + 2 * VLCStyle.seekPreview_padding
+        height: thumbnailImage.height + thumbnailCaption.height + 2 * VLCStyle.seekPreview_padding
+
+        x: Helpers.clamp(_hoverX - width / 2, 0, control.width - width)
+        y: -height - VLCStyle.margin_xsmall
+
+        radius: VLCStyle.seekPreview_radius
+        color: Qt.alpha(waveformTheme.bg.primary, 0.95)
+
+        Widgets.ImageExt {
+            id: thumbnailImage
+
+            x: VLCStyle.seekPreview_padding
+            y: VLCStyle.seekPreview_padding
+
+            // sized after the thumbnail, so that nothing is cropped
+            width: VLCStyle.seekPreview_width
+            height: (implicitWidth > 0) ? Math.round(width * implicitHeight / implicitWidth) : 0
+
+            radius: VLCStyle.seekPreview_imageRadius
+
+            source: control.seekThumbnailer?.thumbnail ?? ""
+            fillMode: Image.Stretch
+            cache: false
+        }
+
+        // time of the hovered position, and its chapter
+        T.Label {
+            id: thumbnailCaption
+
+            anchors.top: thumbnailImage.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.leftMargin: VLCStyle.seekPreview_padding
+            anchors.rightMargin: VLCStyle.seekPreview_padding
+
+            topPadding: VLCStyle.seekPreview_padding
+
+            text: {
+                if (!thumbnailPreview.visible)
+                    return ""
+
+                const length = Player.length
+                let text = length.scale(control._hoverPosition)
+                                 .formatHMS(length.isSubSecond() ? VLCTick.SubSecondFormattedAsMS : 0)
+                if (Player.hasChapters)
+                    text += " - " + Player.chapters.getNameAtPosition(control._hoverPosition)
+                return text
+            }
+
+            horizontalAlignment: Text.AlignHCenter
+            elide: Text.ElideRight
+            color: waveformTheme.fg.secondary
+            font.pixelSize: VLCStyle.fontSize_large
+        }
+    }
+
+    Rectangle {
+        id: blockHandle
+
+        visible: control.blockStyle
+
+        readonly property real _inset: VLCStyle.seekBar_inset
+
+        // the handle closes the progress fill, its right edge follows the position
+        x: Math.max(_inset, _inset + control.visualPosition * (control.availableWidth - 2 * _inset) - width)
+        y: _inset
+
+        // a thin line over the waveform
+        width: control._hasWaveform ? VLCStyle.dp(3, VLCStyle.scale) : VLCStyle.seekBar_handleWidth
+        height: control.barHeight - 2 * _inset
+        radius: control._hasWaveform ? width / 2 : VLCStyle.seekBar_handleRadius
+        color: theme.fg.primary
+
+        // TODO: Do not use `Binding` when minimum Qt is 6.12:
+        Binding {
+            target: blockHandle
+            property: "mutabilityGroup"
+            when: (blockHandle.mutabilityGroup !== undefined)
+            value: (Player.playingState === Player.PLAYING_STATE_PLAYING) ? Item.DynamicMutabilityGroup
+                                                                          : Item.StaticMutabilityGroup
+        }
+    }
+
     Rectangle {
         id: sliderHandle
 
         property int _size: control.barHeight * 3
+
+        opacity: control.blockStyle ? 0.0 : 1.0
 
         x: (control.visualPosition * control.availableWidth) - width / 2
         y: (control.barHeight - height) / 2

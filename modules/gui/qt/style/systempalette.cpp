@@ -304,35 +304,43 @@ SystemPalette::SystemPalette(QObject* parent)
 
 void SystemPalette::componentComplete()
 {
+    loadAccentColor();
+    updatePalette();
+}
+
+void SystemPalette::loadAccentColor()
+{
+    assert(m_ctx);
+    char* accentColor = var_InheritString(m_ctx->getIntf(), "qt-accent-color");
+    assert(accentColor);
+
+    if (!strcmp(accentColor, "default"))
     {
-        assert(m_ctx);
-        char* accentColor = var_InheritString(m_ctx->getIntf(), "qt-accent-color");
-        assert(accentColor);
-
-        if (!strcmp(accentColor, "default"))
-        {
-            // Use default
-        }
+        // the orange of VLC, it may have been changed before
+        orange500 = QColor("#D37918");
+        orange800 = QColor("#FF610A");
+        orange900 = QColor("#371F06");
+    }
 #if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
-        else if (!strcmp(accentColor, "system"))
-        {
-            assert(qApp);
-            const auto palette = qApp->palette();
+    else if (!strcmp(accentColor, "system"))
+    {
+        assert(qApp);
+        const auto palette = qApp->palette();
 
-            orange500 = palette.color(QPalette::Normal, QPalette::Accent);
-            orange800 = orange500.lighter(150);
-        }
+        orange500 = palette.color(QPalette::Normal, QPalette::Accent);
+        // a lighter accent fades on the light theme, the color is kept
+        orange800 = orange500;
+        orange900 = orange500.darker(384);
+    }
 #endif
-        else
-        {
-            orange500 = QColor(accentColor);
-            orange800 = orange500.lighter(150);
-        }
-
-        free(accentColor);
+    else
+    {
+        orange500 = QColor(accentColor);
+        orange800 = orange500;
+        orange900 = orange500.darker(384);
     }
 
-    updatePalette();
+    free(accentColor);
 }
 
 ColorSchemeModel::ColorScheme SystemPalette::source() const
@@ -377,7 +385,14 @@ void SystemPalette::setCtx(MainCtx* ctx)
 {
     if (ctx == m_ctx)
         return;
+    if (m_ctx)
+        disconnect(m_ctx, &MainCtx::accentColorChanged, this, nullptr);
     m_ctx = ctx;
+    if (m_ctx)
+        connect(m_ctx, &MainCtx::accentColorChanged, this, [this]() {
+            loadAccentColor();
+            updatePalette();
+        });
     emit ctxChanged();
     updatePalette();
 }
@@ -633,6 +648,7 @@ void SystemPalette::makeLightPalette()
         C::ColorSet CS = C::Slider;
         setColor(CS, C::Bg, C::Primary, C::Normal, lightGrey400); //#EEEEEE on the designs
         setColor(CS, C::Bg, C::Secondary, C::Normal, setColorAlpha("#lightGrey400", 0.2));
+        setColor(CS, C::Bg, C::Highlight, C::Normal, setColorAlpha(orange800, 0.35));
         setColor(CS, C::Fg, C::Primary, C::Normal, orange800);
         setColor(CS, C::Fg, C::Positive, C::Normal, "#0F7B0F");  //FIXME
         setColor(CS, C::Fg, C::Neutral, C::Normal, "#9D5D00");  //FIXME
@@ -729,8 +745,9 @@ void SystemPalette::makeDarkPalette()
     //window banner & miniplayer
     {
         C::ColorSet CS = C::Window;
-        setColor(CS, C::Bg, C::Primary, C::Normal, Qt::black); //FIXME
-        setColor(CS, C::Bg, C::Secondary, C::Normal, Qt::black);
+        setColor(CS, C::Bg, C::Primary, C::Normal, darkGrey100);
+        setColor(CS, C::Bg, C::Secondary, C::Normal, darkGrey100);
+        setColor(CS, C::Fg, C::Primary, C::Normal, midGrey500);
         setColor(CS, C::Decoration, C::Border, C::Normal, darkGrey800); //FIXME not a predef
     }
 
@@ -761,7 +778,7 @@ void SystemPalette::makeDarkPalette()
         setColor(CS, C::Bg, C::Primary, C::Normal, Qt::transparent);
         setColor(CS, C::Bg, C::Secondary, C::Normal, Qt::black);
 
-        setColor(CS, C::Fg, C::Primary, C::Normal, setColorAlpha(Qt::white, 0.6));
+        setColor(CS, C::Fg, C::Primary, C::Normal, midGrey500);
         setColor(CS, C::Fg, C::Primary, C::Focused, Qt::white);
         setColor(CS, C::Fg, C::Primary, C::Hovered, Qt::white);
         setColor(CS, C::Fg, C::Primary, C::Disabled, setColorAlpha(Qt::white, 0.2));
@@ -843,9 +860,8 @@ void SystemPalette::makeDarkPalette()
     //slider
     {
         C::ColorSet CS = C::Slider;
-        setColor(CS, C::Bg, C::Primary, C::Normal, setColorAlpha("#929292", 0.2)); //FIXME not in the palette
-        setColor(CS, C::Bg, C::Primary, C::Focused, setColorAlpha("#929292", 0.4));
-        setColor(CS, C::Bg, C::Primary, C::Hovered, setColorAlpha("#929292", 0.4));
+        setColor(CS, C::Bg, C::Primary, C::Normal, darkGrey50);
+        setColor(CS, C::Bg, C::Highlight, C::Normal, orange900);
 
         setColor(CS, C::Fg, C::Primary, C::Normal, orange500);
         setColor(CS, C::Fg, C::Positive, C::Normal, "#0F7B0F");  //FIXME
