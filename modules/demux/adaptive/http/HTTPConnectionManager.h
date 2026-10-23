@@ -64,6 +64,7 @@ namespace adaptive
 
                 virtual void start(AbstractChunkSource *) = 0;
                 virtual void cancel(AbstractChunkSource *) = 0;
+                virtual void kill() = 0;
 
                 virtual void updateDownloadRate(const ID &, size_t,
                                                 vlc_tick_t, vlc_tick_t) override;
@@ -92,6 +93,7 @@ namespace adaptive
 
                 void start(AbstractChunkSource *)  override;
                 void cancel(AbstractChunkSource *)  override;
+                void kill() override;
                 void         setLocalConnectionsAllowed();
                 void         addFactory(AbstractConnectionFactory *);
 

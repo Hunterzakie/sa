@@ -25,6 +25,7 @@
 #include <vlc_common.h>
 #include <vlc_threads.h>
 #include <vlc_cxx_helpers.hpp>
+#include <vlc_interrupt.h>
 #include <list>
 
 namespace adaptive
@@ -44,12 +45,13 @@ namespace adaptive
                 bool start();
                 void schedule(HTTPChunkBufferedSource *);
                 void cancel(HTTPChunkBufferedSource *);
+                void kill();
 
             private:
                 static void * downloaderThread(void *);
                 void Run();
-                void kill();
                 vlc_thread_t thread_handle;
+                vlc_interrupt_t *interrupt;
                 vlc::threads::mutex lock;
                 vlc::threads::condition_variable wait_cond;
                 vlc::threads::condition_variable updated_cond;

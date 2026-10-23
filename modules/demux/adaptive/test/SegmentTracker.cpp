@@ -133,6 +133,7 @@ class DummyConnectionManager : public AbstractConnectionManager
         void recycleSource(AbstractChunkSource *) override {}
         void start(AbstractChunkSource *) override {}
         void cancel(AbstractChunkSource *) override {}
+        void kill() override {};
 
         std::map<std::string, std::vector<uint8_t>> data;
 };

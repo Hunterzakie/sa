@@ -68,6 +68,7 @@ PlaylistManager::PlaylistManager( demux_t *p_demux_,
     resources = res;
     bufferingLogic = nullptr;
     failedupdates = 0;
+    interrupt = nullptr;
     b_thread = false;
     b_buffering = false;
     b_canceled = false;
@@ -90,6 +91,17 @@ PlaylistManager::PlaylistManager( demux_t *p_demux_,
 
 PlaylistManager::~PlaylistManager   ()
 {
+    if (b_thread)
+    {
+        assert(interrupt != nullptr);
+        resources->kill();
+        vlc_interrupt_kill(interrupt);
+
+        vlc_join(thread, nullptr);
+
+        vlc_interrupt_destroy(interrupt);
+    }
+
     delete streamFactory;
     unsetPeriod();
     delete playlist;
@@ -171,6 +183,10 @@ bool PlaylistManager::start()
     if(b_thread || b_preparsing)
         return false;
 
+    interrupt = vlc_interrupt_create();
+    if (interrupt == nullptr)
+        return false;
+
     b_thread = !vlc_clone(&thread, managerThread, static_cast<void *>(this));
     if(!b_thread)
         return false;
@@ -195,9 +211,6 @@ void PlaylistManager::stop()
         b_canceled = true;
         waitcond.signal();
     }
-
-    vlc_join(thread, nullptr);
-    b_thread = false;
 }
 
 struct PrioritizedAbstractStream
@@ -735,7 +748,8 @@ void PlaylistManager::setBufferingRunState(bool b)
 
 void PlaylistManager::Run()
 {
-    mutex_locker locker {lock};
+    vlc_interrupt_set(interrupt);
+    lock.lock();
     const vlc_tick_t i_min_buffering = bufferingLogic->getMinBuffering(playlist);
     const vlc_tick_t i_max_buffering = bufferingLogic->getMaxBuffering(playlist);
     const vlc_tick_t i_target_buffering = bufferingLogic->getStableBuffering(playlist);
@@ -758,9 +772,11 @@ void PlaylistManager::Run()
         Times pcr = demux.times;
         vlc_mutex_unlock(&demux.lock);
 
+        lock.unlock();
         AbstractStream::BufferingStatus i_return = bufferize(pcr, i_min_buffering,
                                                              i_max_buffering, i_target_buffering);
 
+        lock.lock();
         if(i_return != AbstractStream::BufferingStatus::Lessthanmin)
         {
             vlc_tick_t i_deadline = vlc_tick_now();
@@ -785,6 +801,7 @@ void PlaylistManager::Run()
                 break;
         }
     }
+    lock.unlock();
 }
 
 void * PlaylistManager::managerThread(void *opaque)

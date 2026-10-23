@@ -767,12 +767,22 @@ AbstractDemuxer * AbstractStream::createDemux(const StreamFormat &format)
 {
     AbstractDemuxer *ret = newDemux( VLC_OBJECT(p_realdemux), format,
                                      (es_out_t *)fakeEsOut(), demuxersource );
-    if(ret && !ret->create())
+    if (!ret)
+        return nullptr;
+
+    vlc_mutex_assert(&lock);
+
+    vlc_mutex_unlock(&lock);
+    bool success = ret->create();
+    vlc_mutex_lock(&lock);
+
+    if(!success)
     {
         delete ret;
-        ret = nullptr;
+        return nullptr;
     }
-    else fakeEsOut()->commandsQueue()->Commit();
+
+    fakeEsOut()->commandsQueue()->Commit();
 
     return ret;
 }

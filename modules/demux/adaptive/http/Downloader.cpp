@@ -35,10 +35,15 @@ Downloader::Downloader()
     thread_handle_valid = false;
     current = nullptr;
     cancel_current = false;
+    interrupt = nullptr;
 }
 
 bool Downloader::start()
 {
+    interrupt = vlc_interrupt_create();
+    if (interrupt == nullptr)
+        return false;
+
     if(!thread_handle_valid &&
        vlc_clone(&thread_handle, downloaderThread, static_cast<void *>(this)))
     {
@@ -53,7 +58,10 @@ Downloader::~Downloader()
     kill();
 
     if(thread_handle_valid)
+    {
         vlc_join(thread_handle, nullptr);
+        vlc_interrupt_destroy(interrupt);
+    }
 }
 
 void Downloader::kill()
@@ -61,6 +69,8 @@ void Downloader::kill()
     vlc::threads::mutex_locker locker {lock};
     killed = true;
     wait_cond.signal();
+
+    vlc_interrupt_kill(interrupt);
 }
 
 void Downloader::schedule(HTTPChunkBufferedSource *source)
@@ -97,6 +107,7 @@ void * Downloader::downloaderThread(void *opaque)
 
 void Downloader::Run()
 {
+    vlc_interrupt_set(interrupt);
     while(1)
     {
         lock.lock();

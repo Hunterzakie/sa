@@ -47,6 +47,7 @@ namespace adaptive
             AuthStorage *getAuthStorage();
             Keyring     *getKeyring();
             AbstractConnectionManager *getConnManager();
+            void kill();
             /* Helper */
             static SharedResources * createDefault(vlc_object_t *, const std::string &);
 

@@ -28,6 +28,7 @@
 #include <vector>
 
 #include <vlc_threads.h>
+#include <vlc_interrupt.h>
 #include <vlc_cxx_helpers.hpp>
 
 namespace adaptive
@@ -158,6 +159,7 @@ namespace adaptive
             vlc::threads::mutex  lock;
             vlc::threads::condition_variable waitcond;
             vlc_thread_t thread;
+            vlc_interrupt_t *interrupt;
             bool         b_thread;
             bool         b_buffering;
             bool         b_canceled;

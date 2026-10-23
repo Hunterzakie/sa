@@ -44,6 +44,11 @@ SharedResources::~SharedResources()
     delete authStorage;
 }
 
+void SharedResources::kill()
+{
+    connManager->kill();
+}
+
 AuthStorage * SharedResources::getAuthStorage()
 {
     return authStorage;

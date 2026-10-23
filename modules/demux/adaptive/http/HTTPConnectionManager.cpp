@@ -85,6 +85,11 @@ HTTPConnectionManager::HTTPConnectionManager    (vlc_object_t *p_object_)
     cache_max = 1 << 19;
 }
 
+void HTTPConnectionManager::kill()
+{
+    downloader->kill();
+}
+
 HTTPConnectionManager::~HTTPConnectionManager   ()
 {
     while(!cache.empty())
