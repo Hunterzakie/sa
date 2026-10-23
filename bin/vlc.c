@@ -221,6 +221,29 @@ int main(int argc, const char *argv[])
     args[count++] = "--dbus";
 #endif
 
+#if defined(QT_QML_DEBUG) && !defined(NDEBUG) && defined(__linux__)
+    // Qt Creator uses the option "-qmljsdebugger" when profiling QML.
+    const char** qmljsdebuggerArg = NULL;
+    {
+        #define QMLJSDEBUGGER "qmljsdebugger"
+        const char qmljsdebuggerSetting[] = "-" QMLJSDEBUGGER "=";
+        for (int i = 1; i < argc; i++)
+        {
+            if (!strncmp(argv[i], qmljsdebuggerSetting, sizeof(qmljsdebuggerSetting) - 1))
+            {
+                char *dest;
+                if (asprintf(&dest, "--qt-" QMLJSDEBUGGER "=%s", &argv[i][sizeof(qmljsdebuggerSetting) - 1]) != -1)
+                {
+                    argv[i] = dest;
+                    qmljsdebuggerArg = &argv[i];
+                }
+                break;
+            }
+        }
+        #undef QMLJSDEBUGGER
+    }
+#endif
+
 #ifdef __OS2__
     for (int i = 1; i < argc; i++)
         if ((args[count++] = FromSystem(argv[i])) == NULL)
@@ -238,6 +261,15 @@ int main(int argc, const char *argv[])
 
     /* Initialize libvlc */
     libvlc_instance_t *vlc = libvlc_new(count, args);
+
+#if defined(QT_QML_DEBUG) && !defined(NDEBUG) && defined(__linux__)
+    if (qmljsdebuggerArg)
+    {
+        free(*qmljsdebuggerArg);
+        *qmljsdebuggerArg = NULL;
+    }
+#endif
+
     if (vlc == NULL)
         return 1;
 
