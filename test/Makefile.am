@@ -149,6 +149,7 @@ EXTRA_DIST = \
 	samples/meta.mp3 \
 	samples/subitems \
 	samples/slaves \
+	checkasm/ext \
 	$(check_SCRIPTS)
 
 check_HEADERS = libvlc/test.h libvlc/media_utils.h libvlc/media_player.h
@@ -659,4 +660,63 @@ vlc_window_LDADD = ../lib/libvlc.la ../src/libvlccore.la ../compat/libcompat.la
 # cannot link static plugins currently anyway.
 if HAVE_DYNAMIC_PLUGINS
 noinst_PROGRAMS += vlc-window
+endif
+
+if !HAVE_EMSCRIPTEN
+noinst_LTLIBRARIES = libtest_checkasm.la
+
+libtest_checkasm_la_SOURCES = \
+    checkasm/ext/src/arm/checkasm_32.S \
+    checkasm/ext/src/arm/checkasm_64.S \
+    checkasm/ext/src/arm/cpu.c \
+    checkasm/ext/src/loongarch/checkasm.S \
+    checkasm/ext/src/riscv/callcheck.S \
+    checkasm/ext/src/riscv/cpu.c \
+    checkasm/ext/src/x86/cpu.c \
+    checkasm/ext/src/perf/arm.c \
+    checkasm/ext/src/perf/linux.c \
+    checkasm/ext/src/perf/macos_kperf.c \
+    checkasm/ext/src/checkasm.c \
+    checkasm/ext/src/cpu.c \
+    checkasm/ext/src/function.c \
+    checkasm/ext/src/perf.c \
+    checkasm/ext/src/signal.c \
+    checkasm/ext/src/stackguard.c \
+    checkasm/ext/src/stats.c \
+    checkasm/ext/src/utils.c
+
+libtest_checkasm_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(srcdir)/checkasm/ext/include -I$(srcdir)/checkasm/ext/src
+
+if HAVE_X86ASM
+
+SUFFIXES = .asm
+
+.asm.lo:
+	$(LIBTOOL) --mode=compile --tag=ASM $(X86ASM) $(X86ASMFLAGS) $(X86ASMDEFS) \
+		-I$(top_srcdir)/extras/include/ \
+		-I$(srcdir)/checkasm/ext/src \
+		$< -o $@	
+libtest_checkasm_la_SOURCES += checkasm/ext/src/x86/checkasm.asm
+
+endif
+
+noinst_LTLIBRARIES += libdeinterlace_merge_generic.la
+libdeinterlace_merge_generic_la_SOURCES= ../modules/video_filter/deinterlace/merge.c
+libdeinterlace_merge_generic_la_CPPFLAGS= $(AM_CPPFLAGS) -I$(top_srcdir)/include
+
+EXTRA_PROGRAMS += vlc-checkasm
+noinst_PROGRAMS += vlc-checkasm
+vlc_checkasm_SOURCES = checkasm/checkasm.c checkasm/merge.c
+vlc_checkasm_CPPFLAGS = $(AM_CPPFLAGS) -I$(srcdir)/checkasm/ext/include -I$(top_srcdir)/include
+vlc_checkasm_LDADD = libtest_checkasm.la libdeinterlace_merge_generic.la -lm $(LIBVLCCORE) $(LIBVLC) ../compat/libcompat.la
+
+if !HAVE_DYNAMIC_PLUGINS
+vlc_checkasm_CPPFLAGS += -DHAVE_STATIC_MODULES
+vlc_checkasm_LDADD += ../modules/libdeinterlace_plugin.la
+
+if HAVE_SSE2
+vlc_checkasm_LDADD += ../modules/libdeinterlace_x86_plugin.la
+endif
+endif
+
 endif

@@ -162,3 +162,6 @@ executable('vlc-window', 'vlc-window.c',
     c_args: common_args,
     install: false,
     win_subsystem: 'console')
+
+######## checkasm 
+subdir('checkasm')
