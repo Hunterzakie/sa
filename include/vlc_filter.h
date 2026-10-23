@@ -58,7 +58,7 @@ struct filter_audio_callbacks
 
 struct filter_subpicture_callbacks
 {
-    subpicture_t *(*buffer_new)(filter_t *);
+    subpicture_t *(*buffer_new)(filter_t *, const subpicture_updater_t *);
 };
 
 typedef struct filter_owner_t
@@ -350,12 +350,19 @@ static inline void filter_SendAudioLoudness(filter_t *filter,
  * \param p_filter filter_t object
  * \return new subpicture
  */
-static inline subpicture_t *filter_NewSubpicture( filter_t *p_filter )
+static inline subpicture_t *
+    filter_NewUpdatableSubpicture( filter_t *p_filter,
+                                   const subpicture_updater_t *p_dyn )
 {
-    subpicture_t *subpic = p_filter->owner.sub->buffer_new( p_filter );
+    subpicture_t *subpic = p_filter->owner.sub->buffer_new( p_filter, p_dyn );
     if( subpic == NULL )
         msg_Warn( p_filter, "can't get output subpicture" );
     return subpic;
+}
+
+static inline subpicture_t *filter_NewSubpicture( filter_t *p_filter )
+{
+    return filter_NewUpdatableSubpicture( p_filter, NULL );
 }
 
 /**

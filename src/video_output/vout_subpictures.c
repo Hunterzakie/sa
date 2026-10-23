@@ -1607,11 +1607,12 @@ static void SetHighlights(spu_t *spu, const vlc_spu_highlight_t *hl)
  * Buffers allocation callbacks for the filters
  *****************************************************************************/
 
-static subpicture_t *sub_new_buffer(filter_t *filter)
+static subpicture_t *sub_new_buffer(filter_t *filter,
+                                    const subpicture_updater_t *p_dyn)
 {
     ssize_t channel = *(ssize_t *)filter->owner.sys;
 
-    subpicture_t *subpicture = subpicture_New(NULL);
+    subpicture_t *subpicture = subpicture_New(p_dyn);
     if (subpicture)
         subpicture->i_channel = channel;
     return subpicture;
