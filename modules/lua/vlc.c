@@ -126,8 +126,12 @@ static char **vlclua_dir_list_append( char **restrict list, char *basedir,
     if (unlikely(basedir == NULL))
         return list;
 
+#ifndef VLC_WINSTORE_APP
     if (likely(asprintf(list, "%s"DIR_SEP"lua"DIR_SEP"%s",
                         basedir, luadirname) != -1))
+#else
+    if (likely(asprintf(list, "lua"DIR_SEP"%s", luadirname) != -1))
+#endif
         list++;
 
     free(basedir);
