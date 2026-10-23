@@ -1397,6 +1397,13 @@ void matroska_segment_c::ParseChapterAtom( int i_level, KaxChapterAtom *ca, chap
             vars.chapters.b_display_seekpoint = static_cast<uint8_t>( flag ) == 0;
             debug( vars, "ChapterFlagHidden=%s", vars.chapters.b_display_seekpoint ? "no" : "yes" );
         }
+#if LIBMATROSKA_VERSION >= 0x010700
+        E_CASE( KaxChapterSkipType, skip_type )
+        {
+            vars.chapters.i_skip_type = static_cast<uint8_t>( skip_type.GetValue() );
+            debug( vars, "ChapterSkipType=%hhu", vars.chapters.i_skip_type );
+        }
+#endif
         E_CASE( KaxChapterSegmentUID, uid )
         {
             delete vars.chapters.p_segment_uid;

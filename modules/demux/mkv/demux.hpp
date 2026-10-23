@@ -68,6 +68,8 @@ public:
     demux_t                 & demuxer;
     bool                    b_seekable;
     bool                    b_fastseekable;
+    uint8_t                 i_auto_skip_mask = 0;
+    uint64_t                i_last_skipped_chapter_uid = 0;
 
     vlc_tick_t              i_pts;
     vlc_tick_t              i_pcr;

@@ -118,6 +118,16 @@ enum chapter_codec_id
     MATROSKA_CHAPTER_CODEC_DVD     = 1,
 };
 
+typedef enum {
+MATROSKA_CHAPTERSKIPTYPE_NO_SKIPPING      = 0, // Content which should not be skipped.
+MATROSKA_CHAPTERSKIPTYPE_OPENING_CREDITS  = 1, // Credits usually found at the beginning of the content.
+MATROSKA_CHAPTERSKIPTYPE_END_CREDITS      = 2, // Credits usually found at the end of the content.
+MATROSKA_CHAPTERSKIPTYPE_RECAP            = 3, // Recap of previous episodes of the content, usually found around the beginning.
+MATROSKA_CHAPTERSKIPTYPE_NEXT_PREVIEW     = 4, // Preview of the next episode of the content, usually found around the end. It may contain spoilers the user wants to avoid.
+MATROSKA_CHAPTERSKIPTYPE_PREVIEW          = 5, // Preview of the current episode of the content, usually found around the beginning. It may contain spoilers the user want to avoid.
+MATROSKA_CHAPTERSKIPTYPE_ADVERTISEMENT    = 6, // Advertisement within the content.
+} MatroskaChapterSkipType;
+
 #define MKVD_TIMECODESCALE 1000000
 
 #define MKV_IS_ID( el, C ) ( el != NULL && (el->operator const EbmlId&()) == EBML_ID(C) && !el->IsDummy() )

@@ -76,6 +76,7 @@ public:
     std::vector<chapter_item_c*> sub_chapters;
     KaxChapterSegmentUID        *p_segment_uid = nullptr;
     KaxChapterSegmentEditionUID *p_segment_edition_uid = nullptr;
+    uint8_t                     i_skip_type = 0;
     chapter_uid                 i_uid = 0;
     bool                        b_display_seekpoint = true;
     bool                        b_user_display = true;

@@ -82,6 +82,34 @@ vlc_module_begin ()
             N_("Preload clusters"),
             N_("Find all cluster positions by jumping cluster-to-cluster before playback") )
 
+    add_bool( "mkv-auto-skip-all", false,
+            N_("Auto-skip all skippable chapters"),
+            N_("Automatically skip all skippable chapters (Below mentioned settings will not mean anything if this is enabled).") )
+    
+    add_bool( "mkv-auto-skip-opening-credits", false,
+            N_("Auto-skip Opening Credits"),
+            N_("Automatically skip chapters marked as Opening Credits.") )
+
+    add_bool( "mkv-auto-skip-end-credits", false,
+            N_("Auto-skip End Credits"),
+            N_("Automatically skip chapters marked as End Credits.") )
+
+    add_bool( "mkv-auto-skip-recap", false,
+            N_("Auto-skip Recap"),
+            N_("Automatically skip chapters marked as Recap.") )
+
+    add_bool( "mkv-auto-skip-next-preview", false,
+            N_("Auto-skip Next Episode Preview"),
+            N_("Automatically skip chapters marked as Next Episode Preview.") )
+
+    add_bool( "mkv-auto-skip-preview", false,
+            N_("Auto-skip Current Episode Preview"),
+            N_("Automatically skip chapters marked as Preview.") )
+
+    add_bool( "mkv-auto-skip-advertisement", false,
+            N_("Auto-skip Advertisement"),
+            N_("Automatically skip chapters marked as Advertisement.") )
+
     add_shortcut( "mka", "mkv" )
     add_file_extension("mka")
     add_file_extension("mks")
@@ -124,6 +152,33 @@ static int OpenInternal( demux_t *p_demux, bool trust_cues )
     p_demux->pf_demux   = Demux;
     p_demux->pf_control = Control;
     p_demux->p_sys      = p_sys = new demux_sys_t( *p_demux, trust_cues );
+
+    /* Get all values of auto-skip settings and build the mask */
+    if (var_InheritBool( p_demux, "mkv-auto-skip-all" )){
+        p_sys->i_auto_skip_mask |= 0xFF;
+    }
+    else {
+        p_sys->i_auto_skip_mask = 0;
+
+        if (var_InheritBool( p_demux, "mkv-auto-skip-opening-credits" )) {
+            p_sys->i_auto_skip_mask |= (1 << MATROSKA_CHAPTERSKIPTYPE_OPENING_CREDITS);
+        }
+        if (var_InheritBool( p_demux, "mkv-auto-skip-end-credits" )) {
+            p_sys->i_auto_skip_mask |= (1 << MATROSKA_CHAPTERSKIPTYPE_END_CREDITS);
+        }
+        if (var_InheritBool( p_demux, "mkv-auto-skip-recap" )) {
+            p_sys->i_auto_skip_mask |= (1 << MATROSKA_CHAPTERSKIPTYPE_RECAP);
+        }
+        if (var_InheritBool( p_demux, "mkv-auto-skip-next-preview" )) {
+            p_sys->i_auto_skip_mask |= (1 << MATROSKA_CHAPTERSKIPTYPE_NEXT_PREVIEW);
+        }
+        if (var_InheritBool( p_demux, "mkv-auto-skip-preview" )) {
+            p_sys->i_auto_skip_mask |= (1 << MATROSKA_CHAPTERSKIPTYPE_PREVIEW);
+        }
+        if (var_InheritBool( p_demux, "mkv-auto-skip-advertisement" )) {
+            p_sys->i_auto_skip_mask |= (1 << MATROSKA_CHAPTERSKIPTYPE_ADVERTISEMENT);
+        }
+    };
 
     vlc_stream_Control( p_demux->s, STREAM_CAN_SEEK, &p_sys->b_seekable );
     if ( !p_sys->b_seekable || vlc_stream_Control(
@@ -296,6 +351,9 @@ static void Close( vlc_object_t *p_this )
 {
     demux_t     *p_demux = reinterpret_cast<demux_t*>( p_this );
     demux_sys_t *p_sys = (demux_sys_t *)p_demux->p_sys;
+    vlc_object_t *p_libvlc = VLC_OBJECT( vlc_object_instance( p_demux ) );
+    var_Destroy( p_libvlc, "mkv-suggest-skip-i" );
+    var_Destroy( p_libvlc, "mkv-suggest-skip-str" );
     virtual_segment_c *p_vsegment = p_sys->GetCurrentVSegment();
     if( p_vsegment )
     {
@@ -827,6 +885,79 @@ static int Demux( demux_t *p_demux)
         if ( p_vsegment->UpdateCurrentToChapter( *p_demux ) )
             return VLC_DEMUXER_SUCCESS;
         p_vsegment = p_sys->GetCurrentVSegment();
+    }
+
+    virtual_chapter_c *p_current_chapter = p_vsegment->CurrentChapter();
+
+    vlc_object_t *p_libvlc = VLC_OBJECT( vlc_object_instance(p_demux) );
+
+    if( p_current_chapter && p_current_chapter->p_chapter )
+    {
+        chapter_uid current_chapter_uid = p_current_chapter->p_chapter->i_uid;
+        uint8_t current_skip_type = p_current_chapter->p_chapter->i_skip_type;
+
+        if( p_sys->i_last_skipped_chapter_uid != 0 && p_sys->i_last_skipped_chapter_uid != current_chapter_uid )
+        {
+            p_sys->i_last_skipped_chapter_uid = 0;
+
+            var_Create( p_libvlc, "mkv-suggest-skip-i", VLC_VAR_INTEGER );
+            var_SetInteger( p_libvlc, "mkv-suggest-skip-i", 0 );
+
+            var_Create( p_libvlc, "mkv-suggest-skip-str", VLC_VAR_STRING );
+            var_SetString( p_libvlc, "mkv-suggest-skip-str", "" );
+        }
+
+        if( current_skip_type != MATROSKA_CHAPTERSKIPTYPE_NO_SKIPPING )
+        {
+            bool b_user_wants_to_skip = ( p_sys->i_auto_skip_mask & ( 1 << current_skip_type ) );
+
+            if( b_user_wants_to_skip && p_sys->i_last_skipped_chapter_uid != current_chapter_uid )
+            {
+                vlc_tick_t i_target_time = p_current_chapter->i_mk_virtual_stop_time + 1;
+
+                msg_Info( p_demux, "Auto-skipping chapter type %hhu to %" PRId64, current_skip_type, i_target_time );
+
+                p_sys->i_last_skipped_chapter_uid = current_chapter_uid;
+
+                p_vsegment->Seek( *p_demux, i_target_time, p_current_chapter );
+                return VLC_DEMUXER_SUCCESS;
+            }
+            else if ( p_sys->i_last_skipped_chapter_uid != current_chapter_uid )
+            {
+                var_Create( p_libvlc, "mkv-suggest-skip-i", VLC_VAR_INTEGER );
+                var_SetInteger( p_libvlc, "mkv-suggest-skip-i", current_skip_type );
+
+                const char* psz_skip_type = "Unknown";
+                switch( current_skip_type )
+                {
+                    case MATROSKA_CHAPTERSKIPTYPE_OPENING_CREDITS:
+                        psz_skip_type = "Opening Credits";
+                        break;
+                    case MATROSKA_CHAPTERSKIPTYPE_END_CREDITS:
+                        psz_skip_type = "End Credits";
+                        break;
+                    case MATROSKA_CHAPTERSKIPTYPE_RECAP:
+                        psz_skip_type = "Recap";
+                        break;
+                    case MATROSKA_CHAPTERSKIPTYPE_NEXT_PREVIEW:
+                        psz_skip_type = "Preview of Next Episode";
+                        break;
+                    case MATROSKA_CHAPTERSKIPTYPE_PREVIEW:
+                        psz_skip_type = "Preview of this Episode";
+                        break;
+                    case MATROSKA_CHAPTERSKIPTYPE_ADVERTISEMENT:
+                        psz_skip_type = "Advertisement";
+                        break;
+                    default:
+                        break;
+                }
+
+                var_Create( p_libvlc, "mkv-suggest-skip-str", VLC_VAR_STRING );
+                var_SetString( p_libvlc, "mkv-suggest-skip-str", psz_skip_type );
+
+                p_sys->i_last_skipped_chapter_uid = current_chapter_uid;
+            }
+        }
     }
 
     matroska_segment_c *p_segment = p_vsegment->CurrentSegment();
