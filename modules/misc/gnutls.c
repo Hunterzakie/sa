@@ -740,12 +740,14 @@ static const char *const priorities_values[] = {
     "NORMAL",
     "SECURE128",
     "SECURE256",
+    "SECURE128:+SECURE192:+SECURE256:-VERS-ALL:+VERS-TLS1.2:+VERS-TLS1.3",
 };
 static const char *const priorities_text[] = {
     N_("Performance (prioritize faster ciphers)"),
     N_("Normal"),
     N_("Secure 128-bit (or higher)"),
     N_("Secure 256-bit (exclude 128-bit ciphers)"),
+    N_("Secure 128-bit (or higher) with TLS 1.2 and 1.3 only"),
 };
 
 vlc_module_begin ()
@@ -758,7 +760,9 @@ vlc_module_begin ()
              SYSTEM_TRUST_LONGTEXT)
     add_string("gnutls-dir-trust", NULL, DIR_TRUST_TEXT,
                DIR_TRUST_LONGTEXT)
-    add_string ("gnutls-priorities", "NORMAL", PRIORITIES_TEXT,
+    add_string ("gnutls-priorities",
+                "SECURE128:+SECURE192:+SECURE256:-VERS-ALL:+VERS-TLS1.2:+VERS-TLS1.3",
+                PRIORITIES_TEXT,
                 PRIORITIES_LONGTEXT)
         change_string_list (priorities_values, priorities_text)
 #ifdef ENABLE_SOUT
