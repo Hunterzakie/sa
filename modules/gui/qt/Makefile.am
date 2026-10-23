@@ -698,6 +698,32 @@ maininterface/viewporter-protocol.c: \
 		$(WAYLAND_PROTOCOLS)/stable/viewporter/viewporter.xml \
 		maininterface/viewporter-client-protocol.h
 	$(AM_V_GEN)$(WAYLAND_SCANNER) private-code $< $@
+
+if HAVE_WAYLAND_PROTOCOLS_146
+libqt_plugin_la_CPPFLAGS += -DQT_HAS_WAYLAND_BACKGROUND_EFFECT
+
+libqt_wayland_extbackgroundeffect_plugin_la_CXXFLAGS = $(AM_CXXFLAGS) $(QT_CFLAGS) $(WAYLAND_CLIENT_CFLAGS) -I$(builddir)/maininterface
+libqt_wayland_extbackgroundeffect_plugin_la_LIBADD = $(QT_LIBS) $(WAYLAND_CLIENT_LIBS)
+libqt_wayland_extbackgroundeffect_plugin_la_LDFLAGS = $(AM_LDFLAGS) $(QT_LDFLAGS)
+libqt_wayland_extbackgroundeffect_plugin_la_SOURCES = \
+	maininterface/wayland_extbackgroundeffect_module.cpp
+
+nodist_libqt_wayland_extbackgroundeffect_plugin_la_SOURCES = \
+	maininterface/ext-background-effect-v1.h \
+	maininterface/ext-background-effect-v1.c
+
+if ENABLE_QT
+gui_PLUGINS += libqt_wayland_extbackgroundeffect_plugin.la
+BUILT_SOURCES += $(nodist_libqt_wayland_extbackgroundeffect_plugin_la_SOURCES)
+endif
+
+maininterface/ext-background-effect-v1.h: $(WAYLAND_PROTOCOLS)/staging/ext-background-effect/ext-background-effect-v1.xml Makefile.am
+	$(AM_V_GEN)$(WAYLAND_SCANNER) client-header $< $@
+
+maininterface/ext-background-effect-v1.c: $(WAYLAND_PROTOCOLS)/staging/ext-background-effect/ext-background-effect-v1.xml Makefile.am
+	$(AM_V_GEN)$(WAYLAND_SCANNER) private-code $< $@
+
+endif
 endif
 
 BUILT_SOURCES += $(nodist_libqt_wayland_plugin_la_SOURCES)

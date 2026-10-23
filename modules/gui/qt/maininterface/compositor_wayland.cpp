@@ -54,6 +54,7 @@ CompositorWayland::CompositorWayland(qt_intf_t *p_intf, QObject* parent)
 
 CompositorWayland::~CompositorWayland()
 {
+    unloadWindowEffectsModule();
     unloadWaylandModule();
 }
 
@@ -116,8 +117,7 @@ bool CompositorWayland::makeMainInterface(MainCtx* mainCtx, std::function<void(Q
     connect(m_intf->p_mi, &MainCtx::windowExtendedMarginChanged, this, [this](const unsigned margin) {
         const auto quickViewPtr = m_qmlView.get();
         assert(quickViewPtr);
-        connect(quickViewPtr, &QWindow::widthChanged, this, &CompositorWayland::adjustQuickWindowMask, Qt::UniqueConnection);
-        connect(quickViewPtr, &QWindow::heightChanged, this, &CompositorWayland::adjustQuickWindowMask, Qt::UniqueConnection);
+        connect(m_mainCtx, &MainCtx::intfSizeChanged, this, &CompositorWayland::adjustQuickWindowMask, Qt::UniqueConnection);
 
         const auto waylandWindow = quickViewPtr->nativeInterface<QNativeInterface::Private::QWaylandWindow>();
         assert(waylandWindow);
@@ -151,6 +151,7 @@ void CompositorWayland::destroyMainInterface()
     // We still need to call this explicitly, as it seems Qt does not send
     // the `QPlatformSurfaceEvent::SurfaceAboutToBeDestroyed` event if we
     // delete the window ourselves:
+    unloadWindowEffectsModule();
     unloadWaylandModule();
     m_qmlView.reset();
     assert(!m_waylandImpl);
@@ -178,6 +179,7 @@ bool CompositorWayland::eventFilter(QObject *watched, QEvent *event)
         if (watched == m_qmlView.get() &&
             static_cast<QPlatformSurfaceEvent *>(event)->surfaceEventType() == QPlatformSurfaceEvent::SurfaceAboutToBeDestroyed)
         {
+            unloadWindowEffectsModule();
             unloadWaylandModule();
         }
         break;

@@ -587,6 +587,15 @@ void MainCtx::setHasAcrylicSurface(const bool v)
     emit hasAcrylicSurfaceChanged(v);
 }
 
+void MainCtx::setAcrylicSurfaceRequiresOpacityLayer(bool layer)
+{
+    if (m_acrylicSurfaceRequiresOpacityLayer == layer)
+        return;
+
+    m_acrylicSurfaceRequiresOpacityLayer = layer;
+    emit acrylicSurfaceRequiresOpacityLayerChanged(layer);
+}
+
 void MainCtx::incrementIntfUserScaleFactor(bool increment)
 {
     if (increment)

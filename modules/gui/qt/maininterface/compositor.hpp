@@ -157,6 +157,8 @@ protected:
 
     bool setBlurBehind(QWindow* window, bool enable = true);
 
+    void unloadWindowEffectsModule();
+
     // The following method should return true if surface updates can be combined:
     // Note that in such a case, `::commitSurface()` must be implemented.
     virtual bool canDoCombinedSurfaceUpdates() const { return false; };

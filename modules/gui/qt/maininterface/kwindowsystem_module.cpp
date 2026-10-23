@@ -23,7 +23,18 @@
 
 #include <KWindowEffects>
 
-static bool isEffectAvailable(const QWindow*, const WindowEffectsModule::Effect effect)
+static bool SupportsPartialArea(WindowEffectsModule&, WindowEffectsModule::Effect effect)
+{
+    Q_UNUSED(effect);
+    return true;
+}
+
+static bool BlurBehindRequiresOpacityLayer(WindowEffectsModule&)
+{
+    return false;
+}
+
+static bool isEffectAvailable(WindowEffectsModule&, const QWindow*, const WindowEffectsModule::Effect effect)
 {
     KWindowEffects::Effect kWindowEffect;
 
@@ -39,7 +50,7 @@ static bool isEffectAvailable(const QWindow*, const WindowEffectsModule::Effect 
     return KWindowEffects::isEffectAvailable(kWindowEffect);
 }
 
-static void setBlurBehind(QWindow* const window, const bool enable = true, const QRegion& region = {})
+static void setBlurBehind(WindowEffectsModule&, QWindow* const window, const bool enable = true, const QRegion& region = {})
 {
     KWindowEffects::enableBlurBehind(window, enable, region);
 }
@@ -48,19 +59,21 @@ static int Open(vlc_object_t* const p_this)
 {
     assert(p_this);
 
+    const auto obj = reinterpret_cast<WindowEffectsModule*>(p_this);
+
     // If none of the effects are available,
     // it probably means that KWindowEffects
     // does not support the environment.
     // In that case, simply fail here,
     // so that another potentially compatible
     // module can be loaded instead:
-    if (!isEffectAvailable(nullptr, WindowEffectsModule::BlurBehind))
+    if (!isEffectAvailable(*obj, nullptr, WindowEffectsModule::BlurBehind))
         return VLC_EGENERIC;
-
-    const auto obj = reinterpret_cast<WindowEffectsModule*>(p_this);
 
     obj->setBlurBehind = setBlurBehind;
     obj->isEffectAvailable = isEffectAvailable;
+    obj->supportsPartialArea = SupportsPartialArea;
+    obj->blurBehindRequiresOpacityLayer = BlurBehindRequiresOpacityLayer;
 
     return VLC_SUCCESS;
 }

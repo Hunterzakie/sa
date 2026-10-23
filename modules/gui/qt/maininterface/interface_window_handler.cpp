@@ -322,6 +322,11 @@ bool InterfaceWindowHandler::eventFilter(QObject*, QEvent* event)
         m_mainCtx->intfDevicePixelRatioChanged();
     }
 #endif
+    case QEvent::Resize:
+    {
+        const auto ev = static_cast<QResizeEvent*>(event);
+        m_mainCtx->intfSizeChanged(ev->size());
+    }
 
     default:
         break;

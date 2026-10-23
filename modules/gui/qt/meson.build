@@ -1184,6 +1184,37 @@ if qt6_dep.found()
                 command: [wayland_scanner, 'private-code', '@INPUT@', '@OUTPUT@'],
             )
             qt_wayland_sources += [qt_wl_viewporter_hdr, qt_wl_viewporter_code]
+
+            if wayland_protocols_dep.version().version_compare('>= 1.46')
+                qt_wl_ext_background_effect_v1_protocol = wayland_protocols_dir / 'staging/ext-background-effect/ext-background-effect-v1.xml'
+
+                qt_wl_ext_background_effect_v1_client_header = custom_target(
+                    'qt-wayland-ext-background-effect-v1-client-header',
+                    output: 'ext-background-effect-v1.h',
+                    input: qt_wl_ext_background_effect_v1_protocol,
+                    command: [wayland_scanner, 'client-header', '@INPUT@', '@OUTPUT@']
+                )
+
+                qt_wl_ext_background_effect_v1_private_code = custom_target(
+                    'qt-wayland-ext-background-effect-v1-private-code',
+                    output: 'ext-background-effect-v1.c',
+                    input: qt_wl_ext_background_effect_v1_protocol,
+                    command: [wayland_scanner, 'private-code', '@INPUT@', '@OUTPUT@']
+                )
+
+                qt_wayland_extbackgroundeffect_sources = files(
+                    'maininterface/wayland_extbackgroundeffect_module.cpp'
+                ) + qt_wl_ext_background_effect_v1_client_header + qt_wl_ext_background_effect_v1_private_code
+
+                qt_extra_flags += '-DQT_HAS_WAYLAND_BACKGROUND_EFFECT'
+
+                vlc_modules += {
+                    'name': 'qt_wayland_extbackgroundeffect',
+                    'sources': qt_wayland_extbackgroundeffect_sources,
+                    'include_directories': [qt_include_dir],
+                    'dependencies': [wayland_deps[0], m_lib, qt6_dep],
+                }
+            endif
         endif
 
         vlc_modules += {

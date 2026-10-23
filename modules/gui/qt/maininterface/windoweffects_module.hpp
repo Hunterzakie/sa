@@ -35,13 +35,24 @@ struct WindowEffectsModule
     module_t *p_module = nullptr;
     void *p_sys = nullptr;
 
-    bool (*isEffectAvailable)(const QWindow* window, Effect effect);
+    // NOTE: For optimization purposes, if the module does not
+    //       support applying effects in a partial area, such
+    //       as with the `Win32WindowEffects` module, you may
+    //       choose to not spend time on calculating the region:
+    bool (*supportsPartialArea)(WindowEffectsModule& obj, Effect effect);
 
-    // NOTE: Region is not guaranteed to be respected.
+    bool (*isEffectAvailable)(WindowEffectsModule& obj, const QWindow* window, Effect effect);
+
+    // NOTE: Region is not guaranteed to be respected, see `supportsPartialArea()`.
     // WARNING: Care must be taken for Qt library ABI compatibility.
     //          For example, KWindowSystem may be built with Qt that are not
     //          binary compatible with the version the application uses.
-    void (*setBlurBehind)(QWindow* window, bool enable, const QRegion& region);
+    // WARNING: It is not permitted to call `setBlurBehind()` if `isEffectAvailable()` returned
+    //          false for `Effect::BlurBehind` effect.
+    void (*setBlurBehind)(WindowEffectsModule& obj, QWindow* window, bool enable, const QRegion& region);
+
+    // NOTE: Returns true if you should not place controls directly on top of the effect:
+    bool (*blurBehindRequiresOpacityLayer)(WindowEffectsModule& obj);
 };
 
 #endif // WINDOWEFFECTSMODULE_HPP

@@ -27,7 +27,19 @@
 #include <dwmapi.h>
 #include <winuser.h>
 
-static bool isEffectAvailable(const QWindow* window, const WindowEffectsModule::Effect effect)
+static bool SupportsPartialArea(WindowEffectsModule&, WindowEffectsModule::Effect effect)
+{
+    Q_UNUSED(effect);
+    return false;
+}
+
+static bool BlurBehindRequiresOpacityLayer(WindowEffectsModule&)
+{
+    // See https://learn.microsoft.com/en-us/windows/apps/design/style/acrylic:
+    return false;
+}
+
+static bool isEffectAvailable(WindowEffectsModule&, const QWindow* window, const WindowEffectsModule::Effect effect)
 {
     // Version check is done on module open, no need to re-do it here.
     switch (effect)
@@ -66,7 +78,7 @@ static bool isEffectAvailable(const QWindow* window, const WindowEffectsModule::
     };
 }
 
-static void setBlurBehind(QWindow* const window, const bool enable = true, const QRegion& region = {})
+static void setBlurBehind(WindowEffectsModule&, QWindow* const window, const bool enable = true, const QRegion& region = {})
 {
     Q_UNUSED(region);
 
@@ -97,6 +109,8 @@ int QtWin32WindowEffectsOpen(vlc_object_t* p_this)
 
     obj->setBlurBehind = setBlurBehind;
     obj->isEffectAvailable = isEffectAvailable;
+    obj->supportsPartialArea = SupportsPartialArea;
+    obj->blurBehindRequiresOpacityLayer = BlurBehindRequiresOpacityLayer;
 
     return VLC_SUCCESS;
 }

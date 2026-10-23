@@ -3712,6 +3712,7 @@ AC_ARG_ENABLE([wayland],
   AS_HELP_STRING([--enable-wayland], [Wayland support (default auto)]))
 
 have_wayland="no"
+have_wayland_protocols_146="no"
 AS_IF([test "${enable_wayland}" != "no"], [
   wl_err=""
 
@@ -3736,6 +3737,13 @@ AS_IF([test "${enable_wayland}" != "no"], [
   dnl wayland-protocols
   PKG_CHECK_MODULES([WAYLAND_PROTOCOLS], [wayland-protocols >= 1.33], [
     WAYLAND_PROTOCOLS="$(${PKG_CONFIG} wayland-protocols --variable pkgdatadir)"
+    WAYLAND_PROTOCOLS_VERSION="$(${PKG_CONFIG} wayland-protocols --modversion)"
+
+    AS_VERSION_COMPARE([$WAYLAND_PROTOCOLS_VERSION], [1.46],
+        [:],
+        [have_wayland_protocols_146="yes"],
+        [have_wayland_protocols_146="yes"]
+    )
   ], [
     wl_err="$wl_err ${WAYLAND_PROTOCOLS_PKG_ERRORS}."
   ])
@@ -3761,6 +3769,7 @@ AM_CONDITIONAL([HAVE_WAYLAND], [test "${have_wayland}" = "yes"])
 AC_SUBST([WAYLAND_PROTOCOLS])
 AC_SUBST([WAYLAND_SCANNER])
 AM_CONDITIONAL([HAVE_XKBCOMMON], [test "${have_xkbcommon}" = "yes"])
+AM_CONDITIONAL([HAVE_WAYLAND_PROTOCOLS_146], [test "${have_wayland_protocols_146}" = "yes"])
 
 
 dnl

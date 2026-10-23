@@ -21,6 +21,7 @@
 #include <QQuickView>
 #include <QOperatingSystemVersion>
 
+#include "maininterface/mainctx.hpp"
 #include "maininterface/interface_window_handler.hpp"
 
 #include <vlc_window.h>
@@ -92,8 +93,9 @@ bool CompositorPlatform::makeMainInterface(MainCtx *mainCtx, std::function<void 
     }
 
     // Make sure the UI child window has the same size as the root parent window:
-    connect(m_rootWindow.get(), &QWindow::widthChanged, m_quickWindow, &QWindow::setWidth);
-    connect(m_rootWindow.get(), &QWindow::heightChanged, m_quickWindow, &QWindow::setHeight);
+    connect(m_mainCtx, &MainCtx::intfSizeChanged, m_quickWindow, [window = m_quickWindow](const QSize& newSize) {
+        window->resize(newSize);
+    });
 
     m_quickWindow->create();
 
