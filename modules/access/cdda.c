@@ -21,11 +21,6 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
-/**
- * Todo:
- *   - Fix tracknumber in MRL
- */
-
 /*****************************************************************************
  * Preamble
  *****************************************************************************/
@@ -63,6 +58,43 @@
 
 #define INVALID_SECTOR ((unsigned) -1)
 
+static unsigned SplitTrackSuffix(char *location, bool *restrict splitp)
+{
+    unsigned track = 0;
+    /* A '/' left in a location is a separator; an encoded one reads %2F */
+    char *sl = strrchr(location, '/');
+
+    *splitp = false;
+
+    if (sl == NULL)
+        return 0;
+
+    if (sl[1] == '\0') /* trailing separator */
+    {
+        *sl = '\0';
+        return 0;
+    }
+
+    char *component = vlc_uri_decode_duplicate(sl + 1);
+    if (component == NULL)
+        return 0;
+
+    int end = -1;
+
+    if (sscanf(component, "Track %2u%n", &track, &end) == 1 && end >= 0
+     && component[end] == '\0')
+    {
+        *sl = '\0';
+        *splitp = true;
+    }
+    else
+        track = 0;
+
+    free(component);
+
+    return track;
+}
+
 static vcddev_t *DiscOpen(vlc_object_t *obj, const char *location,
                          const char *path, unsigned *restrict trackp)
 {
@@ -71,34 +103,53 @@ static vcddev_t *DiscOpen(vlc_object_t *obj, const char *location,
     *trackp = var_InheritInteger(obj, "cdda-track");
 
     if (path != NULL)
-        devpath = ToLocaleDup(path);
+    {
+        char *base = strdup(location);
+        if (base == NULL)
+            return NULL;
+
+        bool split;
+        unsigned track = SplitTrackSuffix(base, &split);
+        free(base);
+
+        if (track != 0)
+            *trackp = track;
+
+        char *dev = strdup(path);
+        if (dev == NULL)
+            return NULL;
+
+        if (split)
+        {
+            char *sep = strrchr(dev, DIR_SEP_CHAR);
+            if (sep != NULL)
+                *sep = '\0';
+
+            size_t len = strlen(dev);
+            while (len > 0 && dev[len - 1] == DIR_SEP_CHAR)
+                dev[--len] = '\0';
+        }
+
+        devpath = ToLocaleDup(dev);
+        free(dev);
+    }
     else if (location[0] != '\0')
     {
 #if (DIR_SEP_CHAR == '/')
-        char *dec = vlc_uri_decode_duplicate(location);
-        if (dec == NULL)
+        char *base = strdup(location);
+        if (base == NULL)
             return NULL;
 
-        /* GNOME CDDA syntax */
-        const char *sl = strrchr(dec, '/');
-        if (sl != NULL)
-        {
-            unsigned track = 0;
+        bool split;
+        unsigned track = SplitTrackSuffix(base, &split);
+        if (track != 0)
+            *trackp = track;
 
-            /* Match a location in the form "/" or "/Track <number>*".  If
-             * there's no match or if it's 0 (invalid), read the whole disk --
-             * but leave *trackp to the inherited value from cdda-track option.
-             * It's important not to reset it to 0 because although it means
-             * "whole disk" we must not switch back to that mode if we get
-             * called for a specific track later on, at the risk of recursing
-             * forever. */
-            if (sl[1] == '\0' || sscanf(sl, "/Track %2u", &track) == 1)
-            {
-                if (track != 0)
-                    *trackp = track;
-                dec[sl - dec] = '\0';
-            }
-        }
+        /* GNOME CDDA syntax */
+        char *dec = vlc_uri_decode_duplicate(base);
+        free(base);
+        if (dec == NULL)
+            return NULL;
 
         if (unlikely(asprintf(&devpath, "/dev/%s", dec) == -1))
             devpath = NULL;
@@ -145,6 +196,7 @@ typedef struct
     es_out_id_t *es;
     date_t       pts;
 
+    unsigned track; /**< Track number, 1-based */
     unsigned start; /**< Track first sector */
     unsigned length; /**< Track total sectors */
     unsigned position; /**< Current offset within track sectors */
@@ -193,6 +245,67 @@ static int Demux(demux_t *demux)
     return VLC_DEMUXER_SUCCESS;
 }
 
+static void DemuxGetMeta(demux_t *demux, vlc_meta_t *meta)
+{
+    demux_sys_t *sys = demux->p_sys;
+    vlc_meta_t **cdtextv;
+    int cdtextc;
+
+    if (ioctl_GetCdText(VLC_OBJECT(demux), sys->vcddev, &cdtextv, &cdtextc) == 0)
+    {
+        /* [0] describes the disc and [n] the n-th track, the same indexing
+         * ReadDir() uses. */
+        const vlc_meta_t *disc = (cdtextc > 0) ? cdtextv[0] : NULL;
+        const vlc_meta_t *tk = (sys->track < (unsigned) cdtextc)
+                             ? cdtextv[sys->track] : NULL;
+        const char *p;
+
+        if (disc != NULL)
+        {
+            if ((p = vlc_meta_Get(disc, vlc_meta_Title)) != NULL)
+                vlc_meta_Set(meta, vlc_meta_Album, p);
+            if ((p = vlc_meta_Get(disc, vlc_meta_Artist)) != NULL)
+                vlc_meta_Set(meta, vlc_meta_AlbumArtist, p);
+            if ((p = vlc_meta_Get(disc, vlc_meta_Genre)) != NULL)
+                vlc_meta_Set(meta, vlc_meta_Genre, p);
+            if ((p = vlc_meta_Get(disc, vlc_meta_Description)) != NULL)
+                vlc_meta_Set(meta, vlc_meta_Description, p);
+        }
+
+        if (tk != NULL)
+        {
+            if ((p = vlc_meta_Get(tk, vlc_meta_Title)) != NULL)
+                vlc_meta_Set(meta, vlc_meta_Title, p);
+            if ((p = vlc_meta_Get(tk, vlc_meta_Artist)) != NULL)
+                vlc_meta_Set(meta, vlc_meta_Artist, p);
+        }
+
+        for (int i = 0; i < cdtextc; i++)
+        {
+            if (cdtextv[i] != NULL)
+                vlc_meta_Delete(cdtextv[i]);
+        }
+        free(cdtextv);
+    }
+
+    /* Same label ReadDir() falls back to, so the two ways of reaching one
+     * track agree on what it is called. */
+    if (vlc_meta_Get(meta, vlc_meta_Title) == NULL)
+    {
+        char *name;
+
+        if (likely(asprintf(&name, _("Audio CD - Track %02u"), sys->track) != -1))
+        {
+            vlc_meta_Set(meta, vlc_meta_Title, name);
+            free(name);
+        }
+    }
+
+    char num[4];
+    if (snprintf(num, sizeof (num), "%u", sys->track) < 4)
+        vlc_meta_Set(meta, vlc_meta_TrackNumber, num);
+}
+
 static int DemuxControl(demux_t *demux, int query, va_list args)
 {
     demux_sys_t *sys = demux->p_sys;
@@ -221,6 +334,10 @@ static int DemuxControl(demux_t *demux, int query, va_list args)
             sys->position = lround(va_arg(args, double) * sys->length);
             date_Set(&sys->pts, VLC_TICK_0);
             date_Increment(&sys->pts, sys->position);
+            break;
+
+        case DEMUX_GET_META:
+            DemuxGetMeta(demux, va_arg(args, vlc_meta_t *));
             break;
 
         case DEMUX_GET_LENGTH:
@@ -315,6 +432,7 @@ static int DemuxOpen(vlc_object_t *obj, vcddev_t *dev, unsigned track)
 
     demux->p_sys = sys;
     sys->vcddev = dev;
+    sys->track = track;
     sys->start = var_InheritInteger(obj, "cdda-first-sector");
     sys->length = var_InheritInteger(obj, "cdda-last-sector") - sys->start;
 
@@ -336,8 +454,9 @@ static int DemuxOpen(vlc_object_t *obj, vcddev_t *dev, unsigned track)
         }
 
         track--;
-        int i_first_sector = p_toc->p_sectors[track].i_lba;
-        int i_last_sector = p_toc->p_sectors[track + 1].i_lba;
+        const unsigned toc_track = track + (i_cdda_first - p_toc->i_first_track);
+        int i_first_sector = p_toc->p_sectors[toc_track].i_lba;
+        int i_last_sector = p_toc->p_sectors[toc_track + 1].i_lba;
         if(i_cdda_first + track == (unsigned) i_cdda_last && p_toc->i_last_track > i_cdda_last)
             i_last_sector -= CD_ROM_XA_INTERVAL;
 
@@ -559,9 +678,27 @@ static int ReadDir(stream_t *access, input_item_node_t *node)
         const vlc_tick_t duration =
             vlc_tick_from_samples(i_last_sector - i_first_sector, CD_ROM_CDDA_FRAMES);
 
-        input_item_t *item = input_item_NewDisc(access->psz_url,
+        char *mrl = NULL;
+        if (access->psz_location[0] != '\0')
+        {
+            /* A trailing separator would come back as an empty final component
+             * and leave one in the device path. */
+            size_t len = strlen(access->psz_url);
+            const size_t schemelen = len - strlen(access->psz_location);
+
+            while (len > schemelen && access->psz_url[len - 1] == '/')
+                len--;
+
+            if (unlikely(asprintf(&mrl, "%.*s/Track%%20%02u",
+                                  (int) len, access->psz_url, i + 1) == -1))
+                mrl = NULL;
+        }
+
+        input_item_t *item = input_item_NewDisc((mrl != NULL) ? mrl :
+                                                access->psz_url,
                                                 (name != NULL) ? name :
                                                 access->psz_url, duration);
+        free(mrl);
         free(name);
 
         if (unlikely(item == NULL))
@@ -837,7 +974,7 @@ static void Close(vlc_object_t *obj)
 # endif
 #endif
 
-#define HELP_TEXT N_("Usage hint: [cdda:][device][@[track]]")
+#define HELP_TEXT N_("Usage hint: [cdda:][device][/Track [track]]")
 
 vlc_module_begin ()
     set_shortname( N_("Audio CD") )
