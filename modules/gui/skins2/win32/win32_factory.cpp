@@ -448,12 +448,21 @@ void Win32Factory::getMonitorInfo( int numScreen, int* p_x, int* p_y,
 }
 
 
-SkinsRect Win32Factory::getWorkArea() const
+SkinsRect Win32Factory::getWorkArea( const GenericWindow &rWindow ) const
 {
+    Win32Window *pWin = (Win32Window*)rWindow.getOSWindow();
+    HMONITOR hmon = MonitorFromWindow( pWin->getHandle(),
+                                       MONITOR_DEFAULTTONEAREST );
+    MONITORINFO mi;
+    mi.cbSize = sizeof( MONITORINFO );
+    if( hmon && GetMonitorInfo( hmon, &mi ) )
+        return SkinsRect( mi.rcWork.left, mi.rcWork.top,
+                          mi.rcWork.right, mi.rcWork.bottom );
+
+    // Fallback to primary monitor if GetMonitorInfo fails
     RECT r;
     SystemParametersInfo( SPI_GETWORKAREA, 0, &r, 0 );
-    // Fill a Rect object
-    return  SkinsRect( r.left, r.top, r.right, r.bottom );
+    return SkinsRect( r.left, r.top, r.right, r.bottom );
 }
 
 
