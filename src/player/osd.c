@@ -122,13 +122,8 @@ vlc_player_osd_Position(vlc_player_t *player,
                         struct vlc_player_input *input, vlc_tick_t time,
                         double position)
 {
-    if (input->length != VLC_TICK_INVALID)
-    {
-        if (time == VLC_TICK_INVALID)
-            time = position * input->length;
-        else
-            position = time / (double) input->length;
-    }
+    if (input->length != VLC_TICK_INVALID && time == VLC_TICK_INVALID)
+        time = position * input->length;
 
     size_t count;
     vout_thread_t **vouts = vlc_player_osd_HoldAll(player, &count);
@@ -147,8 +142,6 @@ vlc_player_osd_Position(vlc_player_t *player,
             vouts_osd_Message(vouts, count, "%s", time_text);
     }
 
-    if (vlc_player_vout_IsFullscreen(player))
-        vouts_osd_Slider(vouts, count, position * 100, OSD_HOR_SLIDER);
     vlc_player_osd_ReleaseAll(player, vouts, count);
 }
 
