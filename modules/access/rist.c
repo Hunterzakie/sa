@@ -31,6 +31,11 @@
 #include <vlc_block.h>
 
 #define RIST_CFG_PREFIX "rist-"
+
+#ifdef __EMSCRIPTEN__
+#include <librist/transport.h>
+#include "rist_wt_transport.h"
+#endif
 #include "rist.h"
 
 #define NACK_FMT_RANGE 0
@@ -56,6 +61,9 @@ typedef struct
     struct       rist_logging_settings logging_settings;
     vlc_mutex_t  lock;
     struct       rist_data_block *rist_items[RIST_MAX_QUEUE_BUFFERS];
+#ifdef __EMSCRIPTEN__
+    int          wt_session;
+#endif
 } stream_sys_t;
 
 static int cb_stats(void *arg, const struct rist_stats *stats_container)
@@ -220,6 +228,9 @@ static void Close(vlc_object_t *p_this)
     stream_t *p_access = (stream_t*)p_this;
     stream_sys_t *p_sys = p_access->p_sys;
     rist_destroy(p_sys->receiver_ctx);
+#ifdef __EMSCRIPTEN__
+    rist_wt_transport_ops_release(p_sys->wt_session);
+#endif
 }
 
 static int Open(vlc_object_t *p_this)
@@ -275,6 +286,28 @@ static int Open(vlc_object_t *p_this)
         return VLC_EGENERIC;
     }
 
+#ifdef __EMSCRIPTEN__
+    bool wt_acquired = false;
+    /* The host page creates one WebTransport ring session per RIST source and
+     * passes its id here; -1 selects the first session for the single-source
+     * case. */
+    int wt_session = var_InheritInteger(p_access, RIST_CFG_PREFIX "wt-session");
+    if (wt_session < 0)
+        wt_session = 0;
+    p_sys->wt_session = wt_session;
+    const struct rist_transport_ops *wt_ops = rist_wt_transport_ops(wt_session);
+    if (wt_ops == NULL) {
+        msg_Err(p_access, "WebTransport session %d unavailable (already in use "
+                "or not created by the host page)", wt_session);
+        goto failed;
+    }
+    wt_acquired = true;
+    if (rist_transport_set(p_sys->receiver_ctx, wt_ops) != 0) {
+        msg_Err(p_access, "Could not install WebTransport transport ops");
+        goto failed;
+    }
+#endif
+
     int nack_type = var_InheritInteger( p_access, RIST_CFG_PREFIX "nack-type" );
     if (rist_receiver_nack_type_set(p_sys->receiver_ctx, nack_type)) {
         msg_Err(p_access, "Could not set nack type");
@@ -303,6 +336,10 @@ static int Open(vlc_object_t *p_this)
 
 failed:
     rist_destroy(p_sys->receiver_ctx);
+#ifdef __EMSCRIPTEN__
+    if (wt_acquired)
+        rist_wt_transport_ops_release(p_sys->wt_session);
+#endif
     msg_Err(p_access, "Failed to open rist module");
     return VLC_EGENERIC;
 }
@@ -362,6 +399,13 @@ vlc_module_begin ()
             RIST_SRP_USERNAME_TEXT, NULL )
     add_password( RIST_CFG_PREFIX RIST_URL_PARAM_SRP_PASSWORD, "",
             RIST_SRP_PASSWORD_TEXT, NULL )
+#ifdef __EMSCRIPTEN__
+    add_integer( RIST_CFG_PREFIX "wt-session", -1,
+            N_("WebTransport session id"),
+            N_("Index of the WebTransport ring session the host page created "
+               "for this source (rist_wt_create_session). Lets one page play "
+               "several RIST sources at once. -1 selects the first session.") )
+#endif
 
     set_capability( "access", 10 )
     add_shortcut( "librist", "rist", "tr06" )

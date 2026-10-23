@@ -501,6 +501,9 @@ EXTRA_LTLIBRARIES += libaccess_srt_plugin.la
 ### RIST ###
 
 librist_plugin_la_SOURCES = access/rist.c access/rist.h
+if HAVE_EMSCRIPTEN
+librist_plugin_la_SOURCES += access/rist_wt_transport.c access/rist_wt_transport.h
+endif
 librist_plugin_la_CFLAGS = $(AM_CFLAGS) $(RIST_CFLAGS)
 librist_plugin_la_LIBADD = $(RIST_LIBS) $(SOCKET_LIBS)
 librist_plugin_la_LDFLAGS = $(AM_LDFLAGS) $(access_RPATH)

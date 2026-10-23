@@ -25,6 +25,11 @@ ifdef HAVE_WIN32
 LIBRIST_CONF += -Dhave_mingw_pthreads=true
 endif
 
+ifdef HAVE_EMSCRIPTEN
+# Networking is disabled on this target, so the gnutls contrib is not built.
+# Use librist's bundled cjson/mbedtls instead of depending on gnutls.
+LIBRIST_CONF += -Dbuiltin_cjson=true -Dbuiltin_mbedtls=true
+else
 # Prefer nettle+gmp+gnutls over the bundled mbedtls when the license
 # allows it. gnutls (nettle/gmp) can't be used with the LGPLv2 license.
 ifdef GPL
@@ -32,6 +37,7 @@ LIBRIST_USE_GNUTLS = 1
 else
 ifdef GNUV3
 LIBRIST_USE_GNUTLS = 1
+endif
 endif
 endif
 
