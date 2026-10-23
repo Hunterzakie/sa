@@ -55,6 +55,7 @@ vlc_playlist_PlaybackOrderChanged(vlc_playlist_t *playlist)
 
     vlc_playlist_Notify(playlist, on_playback_order_changed, playlist->order);
     vlc_playlist_state_NotifyChanges(playlist, &state);
+    vlc_playlist_UpdateNextMedia(playlist);
 
     char const *state_text = NULL;
     switch (playlist->order)
@@ -89,6 +90,7 @@ vlc_playlist_PlaybackRepeatChanged(vlc_playlist_t *playlist)
 
     vlc_playlist_Notify(playlist, on_playback_repeat_changed, playlist->repeat);
     vlc_playlist_state_NotifyChanges(playlist, &state);
+    vlc_playlist_UpdateNextMedia(playlist);
 
     char const *state_text = NULL;
     switch (playlist->repeat)
