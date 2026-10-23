@@ -110,6 +110,12 @@ vlc_modules += {
     'plugin_dir' : 'demux',
 }
 
+# .bkfl recordings demuxer
+vlc_modules += {
+    'name' : 'bkfl',
+    'sources' : files('bkfl.c'),
+}
+
 # MPEG PS demux
 vlc_modules += {
     'name' : 'ps',

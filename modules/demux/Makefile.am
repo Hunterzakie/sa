@@ -60,6 +60,9 @@ demux_PLUGINS += libnsv_plugin.la
 libhx_plugin_la_SOURCES = demux/hx.c
 demux_PLUGINS += libhx_plugin.la
 
+libbkfl_plugin_la_SOURCES = demux/bkfl.c
+demux_PLUGINS += libbkfl_plugin.la
+
 libps_plugin_la_SOURCES = demux/mpeg/ps.c demux/mpeg/ps.h demux/mpeg/pes.h
 demux_PLUGINS += libps_plugin.la
 
