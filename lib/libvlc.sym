@@ -253,6 +253,7 @@ libvlc_video_get_logo_int
 libvlc_video_get_marquee_int
 libvlc_video_get_scale
 libvlc_video_get_spu_delay
+libvlc_video_get_spu_fps
 libvlc_video_get_spu_text_scale
 libvlc_video_get_teletext
 libvlc_video_get_teletext_transparency
@@ -280,6 +281,7 @@ libvlc_video_set_projection_mode
 libvlc_video_unset_projection_mode
 libvlc_video_set_scale
 libvlc_video_set_spu_delay
+libvlc_video_set_spu_fps
 libvlc_video_set_spu_text_scale
 libvlc_video_set_teletext
 libvlc_video_set_teletext_transparency

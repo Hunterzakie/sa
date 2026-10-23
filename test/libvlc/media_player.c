@@ -755,6 +755,8 @@ static void test_media_player_video_controls(const char** argv, int argc)
     libvlc_media_player_set_media(player1, media1);
 
     libvlc_video_set_video_stereo_mode(player1, libvlc_VideoStereoSideBySide);
+    libvlc_video_set_spu_fps(player1, 25.f);
+    assert(libvlc_video_get_spu_fps(player1) == 25.f);
 
     libvlc_media_release(media1);
     libvlc_media_player_release(player1);

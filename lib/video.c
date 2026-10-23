@@ -347,6 +347,28 @@ libvlc_time_t libvlc_video_get_spu_delay( libvlc_media_player_t *p_mi )
     return US_FROM_VLC_TICK(delay);
 }
 
+float libvlc_video_get_spu_fps( libvlc_media_player_t *p_mi )
+{
+    vlc_player_t *player = p_mi->player;
+    vlc_player_Lock(player);
+
+    float fps = vlc_player_GetAssociatedSubsFPS(player);
+
+    vlc_player_Unlock(player);
+
+    return fps;
+}
+
+void libvlc_video_set_spu_fps( libvlc_media_player_t *p_mi, float f_fps )
+{
+    vlc_player_t *player = p_mi->player;
+    vlc_player_Lock(player);
+
+    vlc_player_SetAssociatedSubsFPS(player, f_fps);
+
+    vlc_player_Unlock(player);
+}
+
 int libvlc_video_set_spu_delay( libvlc_media_player_t *p_mi,
                                 libvlc_time_t i_delay )
 {

@@ -2656,6 +2656,15 @@ LIBVLC_API void libvlc_video_set_video_stereo_mode( libvlc_media_player_t *p_mi,
 LIBVLC_API libvlc_time_t libvlc_video_get_spu_delay( libvlc_media_player_t *p_mi );
 
 /**
+ * Get the subtitle FPS used to correct the rate of external subtitle files.
+ *
+ * \param p_mi media player
+ * \return subtitle FPS used for rate correction, or 0 if unset
+ * \version LibVLC 4.0.0 or later
+ */
+LIBVLC_API float libvlc_video_get_spu_fps( libvlc_media_player_t *p_mi );
+
+/**
  * Get the current subtitle text scale
  *
  * The scale factor is expressed as a percentage of the default size, where
@@ -2684,6 +2693,21 @@ LIBVLC_API float libvlc_video_get_spu_text_scale( libvlc_media_player_t *p_mi );
  * \version LibVLC 4.0.0 or later
  */
 LIBVLC_API void libvlc_video_set_spu_text_scale( libvlc_media_player_t *p_mi, float f_scale );
+
+/**
+ * Set the subtitle FPS used to correct the rate of external subtitle files.
+ *
+ * This affects all external subtitle files associated with the current media.
+ * It corrects subtitle drift by adjusting subtitle rate according to the
+ * specified subtitle FPS and the media video FPS.
+ *
+ * Values less than or equal to 1 disable subtitle FPS correction.
+ *
+ * \param p_mi media player
+ * \param f_fps FPS of the external subtitle file
+ * \version LibVLC 4.0.0 or later
+ */
+LIBVLC_API void libvlc_video_set_spu_fps( libvlc_media_player_t *p_mi, float f_fps );
 
 /**
  * Set the subtitle delay. This affects the timing of when the subtitle will
