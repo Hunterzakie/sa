@@ -726,6 +726,22 @@ FocusScope {
                     previousSectionButtonEnabled: tableView_id._firstSectionInstance && (tableView_id._firstSectionInstance !== this)
                     nextSectionButtonEnabled: tableView_id._lastSectionInstance && (tableView_id._lastSectionInstance !== this)
 
+                    // This should normally not be necessary, but `QSG_VISUALIZE=overdraw` has shown that Qt `ListView` keeps many
+                    // active sections outside the viewport (unlike the regular delegate). This is not ideal, because the blur
+                    // effect does a lot of sampling, and we can't afford overdraw especially in such a case:
+                    ViewportObserver {
+                        parent: musicAlbumSectionDelegate
+
+                        anchors.fill: parent
+
+                        preventOverdraw: true
+
+                        anchors.bottomMargin: -tableView_id.displayMarginBeginning
+                        // Extra margin is to care about the bottom window edge, so that the last bottom pixel rows can make use
+                        // of the section as source (blur needs to access neighbour pixels):
+                        anchors.topMargin: -(tableView_id.displayMarginEnd + 16)
+                    }
+
                     Navigation.parentItem: tableView_id
                     Navigation.upAction: function() {
                         let item = tableView_id.listView.itemAt(0, y - 1)

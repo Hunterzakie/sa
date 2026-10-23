@@ -33,6 +33,8 @@ Widgets.PageExt {
 
     // Properties
 
+    property int displayMarginEnd: 0
+
     property bool _initialized: false
     property bool _resetFocusPendingAfterInitialization: false
 
@@ -393,6 +395,20 @@ Widgets.PageExt {
                     contentYBehavior.enabled = false
                 }
             }
+        }
+
+        ViewportObserver {
+            anchors.fill: parent
+
+            // So that we don't prevent overdraw if
+            // miniplayer is open, since it is sourced
+            // for the backdrop blur effect. Some extra
+            // margin is added for the effects that are
+            // spatially aware, such as the backdrop blur
+            // effect:
+            anchors.topMargin: -(root.displayMarginEnd + 16)
+
+            preventOverdraw: true
         }
     }
 }

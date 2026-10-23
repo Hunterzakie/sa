@@ -44,6 +44,8 @@ Widgets.PageExt {
 
     isSearchable: true
 
+    property real displayMarginEnd: 0.0
+
     property real listCoverHeight: VLCStyle.listAlbumCover_height
     property real listCoverWidth: VLCStyle.listAlbumCover_width
     property real listCoverRadius: VLCStyle.listAlbumCover_radius
@@ -153,6 +155,20 @@ Widgets.PageExt {
             // jumps when it is enabled again later on.
         }
 
+        component DefaultViewportObserver : ViewportObserver {
+            anchors.fill: parent
+
+            // So that we don't prevent overdraw if
+            // miniplayer is open, since it is sourced
+            // for the backdrop blur effect. Some extra
+            // margin is added for the effects that are
+            // spatially aware, such as the backdrop blur
+            // effect:
+            anchors.topMargin: -(root.displayMarginEnd + 16)
+
+            preventOverdraw: true
+        }
+
         NoMedialibHome.ConeNButtons {
             id: coneNButtons
 
@@ -173,6 +189,10 @@ Widgets.PageExt {
                 contentYBehavior.enabled = true
                 Helpers.positionFlickableToContainItem(flickable, this)
                 contentYBehavior.enabled = false
+            }
+
+            DefaultViewportObserver {
+
             }
         }
 
@@ -266,6 +286,10 @@ Widgets.PageExt {
                         }
                     }
                 }
+
+                DefaultViewportObserver {
+
+                }
             }
 
             Widgets.ViewHeader {
@@ -341,6 +365,10 @@ Widgets.PageExt {
                             contentYBehavior.enabled = true
                         }
                     }
+                }
+
+                DefaultViewportObserver {
+
                 }
             }
 
@@ -422,6 +450,10 @@ Widgets.PageExt {
                         }
                     }
                 }
+
+                DefaultViewportObserver {
+
+                }
             }
 
             Widgets.ViewHeader {
@@ -495,6 +527,10 @@ Widgets.PageExt {
                             contentYBehavior.enabled = false
                         }
                     }
+                }
+
+                DefaultViewportObserver {
+
                 }
             }
         }

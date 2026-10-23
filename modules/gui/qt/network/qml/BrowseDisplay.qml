@@ -80,6 +80,8 @@ Widgets.PageLoader {
         id: browseHome
 
         BrowseHomeDisplay {
+            displayMarginEnd: root.displayMarginEnd
+
             onSeeAllDevices: (title, sd_source, reason) => {
                 root._showBrowseDevices(title, sd_source, reason)
             }
