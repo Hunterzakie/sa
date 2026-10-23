@@ -76,12 +76,12 @@ private slots:
     void onSurfaceSizeChanged(const QSizeF& size) override;
 
 private:
-    QWidget* m_videoWidget = nullptr;
-    QWidget* m_stable = nullptr;
-    std::unique_ptr<QQuickView> m_qmlView;
+    QWindow* m_videoWindow = nullptr;
+    QWindow* m_stable = nullptr;
+    std::unique_ptr<QQuickView> m_quickView;
     std::unique_ptr<Win7NativeEventFilter> m_nativeEventFilter;
 
-    HWND m_qmlWindowHWND = nullptr;
+    HWND m_quickWindowHWND = nullptr;
     HWND m_videoWindowHWND = nullptr;
 
     std::optional<QSize> m_pendingSize;
