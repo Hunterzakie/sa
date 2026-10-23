@@ -1201,6 +1201,13 @@ static void EsOutChangePosition(es_out_sys_t *p_sys,
     p_sys->b_draining = false;
     p_sys->i_preroll_end = -1;
     p_sys->i_prev_stream_level = -1;
+
+    /* Signal the stream output we enter buffering so that it can preroll
+     * and initialize the needed resources properly. The stream output
+     * should then rely on the clock for proper pacing of the buffering. */
+    if (input_priv(p_sys->p_input)->p_sout != NULL)
+        sout_StreamControl(input_priv(p_sys->p_input)->p_sout,
+                           SOUT_STREAM_SET_BUFFERING, true);
 }
 
 static void EsOutStopFreeVout(es_out_sys_t *p_sys)
@@ -1278,6 +1285,12 @@ static void EsOutDecodersStopBuffering(es_out_sys_t *p_sys, bool b_forced)
     p_sys->b_buffering = false;
     p_sys->i_preroll_end = -1;
     p_sys->i_prev_stream_level = -1;
+
+    /* Signal the stream output we finished prerolling and it must now
+     * use the clock to pace the output. */
+    if( input_priv(p_sys->p_input)->p_sout != NULL )
+        sout_StreamControl( input_priv(p_sys->p_input)->p_sout,
+                            SOUT_STREAM_SET_BUFFERING, false );
 
     if( p_sys->i_buffering_extra_initial > 0 )
     {

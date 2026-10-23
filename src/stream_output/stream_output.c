@@ -799,6 +799,8 @@ struct vlc_sout_clock_bus *sout_ClockMainCreate(sout_stream_t *p_stream)
         goto error_bus;
 
     vlc_clock_main_Lock(bus->clocks.bus);
+    vlc_clock_main_SetInputDejitter(bus->clocks.bus, 0);
+    vlc_clock_main_SetDejitter(bus->clocks.bus, 0);
     bus->clocks.input = vlc_clock_main_CreateInputSlave(bus->clocks.bus);
     vlc_clock_main_Unlock(bus->clocks.bus);
     if (bus->clocks.input == NULL)
@@ -825,6 +827,13 @@ void sout_ClockMainSetFirstPcr(struct vlc_sout_clock_bus *bus, vlc_tick_t pcr )
     vlc_clock_main_Lock(bus->clocks.bus);
     vlc_clock_main_Reset(bus->clocks.bus);
     vlc_clock_main_SetFirstPcr(bus->clocks.bus, vlc_tick_now(), pcr);
+    vlc_clock_main_Unlock(bus->clocks.bus);
+}
+
+void sout_ClockMainReset(struct vlc_sout_clock_bus *bus)
+{
+    vlc_clock_main_Lock(bus->clocks.bus);
+    vlc_clock_main_Reset(bus->clocks.bus);
     vlc_clock_main_Unlock(bus->clocks.bus);
 }
 

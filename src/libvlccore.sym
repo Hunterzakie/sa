@@ -191,6 +191,9 @@ vlc_input_decoder_IsDrained
 vlc_input_decoder_Flush
 vlc_input_decoder_SetSpuHighlight
 vlc_input_decoder_ChangeDelay
+vlc_input_decoder_StartWait
+vlc_input_decoder_Wait
+vlc_input_decoder_StopWait
 input_item_AddInfo
 input_item_AddOption
 input_item_AddOptions
@@ -379,6 +382,7 @@ sout_StreamControlVa
 sout_ClockMainCreate
 sout_ClockMainDelete
 sout_ClockMainSetFirstPcr
+sout_ClockMainReset
 sout_ClockCreate
 sout_ClockDelete
 spu_Create

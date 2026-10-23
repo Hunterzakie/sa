@@ -223,6 +223,20 @@ enum sout_stream_query_e
      * \endcode
      */
     SOUT_STREAM_IS_SYNCHRONOUS,
+
+    /**
+     * Signal the input buffering state to the stream output pipeline.
+     *
+     * This control should fail and do nothing if not implemented.
+     *
+     * \param bool True when entering the buffering phase, false when it ends.
+     *
+     * Usage:
+     * \code{c}
+     * sout_StreamControl(stream, SOUT_STREAM_SET_BUFFERING, true);
+     * \endcode
+     */
+    SOUT_STREAM_SET_BUFFERING,
 };
 
 typedef struct vlc_frame_t vlc_frame_t;
@@ -394,6 +408,7 @@ struct vlc_sout_clock_bus;
 VLC_API struct vlc_sout_clock_bus *sout_ClockMainCreate(sout_stream_t *) VLC_USED;
 VLC_API void sout_ClockMainDelete(struct vlc_sout_clock_bus *);
 VLC_API void sout_ClockMainSetFirstPcr(struct vlc_sout_clock_bus *, vlc_tick_t pcr);
+VLC_API void sout_ClockMainReset(struct vlc_sout_clock_bus *);
 VLC_API vlc_clock_t *sout_ClockCreate(struct vlc_sout_clock_bus *, const es_format_t *) VLC_USED;
 VLC_API void sout_ClockDelete(vlc_clock_t *);
 

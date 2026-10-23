@@ -102,21 +102,6 @@ void vlc_input_decoder_ChangePause( vlc_input_decoder_t *, bool b_paused, vlc_ti
 void vlc_input_decoder_ChangeRate( vlc_input_decoder_t *dec, float rate );
 
 /**
- * This function makes the decoder start waiting for a valid data block from its fifo.
- */
-void vlc_input_decoder_StartWait( vlc_input_decoder_t * );
-
-/**
- * This function waits for the decoder to actually receive data.
- */
-void vlc_input_decoder_Wait( vlc_input_decoder_t * );
-
-/**
- * This function exits the waiting mode of the decoder.
- */
-void vlc_input_decoder_StopWait( vlc_input_decoder_t * );
-
-/**
  * This function returns true if the decoder fifo is empty and false otherwise.
  */
 bool vlc_input_decoder_IsEmpty( vlc_input_decoder_t * );

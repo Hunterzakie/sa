@@ -103,6 +103,31 @@ VLC_API int  vlc_input_decoder_SetSpuHighlight( vlc_input_decoder_t *, const vlc
 VLC_API void vlc_input_decoder_ChangeDelay( vlc_input_decoder_t *, vlc_tick_t i_delay );
 
 /**
+ * Make the decoder hold back its output.
+ *
+ * The decoder keeps decoding into its fifo but its output thread blocks
+ * instead of sending frames to the output. Use this while the
+ * clock has no started timeline yet (i.e. during buffering). Must be paired
+ * with vlc_input_decoder_StopWait().
+ */
+VLC_API void vlc_input_decoder_StartWait(vlc_input_decoder_t *);
+
+/**
+ * Wait for the decoder to have output data ready while held by
+ * vlc_input_decoder_StartWait().
+ */
+VLC_API void vlc_input_decoder_Wait( vlc_input_decoder_t * );
+
+/**
+ * Release the decoder output held by vlc_input_decoder_StartWait().
+ *
+ * The decoder starts its clock and resumes feeding the outputs. Call it only
+ * once the clock is started for the input and ready to be started for
+ * the output.
+ */
+VLC_API void vlc_input_decoder_StopWait( vlc_input_decoder_t * );
+
+/**
  * It creates an empty input resource handler.
  *
  * The given object MUST stay alive as long as the input_resource_t is
