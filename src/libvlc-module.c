@@ -829,6 +829,10 @@ static const char* const ppsz_restore_playback_desc[] = {
 #define SPU_FULL_LONGTEXT N_( \
     "It allows showing subtitles in black bars.")
 
+#define SPU_STRICT_TEXT N_("Strict subtitle placement")
+#define SPU_STRICT_LONGTEXT N_( \
+    "Enforce each subtitle format's own placement.")
+
 #define SECONDARY_SUB_POSITION_TEXT N_("Position of secondary subtitles")
 #define SECONDARY_SUB_POSITION_LONGTEXT N_( \
     "Place on video where to display secondary subtitles (default bottom center).")
@@ -1804,6 +1808,8 @@ vlc_module_begin ()
     add_bool( "spu", true, SPU_TEXT, SPU_LONGTEXT )
         change_safe ()
     add_bool( "spu-fill", true, SPU_FULL_TEXT, SPU_FULL_LONGTEXT )
+        change_safe ()
+    add_bool( "spu-strict-placement", false, SPU_STRICT_TEXT, SPU_STRICT_LONGTEXT )
         change_safe ()
     add_bool( "osd", true, OSD_TEXT, OSD_LONGTEXT )
     add_module("text-renderer", "text renderer", "any",

@@ -1,7 +1,7 @@
 /*****************************************************************************
  * vout_subpictures.c : subpicture management functions
  *****************************************************************************
- * Copyright (C) 2000-2019 VLC authors, VideoLAN and Videolabs SAS
+ * Copyright (C) 2000-2026 VLC authors, VideoLAN and Videolabs SAS
  *
  * Authors: Vincent Seguin <seguin@via.ecp.fr>
  *          Samuel Hocevar <sam@zoy.org>
@@ -127,6 +127,7 @@ struct spu_private_t {
      */
     int secondary_margin;
     int secondary_alignment;       /**< Force alignment for secondary subs */
+    bool strict_placement;
     subtitles_positions_vector subs_pos;
 
     video_palette_t palette;              /**< force palette of subpicture */
@@ -1452,8 +1453,14 @@ static vlc_render_subpicture *SpuRenderSubpictures(spu_t *spu,
             }
             region_FixFmt(region);
 
-            const bool subpic_in_video = !spu_in_full_window ||
-                                         !region->b_in_window;
+            /* Place subtitles relative to the window instead of the video,
+             * for a constant size across transformations, unless strict
+             * placement is set. */
+            const bool place_in_window = region->b_in_window ||
+                                         (!sys->strict_placement && subpic->b_subtitle);
+
+            const bool subpic_in_video = !spu_in_full_window || !place_in_window;
+            const bool subtitle_in_window = !subpic_in_video && subpic->b_subtitle;
             unsigned output_width, output_height;
             unsigned output_x, output_y;
             if (subpic_in_video) {
@@ -1474,10 +1481,13 @@ static vlc_render_subpicture *SpuRenderSubpictures(spu_t *spu,
                 .den = region->fmt.i_sar_den
             };
             if (region_sar.num <= 0 || region_sar.den <= 0) {
-
-                const uint64_t i_sar_num = (uint64_t)output_width  *
+                const unsigned sar_width  = subtitle_in_window ?
+                                            video_position->width  : output_width;
+                const unsigned sar_height = subtitle_in_window ?
+                                            video_position->height : output_height;
+                const uint64_t i_sar_num = (uint64_t)sar_width  *
                                            fmt_dst->i_sar_num * i_original_height;
-                const uint64_t i_sar_den = (uint64_t)output_height *
+                const uint64_t i_sar_den = (uint64_t)sar_height *
                                            fmt_dst->i_sar_den * i_original_width;
 
                 vlc_ureduce(&region_sar.num, &region_sar.den,
@@ -1498,6 +1508,14 @@ static vlc_render_subpicture *SpuRenderSubpictures(spu_t *spu,
 
             /* Check scale validity */
             assert(scale.w != 0 && scale.h != 0);
+
+            if (subtitle_in_window) {
+                const int canvas_width = spu_scale_w(i_original_width, scale);
+                if (canvas_width > (int)output_width) {
+                    scale.w = (int)((uint64_t)scale.w * output_width / canvas_width);
+                    scale.h = (int)((uint64_t)scale.h * output_width / canvas_width);
+                }
+            }
 
             bool cached_is_in_window;
             int cached_alignment;
@@ -1534,6 +1552,11 @@ static vlc_render_subpicture *SpuRenderSubpictures(spu_t *spu,
                 // place the region inside the video area
                 output_last_ptr->place.x += video_position->x;
                 output_last_ptr->place.y += video_position->y;
+            } else if (subtitle_in_window) {
+                output_last_ptr->place.x +=
+                    ((int)output_width  - spu_scale_w(i_original_width,  scale)) / 2;
+                output_last_ptr->place.y +=
+                    ((int)output_height - spu_scale_h(i_original_height, scale)) / 2;
             }
 
             if (cache_pos != NULL)
@@ -1969,6 +1992,7 @@ spu_t *spu_Create(vlc_object_t *object, vout_thread_t *vout)
 
     sys->secondary_alignment = var_InheritInteger(spu,
                                                   "secondary-sub-alignment");
+    sys->strict_placement = var_InheritBool(spu, "spu-strict-placement");
     vlc_vector_init(&sys->subs_pos);
 
     sys->source_chain_update = NULL;
