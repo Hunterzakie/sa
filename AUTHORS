@@ -4,161 +4,223 @@ Programming
 -----------
 Rémi Denis-Courmont
 Jean-Baptiste Kempf
-Laurent Aimar
 François Cartegnie
-Gildas Bazin
+Steve Lhomme
+Laurent Aimar
 Felix Paul Kühne
-Rafaël Carré
-Pierre d'Herbemont
 Thomas Guillem
+Rafaël Carré
+Gildas Bazin
+Pierre d'Herbemont
 Rémi Duraffort
+Hugo Beauzée-Luyssen
 Derk-Jan Hartman
+Jean-Paul Saman
 Antoine Cellerier
 Samuel Hocevar
-Jean-Paul Saman
-Steve Lhomme
+David Fuhrmann
 Christophe Mutricy
 Clément Stenac
 Christophe Massiot
 Ilkka Ollakka
+Marvin Scholz
 Pierre Ynard
 Filip Roséen
+Pierre Lamot
+Prince Gupta
+Alexandre Janniaux
+Erwan Tulou
 Damien Fouilleul
 Sigmund Augdal Helberg
-Erwan Tulou
-David Fuhrmann
-Marvin Scholz
+Romain Vimont
+Pavlov Konstantin
+Tristan Matthews
+Fatih Uzunoglu
+Martin Storsjö
 Olivier Teulière
 Cyril Deguet
 Eric Petit
+Lyndon Brown
 Filippo Carone
 Rocky Bernstein
-Hugo Beauzée-Luyssen
 Olivier Aubert
-Pavlov Konstantin
 Jakob Leben
 Benjamin Pracht
+KO Myung-Hun
+Ludovic Fauvet
 Jean-Philippe André
+Zhao Zhili
 Stéphane Borel
+Adrien Maglo
 JP Dinger
 Geoffroy Couprie
-Martin Storsjö
-Marian Ďurkovič
-Ludovic Fauvet
+Victorien Le Couviour--Tuffet
 Petri Hintukainen
-Yoann Peronneau
+Marian Ďurkovič
+Felix Abecassis
+Benjamin Arnaud
 Denis Charmet
+Julian Scheel
+Yoann Peronneau
 Sébastien Escudier
-Jon Lech Johansen
-KO Myung-Hun
 Edward Wang
-Dennis van Amerongen
-Faustino Osuna
-Mirsal Ennaime
+Jon Lech Johansen
+Hannes Domani
 Sean McGovern
+Abel Tesfaye
+Dennis van Amerongen
+Mirsal Ennaime
+Faustino Osuna
 Jérôme Decoodt
 Loïc Minier
-David Flynn
+Christoph Miebach
 Frédéric Yhuel
-Kaarlo Raiha
+David Flynn
+Kaarlo Räihä
 Mark Moriarty
 Christopher Mueller
 Fabio Ritrovato
+Rohan Rajpal
 Tony Castley
+Simon Latapie
+Niklas Haas
 Srikanth Raju
 Michel Kaempf
 Jean-Marc Dressler
 Johan Bilien
 Vincent Seguin
-Simon Latapie
 Bernie Purcell
+Naohiro Koriyama
 Henri Fallon
 Sebastien Zwickert
-Christoph Miebach
-Adrien Maglo
+Daniel Verkamp
+Salah-Eddin Shaban
+Devin Heitmueller
 Emmanuel Puig
+Michał Trzebiatowski
+Sebastian Ramacher
 Renaud Dartus
 Alexis de Lattre
+Vittorio Giovara
 Vincent Penquerc'h
 Arnaud de Bossoreille de Ribou
 Mohammed Adnène Trojette
-Salah-Eddin Shaban
-Vittorio Giovara
+Dominique Leuenberger
 Boris Dorès
 Jai Menon
 Anil Daoud
 Daniel Mierswa
-Naohiro Koriyama
 Rob Jonson
 Pierre Baillet
-Dominique Leuenberger
+Julien 'Lta' BALLET
+Alaric Senat
 Andre Pang
+Sergio Ammirata
 Zoran Turalija
+Quentin Chateau
+Steinar H. Gunderson
 Akash Mehrotra
 André Weber
 Anthony Loiseau
+Luca Barbato
 Lukas Durfina
+Nicolas Chauvet
+Stanislas Plessia
+Tobias Güntner
 Xavier Marchesini
 Cyril Mathé
-Devin Heitmueller
+Sébastien Toque
 Juho Vähä-Herttua
 Ken Self
-Alexis Ballier
-Juha Jeronen
-Nicolas Chauvet
-Richard Hosking
+Matthias Keiser
+Shaleen Jain
 Éric Lassauge
+Alexis Ballier
+Gleb Pinigin
+Juha Jeronen
+Justin Kim
+Mark Lee
+Richard Hosking
+Timothy B. Terriberry
 Marc Ariberti
-Sébastien Toque
-Tobias Güntner
+Anatoliy Anischovich
 Benoit Steiner
+Brad Smith
+Maxim Bublis
 Michel Lespinasse
+Ronald Wright
 Carlo Calabrò
 Cheng Sun
-Michał Trzebiatowski
-Brad Smith
+Eric Engestrom
+Marián Hikaník
 Brendon Justin
+Vincenzo Reale
 Alexey Sokolov
 Basos G
+Martin Finkel
 Philippe Morin
-Steinar H. Gunderson
 Vicente Jimenez Aguilar
 Yuval Tze
-Yves Duret
 Benjamin Drung
+Benoit du Payrat
+Fumio Nakayama
+Roland Bewick
+Vibhoothi
+Yves Duret
+Daniel Amm
+Grigori Goronzy
 Michael Hanselmann
+Thomas De Rocker
+Uwe L. Korn
+Vianney Boyer
 Alex Merry
 Damien Lucas
-Grigori Goronzy
+Janne Grunau
+Mathieu Velten
 Richard Shepherd
+Antti Ajanki
+Christophe Courtaut
+David González
 Gaël Hendryckx
 Michael Feurstein
+Paul B Mahol
+Rui Zhang
+Sergey Radionov
+Sidney Doria
 Stephan Assmus
+Vikram Fugro
+Wieland Hoffmann
 Adrien Grand
+Alexander Lakhin
 Colin Guthrie
 David Menestrina
+Dennis Hamester
+Diego Elio Pettenò
 Dominique Martinet
-Gleb Pinigin
+Duncan McNamara
+François Revol
 Jason Luka
+John Cox
 Luc Saillard
-Luca Barbato
 Mario Speiß
+Martell Malone
+Michael Tänzer
 Pankaj Yadav
+Petter Reinholdtsen
 Ramiro Polla
-Ronald Wright
-Rui Zhang
+Alexandre Perraud
 Can Wu
-Christophe Courtaut
 FUJISAWA Tooru
-Hannes Domani
+Johan Gunnarsson
 Manol Manolov
-Timothy B. Terriberry
+Nicolas Bertrand
+Yuudai Yamashigi
+Andrey Utkin
 Antoine Lejeune
 Arnaud Schauly
 Branko Kokanovic
 Dylan Yudaken
 Florian G. Pflug
-François Revol
 G Finch
 Keary Griffin
 Konstanty Bialkowski
@@ -166,286 +228,551 @@ Ming Hu
 Philippe Coent
 Przemyslaw Fiala
 Tanguy Krotoff
-Vianney BOYER
+Yaron Shahrabani
+Zinuo Han
 Casian Andrei
 Chris Smowton
+Daniel Glaas
 David Kaplan
+Emeric Grange
 Eugenio Jarosiewicz
 Fabian Keil
+Fabian Yamaguchi
+Gilles Sabourin
 Guillaume Poussel
 John Peterson
+Jonas Lundqvist
+Jonathan Calmels
 Justus Piater
-Mark Lee
+Kamil Rytarowski
+Kaya Zeren
 Martin T. H. Sandsmark
 Rune Botten
 Søren Bøg
 Toralf Niebuhr
-Tristan Matthews
+Vincenzo Nicosia
+Vinson Lee
+Wayne McDougall
+Aaron Boxer
+Adrian Yanes
+Alex Converse
 Angelo Haller
 Aurélien Nephtali
 Austin Burrow
+Benjamin Adolphi
 Bill C. Riemers
+Biswapriyo Nath
+Boris Egorov
+Carola Nitz
 Colin Delacroix
 Cristian Maglie
+David R Robison
 Elminster2031
+Ewout ter Hoeven
+Farid Hammane
+Georgi Chorbadzhiyski
 Jakub Wieczorek
+Jean-Yves Avenard
 John Freed
+John Stebbins
+Kartik Ohri
+Kazuki Yamaguchi
+Louis Régnier
 Mark Hassman
 Martin Briza
+Mathieu Parent
+Maël Kervella
+Mehdi Sabwat
 Mike Houben
+Oliver Collyer
 Romain Goyet
-Adrian Yanes
-Alexander Lakhin
-Anatoliy Anischovich
+Sagar Kohli
+Stefan Brüns
+Stefan Pöschel
+Андрій Бандура
+Adam Leggett
+Akshay V
+Aleksandr Pasechnik
+Aleksey Kuznetsov
+Andrey Gursky
+Arjun Sreedharan
 Barry Wardell
+Bastien Penavayre
 Ben Hutchings
+Ben Littler
 Besnard Jean-Baptiste
 Brian Weaver
 Clement Chesnin
+Daksh Shah
 David Geldreich
-Diego Elio Pettenò
+Diego Biurrun
 Diego Fernando Nieto
-Georgi Chorbadzhiyski
+Frode Tennebø
+Geoffrey Métais
+Jan Ekström
+Jerome Forissier
 Jon Stacey
 Jonathan Rosser
+Joni Räsänen
 Joris van Rooij
+Josh Watzman
+Jérôme Froissart
 Kaloyan Kovachev
 Katsushi Kobayashi
 Kelly Anderson
 Loren Merritt
 Maciej Blizinski
+Marcel Schnirring
 Mark Bidewell
+Matthew Whitworth
 Miguel Angel Cabrera Moya
+Mikhail Gusarov
+Mohammed (Shaan) Huzaifa Danish
+Natanael Copa
 Niles Bindel
+Olivier Crête
+Ramon Gabarró
+Richard Diamond
+Robert Mourning
+Robert-André Mauchin
+Samuel Bassaly
 Samuel Pitoiset
 Scott Caudle
 Sean Robinson
-Sergey Radionov
+Shlomi Fish
 Simon Hailes
 Stephen Parry
 Sukrit Sangwan
 Thierry Reding
+Tobias Conradi
+Valentin Vetter
 Xavier Martin
-Alex Converse
+Abylay Ospan
 Alexander Bethke
 Alexandre Ratchov
+Alon Sirota
+Andreas Mieke
 Andres Krapf
-Andrey Utkin
 Andri Pálsson
 Andy Chenee
+Andy Tather
 Anuradha Suraparaju
+Arun Pandian G
+Avishay Spitzer
 Benjamin Poulain
+Bernd Kuhls
 Brieuc Jeunhomme
 Chris Clayton
+Christian Christiansen
 Clément Lecigne
 Cédric Cocquebert
 Daniel Peng
+Daniel Winzen
 Danny Wood
 David K
+Diogo Silva
+Doney den Ouden
 Edouard Gomez
 Emmanuel de Roux
-Frode Tennebø
+Erick Tyndall
+Etienne Brateau
+Eugen Geist
+Fabrizio Gennari
+Finn Hughes
+Frank Dana (FeRD)
 GBX
 Gaurav Narula
 Geraud CONTINSOUZAS
+Gilles Chanteperdrix
+Gwenole Beauchesne
+Hamza Parnica
 Hugues Fruchet
 Jan Winter
+Jarrad Whitaker
 Jean-François Massol
 Jean-Philippe Grimaldi
-Josh Watzman
+Juha-Pekka Heikkila
+Jérémy Vignelles
 Kai Lauterbach
 Konstantin Bogdanov
 Kuan-Chung Chiu
 Kuang Rufan
+Lionel Landwerlin
+Luis Fernandes
 Matthias Dahl
+Maxime CHAPELET
+Maxime Meissonnier
 Michael McEll
 Michael Ploujnikov
 Mike Schrag
+Nick Briggs
 Nickolai Zeldovich
-Nicolas Bertrand
 Niklas Hayer
+Odd-Arild Kristensen
 Olafs Vandāns
 Olivier Gambier
+Paul Clark
 Paul Corke
+Pere Orga
+Philip Höhlein
+Rafael Waldo Delgado Doblas
+Reka Inovan
+Remita Amine
+Romain Bentz
 Ron Frederick
+Ross Finlayson
 Rov Juvano
-Sabourin Gilles
 Sam Lade
+Samuel Martin
+Samuel Thibault
 Sandeep Kumar
 Sasha Koruga
+Simona-Marinela Prodea
+Soomin Lee
 Sreng Jean
 Sven Petai
+Takahito Hirano
+Tanguy Dubroca
+Timo Rothenpieler
 Tomas Krotil
 Tomer Barletz
 Tristan Leteurtre
+Valentin Deniaud
+Vedanta Nayak
 Wang Bo
+Will Newton
+Zou Ya
 maxime Ripard
 xxcv
+A. Wilcox
+Aakash Singh
+Aashish Parmar
 Adam Hoka
+Adrian Haensler
 Adrian Knoth
 Adrien Cunin
+Ago Allikmaa
+Akinobu Mita
+Alain Degreffe
 Alan Fischer
 Alan McCosh
+Alan Pope
+Alejandro González
 Alex Helfet
+Alex Peak
+Alex Warhawk
+Alex Woods
 Alexander Terentyev
+Alexandr Koverninsky
+Alexandre Fernandez
 Alexandre Ferreira
+Alexandre Pereira Nunes
 Alina Friedrichsen
+Allan Odgaard
+Ammar Salem
 An L. Ber
+Ancelot Mark Pinto
+Andrea Giudiceandrea
+Andreas Hartmetz
+Andreas Krug
 Andreas Schlick
+Andrew Clayton
 Andrew Schubert
 Andrey Makhnutin
+André Silva
+Andrii Zui
+Anton Regnander
+Antonio Larrosa
 Arnaud Vallat
+Arne de Bruijn
+Arnold Marko
 Asad Mehmood
 Ashok Bhat
+Ashutosh Verma
+Atte Kettunen
 Austin English
+Avani Sharma
+Awais Chishti
+Balázs Meskó
 Baptiste Coudurier
+Barmand Toumiret
 Benoit Calvez
+Benoît Noël du Payrat
+Bernhard M. Wiedemann
 Björn Stenberg
+Blake Haydon
 Blake Livingston
+Boy van Amstel
 Brandon Brooks
 Brian Johnson
 Brian Kurle
+Brian Schmidt
+Brion Vibber
+C.W. Betts
+Cameron Mozie
+Carlos Fenollosa
 Cezar Elnazli
+Chenrui He
 Chris White
 Christian Masus
+Christian Suloway
 Christoph Pfister
 Christoph Seibert
 Christopher Key
 Christopher Rath
 Claudio Ortelli
+Clemens Werther
 Cody Russell
 Cristian Morales Vega
 Dan Rosenberg
+Daniel Charles
 Daniel Marth
 Daniel Tisza
+Danny Milosavljevic
+Darko Jankovic
+Darrell Walisser
+Dave Nicolson
+Derek Buitenhuis
 Detlef Schroeder
-Diego Biurrun
+Dmitry Buzdyk
 Dominik 'Rathann' Mierzejewski
+Donald Campbell
 Duncan Salerno
 Edward Sheldrake
 Elliot Murphy
+Elodie Thomann
+Emmanuel Nicolet
 Eren Inan Canpolat
 Ernest E. Teem III
 Etienne Membrives
+Fabrice Bellet
+Fahad Al-Saidi
 Fargier Sylvain
 Fathi Boudra
 Felix Geyer
 Filipe Azevedo
-Finn Hughes
+Florent Pillet
 Florian Hubold
 Florian Roeske
+Forteve Zepushisti
 Frank Enderle
+Frank Praznik
 Frédéric Crozat
+Gabriel de Perthuis
+Gal Vinograd
+Gary Wang
+Gaurav Pruthi
 Georg Seifert
 Gertjan Van Droogenbroeck
-Gilles Chanteperdrix
+Gian Marco Sibilla
+Gianfranco Costamagna
+Gina Dobrescu
+Gonzalo Higuera Díaz
+Goran Dokic
 Greg Farrell
 Gregory Maxwell
-Gwenole Beauchesne
+Guillaume Gomez
 Götz Waschk
 Hans-Kristian Arntzen
+Harald Sitter
 Harry Sintonen
+Heorhi Valakhanovich
+Huang Jie
+Hugo Carvalho
+Hyeon-Ju Lee
 Iain Wade
+Ian Chamberlain
 Ibraheem Paredath
+Igor Prokopenkov
+Ilya Yanok
+Ingmārs Dīriņš
+Ion Agorria
 Isamu Arimoto
 Ismael Luceno
+Iulian Onofrei
+Jai Luthra
 James Bates
 James Bond
 James Turner
-Janne Grunau
+Janboe Ye
 Janne Kujanpää
 Jarmo Torvinen
 Jason Scheunemann
+Jed Smith
 Jeff Lu
+Jeremy Huddleston Sequoia
+Jernej Fijacko
 Jeroen Ost
+Jim Bankoski
 Joe Taber
 Johann Ransay
 Johannes Weißl
 John Hendrikx
-John Stebbins
 Jonas Gehring
+Jonas Knöll
+Jonatan "jaw" Wallmander
+Jonathan Heard
+Jonathan McGowan
+Joseph DeVore
 Joseph S. Atkinson
 Juergen Lock
-Julien 'Lta' BALLET
 Julien / Gellule
 Julien Humbert
+Julien Montant
+Jérémy Carrier
+Kai Uwe Broulik
 Kamil Baldyga
 Kamil Klimek
 Karlheinz Wohlmuth
 Kevin Anthony
 Kevin DuBois
+Konstantin K. Beliak
+Konstantin Pavlov
+Konstantinos Tsanaktsidis
+Kornel Lesiński
+Krish De Souza
+Kuba Niewiarowski
 Lari Natri
+Lochlin Duperron
+Loiret David
 Lorenzo Pistone
+Louis Segretin
 Lucas C. Villa Real
+Lucas Werkmeister
+Luiz Silva
+Lukas Bergdoll
+Lukas Euler
+Lukas Juhrich
 Lukáš Lalinský
+Maite Guix
 Mal Graty
 Malte Tancred
+Marc Aldorasi
+Marc Etcheverry
+Marc Haisenko
+Marek Beleščiak
+Mariusz Wasak
+Mark Becwar
 Martin Pöhlmann
 Martin Zeman
 Marton Balint
 Mathew King
+Mathieu Malaterre
 Mathieu Sonet
 Matthew A. Townsend
 Matthias Bauer
+Matthias Treydte
+Max Dilipovich
+Maxim Sergeev
+Maxime Mouchet
+Michael Kaufmann
+Michael Young
+Miha Sokolov
 Mika Tiainen
 Mike Cardillo
+Moti Zilberman
 Mounir Lamouri (volkmar)
-Natanael Copa
+Nagy Tibor
+Natalie Landsberg
+Nathan Egge
 Nathan Phillip Brink
-Nick Briggs
+Nathaniel Graham
 Nick Pope
+Nicolas Le Quec
 Nil Geiswiller
+O. Hartmann
+Olaf Hering
+Olivier Fourdan
+Olivier Langlois
+Pascal Souchet
 Pascal Thomet
-Pere Orga
+Patrick Ho
+Paweł Stankowski
 Peter Bak Nielsen
 Phil Roffe and David Grellscheid
 Philip Sequeira
 Pierre Souchay
+Pierre-Hugues Husson
 Piotr Fusik
+Pyry Kontio
 Pádraig Brady
 R.M
+Rajeesh K V
 Ralph Giles
-Ramon Gabarró
+Ray Tiley
+Ricardo Ribalda Delgado
+Rinat Ibragimov
 Robert Forsman
 Robert Jedrzejczyk
 Robert Paciorek
 Rolf Ahrenberg
+Romain FLIEDEL
+Roman Diouskine
 Roman Pen
+Ronald S. Bultje
 Ruud Althuizen
+Sam Malone
 Samuli Suominen
+Sanchit Arora
+Santiago Gimeno
 Scott Lyons
 Sebastian Birk
+Sebastian Roth
+Sergey Bolshakov
 Sergey Puzanov
-Sergio Ammirata
 Sharad Dixit
+Shaya Potter
 Song Ye Wen
 Stephan Krempel
 Steven Kramer
 Steven Sheehy
+Steven Toth
+Sushma Reddy
 Sveinung Kvilhaugsvik
 Sylvain Cadhillac
 Sylver Bruneau
-Takahito HIRANO
+Teemu Ikonen
+Theppitak Karoonboonyanan
 Theron Lewis
+Thierry Foucu
 Thijs Alkemade
+Thomas Nigro
 Tillmann Karras
+Tim Allen
+Tim L
+Tim Walker
 Timo Paulssen
-Timo Rothenpieler
 Tobias Rapp
+Tom Needham
 Tomasen
 Tony Vankrunkelsven
 Tristan Heaven
+Tzu-Jung Lee
+ValdikSS
+Valerii Zapodovnikov
+Valter Correia
 Varphone Wong
 Vasily Fomin
 Vikram Narayanan
+Vityusha V. Vinokurov
+William Ung
+Wills Wang
 Yannick Bréhon
 Yavor Doganov
+Yidong Ren
+Yohann D'ANELLO
 Yohann Martineau
+Yuri Sevatz
+Zan Li
+antiparvos
 dharani.prabhu.s
 suheaven
 wucan
+Любомир Василев
+أحمد المحم ودي (Ahmed El-Mahmoudy)
 김정은
 Adam Sampson
+Ajith Manjula Senarathne
 Alexander Gall
 Alex Antropoff
 Alexis Guillard
@@ -456,12 +783,15 @@ Andrew Flintham
 Andrew Zaikin
 Andy Lindsay
 Arai/Fujisawa Tooru
+Ara Qadir
 Arkadiusz Miskiewicz
 Arnaud Gomes-do-Vale
 Arwed v. Merkatz
+A S Alam
 Barak Ori
 Basil Achermann
 Benjamin Mironer
+Benoît Tuduri
 Bill
 Bob Maguire
 Brian C. Wiles
@@ -481,10 +811,13 @@ Damian Ivereigh
 Daniel Fischer
 Daniel Stränger
 Danko Dolch
+David Robison
 Dennis Lou
 Dermot McGahon
+Dominko Azdajic
 Douglas West
 Dugal Harris
+Duncan McNAMARA
 Emmanuel Blindauer
 Enrico Gueli
 Enrique Osuna
@@ -492,6 +825,8 @@ Eren Türkay
 Eric Dudiak
 Espen Skoglund
 Ethan C. Baldridge
+Etienne BRATEAU
+Fabrizio Ge
 François Seingier
 Frans van Veen
 Frédéric Ruget
@@ -506,6 +841,7 @@ Hans Lambermont
 Hans-Peter Jansen
 Harris Dugal
 Heiko Panther
+Ibrahima SARR
 Igor Helman
 Isaac Osunkunle
 Jan David Mol
@@ -522,11 +858,14 @@ Johen Michael Zorko
 Johnathan Rosser
 John Dalgliesh
 John Paul Lorenti
+Jonathan Thambidurai
 Jörg
+Josef Andersson
 Joseph Tulou
 Julien Blache
 Julien Plissonneau Duquène
 Julien Robert
+Kaarlo Raiha
 Kenneth Ostby
 Kenneth Self
 Kevin H. Patterson
@@ -561,38 +900,46 @@ Olivier Pomel
 Ondrej Kuda aka Albert
 Øyvind Kolbu
 Pascal Levesque
-Patrick Horn
 Patrick McLean
 Pauline Castets
 Paul Mackerras
+Paulo Vitor Magacho da Silva
+Pavol Babincak
 Peter Surda
 Petr Vacek
 Philippe Van Hecke
 Pierre-Luc Beaudoin
 Pierre Marc Dumuid
+Radek Vybiral
 Régis Duchesne
 Remco Poortinga
 Rene Gollent
 Rob Casey
 Robson Braga Araujo
 Roine Gustafsson
+Romain Fliedel
 Roman Bednarek
 Rudolf Cornelissen
+Sabourin Gilles
 Sašo Kiselkov
 Sebastian Jenny
 Shane Harper
 Stefán Freyr Stefánsson
 Steve Brown
 Steven M. Schultz
+Takahito HIRANO
 Tapio Hiltunen
+T. Chomphuming
 Thomas L. Wood
-Thomas Mühlgrabner
+Sabrina Mühlgrabner
 Thomas Parmelan
 Tim 'O Callagha
 Tim Schuerewegen
 Tong Ka Man
+Tony Gaillard
 Torsten Spindler
 Udo Richter
+Vianney BOYER
 Vincent Dimar
 Vincent Penne
 Vitalijus Slavinskas
@@ -602,221 +949,11 @@ Wade Majors
 Wallace Wadge
 Watanabe Go
 William Hawkins
+Xabier Aramendi
 Xavier Maillard
+Yaşar Tay
 Ye zhang
 Yuehua Zhao
-Abylay Ospan
-Adam Leggett
-Adrian Haensler
-Ago Allikmaa
-Ajith Manjula Senarathne
-Alain Degreffe
-Alan Pope
-Aleksandr Pasechnik
-Alexandre Fernandez
-Alexandre Pereira Nunes
-Alexandre Perraud
-Alex Peak
-Alex Warhawk
-Alex Woods
-Allan Odgaard
-Ancelot Mark Pinto
-Andrea Giudiceandrea
-Andreas Hartmetz
-Andreas Mieke
-André Silva
-Andrew Clayton
-Andrey Gursky
-Andrii Zui
-Andy Tather
-Antti Ajanki
-Ara Qadir
-Arjun Sreedharan
-Arne de Bruijn
-Arun Pandian G
-A S Alam
-Avani Sharma
-Avishay Spitzer
-Bastien Penavayre
-Benjamin Adolphi
-Ben Littler
-Benoit du Payrat
-Benoît Noël du Payrat
-Bernd Kuhls
-Boris Egorov
-Boy van Amstel
-Brian Schmidt
-Brion Vibber
-Cameron Mozie
-Carlos Fenollosa
-Carola Nitz
-Christian Suloway
-Clemens Werther
-C.W. Betts
-Daniel Amm
-Daniel Verkamp
-Darko Jankovic
-Darrell Walisser
-David Robison
-David R Robison
-Dennis Hamester
-Derek Buitenhuis
-Diogo Silva
-Dominko Azdajic
-Donald Campbell
-Doney den Ouden
-Duncan McNamara
-Duncan McNAMARA
-Elodie Thomann
-Emeric Grange
-Eric Engestrom
-Etienne BRATEAU
-Eugen Geist
-Fabian Yamaguchi
-Fabrizio Ge
-Fabrizio Gennari
-Fahad Al-Saidi
-Felix Abecassis
-Florent Pillet
-Forteve Zepushisti
-Frank Praznik
-Gabriel de Perthuis
-Gal Vinograd
-Gaurav Pruthi
-Geoffrey Métais
-Gian Marco Sibilla
-Gilles Sabourin
-Gina Dobrescu
-Gonzalo Higuera Díaz
-Goran Dokic
-Guillaume Gomez
-Harald Sitter
-Heorhi Valakhanovich
-Ian Chamberlain
-Ibrahima SARR
-Igor Prokopenkov
-Ion Agorria
-Jarrad Whitaker
-Jean-Yves Avenard
-Jed Smith
-Jérémy Carrier
-Jeremy Huddleston Sequoia
-Jerome Forissier
-Jim Bankoski
-Jonas Lundqvist
-Jonatan "jaw" Wallmander
-Jonathan Calmels
-Jonathan Heard
-Jonathan McGowan
-Jonathan Thambidurai
-Joni Räsänen
-Josef Andersson
-Joseph DeVore
-Julian Scheel
-Justin Kim
-Kaarlo Räihä
-Kamil Rytarowski
-Kazuki Yamaguchi
-Konstantin K. Beliak
-Konstantinos Tsanaktsidis
-Konstantin Pavlov
-Kornel Lesiński
-Olivier Langlois
-Lochlin Duperron
-Lukas Juhrich
-Lyndon Brown
-Marc Aldorasi
-Marcel Schnirring
-Marc Etcheverry
-Mariusz Wasak
-Mark Becwar
-Martell Malone
-Mathieu Malaterre
-Mathieu Parent
-Mathieu Velten
-Matthias Keiser
-Matthias Treydte
-Max Dilipovich
-Maxim Bublis
-Maxime CHAPELET
-Maxime Mouchet
-Michael Tänzer
-Miha Sokolov
-Mohammed (Shaan) Huzaifa Danish
-Moti Zilberman
-Nathan Egge
-Niklas Haas
-Odd-Arild Kristensen
-O. Hartmann
-Olaf Hering
-Oliver Collyer
-Paul B Mahol
-Paul Clark
-Paulo Vitor Magacho da Silva
-Pavol Babincak
-Paweł Stankowski
-Petter Reinholdtsen
-Philip Höhlein
-Pierre-Hugues Husson
-Pierre Lamot
-Pyry Kontio
-Radek Vybiral
-Rafael Waldo Delgado Doblas
-Rajeesh K V
-Ray Tiley
-Reka Inovan
-Remita Amine
-Ricardo Ribalda Delgado
-Richard Diamond
-Rinat Ibragimov
-Robert Mourning
-Romain Bentz
-Romain Fliedel
-Romain Vimont
-Ronald S. Bultje
-Ross Finlayson
-Sam Malone
-Samuel Martin
-Samuel Thibault
-Sanchit Arora
-Santiago Gimeno
-Sebastian Ramacher
-Sebastian Roth
-Sergey Bolshakov
-Shaleen Jain
-Shlomi Fish
-Simona-Marinela Prodea
-Stanislas Plessia
-Stefan Pöschel
-Steven Toth
-Sushma Reddy
-Takahito Hirano
-T. Chomphuming
-Thierry Foucu
-Thomas Nigro
-Tim Allen
-Tim Walker
-Tobias Conradi
-Tony Gaillard
-Benoît Tuduri
-Tzu-Jung Lee
-Uwe L. Korn
-Valentin Deniaud
-Valentin Vetter
-Valter Correia
-Vianney Boyer
-Victorien Le Couviour--Tuffet
-Vikram Fugro
-Vinson Lee
-Wayne McDougall
-Wieland Hoffmann
-Wills Wang
-Xabier Aramendi
-Yaşar Tay
-Yidong Ren
-Yuudai Yamashigi
-Zhao Zhili
-أحمد المحم ودي (Ahmed El-Mahmoudy)
 Баярсайхан Энхтайван
 Сергей Дарьичев
 Noah Davis
