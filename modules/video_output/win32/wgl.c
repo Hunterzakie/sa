@@ -293,15 +293,14 @@ static int MakeCurrent(vlc_gl_t *gl)
      * number of DCs is limited only by available memory. */
 
     HDC winDC = GetDC(sys->hvideownd);
-    assert(winDC != NULL);
+    if (winDC == NULL)
+        return VLC_EGENERIC;
 
     bool success = wglMakeCurrent(winDC, sys->hGLRC);
     ReleaseDC(sys->hvideownd, winDC);
 
     if (likely(success))
         return VLC_SUCCESS;
-
-    /* vlc_gl_MakeCurrent should never fail. */
 
     DWORD dw = GetLastError();
     msg_Err(gl, "Cannot make wgl current, error %lx", dw);
