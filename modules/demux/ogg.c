@@ -752,7 +752,21 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
             vlc_tick_t i_preroll = Ogg_GetDecoderPreroll( p_stream );
             if( i_preroll > i64 )
                 i_preroll = i64;
-            if ( Oggseek_BlindSeektoAbsoluteTime( p_demux, p_stream, VLC_TICK_0 + i64 - i_preroll, b ) != -1 )
+            
+            if ( p_sys->i_length <= 0 || !b )
+            {
+                if ( Oggseek_BlindSeektoAbsoluteTime( p_demux, p_stream, VLC_TICK_0 + i64 - i_preroll, b ) != -1 )
+                {
+                    Ogg_PreparePostSeek( p_sys );
+                    if( acc )
+                        es_out_Control( p_demux->out, ES_OUT_SET_NEXT_DISPLAY_TIME,
+                                        VLC_TICK_0 + i64 );
+                    return VLC_SUCCESS;
+                }
+                return VLC_EGENERIC;
+            }
+            
+            if ( Oggseek_SeektoAbsolutetime( p_demux, p_stream, VLC_TICK_0 + i64 - i_preroll ) >= 0 )
             {
                 Ogg_PreparePostSeek( p_sys );
                 if( acc )
@@ -760,8 +774,7 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
                                     VLC_TICK_0 + i64 );
                 return VLC_SUCCESS;
             }
-            else
-                return VLC_EGENERIC;
+            return VLC_EGENERIC;
         }
 
         case DEMUX_GET_ATTACHMENTS:
