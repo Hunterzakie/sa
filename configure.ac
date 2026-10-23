@@ -2399,16 +2399,41 @@ dnl
 dnl dvdread module: check for libdvdread
 dnl
 PKG_ENABLE_MODULES_VLC([DVDREAD], [], [dvdread >= 6.0.0], [dvdread input module], [auto])
+AS_IF([test "${enable_dvdread}" != "no"], [
+  VLC_SAVE_FLAGS
+  CFLAGS="${CFLAGS} ${DVDREAD_CFLAGS}"
+  AC_CHECK_DECL([DVDOpenStream3],
+    [AC_DEFINE([HAVE_DVDREAD_OPEN_STREAM3], [1],
+      [Define to 1 if libdvdread has DVDOpenStream3.])],
+    [], [[#include <dvdread/dvd_reader.h>]])
+  VLC_RESTORE_FLAGS
+])
 
 dnl
 dnl libdvdnav plugin
 dnl
 PKG_ENABLE_MODULES_VLC([DVDNAV], [], [dvdnav >= 6.0.0], [DVD with navigation input module (dvdnav)], [auto])
+AS_IF([test "${enable_dvdnav}" != "no"], [
+  VLC_SAVE_FLAGS
+  CFLAGS="${CFLAGS} ${DVDNAV_CFLAGS}"
+  AC_CHECK_DECL([dvdnav_open_stream3],
+    [AC_DEFINE([HAVE_DVDNAV_OPEN_STREAM3], [1],
+      [Define to 1 if libdvdnav has dvdnav_open_stream3.])],
+    [], [[#include <dvdnav/dvdnav.h>]])
+  VLC_RESTORE_FLAGS
+])
 
 dnl
 dnl  Blu-ray Disc Support with libbluray
 dnl
 PKG_ENABLE_MODULES_VLC([BLURAY], [libbluray], [libbluray >= 1.1.0], (libbluray for Blu-ray disc support ) )
+
+dnl
+dnl  Android USB optical drive disc classification and access
+dnl
+PKG_ENABLE_MODULES_VLC([LASER], [], [liblaser >= 0.2.1], [Android USB optical drive disc classification and access], [auto])
+AM_CONDITIONAL([HAVE_LASER],
+  [test "${enable_laser}" = "yes" && test "${VENDOR}" = "android"])
 
 dnl
 dnl  OpenCV wrapper and example filters

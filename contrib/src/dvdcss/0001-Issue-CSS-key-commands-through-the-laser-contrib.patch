@@ -1,0 +1,614 @@
+From 15ea04bb4e0f2f5637f4f449a6edc890e4a6cff2 Mon Sep 17 00:00:00 2001
+From: Pierre Bogdanovscky <pierrebog@gmail.com>
+Date: Thu, 17 Sep 2026 14:00:00 +0200
+Subject: [PATCH] Issue CSS key commands through the laser contrib
+
+A DVD opened through the stream callbacks could not name the drive it was
+reading from, so a transport that has to send an ioctl somewhere had nowhere
+to send it. Android has no OS-level SCSI passthrough either, so ioctl_*()
+had no branch that worked there and CSS discs in a USB optical drive could
+not be decrypted.
+
+Add dvdcss_open_stream2(), which takes that name alongside the stream
+callbacks, and a branch that sends its CDBs through liblaser to the drive
+the name identifies: the target is read as the registry token of a drive the
+Java side opened, and the key commands are addressed to it while every
+sector still arrives through the callbacks. dvdcss_open_common() already
+carried both a target and a callback set, and dvdcss_check_device() and
+dvdcss_open_device() both return at their stream branch before reading
+psz_device, so nothing else changes.
+
+The branch is behind enable_laser, off by default: it needs <laser.h> and
+the laser_* symbols, which nowhere else has. The dependency behind the
+option is required, so a build that asks for laser and cannot have it stops
+at configure time rather than at the final link. dvdcss_open_stream2() is
+unconditional, and on a build without the branch it records the name and
+otherwise ignores it.
+---
+ meson_options.txt   |   7 +-
+ src/device.c        |   5 +
+ src/dvdcss/dvdcss.h |   3 +
+ src/ioctl.c         | 254 +++++++++++++++++++++++++++++++++++++++++---
+ src/libdvdcss.c     |  73 +++++++++++++
+ src/libdvdcss.h     |   6 +-
+ src/meson.build     |  14 ++-
+ 7 files changed, 345 insertions(+), 17 deletions(-)
+
+diff --git a/meson_options.txt b/meson_options.txt
+index cb06439..04f0f25 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -8,4 +8,9 @@ option('enable_docs',
+ option('enable_examples',
+     type: 'boolean',
+     value: false,
+-    description: 'Build libdvdnav examples')
+\ No newline at end of file
++    description: 'Build libdvdnav examples')
++
++option('enable_laser',
++    type: 'boolean',
++    value: false,
++    description: 'Issue CSS key commands through the laser contrib, for USB optical drives on Android')
+diff --git a/src/device.c b/src/device.c
+index 84e52f6..72dc780 100644
+--- a/src/device.c
++++ b/src/device.c
+@@ -103,6 +103,11 @@ static int os2_open ( dvdcss_t, const char * );
+ 
+ int dvdcss_use_ioctls( dvdcss_t dvdcss )
+ {
++#ifdef HAVE_LASER
++    if( dvdcss->p_stream && dvdcss->b_laser_session )
++        return 1;
++#endif
++
+     if( dvdcss->p_stream )
+         return 0;
+ 
+diff --git a/src/dvdcss/dvdcss.h b/src/dvdcss/dvdcss.h
+index bd3dbe5..db4d010 100644
+--- a/src/dvdcss/dvdcss.h
++++ b/src/dvdcss/dvdcss.h
+@@ -90,6 +90,9 @@ typedef struct dvdcss_stream_cb
+ LIBDVDCSS_EXPORT dvdcss_t dvdcss_open  ( const char *psz_target );
+ LIBDVDCSS_EXPORT dvdcss_t dvdcss_open_stream( void *p_stream,
+                                               dvdcss_stream_cb *p_stream_cb );
++LIBDVDCSS_EXPORT dvdcss_t dvdcss_open_stream2( const char *psz_target,
++                                              void *p_stream,
++                                              dvdcss_stream_cb *p_stream_cb );
+ LIBDVDCSS_EXPORT int      dvdcss_close ( dvdcss_t );
+ LIBDVDCSS_EXPORT int      dvdcss_seek  ( dvdcss_t,
+                                int i_blocks,
+diff --git a/src/ioctl.c b/src/ioctl.c
+index 7da97fe..7475f0c 100644
+--- a/src/ioctl.c
++++ b/src/ioctl.c
+@@ -99,6 +99,61 @@
+ 
+ #define DVD_CHALLENGE_SIZE 10
+ 
++#ifdef HAVE_LASER
++# include <laser.h>
++
++/* SCSI-MMC opcodes and key formats, defined locally: which system header
++ * supplies GPCMD_* depends on the OS branch, and this branch replaces all of
++ * them. */
++# define LASER_REPORT_KEY           0xA4
++# define LASER_SEND_KEY             0xA3
++# define LASER_READ_DVD_STRUCTURE   0xAD
++# define LASER_KEY_CLASS_CSS        0x00
++
++# define LASER_FMT_AGID             0x00
++# define LASER_FMT_CHALLENGE        0x01
++# define LASER_FMT_KEY1             0x02
++# define LASER_FMT_KEY2             0x03
++# define LASER_FMT_TITLE_KEY        0x04
++# define LASER_FMT_ASF              0x05
++# define LASER_FMT_RPC              0x08
++# define LASER_FMT_INVALIDATE       0x3f
++
++# define LASER_STRUCT_COPYRIGHT     0x01
++# define LASER_STRUCT_DISC_KEY      0x02
++
++/* Mirrors INIT_RDC / INIT_USCSI / INIT_CPT / INIT_SSC: declare the buffer and
++ * the CDB, zero both, fill in the opcode and the allocation length. Byte 7 is
++ * left alone, as in all four siblings: it is the key class for REPORT KEY and
++ * SEND KEY but the structure format for READ DVD STRUCTURE, so a macro
++ * filling it in has to guess. */
++# define INIT_LASER( type, size )                                             \
++    uint8_t p_buffer[ (size) ];                                               \
++    uint8_t p_cdb[ 12 ];                                                      \
++    memset( p_buffer, 0, sizeof(p_buffer) );                                  \
++    memset( p_cdb, 0, sizeof(p_cdb) );                                        \
++    p_cdb[ 0 ] = (type);                                                      \
++    p_cdb[ 8 ] = ( (size) >> 8 ) & 0xff;                                      \
++    p_cdb[ 9 ] = (size) & 0xff
++
++/* One transaction, mapped onto the 0 / -1 convention every ioctl_*() returns;
++ * i_fd is the laser registry token here, not a descriptor. Every non-OK
++ * status collapses to -1: there is nowhere to put more, and liblaser already
++ * logs the CDB it rejected.
++ *
++ * The branches below write their out-parameters only on success, unlike their
++ * siblings: zero is plausible for most of them - copyright 0 is "not
++ * scrambled", ASF 0 "not authenticated" - so a failure would otherwise be
++ * indistinguishable from an answer. */
++static int LaserSend( int i_fd, uint8_t *p_cdb,
++                      uint8_t *p_buffer, int i_size, int b_data_in )
++{
++    return laser_scsi_cdb( i_fd, p_cdb, 12,
++                           i_size ? p_buffer : NULL, i_size,
++                           b_data_in, NULL ) == LASER_OK ? 0 : -1;
++}
++#endif /* HAVE_LASER */
++
+ /*****************************************************************************
+  * Local prototypes, OS-specific
+  *****************************************************************************/
+@@ -122,7 +177,18 @@ int ioctl_ReadCopyright( int i_fd, int i_layer, int *pi_copyright )
+ {
+     int i_ret;
+ 
+-#if defined( HAVE_LINUX_DVD_STRUCT )
++#if defined( HAVE_LASER )
++    INIT_LASER( LASER_READ_DVD_STRUCTURE, 8 );
++
++    p_cdb[ 6 ] = i_layer;
++    p_cdb[ 7 ] = LASER_STRUCT_COPYRIGHT;   /* format for ADh, see INIT_LASER */
++
++    i_ret = LaserSend( i_fd, p_cdb, p_buffer, sizeof(p_buffer), 1 );
++
++    if( i_ret == 0 )
++        *pi_copyright = p_buffer[ 4 ];
++
++#elif defined( HAVE_LINUX_DVD_STRUCT )
+     dvd_struct dvd = { 0 };
+ 
+     dvd.type = DVD_STRUCT_COPYRIGHT;
+@@ -244,7 +310,18 @@ int ioctl_ReadDiscKey( int i_fd, const int *pi_agid, uint8_t *p_key )
+ {
+     int i_ret;
+ 
+-#if defined( HAVE_LINUX_DVD_STRUCT )
++#if defined( HAVE_LASER )
++    INIT_LASER( LASER_READ_DVD_STRUCTURE, DVD_DISCKEY_SIZE + 4 );
++
++    p_cdb[  7 ] = LASER_STRUCT_DISC_KEY;
++    p_cdb[ 10 ] = *pi_agid << 6;
++
++    i_ret = LaserSend( i_fd, p_cdb, p_buffer, sizeof(p_buffer), 1 );
++
++    if( i_ret == 0 )
++        memcpy( p_key, p_buffer + 4, DVD_DISCKEY_SIZE );
++
++#elif defined( HAVE_LINUX_DVD_STRUCT )
+     dvd_struct dvd = { 0 };
+ 
+     dvd.type = DVD_STRUCT_DISCKEY;
+@@ -374,7 +451,22 @@ int ioctl_ReadTitleKey( int i_fd, const int *pi_agid, int i_pos, uint8_t *p_key
+ {
+     int i_ret;
+ 
+-#if defined( HAVE_LINUX_DVD_STRUCT )
++#if defined( HAVE_LASER )
++    INIT_LASER( LASER_REPORT_KEY, 12 );
++
++    p_cdb[  7 ] = LASER_KEY_CLASS_CSS;
++    p_cdb[  2 ] = ( i_pos >> 24 ) & 0xff;
++    p_cdb[  3 ] = ( i_pos >> 16 ) & 0xff;
++    p_cdb[  4 ] = ( i_pos >>  8 ) & 0xff;
++    p_cdb[  5 ] = ( i_pos       ) & 0xff;
++    p_cdb[ 10 ] = LASER_FMT_TITLE_KEY | (*pi_agid << 6);
++
++    i_ret = LaserSend( i_fd, p_cdb, p_buffer, sizeof(p_buffer), 1 );
++
++    if( i_ret == 0 )
++        memcpy( p_key, p_buffer + 5, DVD_KEY_SIZE );
++
++#elif defined( HAVE_LINUX_DVD_STRUCT )
+     dvd_authinfo auth_info = { 0 };
+ 
+     auth_info.type = DVD_LU_SEND_TITLE_KEY;
+@@ -508,7 +600,18 @@ int ioctl_ReportAgid( int i_fd, int *pi_agid )
+ {
+     int i_ret;
+ 
+-#if defined( HAVE_LINUX_DVD_STRUCT )
++#if defined( HAVE_LASER )
++    INIT_LASER( LASER_REPORT_KEY, 8 );
++
++    p_cdb[  7 ] = LASER_KEY_CLASS_CSS;
++    p_cdb[ 10 ] = LASER_FMT_AGID | (*pi_agid << 6);
++
++    i_ret = LaserSend( i_fd, p_cdb, p_buffer, sizeof(p_buffer), 1 );
++
++    if( i_ret == 0 )
++        *pi_agid = p_buffer[ 7 ] >> 6;
++
++#elif defined( HAVE_LINUX_DVD_STRUCT )
+     dvd_authinfo auth_info = { 0 };
+ 
+     auth_info.type = DVD_LU_SEND_AGID;
+@@ -605,7 +708,18 @@ int ioctl_ReportChallenge( int i_fd, const int *pi_agid, uint8_t *p_challenge )
+ {
+     int i_ret;
+ 
+-#if defined( HAVE_LINUX_DVD_STRUCT )
++#if defined( HAVE_LASER )
++    INIT_LASER( LASER_REPORT_KEY, 16 );
++
++    p_cdb[  7 ] = LASER_KEY_CLASS_CSS;
++    p_cdb[ 10 ] = LASER_FMT_CHALLENGE | (*pi_agid << 6);
++
++    i_ret = LaserSend( i_fd, p_cdb, p_buffer, sizeof(p_buffer), 1 );
++
++    if( i_ret == 0 )
++        memcpy( p_challenge, p_buffer + 4, DVD_CHALLENGE_SIZE );
++
++#elif defined( HAVE_LINUX_DVD_STRUCT )
+     dvd_authinfo auth_info = { 0 };
+ 
+     auth_info.type = DVD_LU_SEND_CHALLENGE;
+@@ -715,7 +829,18 @@ int ioctl_ReportASF( int i_fd, int *pi_asf )
+ {
+     int i_ret;
+ 
+-#if defined( HAVE_LINUX_DVD_STRUCT )
++#if defined( HAVE_LASER )
++    INIT_LASER( LASER_REPORT_KEY, 8 );
++
++    p_cdb[  7 ] = LASER_KEY_CLASS_CSS;
++    p_cdb[ 10 ] = LASER_FMT_ASF;
++
++    i_ret = LaserSend( i_fd, p_cdb, p_buffer, sizeof(p_buffer), 1 );
++
++    if( i_ret == 0 )
++        *pi_asf = p_buffer[ 7 ] & 1;
++
++#elif defined( HAVE_LINUX_DVD_STRUCT )
+     dvd_authinfo auth_info = { 0 };
+ 
+     auth_info.type = DVD_LU_SEND_ASF;
+@@ -827,7 +952,18 @@ int ioctl_ReportKey1( int i_fd, const int *pi_agid, uint8_t *p_key )
+ {
+     int i_ret;
+ 
+-#if defined( HAVE_LINUX_DVD_STRUCT )
++#if defined( HAVE_LASER )
++    INIT_LASER( LASER_REPORT_KEY, 12 );
++
++    p_cdb[  7 ] = LASER_KEY_CLASS_CSS;
++    p_cdb[ 10 ] = LASER_FMT_KEY1 | (*pi_agid << 6);
++
++    i_ret = LaserSend( i_fd, p_cdb, p_buffer, sizeof(p_buffer), 1 );
++
++    if( i_ret == 0 )
++        memcpy( p_key, p_buffer + 4, DVD_KEY_SIZE );
++
++#elif defined( HAVE_LINUX_DVD_STRUCT )
+     dvd_authinfo auth_info = { 0 };
+ 
+     auth_info.type = DVD_LU_SEND_KEY1;
+@@ -932,7 +1068,17 @@ int ioctl_InvalidateAgid( int i_fd, int *pi_agid )
+ {
+     int i_ret;
+ 
+-#if defined( HAVE_LINUX_DVD_STRUCT )
++#if defined( HAVE_LASER )
++    uint8_t p_cdb[ 12 ];
++
++    memset( p_cdb, 0, sizeof(p_cdb) );
++    p_cdb[  0 ] = LASER_REPORT_KEY;
++    p_cdb[  7 ] = LASER_KEY_CLASS_CSS;
++    p_cdb[ 10 ] = LASER_FMT_INVALIDATE | (*pi_agid << 6);
++
++    i_ret = LaserSend( i_fd, p_cdb, NULL, 0, 0 );
++
++#elif defined( HAVE_LINUX_DVD_STRUCT )
+     dvd_authinfo auth_info = { 0 };
+ 
+     auth_info.type = DVDCSS_INVALIDATE_AGID;
+@@ -1017,7 +1163,21 @@ int ioctl_ReadCPRMMediaId(int i_fd,int *p_agid, uint8_t *p_data_buffer)
+ {
+     int i_ret;
+ 
+-#if (defined( HAVE_LINUX_DVD_STRUCT ) && defined( HAVE_SCSI_SG_H )) || (defined( HAVE_BSD_DVD_STRUCT ) && defined( HAVE_CAM_SCSI_SCSI_SG_H ))
++#if defined( HAVE_LASER )
++    INIT_LASER( LASER_READ_DVD_STRUCTURE, CPRM_MEDIA_ID_SIZE + 4 );
++
++    /* Byte 7 is the STRUCTURE FORMAT for opcode ADh - the same offset the
++     * REPORT KEY branches fill with a key class, which is why INIT_LASER
++     * leaves it to each branch. */
++    p_cdb[  7 ] = CPRM_STRUCT_MEDIA_ID;
++    p_cdb[ 10 ] = *p_agid << 6;
++
++    i_ret = LaserSend( i_fd, p_cdb, p_buffer, sizeof(p_buffer), 1 );
++
++    if( i_ret == 0 )
++        memcpy( p_data_buffer, p_buffer + 4, CPRM_MEDIA_ID_SIZE );
++
++#elif (defined( HAVE_LINUX_DVD_STRUCT ) && defined( HAVE_SCSI_SG_H )) || (defined( HAVE_BSD_DVD_STRUCT ) && defined( HAVE_CAM_SCSI_SCSI_SG_H ))
+     struct sg_io_hdr io_hdr;
+     uint8_t sense[32] = {0};  
+     uint8_t cdb[12] = {0};
+@@ -1137,7 +1297,38 @@ int ioctl_ReadCPRMMKBPack(int i_fd, int *p_agid, int mkb_pack, uint8_t *p_mkb_pa
+ {
+     int i_ret;
+ 
+-#if (defined( HAVE_LINUX_DVD_STRUCT ) && defined( HAVE_SCSI_SG_H )) || (defined( HAVE_BSD_DVD_STRUCT ) && defined( HAVE_CAM_SCSI_SCSI_SG_H ))
++#if defined( HAVE_LASER )
++    uint8_t *p_buffer = malloc( CPRM_MKB_PACK_SIZE + 4 );
++    uint8_t p_cdb[ 12 ];
++
++    if( p_buffer == NULL )
++        return -1;
++
++    memset( p_buffer, 0, CPRM_MKB_PACK_SIZE + 4 );
++    memset( p_cdb, 0, sizeof(p_cdb) );
++
++    p_cdb[  0 ] = LASER_READ_DVD_STRUCTURE;
++    /* Address field: which pack of the MKB is wanted. */
++    p_cdb[  2 ] = ( mkb_pack >> 24 ) & 0xff;
++    p_cdb[  3 ] = ( mkb_pack >> 16 ) & 0xff;
++    p_cdb[  4 ] = ( mkb_pack >>  8 ) & 0xff;
++    p_cdb[  5 ] = ( mkb_pack       ) & 0xff;
++    p_cdb[  7 ] = CPRM_STRUCT_MKB;
++    p_cdb[  8 ] = ( ( CPRM_MKB_PACK_SIZE + 4 ) >> 8 ) & 0xff;
++    p_cdb[  9 ] = ( CPRM_MKB_PACK_SIZE + 4 ) & 0xff;
++    p_cdb[ 10 ] = *p_agid << 6;
++
++    i_ret = LaserSend( i_fd, p_cdb, p_buffer, CPRM_MKB_PACK_SIZE + 4, 1 );
++
++    if( i_ret == 0 )
++    {
++        *p_total_packs = p_buffer[ 3 ];
++        memcpy( p_mkb_pack, p_buffer + 4, CPRM_MKB_PACK_SIZE );
++    }
++
++    free( p_buffer );
++
++#elif (defined( HAVE_LINUX_DVD_STRUCT ) && defined( HAVE_SCSI_SG_H )) || (defined( HAVE_BSD_DVD_STRUCT ) && defined( HAVE_CAM_SCSI_SCSI_SG_H ))
+     uint8_t *sptd_buf = malloc( CPRM_MKB_PACK_SIZE + 4 );
+     uint8_t cdb[12] = { 0 };
+     uint8_t sense[32] = { 0 };
+@@ -1286,7 +1477,18 @@ int ioctl_SendChallenge( int i_fd, const int *pi_agid, const uint8_t *p_challeng
+ {
+     int i_ret;
+ 
+-#if defined( HAVE_LINUX_DVD_STRUCT )
++#if defined( HAVE_LASER )
++    INIT_LASER( LASER_SEND_KEY, 16 );
++
++    p_cdb[  7 ] = LASER_KEY_CLASS_CSS;
++    p_cdb[ 10 ] = LASER_FMT_CHALLENGE | (*pi_agid << 6);
++
++    p_buffer[ 1 ] = 0xe;
++    memcpy( p_buffer + 4, p_challenge, DVD_CHALLENGE_SIZE );
++
++    i_ret = LaserSend( i_fd, p_cdb, p_buffer, sizeof(p_buffer), 0 );
++
++#elif defined( HAVE_LINUX_DVD_STRUCT )
+     dvd_authinfo auth_info = { 0 };
+ 
+     auth_info.type = DVD_HOST_SEND_CHALLENGE;
+@@ -1397,7 +1599,18 @@ int ioctl_SendKey2( int i_fd, const int *pi_agid, const uint8_t *p_key )
+ {
+     int i_ret;
+ 
+-#if defined( HAVE_LINUX_DVD_STRUCT )
++#if defined( HAVE_LASER )
++    INIT_LASER( LASER_SEND_KEY, 12 );
++
++    p_cdb[  7 ] = LASER_KEY_CLASS_CSS;
++    p_cdb[ 10 ] = LASER_FMT_KEY2 | (*pi_agid << 6);
++
++    p_buffer[ 1 ] = 0xa;
++    memcpy( p_buffer + 4, p_key, DVD_KEY_SIZE );
++
++    i_ret = LaserSend( i_fd, p_cdb, p_buffer, sizeof(p_buffer), 0 );
++
++#elif defined( HAVE_LINUX_DVD_STRUCT )
+     dvd_authinfo auth_info = { 0 };
+ 
+     auth_info.type = DVD_HOST_SEND_KEY2;
+@@ -1508,7 +1721,22 @@ int ioctl_ReportRPC( int i_fd, int *p_type, int *p_mask, int *p_scheme )
+ {
+     int i_ret;
+ 
+-#if defined( HAVE_LINUX_DVD_STRUCT ) && defined( DVD_LU_SEND_RPC_STATE )
++#if defined( HAVE_LASER )
++    INIT_LASER( LASER_REPORT_KEY, 8 );
++
++    p_cdb[  7 ] = LASER_KEY_CLASS_CSS;
++    p_cdb[ 10 ] = LASER_FMT_RPC;
++
++    i_ret = LaserSend( i_fd, p_cdb, p_buffer, sizeof(p_buffer), 1 );
++
++    if( i_ret == 0 )
++    {
++        *p_type   = p_buffer[ 4 ] >> 6;
++        *p_mask   = p_buffer[ 5 ];
++        *p_scheme = p_buffer[ 6 ];
++    }
++
++#elif defined( HAVE_LINUX_DVD_STRUCT ) && defined( DVD_LU_SEND_RPC_STATE )
+     dvd_authinfo auth_info = { 0 };
+ 
+     auth_info.type = DVD_LU_SEND_RPC_STATE;
+diff --git a/src/libdvdcss.c b/src/libdvdcss.c
+index eab4c8d..787a091 100644
+--- a/src/libdvdcss.c
++++ b/src/libdvdcss.c
+@@ -133,6 +133,10 @@
+ #include "ioctl.h"
+ #include "device.h"
+ 
++#ifdef HAVE_LASER
++# include <laser.h>
++#endif
++
+ #ifdef HAVE_BROKEN_MKDIR
+ #include <direct.h>
+ #define mkdir(a, b) _mkdir(a)
+@@ -535,6 +539,26 @@ LIBDVDCSS_EXPORT dvdcss_t dvdcss_open_stream ( void *p_stream,
+     return dvdcss_open_common( NULL, p_stream, p_stream_cb );
+ }
+ 
++/**
++ * \brief Open a DVD device using dvdcss_stream_cb, naming the device.
++ *
++ * \param psz_target the device the key commands address, or NULL for none.
++ * \param p_stream a private handle used by p_stream_cb
++ * \param p_stream_cb a struct containing seek and read functions
++ * \return a handle to a dvdcss instance or NULL on error.
++ *
++ * Every sector still arrives through p_stream_cb; psz_target names the drive
++ * for the ioctls alone.
++ *
++ * \see dvdcss_open_stream()
++ */
++LIBDVDCSS_EXPORT dvdcss_t dvdcss_open_stream2 ( const char *psz_target,
++                                                void *p_stream,
++                                                dvdcss_stream_cb *p_stream_cb )
++{
++    return dvdcss_open_common( psz_target, p_stream, p_stream_cb );
++}
++
+ static dvdcss_t dvdcss_open_common ( const char *psz_target, void *p_stream,
+                                      dvdcss_stream_cb *p_stream_cb )
+ {
+@@ -547,6 +571,8 @@ static dvdcss_t dvdcss_open_common ( const char *psz_target, void *p_stream,
+         return NULL;
+     }
+ 
++    dvdcss->b_laser_session = 0;
++
+     if( psz_target == NULL &&
+       ( p_stream == NULL || p_stream_cb == NULL ) )
+     {
+@@ -587,6 +613,36 @@ static dvdcss_t dvdcss_open_common ( const char *psz_target, void *p_stream,
+         goto error;
+     }
+ 
++#ifdef HAVE_LASER
++    /* Claim the drive the target names, and open a CSS session on it. On a
++     * stream open, the target is the registry token of a drive the Java side
++     * opened through UsbManager; the key commands are its only use. */
++    int i_laser_token;
++    if( p_stream != NULL
++     && laser_parse_token( dvdcss->psz_device, &i_laser_token ) )
++    {
++        if( laser_acquire( i_laser_token ) != LASER_OK )
++        {
++            print_error( dvdcss, "could not acquire the Android USB optical "
++                                 "drive; continuing without ioctls" );
++        }
++        else if( laser_css_session_begin( i_laser_token, dvdcss ) == LASER_OK )
++        {
++            dvdcss->i_fd = i_laser_token;
++            dvdcss->b_laser_session = 1;
++            print_debug( dvdcss, "using Android USB optical drive, token %d",
++                         dvdcss->i_fd );
++        }
++        else
++        {
++            laser_release( i_laser_token );
++            print_error( dvdcss, "could not obtain a CSS session on the "
++                                 "Android USB drive; continuing without "
++                                 "ioctls" );
++        }
++    }
++#endif
++
+     dvdcss->b_scrambled = 1; /* Assume the worst */
+     dvdcss->b_ioctls = dvdcss_use_ioctls( dvdcss );
+ 
+@@ -635,6 +691,14 @@ static dvdcss_t dvdcss_open_common ( const char *psz_target, void *p_stream,
+     return dvdcss;
+ 
+ error:
++#ifdef HAVE_LASER
++    if( dvdcss->b_laser_session )
++    {
++        laser_css_session_end( dvdcss->i_fd, dvdcss );
++        laser_release( dvdcss->i_fd );
++        dvdcss->b_laser_session = 0;
++    }
++#endif
+     free( dvdcss->psz_device );
+     free( dvdcss );
+     return NULL;
+@@ -865,6 +929,15 @@ LIBDVDCSS_EXPORT int dvdcss_close ( dvdcss_t dvdcss )
+ 
+     i_ret = dvdcss_close_device( dvdcss );
+ 
++#ifdef HAVE_LASER
++    if( dvdcss->b_laser_session )
++    {
++        laser_css_session_end( dvdcss->i_fd, dvdcss );
++        laser_release( dvdcss->i_fd );
++        dvdcss->b_laser_session = 0;
++    }
++#endif
++
+     free( dvdcss->psz_device );
+ 
+     /* close cpxm related structures if they were used */
+diff --git a/src/libdvdcss.h b/src/libdvdcss.h
+index beaf651..a8aabdc 100644
+--- a/src/libdvdcss.h
++++ b/src/libdvdcss.h
+@@ -51,7 +51,7 @@ struct dvdcss_s
+ {
+     /* File descriptor */
+     char * psz_device;
+-    int    i_fd;
++    int    i_fd;    /* Descriptor for psz_device, or a "laser" registry token. */
+     int    i_pos;
+ 
+     /* File handling */
+@@ -93,6 +93,10 @@ struct dvdcss_s
+ 
+     void                *p_stream;
+     dvdcss_stream_cb    *p_stream_cb;
++
++    /* Whether this instance holds a claim on the device AND a CSS session on it.
++     * Present in every build so that struct dvdcss_s has one layout. */
++    int    b_laser_session;
+ };
+ 
+ /*****************************************************************************
+diff --git a/src/meson.build b/src/meson.build
+index 90c1c9f..33deb4e 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -19,11 +19,20 @@ else
+     api_export_flags = []
+ endif
+ 
++# Android USB optical drives support
++if get_option('enable_laser')
++    laser_args = ['-DHAVE_LASER']
++    laser_deps = [dependency('liblaser', version: '>= 0.2.1')]
++else
++    laser_args = []
++    laser_deps = []
++endif
++
+ # The final libdvdcss library
+ libdvdcss = library('dvdcss', dvdcss_src,
+     include_directories: dvdcss_inc_dirs,
+-    dependencies: extra_dependencies,
+-    c_args: [api_export_flags],
++    dependencies: extra_dependencies + laser_deps,
++    c_args: [api_export_flags, laser_args],
+     gnu_symbol_visibility: 'hidden',
+     version: dvdcss_soname_version,
+     install: true,
+@@ -41,4 +50,5 @@ pkg_mod.generate(libraries: libdvdcss,
+     version: meson.project_version(),
+     name: 'libdvdcss',
+     description: 'DVD access and decryption library',
++    requires_private: laser_deps,
+ )

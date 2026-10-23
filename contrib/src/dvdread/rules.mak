@@ -31,6 +31,7 @@ $(TARBALLS)/libdvdread-$(LIBDVDREAD_VERSION).tar.xz:
 dvdread: libdvdread-$(LIBDVDREAD_VERSION).tar.xz .sum-dvdread
 # dvdread: libdvdread-$(LIBDVDREAD_GITVERSION).tar.xz .sum-dvdread
 	$(UNPACK)
+	$(APPLY) $(SRC)/dvdread/0001-Allow-a-stream-open-to-name-the-device-it-reads-from.patch
 	$(MOVE)
 
 DEPS_dvdread = dvdcss $(DEPS_dvdcss)

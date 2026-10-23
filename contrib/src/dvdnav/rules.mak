@@ -22,6 +22,7 @@ $(TARBALLS)/libdvdnav-$(LIBDVDNAV_VERSION).tar.xz:
 dvdnav: libdvdnav-$(LIBDVDNAV_VERSION).tar.xz .sum-dvdnav
 	$(UNPACK)
 	$(APPLY) $(SRC)/dvdnav/0001-configure-don-t-use-ms-style-packing.patch
+	$(APPLY) $(SRC)/dvdnav/0002-Allow-a-stream-open-to-name-the-device-it-reads-from.patch
 	$(MOVE)
 
 DEPS_dvdnav = dvdread $(DEPS_dvdread)

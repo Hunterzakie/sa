@@ -590,7 +590,14 @@ static int DemuxOpen ( vlc_object_t *p_this )
     };
 
     /* Open dvdnav with stream callbacks */
-#if DVDNAV_VERSION >= 60100
+#ifdef HAVE_DVDNAV_OPEN_STREAM3
+    dvdnav_logger_cb cbs;
+    cbs.pf_log = DvdNavLog;
+    /* psz_location is the drive's registry token on a laser MRL. */
+    if( dvdnav_open_stream3( &p_dvdnav, p_demux, &cbs,
+                             p_demux->psz_location,
+                             &stream_cb ) != DVDNAV_STATUS_OK )
+#elif DVDNAV_VERSION >= 60100
     dvdnav_logger_cb cbs;
     cbs.pf_log = DvdNavLog;
     if( dvdnav_open_stream2( &p_dvdnav, p_demux,

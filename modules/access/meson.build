@@ -322,9 +322,18 @@ endif
 ## Optical media
 #
 
+# Android USB optical drive support (contrib liblaser)
+laser_dep = dependency('liblaser', version: '>= 0.2.1',
+                       required: get_option('laser')
+                           .require(host_system == 'android',
+                                    error_message: 'liblaser is only used on Android'))
+have_laser = laser_dep.found()
+laser_deps = have_laser ? [laser_dep] : []
+laser_flags = have_laser ? ['-DHAVE_LASER'] : []
+
 # VCD and CD-DA access module
 if get_option('vcd_module')
-    vcd_cdda_flags = []
+    vcd_cdda_flags = laser_flags
 
     if cc.has_header_symbol('linux/cdrom.h', 'struct cdrom_msf0')
         needed_vcd_unix_headers_present = true
@@ -355,7 +364,7 @@ if get_option('vcd_module')
             ),
             'c_args' : vcd_cdda_flags,
             'link_with' : vlc_json_lib,
-            'dependencies' : [vcd_cdda_darwin_deps, gcrypt_dep],
+            'dependencies' : [vcd_cdda_darwin_deps, gcrypt_dep, laser_deps],
             'plugin_dir' : 'access',
         }
 
@@ -366,7 +375,7 @@ if get_option('vcd_module')
                 'vcd/cdrom.c',
             ),
             'c_args' : vcd_cdda_flags,
-            'dependencies' : [vcd_cdda_darwin_deps],
+            'dependencies' : [vcd_cdda_darwin_deps, laser_deps],
             'plugin_dir' : 'access',
         }
 
@@ -376,9 +385,15 @@ endif
 # DVD with navigation (dvdnav) access
 dvdnav_dep = dependency('dvdnav', version: '>= 6.0.0', required: get_option('dvdnav'))
 if dvdnav_dep.found()
+    dvdnav_has_open_stream3 = cc.has_header_symbol('dvdnav/dvdnav.h',
+                                                   'dvdnav_open_stream3',
+                                                   dependencies: dvdnav_dep)
+    dvdnav_open_stream3_flags = dvdnav_has_open_stream3 ? ['-DHAVE_DVDNAV_OPEN_STREAM3'] : []
+
     vlc_modules += {
         'name' : 'dvdnav',
         'sources' : files('dvdnav.c'),
+        'c_args' : dvdnav_open_stream3_flags,
         'dependencies' : [
             dvdnav_dep,
             (host_system == 'darwin') ? [corefoundation_dep, iokit_dep] : []
@@ -390,9 +405,15 @@ endif
 # DVD access
 dvdread_dep = dependency('dvdread', version: '>= 6.0.0', required: get_option('dvdread'))
 if dvdread_dep.found()
+    dvdread_has_open_stream3 = cc.has_header_symbol('dvdread/dvd_reader.h',
+                                                    'DVDOpenStream3',
+                                                    dependencies: dvdread_dep)
+    dvdread_open_stream3_flags = dvdread_has_open_stream3 ? ['-DHAVE_DVDREAD_OPEN_STREAM3'] : []
+
     vlc_modules += {
         'name' : 'dvdread',
         'sources' : files('dvdread.c', 'dvdread_video.c', 'dvdread_audio.c', 'dvdread_vr.c'),
+        'c_args' : dvdread_open_stream3_flags,
         'dependencies' : [
             dvdread_dep,
             (host_system == 'darwin') ? [corefoundation_dep, iokit_dep] : []
@@ -421,6 +442,15 @@ if libbluray_dep.found()
     endif
 endif
 
+# Disc classification and playback for USB optical drives on Android
+if have_laser
+    vlc_modules += {
+        'name' : 'laser',
+        'sources' : files('laser.c'),
+        'dependencies' : [laser_dep],
+        'plugin_dir' : 'access',
+    }
+endif
 
 ## Digital TV
 

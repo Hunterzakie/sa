@@ -141,8 +141,167 @@ exit_free:
 #   error FIXME
 #endif
 
+#ifdef HAVE_LASER
+#   include <laser.h>
+#endif
+
 #include "cdrom.h"
 #include "cdrom_internals.h"
+
+#ifdef HAVE_LASER
+/*****************************************************************************
+ * Android/USB optical drives
+ *****************************************************************************/
+
+/* Device-path form this arm answers to: "laser/<fd>" */
+#define LASER_VCD_PREFIX     "laser/"
+
+static bool LaserParseLocation( const char *psz_dev, int *pi_token )
+{
+    if( psz_dev == NULL )
+        return false;
+
+    if( strncmp( psz_dev, LASER_VCD_PREFIX,
+                 sizeof(LASER_VCD_PREFIX) - 1 ) != 0 )
+        return false;
+
+    const char *psz_fd = psz_dev + sizeof(LASER_VCD_PREFIX) - 1;
+
+    return laser_parse_token( psz_fd, pi_token );
+}
+
+/* For callers that only need to know whether a location names a drive. */
+bool ioctl_IsLaserLocation( const char *psz_location )
+{
+    int i_token;
+
+    return LaserParseLocation( psz_location, &i_token );
+}
+
+static bool LaserGetTOC( vlc_object_t *p_this, const vcddev_t *p_vcddev,
+                         vcddev_toc_t *p_toc )
+{
+    /* READ TOC format 0, LBA addressing: a 4-byte header, then one 8-byte
+     * descriptor per track and one for the lead-out (track 0xAA). */
+    uint8_t p_buf[4 + 100 * 8] = { 0 };
+    uint8_t cdb[10] = { 0 };
+    int i_actual = 0;
+
+    cdb[0] = 0x43;                              /* READ TOC/PMA/ATIP */
+    cdb[1] = 0x00;                              /* MSF=0: LBA addressing */
+    cdb[2] = 0x00;                              /* format 0: normal TOC */
+    cdb[6] = 0x00;                              /* from the first track */
+    cdb[7] = (uint8_t)(sizeof(p_buf) >> 8);
+    cdb[8] = (uint8_t)(sizeof(p_buf) & 0xff);
+
+    if( laser_scsi_cdb( p_vcddev->i_laser_token,
+                        cdb, sizeof(cdb),
+                        p_buf, sizeof(p_buf), 1,
+                        &i_actual ) != LASER_OK )
+    {
+        msg_Err( p_this, "could not read the TOC" );
+        return false;
+    }
+
+    /* The length field does not count its own two bytes. */
+    unsigned i_len = ((unsigned)p_buf[0] << 8 | p_buf[1]) + 2u;
+    if( i_actual < 4 || i_len < 4 + 8 || i_len > sizeof(p_buf) ||
+        (unsigned)i_actual < i_len )
+    {
+        msg_Err( p_this, "malformed TOC (%u bytes announced, %d read)",
+                 i_len, i_actual );
+        return false;
+    }
+
+    p_toc->i_first_track = p_buf[2];
+    p_toc->i_last_track  = p_buf[3];
+    p_toc->i_tracks      = p_toc->i_last_track - p_toc->i_first_track + 1;
+
+    if( p_toc->i_tracks < 1 || p_toc->i_tracks > 99 )
+    {
+        msg_Err( p_this, "implausible track count %d", p_toc->i_tracks );
+        return false;
+    }
+
+    p_toc->p_sectors = calloc( p_toc->i_tracks + 1,
+                               sizeof(*p_toc->p_sectors) );
+    if( p_toc->p_sectors == NULL )
+        return false;
+
+    /* Placed by track number: a drive need not return the descriptors in
+     * order. The lead-out goes in the last slot. */
+    bool pb_seen[100] = { false };
+    unsigned i_filled = 0;
+
+    for( unsigned i = 4; i + 8 <= i_len; i += 8 )
+    {
+        const uint8_t *p_d = &p_buf[i];
+        int i_track = p_d[2];
+        int i_slot;
+
+        if( i_track == 0xAA )
+            i_slot = p_toc->i_tracks;
+        else if( i_track >= p_toc->i_first_track &&
+                 i_track <= p_toc->i_last_track )
+            i_slot = i_track - p_toc->i_first_track;
+        else
+            continue;
+
+        p_toc->p_sectors[i_slot].i_lba =
+                (int)( (uint32_t)p_d[4] << 24 | (uint32_t)p_d[5] << 16 |
+                       (uint32_t)p_d[6] <<  8 | (uint32_t)p_d[7] );
+        p_toc->p_sectors[i_slot].i_control = p_d[1] & 0x0f;
+
+        if( !pb_seen[i_slot] )
+        {
+            pb_seen[i_slot] = true;
+            i_filled++;
+        }
+    }
+
+    if( i_filled < (unsigned)p_toc->i_tracks + 1 )
+    {
+        msg_Err( p_this, "incomplete TOC: %u of %d entries",
+                 i_filled, p_toc->i_tracks + 1 );
+        return false;
+    }
+
+    return true;
+}
+
+/* Read i_nb sectors of kind i_type into p_block through the laser transport */
+static int LaserReadSectors( vlc_object_t *p_this, const vcddev_t *p_vcddev,
+                             int i_sector, uint8_t *p_block, int i_nb,
+                             int i_type )
+{
+    /* A Video CD track holds both Mode 2 Form 1 (filesystem) and Form 2
+     * (MPEG) sectors, so no single expected type fits it. Either way, every
+     * sector comes back as 2352 bytes. */
+    laser_cd_sector_t e_sector = i_type == VCD_TYPE
+                               ? LASER_CD_SECTOR_ANY
+                               : LASER_CD_SECTOR_AUDIO;
+
+    int i_read = laser_read_cd_blocks( p_vcddev->i_laser_token,
+                                       i_sector, i_nb, e_sector,
+                                       p_block );
+    if( i_read <= 0 )
+    {
+        msg_Err( p_this, "could not read %d sectors from sector %d",
+                 i_nb, i_sector );
+        return -1;
+    }
+
+    if( i_read < i_nb )
+    {
+        memset( p_block + (size_t)i_read * VCD_SECTOR_SIZE, 0,
+                (size_t)( i_nb - i_read ) * VCD_SECTOR_SIZE );
+        msg_Warn( p_this, "only %d of %d sectors readable from sector %d; "
+                  "the rest is silenced", i_read, i_nb, i_sector );
+    }
+
+    return 0;
+}
+#endif /* HAVE_LASER */
 
 /*****************************************************************************
  * ioctl_Open: Opens a VCD device or file and returns an opaque handle
@@ -168,6 +327,37 @@ vcddev_t *ioctl_Open( vlc_object_t *p_this, const char *psz_dev )
     p_vcddev->psz_dev = NULL;
     memset( &p_vcddev->toc, 0, sizeof(p_vcddev->toc) );
     b_is_file = 1;
+
+#ifdef HAVE_LASER
+    p_vcddev->i_laser_token = -1;
+
+    /* ioctl_Close() is shared with the paths that open a descriptor. */
+#if !defined( _WIN32 ) && !defined( __OS2__ )
+    p_vcddev->i_device_handle = -1;
+#endif
+
+    /* Before stat(): a laser location is not a path. The descriptor is
+     * already open; acquiring claims the drive and performs its USB setup. */
+    if( LaserParseLocation( psz_dev, &p_vcddev->i_laser_token ) )
+    {
+        if( laser_acquire( p_vcddev->i_laser_token ) != LASER_OK )
+        {
+            msg_Err( p_this, "cannot acquire USB optical drive (token %d)",
+                     p_vcddev->i_laser_token );
+            free( p_vcddev );
+            return NULL;
+        }
+
+        p_vcddev->psz_dev = strdup( psz_dev );
+        if( p_vcddev->psz_dev == NULL )
+        {
+            laser_release( p_vcddev->i_laser_token );
+            free( p_vcddev );
+            return NULL;
+        }
+        return p_vcddev;
+    }
+#endif
 
     /*
      *  Check if we are dealing with a device or a file (vcd image)
@@ -245,6 +435,16 @@ void ioctl_Close( vlc_object_t * p_this, vcddev_t *p_vcddev )
      *  vcd device mode
      */
 
+#ifdef HAVE_LASER
+    if( p_vcddev->i_laser_token != -1 )
+    {
+        /* The descriptor belongs to the caller: only the claim is dropped. */
+        laser_release( p_vcddev->i_laser_token );
+        free( p_vcddev );
+        return;
+    }
+#endif
+
 #ifdef _WIN32
     if( p_vcddev->h_device_handle )
         CloseHandle( p_vcddev->h_device_handle );
@@ -279,6 +479,20 @@ vcddev_toc_t * ioctl_GetTOC( vlc_object_t *p_this, const vcddev_t *p_vcddev )
     vcddev_toc_t *p_toc = calloc(1, sizeof(*p_toc));
     if(!p_toc)
         return NULL;
+
+#ifdef HAVE_LASER
+    /* A vcddev opened from a device node has no token. */
+    if( p_vcddev->i_laser_token != -1 )
+    {
+        if( !LaserGetTOC( p_this, p_vcddev, p_toc ) )
+        {
+            free( p_toc->p_sectors );
+            free( p_toc );
+            return NULL;
+        }
+        return p_toc;
+    }
+#endif
 
     if( p_vcddev->i_vcdimage_handle != -1 )
     {
@@ -616,6 +830,16 @@ int ioctl_ReadSectors( vlc_object_t *p_this, const vcddev_t *p_vcddev,
     else
         p_block = p_buffer;
 
+#ifdef HAVE_LASER
+    /* The dangling else chains onto the if below without reindenting it. */
+    if( p_vcddev->i_laser_token != -1 )
+    {
+        if( LaserReadSectors( p_this, p_vcddev, i_sector, p_block, i_nb,
+                              i_type ) != 0 )
+            goto error;
+    }
+    else
+#endif
     if( p_vcddev->i_vcdimage_handle != -1 )
     {
         /*
@@ -1657,7 +1881,8 @@ exit:
     return pp_tracks ? 0 : -1;
 }
 
-#if defined( __APPLE__ ) || \
+#if defined( HAVE_LASER ) || \
+    defined( __APPLE__ ) || \
     defined( __OS2__ ) || \
     defined( HAVE_IOC_TOC_HEADER_IN_SYS_CDIO_H ) || \
     defined( HAVE_SCSIREQ_IN_SYS_SCSIIO_H )
