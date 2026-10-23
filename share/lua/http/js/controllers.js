@@ -1,3 +1,14 @@
+function escapeHtml(text) {
+    var map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
 var currentArt = null;
 var current_que = 'main';
 var current_playlist_id = -1;
@@ -435,7 +446,8 @@ function sendVLMCmd(command, append) {
                 data: 'command=' + encodeURIComponent(command),
                 success: function (data, status, jqXHR) {
                     if ($('error', data).text()) {
-                        $('#error_container').append('<div>' + $('error', data).text() + '</div>');
+                        var escapedErrorText = escapeHtml($('error', data).text());
+                        $('#error_container').append('<div>' + escapedErrorText + '</div>');
                         $('#window_error').dialog('open');
                     }
                     if (append != undefined) {
@@ -467,7 +479,8 @@ function sendBatchVLMCmd(command, append) {
         data: 'command=' + encodeURIComponent(commands.shift()),
         success: function (data, status, jqXHR) {
             if ($('error', data).text()) {
-                $('#error_container').append('<div>' + $('error', data).text() + '</div>');
+                 var escapedErrorText = escapeHtml($('error', data).text());
+                 $('#error_container').append('<div>' + escapedErrorText + '</div>');
                 $('#window_error').dialog('open');
             }
             sendVLMCmd(commands.join(';'), append);
