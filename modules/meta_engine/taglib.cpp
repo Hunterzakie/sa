@@ -887,6 +887,7 @@ static void ReadMetaFromMP4( MP4::Tag* tag, demux_meta_t *p_demux_meta, vlc_meta
         vlc_meta_SetExtra( p_meta, metaName, list.toStringList().front().toCString( true ) ); \
     }
 
+    SET( "cprt", Copyright );
     SET("----:com.apple.iTunes:MusicBrainz Track Id", TrackID );
     SET_EXTRA("----:com.apple.iTunes:MusicBrainz Album Id", VLC_META_EXTRA_MB_ALBUMID );
 
@@ -1364,6 +1365,18 @@ static int WriteMeta( vlc_object_t *p_this )
             WriteMetaToId3v2( flac->ID3v2Tag(), p_item );
         else if( flac->xiphComment() )
             WriteMetaToXiph( flac->xiphComment(), p_item );
+    }
+    else if( MP4::File* mp4 = dynamic_cast<MP4::File*>(f.file()) )
+    {
+        psz_meta = input_item_GetCopyright( p_item );
+        if( psz_meta )
+        {
+            if( *psz_meta )
+                mp4->tag()->setItem( "cprt", StringList( String( psz_meta, String::UTF8 ) ) );
+            else
+                mp4->tag()->removeItem( "cprt" );
+            free( psz_meta );
+        }
     }
     else if( MPC::File* mpc = dynamic_cast<MPC::File*>(f.file()) )
     {
