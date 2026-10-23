@@ -1057,10 +1057,9 @@ static bool IsPictureLateToStaticFilter(vout_thread_sys_t *vout,
 /* */
 VLC_USED
 static picture_t *PreparePicture(vout_thread_sys_t *vout, bool reuse_decoded,
-                                 bool frame_by_frame)
+                                 bool (*drop_policy)(void*, const picture_t*), void *opaque)
 {
     vout_thread_sys_t *sys = vout;
-    bool is_late_dropped = sys->is_late_dropped && !frame_by_frame;
 
     vlc_mutex_lock(&sys->filter.lock);
 
@@ -1071,67 +1070,59 @@ static picture_t *PreparePicture(vout_thread_sys_t *vout, bool reuse_decoded,
         picture_t *decoded;
         if (unlikely(reuse_decoded && sys->displayed.decoded)) {
             decoded = picture_Hold(sys->displayed.decoded);
-            if (decoded == NULL)
-                break;
         } else {
             picture_fifo_Lock(sys->decoder_fifo);
             decoded = picture_fifo_Pop(sys->decoder_fifo);
             picture_fifo_Unlock(sys->decoder_fifo);
-            if (decoded == NULL)
-                break;
+        }
+        if (decoded == NULL)
+            break;
+        reuse_decoded = false;
 
-            if (!decoded->b_force)
-            {
-                const vlc_tick_t system_now = vlc_tick_now();
-                uint32_t clock_id;
-                vlc_clock_Lock(sys->clock);
-                const vlc_tick_t system_pts =
-                    vlc_clock_ConvertToSystem(sys->clock, system_now,
-                                              decoded->date, sys->rate, &clock_id);
-                vlc_clock_Unlock(sys->clock);
-                if (clock_id != sys->clock_id)
-                {
-                    sys->clock_id = clock_id;
-                    msg_Dbg(&vout->obj, "Using a new clock context (%u), "
-                            "flusing static filters", clock_id);
+        const vlc_tick_t system_now = vlc_tick_now();
+        uint32_t clock_id;
+        vlc_clock_Lock(sys->clock);
+        vlc_clock_ConvertToSystem(sys->clock, system_now,
+                                  decoded->date, sys->rate, &clock_id);
+        vlc_clock_Unlock(sys->clock);
+        if (clock_id != sys->clock_id)
+        {
+            sys->clock_id = clock_id;
+            msg_Dbg(&vout->obj, "Using a new clock context (%u), "
+                    "flushing static filters", clock_id);
 
-                    /* Most deinterlace modules can't handle a PTS
-                     * discontinuity, so flush them.
-                     *
-                     * FIXME: Pass a discontinuity flag and handle it in
-                     * deinterlace modules. */
-                    filter_chain_VideoFlush(sys->filter.chain_static);
-                }
-
-                if (is_late_dropped
-                 && IsPictureLateToStaticFilter(vout, system_pts - system_now))
-                {
-                    picture_Release(decoded);
-                    vout_statistic_AddLost(&sys->statistic, 1);
-
-                    /* A picture dropped means discontinuity for the
-                     * filters and we need to notify eg. deinterlacer. */
-                    filter_chain_VideoFlush(sys->filter.chain_static);
-                    continue;
-                }
-            }
-
-            if (!VideoFormatIsCropArEqual(&decoded->format, &sys->filter.src_fmt))
-            {
-                // we received an aspect ratio change
-                // Update the filters with the filter source format with the new aspect ratio
-                video_format_Clean(&sys->filter.src_fmt);
-                video_format_Copy(&sys->filter.src_fmt, &decoded->format);
-                if (sys->filter.src_vctx)
-                    vlc_video_context_Release(sys->filter.src_vctx);
-                vlc_video_context *pic_vctx = picture_GetVideoContext(decoded);
-                sys->filter.src_vctx = pic_vctx ? vlc_video_context_Hold(pic_vctx) : NULL;
-
-                ChangeFilters(vout);
-            }
+            /* Most deinterlace modules can't handle a PTS
+             * discontinuity, so flush them.
+             *
+             * FIXME: Pass a discontinuity flag and handle it in
+             * deinterlace modules. */
+            filter_chain_VideoFlush(sys->filter.chain_static);
         }
 
-        reuse_decoded = false;
+        if (drop_policy && drop_policy(opaque, decoded))
+        {
+            picture_Release(decoded);
+            vout_statistic_AddLost(&sys->statistic, 1);
+
+            /* A picture dropped means discontinuity for the
+             * filters and we need to notify eg. deinterlacer. */
+            filter_chain_VideoFlush(sys->filter.chain_static);
+            continue;
+        }
+
+        if (!VideoFormatIsCropArEqual(&decoded->format, &sys->filter.src_fmt))
+        {
+            // we received an aspect ratio change
+            // Update the filters with the filter source format with the new aspect ratio
+            video_format_Clean(&sys->filter.src_fmt);
+            video_format_Copy(&sys->filter.src_fmt, &decoded->format);
+            if (sys->filter.src_vctx)
+                vlc_video_context_Release(sys->filter.src_vctx);
+            vlc_video_context *pic_vctx = picture_GetVideoContext(decoded);
+            sys->filter.src_vctx = pic_vctx ? vlc_video_context_Hold(pic_vctx) : NULL;
+
+            ChangeFilters(vout);
+        }
 
         if (sys->displayed.decoded)
             picture_Release(sys->displayed.decoded);
@@ -1143,6 +1134,13 @@ static picture_t *PreparePicture(vout_thread_sys_t *vout, bool reuse_decoded,
         vout_chrono_Start(&sys->chrono.static_filter);
         picture = filter_chain_VideoFilter(sys->filter.chain_static, sys->displayed.decoded);
         vout_chrono_Stop(&sys->chrono.static_filter);
+
+        if (picture && drop_policy && drop_policy(opaque, picture))
+        {
+            picture_Release(picture);
+            picture = NULL;
+            vout_statistic_AddLate(&sys->statistic, 1);
+        }
     }
 
     vlc_mutex_unlock(&sys->filter.lock);
@@ -1574,7 +1572,7 @@ static int DisplayNextFrame(vout_thread_sys_t *sys)
 {
     UpdateDeinterlaceFilter(sys);
 
-    picture_t *next = PreparePicture(sys, !sys->displayed.current, true);
+    picture_t *next = PreparePicture(sys, !sys->displayed.current, NULL, NULL);
 
     if (next)
     {
@@ -1587,6 +1585,23 @@ static int DisplayNextFrame(vout_thread_sys_t *sys)
         return VLC_EGENERIC;
 
     return RenderPicture(sys, RENDER_PICTURE_NEXT);
+}
+
+static bool DropLatePic(void *opaque, const picture_t *decoded)
+{
+    if (decoded->b_force)
+        return false;
+
+    vout_thread_sys_t *sys = opaque;
+    vlc_clock_Lock(sys->clock);
+    const vlc_tick_t system_now = vlc_tick_now();
+    const vlc_tick_t system_pts =
+        vlc_clock_ConvertToSystem(sys->clock, system_now,
+                                  decoded->date, sys->rate, NULL);
+    vlc_clock_Unlock(sys->clock);
+
+    return system_pts != VLC_TICK_MAX &&
+           IsPictureLateToStaticFilter(sys, system_pts - system_now);
 }
 
 static bool UpdateCurrentPicture(vout_thread_sys_t *sys)
@@ -1602,7 +1617,8 @@ static bool UpdateCurrentPicture(vout_thread_sys_t *sys)
 
     if (sys->displayed.current == NULL)
     {
-        sys->displayed.current = PreparePicture(sys, true, false);
+        sys->displayed.current = PreparePicture(sys, true,
+                                     sys->is_late_dropped ? DropLatePic : NULL, sys);
         return sys->displayed.current != NULL;
     }
 
@@ -1638,7 +1654,8 @@ static bool UpdateCurrentPicture(vout_thread_sys_t *sys)
         return true;
 
     // the current frame will be late, look for the next not late one
-    picture_t *next = PreparePicture(sys, false, false);
+    picture_t *next = PreparePicture(sys, false,
+                                     sys->is_late_dropped ? DropLatePic : NULL, sys);
     if (next == NULL)
         return false;
     /* We might have reset the current picture when preparing the next one,
@@ -1696,9 +1713,8 @@ static vlc_tick_t DisplayPicture(vout_thread_sys_t *vout)
         * So it will be done later.
         */
         if (date_refresh > system_now) {
-            // nothing changed, wait until the next deadline or a control
-            vlc_tick_t max_deadline = system_now + VOUT_REDISPLAY_DELAY;
-            return __MIN(date_refresh, max_deadline);
+            // too early to redisplay, wait until the proper deadline
+            return date_refresh;
         }
         RenderPicture(vout, RENDER_PICTURE_FORCED);
     }
