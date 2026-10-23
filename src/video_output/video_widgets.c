@@ -44,22 +44,25 @@
 #define RGB_ORANGE      0xf48b00
 #define RGB_FILL        RGB_ORANGE
 
-#define COL_TRANSPARENT 0
-#define COL_WHITE       1
-#define COL_FILL        2
-#define COL_FILL_SHADE  3
+enum color_index {
+    COL_TRANSPARENT,
+    COL_WHITE,
+    COL_FILL,
+    COL_FILL_SHADE,
+};
 
-#define SET_PALETTE_COLOR(id, rgb, alpha) \
-{\
-    uint8_t color[4] = { HEX2YUV(rgb), alpha };\
-    memcpy( &palette.palette[id], &color, 4 );\
-}
+static const uint8_t WIDGET_COLORS[4][4] = {
+    { HEX2RGB(0xffffff), STYLE_ALPHA_TRANSPARENT}, // COL_TRANSPARENT
+    { HEX2RGB(0xffffff), STYLE_ALPHA_OPAQUE     }, // COL_WHITE
+    { HEX2RGB(RGB_FILL), 0xA0                   }, // COL_FILL
+    { HEX2RGB(RGB_FILL), 0x25                   }, // COL_FILL_SHADE
+};
 
 /**
  * Draws a rectangle at the given position in the region.
  * It may be filled (fill == STYLE_FILLED) or empty (fill == STYLE_EMPTY).
  */
-static void DrawRect(subpicture_region_t *r, int fill, uint8_t color,
+static void DrawRect(subpicture_region_t *r, int fill, enum color_index color,
                      int x1, int y1, int x2, int y2)
 {
     uint8_t *p    = r->p_picture->p->p_pixels;
@@ -69,10 +72,14 @@ static void DrawRect(subpicture_region_t *r, int fill, uint8_t color,
 
     if (fill == STYLE_FILLED) {
         if(x1 == 0 && x2 + 1 == r->p_picture->p->i_visible_pitch) {
-            memset(&p[pitch * y1], color, pitch * (y2 - y1 + 1));
+            for (int x=0; x<pitch * (y2 - y1 + 1); x++)
+                SetPixelColor(r->p_picture->p, y1, x, WIDGET_COLORS[color]);
         } else {
             for (int y = y1; y <= y2; y++)
-                memset(&p[x1 + pitch * y], color, x2 - x1 + 1);
+            {
+                for (int x=0; x<x2 - x1 + 1; x++)
+                    SetPixelColor(r->p_picture->p, y, x1 + x, WIDGET_COLORS[color]);
+            }
         }
     } else {
         DrawRect(r, STYLE_FILLED, color, x1, y1, x1, y2);
@@ -86,7 +93,7 @@ static void DrawRect(subpicture_region_t *r, int fill, uint8_t color,
  * Draws a triangle at the given position in the region.
  * It may be filled (fill == STYLE_FILLED) or empty (fill == STYLE_EMPTY).
  */
-static void DrawTriangle(subpicture_region_t *r, int fill, uint8_t color,
+static void DrawTriangle(subpicture_region_t *r, int fill, enum color_index color,
                          int x1, int y1, int x2, int y2)
 {
     uint8_t *p    = r->p_picture->p->p_pixels;
@@ -103,10 +110,10 @@ static void DrawTriangle(subpicture_region_t *r, int fill, uint8_t color,
             DrawRect(r, STYLE_FILLED, color,
                      (b_swap) ? w : x1, y2 - h, (b_swap) ? x1 : w, y2 - h);
         } else {
-            p[x1 +                     pitch * y       ] = color;
-            p[x1 + (b_swap ? -h : h) + pitch * y       ] = color;
-            p[x1 +                     pitch * (y2 - h)] = color;
-            p[x1 + (b_swap ? -h : h) + pitch * (y2 - h)] = color;
+            SetPixelColor(r->p_picture->p, y,      x1                    , WIDGET_COLORS[color]);
+            SetPixelColor(r->p_picture->p, y,      x1 + (b_swap ? -h : h), WIDGET_COLORS[color]);
+            SetPixelColor(r->p_picture->p, y2 - h, x1                    , WIDGET_COLORS[color]);
+            SetPixelColor(r->p_picture->p, y2 - h, x1 + (b_swap ? -h : h), WIDGET_COLORS[color]);
         }
     }
 }
@@ -119,22 +126,14 @@ static subpicture_region_t *OSDRegion(int x, int y, int width, int height)
     if( unlikely( width == 0 || height == 0 ) )
         return NULL;
 
-    video_palette_t palette;
-    SET_PALETTE_COLOR(COL_WHITE,       0xffffff, STYLE_ALPHA_OPAQUE)
-    SET_PALETTE_COLOR(COL_TRANSPARENT, 0xffffff, STYLE_ALPHA_TRANSPARENT)
-    SET_PALETTE_COLOR(COL_FILL,        RGB_FILL, 0xA0)
-    SET_PALETTE_COLOR(COL_FILL_SHADE,  RGB_FILL, 0x25)
-    palette.i_entries = 4;
-
     video_format_t fmt;
-    video_format_Init(&fmt, VLC_CODEC_YUVP);
+    video_format_Init(&fmt, VLC_CODEC_RGBA);
     fmt.i_width          =
     fmt.i_visible_width  = width;
     fmt.i_height         =
     fmt.i_visible_height = height;
     fmt.i_sar_num        = 1;
     fmt.i_sar_den        = 1;
-    fmt.p_palette        = &palette;
 
     subpicture_region_t *r = subpicture_region_New(&fmt);
     if (!r)

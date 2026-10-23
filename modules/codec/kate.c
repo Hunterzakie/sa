@@ -638,15 +638,6 @@ static void *ProcessPacket( decoder_t *p_dec, kate_packet *p_kp,
     }
 }
 
-/* nicked off blend.c */
-static inline void rgb_to_yuv( uint8_t *y, uint8_t *u, uint8_t *v,
-                               int r, int g, int b )
-{
-    *y = ( ( (  66 * r + 129 * g +  25 * b + 128 ) >> 8 ) + 16 );
-    *u =   ( ( -38 * r -  74 * g + 112 * b + 128 ) >> 8 ) + 128 ;
-    *v =   ( ( 112 * r -  94 * g -  18 * b + 128 ) >> 8 ) + 128 ;
-}
-
 /*
   This retrieves the size of the video.
   The best case is when the original video size is known, as we can then
@@ -676,7 +667,8 @@ static void GetVideoSize( decoder_t *p_dec, int *w, int *h )
     }
 }
 
-static void CreateKateBitmap( picture_t *pic, const kate_bitmap *bitmap )
+static void CreateKateBitmap( picture_t *pic, const kate_bitmap *bitmap,
+                              const kate_palette *palette )
 {
     size_t y;
 
@@ -684,22 +676,17 @@ static void CreateKateBitmap( picture_t *pic, const kate_bitmap *bitmap )
     {
         uint8_t *dest = pic->Y_PIXELS+pic->Y_PITCH*y;
         const uint8_t *src = bitmap->pixels+y*bitmap->width;
-        memcpy( dest, src, bitmap->width );
-    }
-}
-
-static void CreateKatePalette( video_palette_t *fmt_palette, const kate_palette *palette )
-{
-    size_t n;
-
-    fmt_palette->i_entries = palette->ncolors;
-    for( n=0; n<palette->ncolors; ++n )
-    {
-        rgb_to_yuv(
-            &fmt_palette->palette[n][0], &fmt_palette->palette[n][1], &fmt_palette->palette[n][2],
-            palette->colors[n].r, palette->colors[n].g, palette->colors[n].b
-        );
-        fmt_palette->palette[n][3] = palette->colors[n].a;
+        for ( size_t x=0; x<bitmap->width; x++ )
+        {
+            size_t palette_index = src[x];
+            if (likely(palette_index < palette->ncolors))
+            {
+                dest[x*4 + 0] = palette->colors[palette_index].r;
+                dest[x*4 + 1] = palette->colors[palette_index].g;
+                dest[x*4 + 2] = palette->colors[palette_index].b;
+                dest[x*4 + 3] = palette->colors[palette_index].a;
+            }
+        }
     }
 }
 
@@ -1081,7 +1068,6 @@ static subpicture_t *SetupSimpleKateSPU( decoder_t *p_dec, subpicture_t *p_spu,
 {
     decoder_sys_t *p_sys = p_dec->p_sys;
     subpicture_region_t *p_bitmap_region = NULL;
-    video_palette_t palette;
     kate_tracker kin;
     bool b_tracker_valid = false;
     int i_ret;
@@ -1120,12 +1106,10 @@ static subpicture_t *SetupSimpleKateSPU( decoder_t *p_dec, subpicture_t *p_spu,
 
         /* create a separate region for the bitmap */
         video_format_t fmt;
-        video_format_Init( &fmt, VLC_CODEC_YUVP );
+        video_format_Init( &fmt, VLC_CODEC_RGBA );
         fmt.i_width = fmt.i_visible_width = ev->bitmap->width;
         fmt.i_height = fmt.i_visible_height = ev->bitmap->height;
         fmt.i_x_offset = fmt.i_y_offset = 0;
-        fmt.p_palette = &palette;
-        CreateKatePalette( fmt.p_palette, ev->palette );
 
         p_bitmap_region = subpicture_region_New( &fmt );
         if( !p_bitmap_region )
@@ -1136,7 +1120,7 @@ static subpicture_t *SetupSimpleKateSPU( decoder_t *p_dec, subpicture_t *p_spu,
         }
 
         /* create the bitmap */
-        CreateKateBitmap( p_bitmap_region->p_picture, ev->bitmap );
+        CreateKateBitmap( p_bitmap_region->p_picture, ev->bitmap, ev->palette );
 
         msg_Dbg(p_dec, "Created bitmap, %zux%zu, %zu colors", ev->bitmap->width, ev->bitmap->height, ev->palette->ncolors);
     }
