@@ -40,12 +40,12 @@ typedef struct
 
 static block_t *Process ( filter_t *p_filter, block_t *p_in_buf )
 {
-    filter_sys_t *p_sys = p_filter->p_sys;
-    float *p_in = (float *)p_in_buf->p_buffer;
-    size_t i_nb_samples = p_in_buf->i_nb_samples;
-    size_t i_nb_channels = aout_FormatNbChannels( &p_filter->fmt_in.audio );
-    float f_pan = atomic_load( &p_sys->f_pan );
+    const filter_sys_t *p_sys = p_filter->p_sys;
+    const size_t i_nb_samples = p_in_buf->i_nb_samples;
+    const size_t i_nb_channels = aout_FormatNbChannels( &p_filter->fmt_in.audio );
+    const float f_pan = atomic_load( &p_sys->f_pan );
 
+    float *p_in = (float *)p_in_buf->p_buffer;
     for ( size_t i = 0 ; i < i_nb_samples ; ++i )
     {
         float f_left = p_in[ i * i_nb_channels ];
@@ -71,9 +71,8 @@ static int paramCallback( vlc_object_t *p_this, char const *psz_var,
     return VLC_SUCCESS;
 }
 
-static void Close (vlc_object_t *p_in)
+static void Close (filter_t *p_filter)
 {
-    filter_t *p_filter = (filter_t *)p_in;
     filter_sys_t *p_sys = p_filter->p_sys;
     vlc_object_t *p_aout = vlc_object_parent(p_filter);
     var_DelCallback( p_aout, "pan-control", paramCallback, p_sys );
@@ -83,10 +82,6 @@ static void Close (vlc_object_t *p_in)
 
 static int Open (filter_t *p_filter)
 {
-    if (p_filter->fmt_out.audio.i_channels < 2) {
-        msg_Err( p_filter, "At least 2 audio channels are required" );
-        return VLC_EGENERIC;
-    }
     vlc_object_t *p_aout = vlc_object_parent(p_filter);
     filter_sys_t *p_sys = p_filter->p_sys = malloc( sizeof(*p_sys) );
     if (unlikely(!p_sys))
@@ -96,14 +91,21 @@ static int Open (filter_t *p_filter)
             var_CreateGetFloat( p_aout, "pan-control" ) );
     var_AddCallback( p_aout, "pan-control", paramCallback, p_sys );
 
-    p_filter->fmt_out.audio.i_format = VLC_CODEC_FL32;
+    /* The algorithm only supports a stereo left+right pair for now. */
+    p_filter->fmt_in.audio.channel_type = AUDIO_CHANNEL_TYPE_BITMAP;
+    p_filter->fmt_out.audio.channel_type = AUDIO_CHANNEL_TYPE_BITMAP;
+    p_filter->fmt_in.audio.i_physical_channels = AOUT_CHANS_STEREO;
+    p_filter->fmt_out.audio.i_physical_channels = AOUT_CHANS_STEREO;
+
     p_filter->fmt_in.audio.i_format = VLC_CODEC_FL32;
+    p_filter->fmt_out.audio.i_format = VLC_CODEC_FL32;
     aout_FormatPrepare( &p_filter->fmt_in.audio );
     aout_FormatPrepare( &p_filter->fmt_out.audio );
 
     static const struct vlc_filter_operations filter_ops =
     {
         .filter_audio = Process,
+        .close = Close,
     };
     p_filter->ops = &filter_ops;
     return VLC_SUCCESS;
@@ -116,5 +118,5 @@ vlc_module_begin()
     add_float_with_range( "pan-control", 0.5, 0, 1,
             PAN_CONTROL_TEXT, PAN_CONTROL_LONGTEXT )
     set_capability ( "audio filter", 0 )
-    set_callbacks ( Open, Close )
+    set_callback ( Open )
 vlc_module_end ()
