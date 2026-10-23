@@ -736,12 +736,14 @@ error:
     "hash functions and compression methods can be selected. " \
     "Refer to GNU TLS documentation for detailed syntax.")
 static const char *const priorities_values[] = {
+    "@SYSTEM",
     "PERFORMANCE",
     "NORMAL",
     "SECURE128",
     "SECURE256",
 };
 static const char *const priorities_text[] = {
+    N_("System (default to system crypto ciphers policy)"),
     N_("Performance (prioritize faster ciphers)"),
     N_("Normal"),
     N_("Secure 128-bit (or higher)"),
@@ -758,7 +760,7 @@ vlc_module_begin ()
              SYSTEM_TRUST_LONGTEXT)
     add_string("gnutls-dir-trust", NULL, DIR_TRUST_TEXT,
                DIR_TRUST_LONGTEXT)
-    add_string ("gnutls-priorities", "NORMAL", PRIORITIES_TEXT,
+    add_string ("gnutls-priorities", "@SYSTEM", PRIORITIES_TEXT,
                 PRIORITIES_LONGTEXT)
         change_string_list (priorities_values, priorities_text)
 #ifdef ENABLE_SOUT
