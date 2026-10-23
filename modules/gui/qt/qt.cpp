@@ -1311,6 +1311,13 @@ static void *Thread( void *obj )
     p_intf->p_mi = new MainCtx(p_intf);
 #endif
 
+    /* Ensure the core hotkeys management interface is created so that
+     * keypress events (space, arrows, f, etc.) are converted into actions */
+    intf_Create(vlc_object_instance(p_intf), "hotkeys");
+#ifdef _WIN32
+    intf_Create(vlc_object_instance(p_intf), "win_hotkeys");
+#endif
+
     if( !p_intf->b_isDialogProvider )
     {
         class TouchObserver : public QObject
