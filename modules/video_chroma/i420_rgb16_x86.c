@@ -96,6 +96,29 @@ static void SetOffset( int i_width, int i_height, int i_pic_width,
         *pi_vscale = -1;
 }
 
+#if defined(__i386__) || defined(__x86_64__)
+VLC_TARGET
+static void vlcpriv_i420_r5g5b5_sse2(uint8_t *p_y, uint8_t *p_u, uint8_t *p_v, uint16_t *p_buffer)
+{
+    SSE2_CALL(
+        SSE2_INIT_16_ALIGNED
+        SSE2_YUV_MUL
+        SSE2_YUV_ADD
+        SSE2_UNPACK_15_ALIGNED
+    );
+}
+VLC_TARGET
+static void vlcpriv_i420_r5g5b5_sse2_unaligned(uint8_t *p_y, uint8_t *p_u, uint8_t *p_v, uint16_t *p_buffer)
+{
+    SSE2_CALL (
+        SSE2_INIT_16_UNALIGNED
+        SSE2_YUV_MUL
+        SSE2_YUV_ADD
+        SSE2_UNPACK_15_UNALIGNED
+    );
+}
+#endif
+
 VLC_TARGET
 void I420_R5G5B5( filter_t *p_filter, picture_t *p_src, picture_t *p_dest )
 {
@@ -181,12 +204,7 @@ void I420_R5G5B5( filter_t *p_filter, picture_t *p_src, picture_t *p_dest )
 
             for ( i_x = (p_filter->fmt_in.video.i_x_offset + p_filter->fmt_in.video.i_visible_width)/16; i_x--; )
             {
-                SSE2_CALL (
-                    SSE2_INIT_16_ALIGNED
-                    SSE2_YUV_MUL
-                    SSE2_YUV_ADD
-                    SSE2_UNPACK_15_ALIGNED
-                );
+                vlcpriv_i420_r5g5b5_sse2(p_y, p_u, p_v, p_buffer);
                 p_y += 16;
                 p_u += 8;
                 p_v += 8;
@@ -201,12 +219,7 @@ void I420_R5G5B5( filter_t *p_filter, picture_t *p_src, picture_t *p_dest )
                 p_v -= i_rewind >> 1;
                 p_buffer -= i_rewind;
 
-                SSE2_CALL (
-                    SSE2_INIT_16_UNALIGNED
-                    SSE2_YUV_MUL
-                    SSE2_YUV_ADD
-                    SSE2_UNPACK_15_UNALIGNED
-                );
+                vlcpriv_i420_r5g5b5_sse2_unaligned(p_y, p_u, p_v, p_buffer);
                 p_y += 16;
                 p_u += 8;
                 p_v += 8;
@@ -232,12 +245,7 @@ void I420_R5G5B5( filter_t *p_filter, picture_t *p_src, picture_t *p_dest )
 
             for ( i_x = (p_filter->fmt_in.video.i_x_offset + p_filter->fmt_in.video.i_visible_width)/16; i_x--; )
             {
-                SSE2_CALL (
-                    SSE2_INIT_16_UNALIGNED
-                    SSE2_YUV_MUL
-                    SSE2_YUV_ADD
-                    SSE2_UNPACK_15_UNALIGNED
-                );
+                vlcpriv_i420_r5g5b5_sse2_unaligned(p_y, p_u, p_v, p_buffer);
                 p_y += 16;
                 p_u += 8;
                 p_v += 8;
@@ -252,12 +260,7 @@ void I420_R5G5B5( filter_t *p_filter, picture_t *p_src, picture_t *p_dest )
                 p_v -= i_rewind >> 1;
                 p_buffer -= i_rewind;
 
-                SSE2_CALL (
-                    SSE2_INIT_16_UNALIGNED
-                    SSE2_YUV_MUL
-                    SSE2_YUV_ADD
-                    SSE2_UNPACK_15_UNALIGNED
-                );
+                vlcpriv_i420_r5g5b5_sse2_unaligned(p_y, p_u, p_v, p_buffer);
                 p_y += 16;
                 p_u += 8;
                 p_v += 8;
