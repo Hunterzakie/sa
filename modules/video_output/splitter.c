@@ -271,7 +271,7 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
                 .align = { 0, 0 } /* TODO */,
                 .fitting = VLC_VIDEO_FIT_SMALLER,
                 .zoom = { 1, 1 },
-                .full_fill = true,
+                .full_fill = VLC_SUBPICTURE_AREA_WINDOW,
             },
         };
         const char *modname = output->psz_module;

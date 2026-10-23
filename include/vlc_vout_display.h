@@ -89,6 +89,15 @@ enum vlc_video_fitting {
 };
 
 /**
+ * Area to use to position subpictures that are not fixed within the video.
+ */
+enum vlc_subpicture_area {
+    VLC_SUBPICTURE_AREA_VIDEO = 0  /**< Use the video area to position subpictures */,
+    VLC_SUBPICTURE_AREA_WINDOW = 1 /**< Use the whole window area to position subpictures */,
+    VLC_SUBPICTURE_AREA_VIDEO_CROP = 2 /**< Use the cropped video area to position subpictures */,
+};
+
+/**
  * Display placement and zoom configuration.
  */
 struct vout_display_placement {
@@ -99,7 +108,7 @@ struct vout_display_placement {
     vlc_video_align_t align; /**< Alignment within the window */
     enum vlc_video_fitting fitting; /**< Scaling/fitting mode */
     vlc_rational_t zoom; /**< Zoom ratio (if fitting is disabled) */
-    bool full_fill; /**< whether the rendering will take the whole display */
+    enum vlc_subpicture_area full_fill; /**< whether the rendering will take the whole display */
 };
 
 /**

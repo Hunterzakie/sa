@@ -825,9 +825,15 @@ static const char* const ppsz_restore_playback_desc[] = {
 #define SPU_LONGTEXT N_( \
     "You can completely disable the sub-picture processing.")
 
-#define SPU_FULL_TEXT N_("Display sub-pictures on full window")
+#define SPU_FULL_TEXT N_("Sub-pictures display area")
 #define SPU_FULL_LONGTEXT N_( \
-    "It allows showing subtitles in black bars.")
+    "Area to use to position and scale sub-pictures.")
+static const int ppsz_spu_fill_mode[] = {
+    VLC_SUBPICTURE_AREA_VIDEO, VLC_SUBPICTURE_AREA_WINDOW, VLC_SUBPICTURE_AREA_VIDEO_CROP,
+};
+static const char * const ppsz_spu_fill_mode_text[] = {
+    N_("Inside Video"), N_("In Full Window"), N_("Inside Cropped Video"),
+};
 
 #define SECONDARY_SUB_POSITION_TEXT N_("Position of secondary subtitles")
 #define SECONDARY_SUB_POSITION_LONGTEXT N_( \
@@ -1803,7 +1809,8 @@ vlc_module_begin ()
 
     add_bool( "spu", true, SPU_TEXT, SPU_LONGTEXT )
         change_safe ()
-    add_bool( "spu-fill", true, SPU_FULL_TEXT, SPU_FULL_LONGTEXT )
+    add_integer( "spu-fill", VLC_SUBPICTURE_AREA_WINDOW, SPU_FULL_TEXT, SPU_FULL_LONGTEXT )
+        change_integer_list( ppsz_spu_fill_mode, ppsz_spu_fill_mode_text )
         change_safe ()
     add_bool( "osd", true, OSD_TEXT, OSD_LONGTEXT )
     add_module("text-renderer", "text renderer", "any",
