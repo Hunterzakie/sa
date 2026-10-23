@@ -81,6 +81,23 @@ static int ytdl_popen(pid_t *restrict pid, const char *argv[])
     int fdv[] = { -1, fds[1], STDERR_FILENO, -1 };
     int val = vlc_spawnp(pid, argv[0], fdv, argv);
 
+#ifdef __APPLE__
+    static const char *const dirs[] = {
+        "/opt/homebrew/bin", "/usr/local/bin", "/opt/local/bin",
+    };
+
+    for (size_t i = 0; val == ENOENT && strchr(argv[0], '/') == NULL
+                    && i < ARRAY_SIZE(dirs); i++) {
+        char *path;
+
+        if (asprintf(&path, "%s/%s", dirs[i], argv[0]) == -1)
+            break;
+
+        val = vlc_spawn(pid, path, fdv, argv);
+        free(path);
+    }
+#endif
+
     vlc_close(fds[1]);
 
     if (val) {
@@ -123,7 +140,32 @@ static int vlc_kill(pid_t pid, int signum)
 struct ytdl_playlist {
     struct json_object json;
     stream_t *source;
+    struct {
+        es_out_t out;
+        es_out_t *target;
+        const char *lang;
+    } esout;
 };
+
+static bool FormatHasManifest(const struct json_object *fmt)
+{
+    const char *protocol = json_get_str(fmt, "protocol");
+
+    if (protocol == NULL || json_get_str(fmt, "manifest_url") == NULL)
+        return false;
+
+    return strncmp(protocol, "m3u8", 4) == 0 /* HLS */
+        || strcmp(protocol, "http_dash_segments") == 0 /* DASH */
+        || strcmp(protocol, "ism") == 0; /* Smooth Streaming */
+}
+
+static const char *FormatURL(const struct json_object *fmt)
+{
+    if (FormatHasManifest(fmt))
+        return json_get_str(fmt, "manifest_url");
+
+    return json_get_str(fmt, "url");
+}
 
 static int CompareFormats(const struct json_object *f_a,
                           const struct json_object *f_b, double pref_height)
@@ -133,13 +175,35 @@ static int CompareFormats(const struct json_object *f_a,
     double h_b = json_get_num(f_b, "height");
     double abr_b = json_get_num(f_b, "abr");
 
+    /* Prefer manifests over single files */
+    bool manifest_a = FormatHasManifest(f_a);
+    bool manifest_b = FormatHasManifest(f_b);
+    if (manifest_a != manifest_b)
+        return manifest_a ? +1 : -1;
+
     /* Prefer non-mute formats */
-    if (!isnan(abr_a) != !isnan(abr_b))
-        return isnan(abr_a) ? -1 : +1;
+    const char *acodec_a = json_get_str(f_a, "acodec");
+    const char *acodec_b = json_get_str(f_b, "acodec");
+    bool has_audio_a = acodec_a != NULL && strcmp(acodec_a, "none") != 0;
+    bool has_audio_b = acodec_b != NULL && strcmp(acodec_b, "none") != 0;
+    if (has_audio_a != has_audio_b)
+        return has_audio_a ? +1 : -1;
 
     /* Prefer non-blind formats */
-    if (!isnan(h_a) != !isnan(h_b))
-        return isnan(h_a) ? -1 : +1;
+    const char *vcodec_a = json_get_str(f_a, "vcodec");
+    const char *vcodec_b = json_get_str(f_b, "vcodec");
+    bool has_video_a = vcodec_a != NULL && strcmp(vcodec_a, "none") != 0;
+    bool has_video_b = vcodec_b != NULL && strcmp(vcodec_b, "none") != 0;
+    if (has_video_a != has_video_b)
+        return has_video_a ? +1 : -1;
+
+    /* Prefer the original audio language over dubs */
+    double lang_a = json_get_num(f_a, "language_preference");
+    double lang_b = json_get_num(f_b, "language_preference");
+    if (isgreater(lang_a, lang_b))
+        return +1;
+    if (isgreater(lang_b, lang_a))
+        return -1;
 
     if (islessequal(h_a, pref_height)) {
         if (!islessequal(h_b, pref_height))
@@ -201,6 +265,102 @@ static const struct json_object *PickFormat(stream_t *s,
      return best_fmt;
 }
 
+static const char *OriginalLanguage(const struct json_object *entry)
+{
+    const struct json_value *fmts = json_get(entry, "formats");
+    const char *lang = NULL;
+    double best = 0.;
+
+    if (fmts == NULL || fmts->type != JSON_ARRAY)
+        return NULL;
+
+    for (size_t i = 0; i < fmts->array.size; i++) {
+        const struct json_value *v = &fmts->array.entries[i];
+
+        if (v->type != JSON_OBJECT)
+            continue;
+
+        double pref = json_get_num(&v->object, "language_preference");
+        const char *l = json_get_str(&v->object, "language");
+
+        if (l != NULL && isgreater(pref, best)) {
+            best = pref;
+            lang = l;
+        }
+    }
+
+    return lang;
+}
+
+static bool LanguageMatch(const char *a, const char *b)
+{
+    size_t len = strcspn(a, "-_");
+
+    return len > 0 && strcspn(b, "-_") == len
+        && vlc_ascii_strncasecmp(a, b, len) == 0;
+}
+
+static es_out_id_t *EsOutAdd(es_out_t *out, input_source_t *in,
+                             const es_format_t *fmt)
+{
+    struct ytdl_playlist *sys = container_of(out, struct ytdl_playlist,
+                                             esout.out);
+    es_out_t *target = sys->esout.target;
+
+    if (sys->esout.lang != NULL && fmt->i_cat == AUDIO_ES
+     && fmt->psz_language != NULL
+     && LanguageMatch(fmt->psz_language, sys->esout.lang)
+     && fmt->i_priority >= ES_PRIORITY_SELECTABLE_MIN) {
+        es_format_t copy = *fmt;
+
+        copy.i_priority = ES_PRIORITY_SELECTABLE_MIN + 10; /* make it default */
+        return target->cbs->add(target, in, &copy);
+    }
+
+    return target->cbs->add(target, in, fmt);
+}
+
+static int EsOutSend(es_out_t *out, es_out_id_t *id, block_t *block)
+{
+    struct ytdl_playlist *sys = container_of(out, struct ytdl_playlist,
+                                             esout.out);
+    es_out_t *target = sys->esout.target;
+
+    return target->cbs->send(target, id, block);
+}
+
+static void EsOutDel(es_out_t *out, es_out_id_t *id)
+{
+    struct ytdl_playlist *sys = container_of(out, struct ytdl_playlist,
+                                             esout.out);
+    es_out_t *target = sys->esout.target;
+
+    target->cbs->del(target, id);
+}
+
+static int EsOutControl(es_out_t *out, input_source_t *in, int query,
+                        va_list args)
+{
+    struct ytdl_playlist *sys = container_of(out, struct ytdl_playlist,
+                                             esout.out);
+    es_out_t *target = sys->esout.target;
+
+    return target->cbs->control(target, in, query, args);
+}
+
+static void EsOutDestroy(es_out_t *out)
+{
+    (void) out;
+}
+
+static const struct es_out_callbacks ytdl_esout_cbs = {
+    .add = EsOutAdd,
+    .send = EsOutSend,
+    .del = EsOutDel,
+    .control = EsOutControl,
+    .destroy = EsOutDestroy,
+};
+
 static const char *PickArt(const struct json_object *entry)
 {
     const struct json_value *v = json_get(entry, "thumbnails");
@@ -243,7 +403,7 @@ static int ReadItem(stream_t *s, input_item_node_t *node,
     if (fmt == NULL)
         return VLC_EGENERIC;
 
-    const char *url = json_get_str(fmt, "url");
+    const char *url = FormatURL(fmt);
 
     if (url == NULL)
         return VLC_EGENERIC;
@@ -434,11 +594,18 @@ static int OpenCommon(vlc_object_t *obj, const char *src_url)
     stream_t *demux = NULL;
 
     if (fmt != NULL) {
-        const char *url = json_get_str(fmt, "url");
+        const char *url = FormatURL(fmt);
 
         if (url != NULL) {
+            sys->esout.out.cbs = &ytdl_esout_cbs;
+            sys->esout.target = s->out;
+            sys->esout.lang = OriginalLanguage(&sys->json);
+
+            if (sys->esout.lang != NULL)
+                msg_Dbg(s, "original audio language: %s", sys->esout.lang);
+
             var_Create(obj, "ytdl", VLC_VAR_BOOL);
-            demux = vlc_demux_NewURL(obj, url, s->out);
+            demux = vlc_demux_NewURL(obj, url, &sys->esout.out);
 
             if (demux == NULL)
                 msg_Err(s, "cannot open URL: %s", url);
