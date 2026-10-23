@@ -436,6 +436,10 @@ static void
 randomizer_SelectIndex(struct randomizer *r, size_t index)
 {
     vlc_playlist_item_t *selected = r->items.data[index];
+
+    if (r->next < r->head)
+        r->head = r->next;
+
     if (r->history && index >= r->history)
     {
         if (index > r->history)
@@ -1209,6 +1213,71 @@ test_has_prev_next_empty(void)
     randomizer_Destroy(&randomizer);
 }
 
+static void
+test_select_after_next_item_ready(void)
+{
+    struct randomizer randomizer;
+    randomizer_Init(&randomizer);
+
+    #define SIZE 100
+    vlc_playlist_item_t *items[SIZE];
+    ArrayInit(items, SIZE);
+
+    bool ok = randomizer_Add(&randomizer, items, SIZE);
+    assert(ok);
+
+    randomizer_PeekNext(&randomizer);
+    randomizer_Select(&randomizer, items[0]);
+
+    bool selected[SIZE] = {0};
+    selected[0] = true;
+    while (randomizer_HasNext(&randomizer))
+    {
+        vlc_playlist_item_t *item = randomizer_Next(&randomizer);
+        assert(!selected[item->index]);
+        selected[item->index] = true;
+    }
+
+    for (int i = 0; i < SIZE; i++) assert(selected[i]);
+
+    ArrayDestroy(items, SIZE);
+    randomizer_Destroy(&randomizer);
+    #undef SIZE
+}
+
+static void
+test_select_after_prev(void)
+{
+    struct randomizer randomizer;
+    randomizer_Init(&randomizer);
+
+    #define SIZE 100
+    vlc_playlist_item_t *items[SIZE];
+    ArrayInit(items, SIZE);
+
+    bool ok = randomizer_Add(&randomizer, items, SIZE);
+    assert(ok);
+
+    bool selected[SIZE] = {0};
+    for (int i = 0; i < 2; i++) selected[randomizer_Next(&randomizer)->index] = true;
+
+    randomizer_PeekNext(&randomizer);
+    selected[randomizer_Prev(&randomizer)->index] = true;
+
+    while (randomizer_HasNext(&randomizer))
+    {
+        vlc_playlist_item_t *item = randomizer_PeekNext(&randomizer);
+        randomizer_Select(&randomizer, item);
+        selected[item->index] = true;
+    }
+
+    for (int i = 0; i < SIZE; i++) assert(selected[i]);
+
+    ArrayDestroy(items, SIZE);
+    randomizer_Destroy(&randomizer);
+    #undef SIZE
+}
+
 int main(void)
 {
     test_all_items_selected_exactly_once();
@@ -1225,6 +1294,8 @@ int main(void)
     test_loop_respect_not_same_before();
     test_loop_respect_not_same_before_impossible();
     test_has_prev_next_empty();
+    test_select_after_next_item_ready();
+    test_select_after_prev();
 }
 
 #endif
