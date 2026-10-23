@@ -1659,6 +1659,7 @@ typedef NS_ENUM(NSInteger, VLCObjectType) {
 
 - (IBAction)showDetachedAudioWindow:(id)sender
 {
+    [NSApp activateIgnoringOtherApps:YES];
     [VLCMain.sharedInstance.detachedAudioWindow makeKeyAndOrderFront:self];
 }
 
