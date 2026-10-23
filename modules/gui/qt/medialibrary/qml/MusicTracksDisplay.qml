@@ -50,6 +50,58 @@ Widgets.PageExt {
         tracklistdisplay_id.positionViewAtBeginningAnimated()
     }
 
+    readonly property list<Item> actions: [
+        Widgets.ActionButtonPrimary {
+            id: playButton
+
+            visible: tracklistdisplay_id.model.count > 0
+
+            width: height
+            radius: width / 2
+
+            anchors.verticalCenter: parent.verticalCenter
+
+            iconTxt: VLCIcons.play_filled
+            text: qsTr("Play all")
+            showText: false
+            iconSize: MainCtx.dp(20, VLCStyle.scale)
+
+            Navigation.parentItem: root.header.actionsFocusScopeRow
+            Navigation.rightItem: enqueueButton
+
+            onClicked: tracklistdisplay_id.model.playAll()
+        },
+        Widgets.ActionButtonOverlay {
+            id: enqueueButton
+
+            visible: tracklistdisplay_id.model.count > 0
+
+            focus: true
+
+            anchors.verticalCenter: parent.verticalCenter
+
+            width: VLCStyle.bannerButton_width
+            height: VLCStyle.bannerButton_height
+            padding: VLCStyle.margin_xxxsmall
+            iconSize: MainCtx.dp(20, VLCStyle.scale)
+
+            iconTxt: VLCIcons.enqueue
+            text: qsTr("Enqueue all")
+            showText: false
+
+            Navigation.parentItem: root.header.actionsFocusScopeRow
+            Navigation.leftItem: playButton
+
+            onClicked: tracklistdisplay_id.model.enqueueAll()
+        }
+    ]
+
+    Binding {
+        target: root.header.actionsFocusScopeRow
+        property: "children"
+        value: root.actions
+    }
+
     FocusScope {
 
         anchors.fill: parent

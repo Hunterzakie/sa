@@ -137,6 +137,8 @@ T.Page {
         // Properties
         property alias text: label.text
 
+        property alias actionsFocusScopeRow: titleActions
+
         property alias sortMenu: gridSortFilter.sortMenu
 
         property alias search: gridSortFilter.search
@@ -159,7 +161,7 @@ T.Page {
         implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
                                  implicitContentHeight + topPadding + bottomPadding)
 
-        Navigation.navigable: gridSortFilter.enabled
+        Navigation.navigable: gridSortFilter.enabled || titleActionsFocusScope.active
 
         // Children
 
@@ -172,25 +174,59 @@ T.Page {
             color: theme.bg.primary
         }
 
-        RowLayout {
-            id: row
-
+        Item {
             anchors.fill: parent
 
-            SubtitleLabel {
-                id: label
+            implicitHeight: Math.max(label.implicitHeight, gridSortFilter.implicitHeight)
 
-                Layout.fillWidth: true
+            RowLayout {
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
 
-                color: theme.fg.primary
+                width: Math.min(implicitWidth, gridSortFilter.x)
+
+                spacing: titleActionsFocusScope.active ? VLCStyle.margin_normal : 0
+
+                SubtitleLabel {
+                    id: label
+
+                    Layout.fillWidth: true
+
+                    color: theme.fg.primary
+                }
+
+                // reparent page actions into titleActions (e.g. Play all)
+                FocusScope {
+                    id: titleActionsFocusScope
+
+                    readonly property bool active: titleActions.visibleChildren.length > 0
+
+                    implicitWidth: active ? titleActions.implicitWidth : 0
+                    implicitHeight: active ? titleActions.implicitHeight : 0
+
+                    Row {
+                        id: titleActions
+
+                        spacing: VLCStyle.margin_xxsmall
+
+                        Navigation.parentItem: defaultPageHeader
+                        Navigation.rightItem: gridSortFilter
+                        Navigation.navigable: parent.active
+                    }
+                }
             }
 
             GridSortFilterControls {
                 id: gridSortFilter
+
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+
                 focus: true
                 sort: _sortCtx
                 search: _searchCtx
                 Navigation.parentItem: defaultPageHeader
+                Navigation.leftItem: titleActionsFocusScope
             }
         }
     }
