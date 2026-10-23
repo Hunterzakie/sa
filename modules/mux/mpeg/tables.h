@@ -66,6 +66,6 @@ void BuildPMT( dvbpsi_t *p_dvbpsi, vlc_object_t *p_object,
 
 
 int FillPMTESParams( ts_mux_standard, const es_format_t *,
-                   tsmux_stream_t *, pesmux_stream_t * );
+                     int, tsmux_stream_t *, pesmux_stream_t * );
 
 #endif

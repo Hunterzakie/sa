@@ -273,8 +273,10 @@ void MissingPATPMTFixup( demux_t *p_demux )
             es_format_Init(&esstreams[j].fmt, p_pid->probed.i_cat, p_pid->probed.i_fourcc);
             esstreams[j].fmt.i_original_fourcc = p_pid->probed.i_original_fourcc;
 
+            pesmux_stream_t tmppes = {0};
+            tsmux_stream_t tmpts = {0};
             if( VLC_SUCCESS !=
-                FillPMTESParams(mux_standard, &esstreams[j].fmt, &esstreams[j].ts, &esstreams[j].pes ) )
+                FillPMTESParams(mux_standard, &esstreams[j].fmt, p_pid->i_pid, &tmpts, &tmppes ) )
             {
                 es_format_Clean( &esstreams[j].fmt );
                 continue;
@@ -283,6 +285,7 @@ void MissingPATPMTFixup( demux_t *p_demux )
             /* Important for correct remapping: Enforce probed PES stream id */
             esstreams[j].pes.i_stream_id = p_pid->probed.i_stream_id;
 
+            esstreams[j].ts.i_stream_type = tmpts.i_stream_type;
             esstreams[j].ts.i_pid = p_pid->i_pid;
             mapped[j].pes = &esstreams[j].pes;
             mapped[j].ts = &esstreams[j].ts;

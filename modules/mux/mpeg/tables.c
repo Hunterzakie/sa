@@ -752,7 +752,7 @@ void BuildPMT( dvbpsi_t *p_dvbpsi, vlc_object_t *p_object,
 }
 
 int FillPMTESParams( ts_mux_standard standard, const es_format_t *fmt,
-                     tsmux_stream_t *ts, pesmux_stream_t *pes )
+                     int i_pid, tsmux_stream_t *ts, pesmux_stream_t *pes )
 {
     switch( fmt->i_codec )
     {
@@ -768,7 +768,7 @@ int FillPMTESParams( ts_mux_standard standard, const es_format_t *fmt,
     case VLC_CODEC_MP4V:
         ts->i_stream_type = 0x10;
         pes->i_stream_id = 0xe0;
-        pes->i_es_id = ts->i_pid;
+        pes->i_es_id = i_pid;
         break;
     case VLC_CODEC_VVC:
         ts->i_stream_type = 0x33;
