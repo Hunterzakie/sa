@@ -23,6 +23,7 @@ import VLC.MediaLibrary
 import VLC.Util
 import VLC.Widgets as Widgets
 import VLC.MainInterface
+import VLC.Playlist
 import VLC.Style
 
 MainViewLoader {
@@ -63,6 +64,19 @@ MainViewLoader {
             console.assert(root.model)
             const data = root.model.getDataAt(currentIndex)
             artistAlbumViewRequested(data.id, reason)
+        }
+    }
+
+    function _onItemMiddleClicked(index : int, view : Item /* ItemView */) {
+        const urlRole = MainCtx.getRoleByName(view.model, ["url", "mrl"])
+        if (urlRole >= 0) {
+            MainPlaylistController.append(Helpers.itemSelectionToDataList(index,
+                                                                          view.selectionModel,
+                                                                          urlRole), false)
+        } else if (root.model.ml) {
+            MediaLib.addToPlaylist(Helpers.itemSelectionToDataList(index,
+                                                                   view.selectionModel,
+                                                                   MainCtx.getRoleByName(view.model, "id")))
         }
     }
 
@@ -146,7 +160,20 @@ MainViewLoader {
                 textAlignHCenter: true
                 dragItem: artistsDragItem
 
-                onItemClicked: (modifier, select) => { artistGrid.leftClickOnItem(modifier, index, select) }
+                onItemClicked: (modifier, select, button) => {
+                    switch (button) {
+                        default:
+                        case Qt.LeftButton:
+                            artistGrid.leftClickOnItem(modifier, index, select)
+                            break
+                        case Qt.RightButton:
+                            artistGrid.rightClickOnItem(index)
+                            break
+                        case Qt.MiddleButton:
+                            root._onItemMiddleClicked(index, artistGrid)
+                            break
+                    }
+                }
 
                 onItemDoubleClicked: root.requestArtistAlbumView(Qt.MouseFocusReason, model.id)
 
@@ -239,6 +266,10 @@ MainViewLoader {
 
             onRightClick: (_,_,globalMousePos) => {
                 contextMenu.popup(selectionModel.selectedIndexes, globalMousePos)
+            }
+
+            onMiddleClick: (index, point) => {
+                root._onItemMiddleClicked(index, artistTable)
             }
 
             MLTableColumns {

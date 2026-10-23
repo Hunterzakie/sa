@@ -151,6 +151,7 @@ ListViewExt {
     property bool useCurrentSectionLabel: true
 
     signal actionForSelection( var selection )
+    signal middleClick(int index, var point) // TODO: Qt 6.2 can not use `eventPoint` type.
     signal rightClick(Item menuParent, var menuModel, point globalMousePos)
     signal itemDoubleClicked(var index, var model)
 
@@ -386,6 +387,9 @@ ListViewExt {
         rowModel: model
         sortModel: root.sortModel
 
+        onMiddleClick: (point) => {
+            root.middleClick(index, point)
+        }
         onRightClick: (menuParent, menuModel, globalMousePos) => {
             root.rightClick(menuParent, menuModel, globalMousePos)
         }

@@ -39,7 +39,7 @@ Item {
 
     activeFocusOnTab: false
 
-    signal tapped(var point)
+    signal tapped(var point, int button) // TODO: Qt 6.2 can not use `eventPoint` type here.
 
     readonly property ColorContext colorContext: ColorContext {
         id: theme
@@ -74,8 +74,8 @@ Item {
 
         grabPermissions: TapHandler.CanTakeOverFromHandlersOfDifferentType | TapHandler.ApprovesTakeOverByAnything
 
-        onSingleTapped: (eventPoint, button) => {
-            root.tapped(point)
+        Component.onCompleted: {
+            singleTapped.connect(root, root.tapped)
         }
     }
 

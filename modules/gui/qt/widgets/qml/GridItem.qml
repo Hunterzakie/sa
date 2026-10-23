@@ -77,7 +77,7 @@ T.ItemDelegate {
 
     signal playClicked
     signal addToPlaylistClicked
-    signal itemClicked(int modifier, bool select)
+    signal itemClicked(int modifier, bool select, int button)
     signal itemDoubleClicked(int modifier)
     signal contextMenuButtonClicked(Item menuParent, point globalMousePos)
 
@@ -194,7 +194,7 @@ T.ItemDelegate {
             onActiveChanged: {
                 if (dragItem) {
                     if (active && !selected) {
-                        root.itemClicked(root._modifiersOnLastPress, true)
+                        root.itemClicked(root._modifiersOnLastPress, true, centroid.pressedButtons)
                     }
 
                     if (active)
@@ -208,7 +208,7 @@ T.ItemDelegate {
         TapHandler {
             acceptedDevices: PointerDevice.AllDevices & ~(PointerDevice.TouchScreen)
 
-            acceptedButtons: Qt.RightButton | Qt.LeftButton
+            acceptedButtons: Qt.RightButton | Qt.LeftButton | Qt.MiddleButton
 
             grabPermissions: TapHandler.CanTakeOverFromHandlersOfDifferentType | TapHandler.ApprovesTakeOverByAnything
 
@@ -222,7 +222,7 @@ T.ItemDelegate {
                 if (button === Qt.RightButton)
                     contextMenuButtonClicked(picture, eventPoint.globalPosition);
                 else
-                    root.itemClicked(point.modifiers, true);
+                    root.itemClicked(point.modifiers, true, button);
             }
 
             onDoubleTapped: (eventPoint, button) => {
@@ -246,7 +246,7 @@ T.ItemDelegate {
 
             onSingleTapped: (eventPoint, button) => {
                 // initial action is handled in `DelegateTouchTapHandler`
-                root.itemClicked(Qt.NoModifier, false)
+                root.itemClicked(Qt.NoModifier, false, Qt.LeftButton)
                 root.itemDoubleClicked(Qt.NoModifier)
             }
 
@@ -300,10 +300,10 @@ T.ItemDelegate {
             pictureWidth: root.pictureWidth
             pictureHeight: root.pictureHeight
 
-            onPlayIconClicked: (point) => {
+            onPlayIconClicked: (point, button) => {
                 // emulate a mouse click before delivering the play signal as to select the item
                 // this helps in updating the selection and restore of initial index in the parent views
-                root.itemClicked(point.modifiers, true)
+                root.itemClicked(point.modifiers, true, button)
                 root.playClicked()
             }
 

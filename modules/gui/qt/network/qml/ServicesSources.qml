@@ -107,7 +107,7 @@ Widgets.PageExt {
                     root.browseSourceRoot(model.name, Qt.TabFocusReason)
             }
 
-            onItemClicked : (modifier, select) => {
+            onItemClicked : (modifier, select, button) => {
                 if (select)
                     grid.selectionModel.updateSelection(modifier, grid.currentIndex, index)
                 grid.currentIndex = index

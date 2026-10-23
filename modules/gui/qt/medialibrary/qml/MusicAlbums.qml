@@ -22,6 +22,7 @@ import VLC.MediaLibrary
 import VLC.Util
 import VLC.Widgets as Widgets
 import VLC.MainInterface
+import VLC.Playlist
 import VLC.Style
 
 MainViewLoader {
@@ -70,6 +71,19 @@ MainViewLoader {
             model.addAndPlay( selectionModel.selectedIndexes )
         } else {
             model.addAndPlay( new Array(index) )
+        }
+    }
+
+    function _onItemMiddleClicked(index : int, view : Item /* ItemView */) {
+        const urlRole = MainCtx.getRoleByName(view.model, ["url", "mrl"])
+        if (urlRole >= 0) {
+            MainPlaylistController.append(Helpers.itemSelectionToDataList(index,
+                                                                          view.selectionModel,
+                                                                          urlRole), false)
+        } else if (root.model.ml) {
+            MediaLib.addToPlaylist(Helpers.itemSelectionToDataList(index,
+                                                                   view.selectionModel,
+                                                                   MainCtx.getRoleByName(view.model, "id")))
         }
     }
 
@@ -125,7 +139,20 @@ MainViewLoader {
 
                 opacity: gridView_id.expandIndex !== -1 && gridView_id.expandIndex !== audioGridItem.index ? .7 : 1
                 dragItem: albumDragItem
-                onItemClicked : (modifier, select) => { gridView_id.leftClickOnItem(modifier, index, select) }
+                onItemClicked: (modifier, select, button) => {
+                    switch (button) {
+                        default:
+                        case Qt.LeftButton:
+                            gridView_id.leftClickOnItem(modifier, index, select)
+                            break
+                        case Qt.RightButton:
+                            gridView_id.rightClickOnItem(index)
+                            break
+                        case Qt.MiddleButton:
+                            root._onItemMiddleClicked(index, gridView_id)
+                            break
+                    }
+                }
 
                 onItemDoubleClicked: {
                     gridView_id.switchExpandItem(index)
@@ -268,6 +295,10 @@ MainViewLoader {
                 contextMenu.popup(selectionModel.selectedIndexes, globalMousePos)
             }
             onItemDoubleClicked: (index, model) => MediaLib.addAndPlay( model.id )
+
+            onMiddleClick: (index, point) => {
+                root._onItemMiddleClicked(index, tableView_id)
+            }
 
             MLTableColumns {
                 id: tableColumns

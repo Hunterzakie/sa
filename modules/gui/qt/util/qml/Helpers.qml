@@ -164,6 +164,45 @@ QtObject {
                  ((item.y < (area.y + area.height)) && ((item.y + item.height) > area.y)))
     }
 
+    function itemSelectionToDataList(index: int,
+                                     selectionModel: ListSelectionModel,
+                                     role: int) : var {
+        const model = selectionModel.model
+        console.assert(model)
+
+        let list = []
+
+        if (role < 0) {
+            return list
+        }
+
+        if (selectionModel) {
+            // FIXME: Selection should have been handled directly in the tap handler instead.
+            if (!selectionModel.isSelected(index)) {
+                selectionModel.select(selectionModel.model.index(index, 0), ItemSelectionModel.ClearAndSelect)
+            }
+
+            const selectedIndexesFlat = selectionModel.selectedIndexesFlat
+            for (let i in selectedIndexesFlat) {
+                const modelIndex = model.index(selectedIndexesFlat[i], 0)
+                console.assert(modelIndex.valid)
+                const url = model.data(modelIndex, role)
+                if (url) {
+                    list.push(url)
+                }
+            }
+        } else {
+            const modelIndex = model.index(index, 0)
+            console.assert(modelIndex.valid)
+            const url = model.data(modelIndex, role)
+            if (url) {
+                list.push(url)
+            }
+        }
+
+        return list
+    }
+
     // Similar to `ItemView::positionViewAtIndex()` with `ItemView.Contain`,
     // but only the works in the y-axis for now.
     // The behavior is undefined if the item is not a visual child of the

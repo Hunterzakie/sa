@@ -30,6 +30,7 @@
 #include <QApplication>
 #include <QQuickItem>
 #include <QTimer>
+#include <QAbstractItemModel>
 
 Q_MOC_INCLUDE( "dialogs/toolbar/controlbar_profile_model.hpp" )
 Q_MOC_INCLUDE( "util/csdbuttonmodel.hpp" )
@@ -374,6 +375,23 @@ public:
             return;
         m_usingTouch = touch;
         usingTouchChanged();
+    }
+
+    Q_INVOKABLE static int getRoleByName(const QAbstractItemModel* model, const QString& roleName)
+    {
+        assert(model);
+        return model->roleNames().key(roleName.toLatin1(), -1);
+    }
+
+    Q_INVOKABLE static int getRoleByName(const QAbstractItemModel* model, const QList<QString>& roleNames)
+    {
+        for (const auto& i : roleNames)
+        {
+            const int role = getRoleByName(model, i);
+            if (role >= 0)
+                return role;
+        }
+        return -1;
     }
 
     /**

@@ -23,6 +23,7 @@ import VLC.MediaLibrary
 import VLC.Util
 import VLC.Widgets as Widgets
 import VLC.MainInterface
+import VLC.Playlist
 import VLC.Style
 
 Widgets.TableViewExt {
@@ -120,6 +121,19 @@ Widgets.TableViewExt {
     section.property: "title_first_symbol"
 
     rowHeight: VLCStyle.tableCoverRow_height
+
+    onMiddleClick: (index, point) => {
+        const urlRole = MainCtx.getRoleByName(listView_id.model, ["url", "mrl"])
+        if (urlRole >= 0) {
+            MainPlaylistController.append(Helpers.itemSelectionToDataList(index,
+                                                                          listView_id.selectionModel,
+                                                                          urlRole), false)
+        } else {
+            MediaLib.addToPlaylist(Helpers.itemSelectionToDataList(index,
+                                                                   listView_id.selectionModel,
+                                                                   MainCtx.getRoleByName(listView_id.model, "id")))
+        }
+    }
 
     //---------------------------------------------------------------------------------------------
     // Childs

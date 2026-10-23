@@ -227,7 +227,10 @@ T.Pane {
             }
 
             Widgets.CaptionLabel {
-                color: theme.fg.secondary
+                color: implicitColor
+
+                property color implicitColor: theme.fg.secondary
+
                 visible: listView.count !== 0
                 text: {
                     if (listView.count <= 0)
@@ -250,6 +253,25 @@ T.Pane {
                     }
 
                     return qsTr("%1 elements, %2").arg(listView.count).arg(duration.formatLong())
+                }
+
+                onTextChanged: {
+                    colorBehavior.enabled = false
+                    color = theme.accent
+                    colorBehavior.enabled = true
+                    color = Qt.binding(() => implicitColor)
+                    colorBehavior.enabled = false
+                }
+
+                Behavior on color {
+                    id: colorBehavior
+
+                    enabled: false
+
+                    ColorAnimation {
+                        duration: VLCStyle.duration_veryLong
+                        // easing.type: Easing.OutSine
+                    }
                 }
             }
         }

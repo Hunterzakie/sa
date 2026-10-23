@@ -76,7 +76,7 @@ Item {
 
     // Signals
 
-    signal playIconClicked(var point)
+    signal playIconClicked(var point, int button)
 
     // Settings
 
