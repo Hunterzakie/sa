@@ -76,7 +76,6 @@ typedef struct
 {
     es_out_id_t *p_es;
 
-    date_t      feed_dts;
     date_t      output_dts;
     unsigned    frame_rate_num;
     unsigned    frame_rate_den;
@@ -346,19 +345,18 @@ static int GenericOpen( demux_t *p_demux, const char *psz_module,
         if ( f_fps < 0.001f ) f_fps = 0.001f;
         p_sys->frame_rate_den = 1000;
         p_sys->frame_rate_num = 2000 * f_fps;
-        date_Init( &p_sys->feed_dts, p_sys->frame_rate_num, p_sys->frame_rate_den );
+        date_Init( &p_sys->output_dts, p_sys->frame_rate_num, p_sys->frame_rate_den );
     }
     else
-        date_Init( &p_sys->feed_dts, 25000, 1000 );
-    date_Set( &p_sys->feed_dts, VLC_TICK_0 );
-    p_sys->output_dts = p_sys->feed_dts;
+        date_Init( &p_sys->output_dts, 25000, 1000 );
+    date_Set( &p_sys->output_dts, VLC_TICK_0 );
 
     /* Load the mpegvideo packetizer */
     es_format_Init( &fmt, VIDEO_ES, i_codec );
     if( f_fps )
     {
-        fmt.video.i_frame_rate = p_sys->feed_dts.i_divider_num;
-        fmt.video.i_frame_rate_base = p_sys->feed_dts.i_divider_den;
+        fmt.video.i_frame_rate = p_sys->output_dts.i_divider_num;
+        fmt.video.i_frame_rate_base = p_sys->output_dts.i_divider_den;
     }
     p_sys->p_packetizer = demux_PacketizerNew( VLC_OBJECT(p_demux), &fmt, psz_module );
     if( !p_sys->p_packetizer )
@@ -423,7 +421,7 @@ static int Demux( demux_t *p_demux)
     }
     else
     {
-        p_block_in->i_dts = date_Get( &p_sys->feed_dts );
+        p_block_in->i_dts = date_Get( &p_sys->output_dts );
     }
 
     while( (p_block_out = p_sys->p_packetizer->pf_packetize( p_sys->p_packetizer,
@@ -441,7 +439,6 @@ static int Demux( demux_t *p_demux)
             {
                 p_sys->frame_rate_num = p_sys->p_packetizer->fmt_out.video.i_frame_rate;
                 p_sys->frame_rate_den = p_sys->p_packetizer->fmt_out.video.i_frame_rate_base;
-                date_Change( &p_sys->feed_dts, 2 * p_sys->frame_rate_num, p_sys->frame_rate_den );
                 date_Change( &p_sys->output_dts, 2 * p_sys->frame_rate_num, p_sys->frame_rate_den );
                 msg_Dbg( p_demux, "using %.2f fps", (double) p_sys->frame_rate_num / p_sys->frame_rate_den );
             }
@@ -460,7 +457,7 @@ static int Demux( demux_t *p_demux)
 
             if( p_block_in )
             {
-                p_block_in->i_dts = date_Get( &p_sys->feed_dts );
+                p_block_in->i_dts = VLC_TICK_INVALID;
                 p_block_in->i_pts = VLC_TICK_INVALID;
             }
 
