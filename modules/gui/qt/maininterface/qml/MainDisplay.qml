@@ -815,16 +815,20 @@ FocusScope {
 
         focus: !!item
 
-        property int _updateStatusOnDismissal: -1
-
         readonly property bool shouldShow: {
             if (!updateModelIsAvailable)
+                return false
+
+            if (DialogsProvider.updateDialogVisible)
                 return false
 
             if (UpdateModel.explicitCheck) {
                 return (UpdateModel.updateStatus !== UpdateModel.Unchecked)
             } else {
-                if (UpdateModel.updateStatus === _updateStatusOnDismissal)
+                if (sidebar.loaderUpdateButton.active && !sidebar.loaderUpdateButton.suppressed)
+                    return false
+
+                if (UpdateModel.updateStatus === UpdateModel.updateStatusOnAcknowledgment)
                     return false // already dismissed with the same status
 
                 switch (UpdateModel.updateStatus) {
@@ -843,8 +847,10 @@ FocusScope {
 
         function dismiss() {
             // This could be also be an assertion:
-            if (updateModelIsAvailable)
-                _updateStatusOnDismissal = UpdateModel.updateStatus
+            if (updateModelIsAvailable) {
+                UpdateModel.updateStatusOnAcknowledgment = UpdateModel.updateStatus
+                UpdateModel.explicitCheck = undefined // Resets the property
+            }
 
             height = 0.0
         }
@@ -852,12 +858,6 @@ FocusScope {
         onShouldShowChanged: {
             if (shouldShow)
                 height = Qt.binding(() => { return implicitHeight })
-        }
-
-        onActiveChanged: {
-            if (updateModelIsAvailable && !active) {
-                UpdateModel.explicitCheck = undefined // Resets the property
-            }
         }
 
         clip: (height < implicitHeight)
