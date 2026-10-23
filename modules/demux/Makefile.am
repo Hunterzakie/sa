@@ -128,6 +128,7 @@ libdmxmus_plugin_la_SOURCES = demux/dmxmus.c
 demux_PLUGINS += libdmxmus_plugin.la
 
 libgme_plugin_la_SOURCES = demux/gme.c
+libgme_plugin_la_CFLAGS = $(AM_CFLAGS) $(CFLAGS_gme)
 libgme_plugin_la_LDFLAGS = $(AM_LDFLAGS) $(demux_RPATH)
 libgme_plugin_la_LIBADD = $(LIBS_gme)
 EXTRA_LTLIBRARIES += libgme_plugin.la
