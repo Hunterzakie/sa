@@ -490,9 +490,15 @@ static int EntryPoints( stream_t *p_access )
         msg_Dbg( p_access, "Entry[%d] title=%d sector=%d",
                  i, i_title, i_sector );
 
-        p_sys->titles[i_title].seekpoints = xrealloc(
-            p_sys->titles[i_title].seekpoints,
-            sizeof( uint64_t ) * (p_sys->titles[i_title].count + 1) );
+        if( p_sys->titles[i_title].count % 25 == 0 )
+        {
+            uint64_t *alloc = vlc_reallocarray( p_sys->titles[i_title].seekpoints,
+                                                p_sys->titles[i_title].count + 25,
+                                                sizeof( uint64_t ) );
+            if( !alloc )
+                return VLC_ENOMEM;
+            p_sys->titles[i_title].seekpoints = alloc;
+        }
         p_sys->titles[i_title].seekpoints[p_sys->titles[i_title].count++] =
             (i_sector - p_toc->p_sectors[i_title+1].i_lba) * VCD_DATA_SIZE;
     }
