@@ -711,3 +711,22 @@ vlc_modules += {
 
 # RTP
 subdir('rtp')
+
+# CloudStorage
+cloudstorage_dep = dependency('libcloudstorage', required: false)
+if cloudstorage_dep.found()
+    vlc_modules += {
+        'name' : 'access_cloudstorage',
+        'sources' : files(
+            'cloudstorage.cpp',
+            'cloudstorage/access.cpp',
+            'cloudstorage/cloudstorage_handler.cpp',
+            'cloudstorage/token_cache.cpp',
+            'cloudstorage/vlc_http.cpp',
+            'cloudstorage/vlc_httpd_server.cpp',
+            'cloudstorage/services_discovery.cpp',
+        ),
+        'link_with' : [vlc_http_lib],
+        'dependencies' : [cloudstorage_dep],
+    }
+endif

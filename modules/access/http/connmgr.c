@@ -27,6 +27,7 @@
 #include <vlc_network.h>
 #include <vlc_tls.h>
 #include <vlc_url.h>
+#include <vlc_block.h>
 #include "transport.h"
 #include "conn.h"
 #include "connmgr.h"
@@ -121,23 +122,52 @@ static void vlc_http_mgr_release(struct vlc_http_mgr *mgr,
     vlc_http_conn_release(conn);
 }
 
+/* Writes (and consumes) the request payload on an already-open stream.
+ * On failure, the unwritten remainder of the chain is released. */
+static bool vlc_http_stream_write_payload(struct vlc_http_stream *stream,
+                                          block_t *payload, bool eos)
+{
+    while (payload != NULL)
+    {
+        block_t *next = payload->p_next;
+        bool end = eos && next == NULL;
+
+        if (vlc_http_stream_write(stream, payload->p_buffer, payload->i_buffer,
+                                  end) < (ssize_t)payload->i_buffer)
+        {
+            block_ChainRelease(payload);
+            return false;
+        }
+
+        block_Release(payload);
+        payload = next;
+    }
+    return true;
+}
+
 static
 struct vlc_http_msg *vlc_http_mgr_reuse(struct vlc_http_mgr *mgr,
                                         const char *host, unsigned port,
                                         const struct vlc_http_msg *req,
-                                        bool payload)
+                                        block_t* initial_payload,
+                                        bool eos)
 {
+    bool payload = initial_payload || !eos;
     struct vlc_http_conn *conn = vlc_http_mgr_find(mgr, host, port);
     if (conn == NULL)
         return NULL;
 
     struct vlc_http_stream *stream = vlc_http_stream_open(conn, req, payload);
-    if (stream != NULL)
+    if (stream != NULL &&
+        vlc_http_stream_write_payload(stream, initial_payload, eos))
     {
         struct vlc_http_msg *m = vlc_http_msg_get_initial(stream);
         if (m != NULL)
             return m;
     }
+    else if (stream == NULL)
+        block_ChainRelease(initial_payload);
+
     /* Get rid of closing or reset connection */
     vlc_http_mgr_release(mgr, conn);
     return NULL;
@@ -146,7 +176,9 @@ struct vlc_http_msg *vlc_http_mgr_reuse(struct vlc_http_mgr *mgr,
 static struct vlc_http_msg *vlc_https_request(struct vlc_http_mgr *mgr,
                                               const char *host, unsigned port,
                                               const struct vlc_http_msg *req,
-                                              bool idempotent, bool payload)
+                                              bool idempotent,
+                                              block_t* initial_payload,
+                                              bool eos)
 {
     vlc_tls_t *tls;
     bool http2 = true;
@@ -168,7 +200,7 @@ static struct vlc_http_msg *vlc_https_request(struct vlc_http_mgr *mgr,
          * before the response is received.
          */
         struct vlc_http_msg *resp = vlc_http_mgr_reuse(mgr, host, port, req,
-                                                       payload);
+                            initial_payload, eos);
         if (resp != NULL)
             return resp; /* existing connection reused */
     }
@@ -210,21 +242,24 @@ static struct vlc_http_msg *vlc_https_request(struct vlc_http_mgr *mgr,
         vlc_http_mgr_release(mgr, mgr->conn);
 
     mgr->conn = conn;
-    return vlc_http_mgr_reuse(mgr, host, port, req, payload);
+    return vlc_http_mgr_reuse(mgr, host, port, req, initial_payload, eos);
 }
 
 static struct vlc_http_msg *vlc_http_request(struct vlc_http_mgr *mgr,
                                              const char *host, unsigned port,
                                              const struct vlc_http_msg *req,
-                                             bool idempotent, bool payload)
+                                             bool idempotent,
+                                             block_t* initial_payload,
+                                             bool eos)
 {
+    bool payload = !eos || initial_payload;
     if (mgr->creds != NULL && mgr->conn != NULL)
         return NULL; /* switch from HTTPS to HTTP not implemented */
 
     if (idempotent)
     {
         struct vlc_http_msg *resp = vlc_http_mgr_reuse(mgr, host, port, req,
-                                                       payload);
+                                                       initial_payload, eos);
         if (resp != NULL)
             return resp;
     }
@@ -254,7 +289,16 @@ static struct vlc_http_msg *vlc_http_request(struct vlc_http_mgr *mgr,
                                 req, idempotent, payload, &conn);
 
     if (stream == NULL)
+    {
+        block_ChainRelease(initial_payload);
         return NULL;
+    }
+
+    if (!vlc_http_stream_write_payload(stream, initial_payload, eos))
+    {
+        vlc_http_conn_release(conn);
+        return NULL;
+    }
 
     struct vlc_http_msg *resp = vlc_http_msg_get_initial(stream);
     if (resp == NULL)
@@ -273,13 +317,15 @@ static struct vlc_http_msg *vlc_http_request(struct vlc_http_mgr *mgr,
 struct vlc_http_msg *vlc_http_mgr_request(struct vlc_http_mgr *mgr, bool https,
                                           const char *host, unsigned port,
                                           const struct vlc_http_msg *m,
-                                          bool idempotent, bool payload)
+                                          bool idempotent,
+                                          block_t* initial_payload,
+                                          bool eos)
 {
     if (port && vlc_http_port_blocked(port))
         return NULL;
 
     return (https ? vlc_https_request : vlc_http_request)(mgr, host, port, m,
-                                                          idempotent, payload);
+                                                          idempotent, initial_payload, eos);
 }
 
 struct vlc_http_cookie_jar_t *vlc_http_mgr_get_jar(struct vlc_http_mgr *mgr)
