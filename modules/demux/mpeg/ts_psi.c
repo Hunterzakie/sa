@@ -35,6 +35,7 @@
 
 #include <vlc_demux.h>
 #include <vlc_bits.h>
+#include <vlc_charset.h>   /* FromCharset, for dvb-text.h */
 
 #include "ts_streams.h"
 #include "ts_psi.h"
@@ -49,6 +50,7 @@
 #include "../../codec/jpeg2000.h"
 #include "../../codec/opus_header.h"
 #include "../../packetizer/dts_header.h"
+#include "../dvb-text.h"
 
 #include "sections.h"
 #include "ts_sl.h"
@@ -791,7 +793,7 @@ static void SetupTTMLExtendedDescriptor( demux_t *p_demux,
     if( i_data < 1U || i_data < 1U + p_data[0] )
         goto end;
     if( !p_fmt->psz_description )
-        p_fmt->psz_description = strndup( (const char*) &p_data[1], p_data[0] );
+        p_fmt->psz_description = vlc_from_EIT( &p_data[1], p_data[0] );
 
 end:
     /* Apply */
