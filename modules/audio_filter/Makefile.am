@@ -46,6 +46,8 @@ libscaletempo_pitch_plugin_la_SOURCES = $(libscaletempo_plugin_la_SOURCES)
 libscaletempo_pitch_plugin_la_LIBADD = $(libscaletempo_plugin_la_LIBADD)
 libscaletempo_pitch_plugin_la_CFLAGS = $(AM_CFLAGS) -DPITCH_SHIFTER
 libstereo_widen_plugin_la_SOURCES = audio_filter/stereo_widen.c
+libstereo_srs_wow_plugin_la_SOURCES = audio_filter/stereo_srs_wow.c
+libstereo_srs_wow_plugin_la_LIBADD = $(LIBM)
 libspatializer_plugin_la_SOURCES = \
 	audio_filter/spatializer/allpass.cpp \
 	audio_filter/spatializer/allpass.hpp \
@@ -79,6 +81,7 @@ audio_filter_PLUGINS += \
 	libscaletempo_pitch_plugin.la \
 	libspatializer_plugin.la \
 	libstereo_widen_plugin.la \
+	libstereo_srs_wow_plugin.la \
 	libcenter_plugin.la \
 	libstereopan_plugin.la
 
