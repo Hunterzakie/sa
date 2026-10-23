@@ -191,6 +191,14 @@ FocusScope {
             flickable.layout(true)
     }
 
+    onActiveFocusChanged: {
+        if (!activeFocus || !model || model.count === 0 || currentIndex === -1)
+            return
+
+        if (selectionModel && !selectionModel.hasSelection)
+            selectionModel.select(currentIndex, ItemSelectionModel.ClearAndSelect)
+    }
+
     // view needs to be relayout, since items may move
     onWidthChanged: Qt.callLater(_anchoredLayout, true)
     onHeightChanged: Qt.callLater(_anchoredLayout, true)
@@ -753,7 +761,7 @@ FocusScope {
         if (activeFocus && currentIndex === item.index && expandIndex === -1)
             item.forceActiveFocus(_currentFocusReason)
         else
-            item.focus = false
+            item.focus = (!activeFocus && currentIndex === item.index && expandIndex === -1)
     }
 
     function _refreshData( iMin, iMax ) {

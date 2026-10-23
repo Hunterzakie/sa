@@ -516,6 +516,14 @@ ListView {
         Helpers.enforceFocus(currentItem, reason);
     }
 
+    onActiveFocusChanged: {
+        if (!activeFocus || !model || model.count === 0 || currentIndex === -1)
+            return
+
+        if (selectionModel && !selectionModel.hasSelection)
+            selectionModel.select(currentIndex, ItemSelectionModel.ClearAndSelect)
+    }
+
     // Qt does not allow having multiple behavior on a single
     // property. Having this behavior for a single purpose can
     // be problematic for the cases where a different behavior
