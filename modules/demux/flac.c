@@ -658,10 +658,53 @@ static inline int Get24bBE( const uint8_t *p )
     return (p[0] << 16)|(p[1] << 8)|(p[2]);
 }
 
+static inline void Set24bBE( uint8_t *p, unsigned v )
+{
+    p[0] = v >> 16;
+    p[1] = v >> 8;
+    p[2] = v;
+}
+
 static void ParseSeekTable( demux_t *p_demux, const uint8_t *p_data, size_t i_data,
                             unsigned i_sample_rate );
 static void ParseComment( demux_t *, const uint8_t *p_data, size_t i_data );
 static void ParsePicture( demux_t *, const uint8_t *p_data, size_t i_data );
+
+static void Apply_WFE_channels( es_format_t *fmt, const vlc_meta_t *p_meta )
+{
+    if(!p_meta)
+        return;
+    const char *val = vlc_meta_GetExtra(p_meta, "WAVEFORMATEXTENSIBLE_CHANNEL_MASK");
+    if(!val)
+        return;
+
+    char *str;
+    ssize_t masklen = asprintf(&str, "WAVEFORMATEXTENSIBLE_CHANNEL_MASK=%s", val);
+    if(masklen < 1)
+        return;
+    unsigned char header[] = { 0x80 | META_COMMENT, 0, 0, 0,
+                               0, 0, 0, 0, // vendor_length
+                               1, 0, 0, 0, // user_comment_list_length
+                               0, 0, 0, 0, // length[0]
+                             };
+    Set24bBE(&header[1], sizeof(header) + masklen - 4);
+    SetDWLE(&header[12], masklen);
+    size_t realloc_size = fmt->i_extra + sizeof(header) + masklen;
+    uint8_t *p_realloc = realloc( fmt->p_extra, realloc_size);
+    if(!p_realloc)
+    {
+        free(str);
+        return;
+    }
+    assert(p_realloc[4]==(0x80|META_STREAMINFO));
+    p_realloc[4]= META_STREAMINFO;
+    uint8_t *p_head = &p_realloc[fmt->i_extra];
+    fmt->p_extra = p_realloc;
+    fmt->i_extra = realloc_size;
+    memcpy(p_head, header, sizeof(header));
+    memcpy(&p_head[16], str, masklen);
+    free(str);
+}
 
 static int  ParseHeaders( demux_t *p_demux, es_format_t *p_fmt )
 {
@@ -703,7 +746,11 @@ static int  ParseHeaders( demux_t *p_demux, es_format_t *p_fmt )
                 return VLC_EGENERIC;
             }
 
-            p_fmt->p_extra = malloc( FLAC_STREAMINFO_SIZE );
+            const char extra[] = { 'f', 'L', 'a', 'C',
+                                    0x80 | META_STREAMINFO,
+                                    0, 0, FLAC_STREAMINFO_SIZE };
+
+            p_fmt->p_extra = malloc( sizeof(extra) + FLAC_STREAMINFO_SIZE );
             if( p_fmt->p_extra == NULL )
                 return VLC_EGENERIC;
 
@@ -712,18 +759,22 @@ static int  ParseHeaders( demux_t *p_demux, es_format_t *p_fmt )
                 FREENULL( p_fmt->p_extra );
                 return VLC_EGENERIC;
             }
-            if( vlc_stream_Read( p_demux->s, p_fmt->p_extra,
+
+            memcpy( p_fmt->p_extra, extra, sizeof(extra) );
+
+            uint8_t *p_streaminfo = (uint8_t *)p_fmt->p_extra + sizeof(extra);
+            if( vlc_stream_Read( p_demux->s, p_streaminfo,
                                  FLAC_STREAMINFO_SIZE ) != FLAC_STREAMINFO_SIZE )
             {
                 msg_Err( p_demux, "failed to read STREAMINFO metadata block" );
                 FREENULL( p_fmt->p_extra );
                 return VLC_EGENERIC;
             }
-            p_fmt->i_extra = FLAC_STREAMINFO_SIZE;
+            p_fmt->i_extra = sizeof(extra) + FLAC_STREAMINFO_SIZE;
 
             /* */
             p_sys->b_stream_info = true;
-            FLAC_ParseStreamInfo( (uint8_t *) p_fmt->p_extra, &p_sys->stream_info );
+            FLAC_ParseStreamInfo( (uint8_t *) p_streaminfo, &p_sys->stream_info );
 
             p_fmt->audio.i_rate = p_sys->stream_info.sample_rate;
             p_fmt->audio.i_channels = p_sys->stream_info.channels;
@@ -747,6 +798,7 @@ static int  ParseHeaders( demux_t *p_demux, es_format_t *p_fmt )
                 ParseComment( p_demux, p_peek, i_peek );
 
             vlc_replay_gain_CopyFromMeta( &p_fmt->audio_replay_gain, p_sys->p_meta );
+            Apply_WFE_channels( p_fmt, p_sys->p_meta );
         }
         else if( i_type == META_PICTURE )
         {

@@ -126,14 +126,6 @@ static void ProcessHeader(decoder_t *p_dec)
     FLAC_ParseStreamInfo( (uint8_t *) p_extra, &p_sys->stream_info );
 
     p_sys->b_stream_info = true;
-
-    p_dec->fmt_out.i_extra = i_extra;
-    free(p_dec->fmt_out.p_extra);
-    p_dec->fmt_out.p_extra = malloc(i_extra);
-    if (p_dec->fmt_out.p_extra)
-        memcpy(p_dec->fmt_out.p_extra, p_extra, i_extra);
-    else
-        p_dec->fmt_out.i_extra = 0;
 }
 
 /* CRC-8, poly = x^8 + x^2 + x^1 + x^0, init = 0 */

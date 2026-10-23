@@ -37,6 +37,7 @@
 #include <limits.h>
 #include <vlc_rand.h>
 #include "../demux/xiph.h"
+#include "../packetizer/flac.h"
 
 #include <ogg/ogg.h>
 
@@ -1260,27 +1261,33 @@ static bool OggCreateHeaders( sout_mux_t *p_mux )
             /* Send a packet with the VOL data for mp4v
              * or STREAMINFO for flac */
             msg_Dbg( p_mux, "writing extra data" );
-            op.bytes  = p_input->p_fmt->i_extra;
-            op.packet = p_input->p_fmt->p_extra;
-            uint8_t flac_streaminfo[34 + 4];
+            const uint8_t *p_extra = p_input->p_fmt->p_extra;
+            const size_t i_extra = p_input->p_fmt->i_extra;
+            uint8_t flac_streaminfo[FLAC_STREAMINFO_SIZE + 4];
             if( p_stream->fmt.i_codec == VLC_CODEC_FLAC )
             {
-                if (op.bytes == 42 && !memcmp(op.packet, "fLaC", 4)) {
-                    op.bytes -= 4;
-                    memcpy(flac_streaminfo, op.packet + 4, 38);
-                    op.packet = flac_streaminfo;
-                } else if (op.bytes == 34) {
-                    op.bytes += 4;
-                    memcpy(flac_streaminfo + 4, op.packet, 34);
-                    flac_streaminfo[0] = 0x80; /* last block, streaminfo */
-                    flac_streaminfo[1] = 0;
-                    flac_streaminfo[2] = 0;
-                    flac_streaminfo[3] = 34; /* block size */
-                    op.packet = flac_streaminfo;
+                flac_streaminfo[0] = 0x80; /* last block, streaminfo */
+                flac_streaminfo[1] = 0;
+                flac_streaminfo[2] = 0;
+                flac_streaminfo[3] = FLAC_STREAMINFO_SIZE; /* block size */
+                op.packet = flac_streaminfo;
+                if ( i_extra >= FLAC_STREAMINFO_SIZE )
+                {
+                    if (i_extra >= (FLAC_STREAMINFO_SIZE+8) && !memcmp(p_extra, "fLaC", 4))
+                        memcpy(flac_streaminfo + 4, p_extra + 8, FLAC_STREAMINFO_SIZE);
+                    else
+                        memcpy(flac_streaminfo + 4, p_extra, FLAC_STREAMINFO_SIZE);
+                    op.bytes = 4 + FLAC_STREAMINFO_SIZE;
                 } else {
                     msg_Err(p_mux, "Invalid FLAC streaminfo (%ld bytes)",
-                            op.bytes);
+                            p_input->p_fmt->i_extra);
+                    op.bytes = 0;
                 }
+            }
+            else
+            {
+                op.packet = (unsigned char*)p_extra;
+                op.bytes = i_extra;
             }
             op.b_o_s  = 0;
             op.e_o_s  = 0;

@@ -54,6 +54,8 @@
 #   define USE_NEW_FLAC_API
 #endif
 
+static_assert(FLAC__MAX_CHANNELS <= AOUT_CHAN_MAX, "FLAC__MAX_CHANNELS overflows AOUT_CHAN_MAX");
+
 /*****************************************************************************
  * decoder_sys_t : FLAC decoder descriptor
  *****************************************************************************/
@@ -72,6 +74,7 @@ typedef struct
     FLAC__StreamDecoder *p_flac;
     FLAC__StreamMetadata_StreamInfo stream_info;
 
+    uint32_t i_wfxmask;
     uint8_t rgi_channels_reorder[AOUT_CHAN_MAX];
     bool b_stream_info;
 } decoder_sys_t;
@@ -153,6 +156,9 @@ static void CloseEncoder ( encoder_t * );
 static int DecodeBlock( decoder_t *, block_t * );
 static void Flush( decoder_t * );
 
+static int ApplyWFXMask( uint32_t i_wfxmask, audio_format_t *fmt,
+                         uint8_t *pi_channels_reorder );
+
 /*****************************************************************************
  * Module descriptor
  *****************************************************************************/
@@ -195,23 +201,45 @@ static void Interleave( int32_t *p_out, const int32_t * const *pp_in,
 }
 
 /*****************************************************************************
+ * DecoderOutputFormatChanged: check if audio format has changed
+ *****************************************************************************/
+static bool DecoderOutputFormatChanged(unsigned i_channels, unsigned i_rate,
+                                       unsigned i_streaminfo_rate,
+                                       const audio_format_t *fmt)
+{
+    return fmt->i_channels != i_channels ||
+           fmt->i_rate != ((i_rate > 0 ) ? i_rate : i_streaminfo_rate);
+}
+
+/*****************************************************************************
  * DecoderSetOutputFormat: helper function to convert and check frame format
  *****************************************************************************/
-static int DecoderSetOutputFormat( unsigned i_channels, unsigned i_rate,
-                                   unsigned i_streaminfo_rate,
-                                   unsigned i_bitspersample,
+static int DecoderSetOutputFormat( decoder_t *p_dec,
+                                   unsigned i_channels, unsigned i_rate,
                                    audio_format_t *fmt,
+                                   uint32_t i_wfxmask,
                                    uint8_t *pi_channels_reorder )
 {
-    if( i_channels == 0 || i_channels > FLAC__MAX_CHANNELS ||
-        i_bitspersample == 0 || (i_rate == 0 && i_streaminfo_rate == 0) )
+    if( i_channels == 0 || i_channels > FLAC__MAX_CHANNELS || i_rate == 0 )
         return VLC_EGENERIC;
 
     fmt->i_channels = i_channels;
-    fmt->i_rate = (i_rate > 0 ) ? i_rate : i_streaminfo_rate;
-    fmt->i_physical_channels = pi_channels_maps[i_channels];
-    memcpy( pi_channels_reorder, ppi_reorder[i_channels], i_channels );
-    fmt->i_bitspersample = i_bitspersample;
+    fmt->i_rate = i_rate;
+    if( i_wfxmask )
+    {
+        if( ApplyWFXMask( i_wfxmask, fmt, pi_channels_reorder ) )
+        {
+            msg_Warn( p_dec, "Unsupported channel mask %x", i_wfxmask );
+            return VLC_EGENERIC;
+        }
+    }
+    else
+    {
+        fmt->i_physical_channels = pi_channels_maps[i_channels];
+        memcpy( pi_channels_reorder, ppi_reorder[i_channels], i_channels );
+    }
+
+    aout_FormatPrepare( fmt );
 
     return VLC_SUCCESS;
 }
@@ -228,11 +256,18 @@ DecoderWriteCallback( const FLAC__StreamDecoder *decoder,
     decoder_t *p_dec = (decoder_t *)client_data;
     decoder_sys_t *p_sys = p_dec->p_sys;
 
-    if( DecoderSetOutputFormat( frame->header.channels,
-                                frame->header.sample_rate,
-                                p_sys->b_stream_info ? p_sys->stream_info.sample_rate : 0,
-                                frame->header.bits_per_sample,
+    const bool b_changed =
+        DecoderOutputFormatChanged( frame->header.channels,
+                                    frame->header.sample_rate,
+                                    p_sys->b_stream_info ? p_sys->stream_info.sample_rate : 0,
+                                    &p_dec->fmt_out.audio );
+
+    if( b_changed &&
+        DecoderSetOutputFormat( p_dec, frame->header.channels,
+                                p_sys->b_stream_info ? p_sys->stream_info.sample_rate
+                                                     : frame->header.sample_rate,
                                 &p_dec->fmt_out.audio,
+                                p_sys->i_wfxmask,
                                 p_sys->rgi_channels_reorder ) )
         return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 
@@ -244,7 +279,7 @@ DecoderWriteCallback( const FLAC__StreamDecoder *decoder,
             date_Init( &p_sys->end_date, p_dec->fmt_out.audio.i_rate, 1 );
     }
 
-    if( decoder_UpdateAudioFormat( p_dec ) )
+    if( b_changed && decoder_UpdateAudioFormat( p_dec ) )
         return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 
     if( date_Get( &p_sys->end_date ) == VLC_TICK_INVALID )
@@ -258,7 +293,8 @@ DecoderWriteCallback( const FLAC__StreamDecoder *decoder,
 
     Interleave( (int32_t *)p_sys->p_aout_buffer->p_buffer, buffer,
                  p_sys->rgi_channels_reorder,
-                 frame->header.channels, frame->header.blocksize,
+                 stdc_count_ones(p_dec->fmt_out.audio.i_physical_channels),
+                 frame->header.blocksize,
                  frame->header.bits_per_sample );
 
     /* Date management (already done by packetizer) */
@@ -297,6 +333,43 @@ DecoderReadCallback( const FLAC__StreamDecoder *decoder, FLAC__byte buffer[],
     return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
 }
 
+static int ApplyWFXMask( uint32_t i_wfxmask, audio_format_t *fmt,
+                         uint8_t *pi_channels_reorder )
+{
+    const unsigned i_wfxchannels = stdc_count_ones( i_wfxmask );
+    if( i_wfxchannels == 0 || i_wfxchannels > fmt->i_channels )
+        return VLC_EGENERIC;
+
+    /* Create the vlc bitmap from wfx channels */
+    uint32_t i_vlcmask = 0;
+    for( uint32_t i_chan = 1; i_chan && i_chan <= i_wfxmask; i_chan <<= 1 )
+    {
+        if( (i_chan & i_wfxmask) == 0 )
+            continue;
+        for( size_t j=0; j<MAPPED_WFX_CHANNELS; j++ )
+        {
+            if( wfx_remapping[j][0] == i_chan )
+                i_vlcmask |= wfx_remapping[j][1];
+        }
+    }
+    /* Check if we have the 1 to 1 mapping */
+    if( stdc_count_ones(i_vlcmask) != i_wfxchannels )
+        return VLC_EGENERIC;
+
+    /* Compute the remapping */
+    uint8_t neworder[AOUT_CHAN_MAX] = {0};
+    aout_CheckChannelReorder( wfx_chans_order, NULL,
+                              i_vlcmask, neworder );
+
+    /* /!\ Invert our source/dest reordering,
+         * as Interleave() here works source indexes */
+    for( unsigned j=0; j<i_wfxchannels; j++ )
+        pi_channels_reorder[neworder[j]] = j;
+    fmt->i_physical_channels = i_vlcmask;
+
+    return VLC_SUCCESS;
+}
+
 /*****************************************************************************
  * DecoderMetadataCallback: called by libflac to when it encounters metadata
  *****************************************************************************/
@@ -311,16 +384,9 @@ static void DecoderMetadataCallback( const FLAC__StreamDecoder *decoder,
     switch(metadata->type)
     {
         case FLAC__METADATA_TYPE_STREAMINFO:
-            /* Setup the format */
-            DecoderSetOutputFormat( metadata->data.stream_info.channels,
-                                    metadata->data.stream_info.sample_rate,
-                                    metadata->data.stream_info.sample_rate,
-                                    metadata->data.stream_info.bits_per_sample,
-                                    &p_dec->fmt_out.audio, p_sys->rgi_channels_reorder );
-
-            msg_Dbg( p_dec, "channels:%d samplerate:%d bitspersamples:%d",
-                     p_dec->fmt_out.audio.i_channels, p_dec->fmt_out.audio.i_rate,
-                     p_dec->fmt_out.audio.i_bitspersample );
+            msg_Dbg( p_dec, "channels:%"PRIu32" samplerate:%"PRIu32" bitspersamples:%"PRIu32,
+                     metadata->data.stream_info.channels, metadata->data.stream_info.sample_rate,
+                     metadata->data.stream_info.bits_per_sample );
 
             p_sys->b_stream_info = true;
             p_sys->stream_info = metadata->data.stream_info;
@@ -335,46 +401,17 @@ static void DecoderMetadataCallback( const FLAC__StreamDecoder *decoder,
                         &metadata->data.vorbis_comment.comments[i];
                 /* Check for custom WAVEFORMATEX channel ordering */
                 if( comment->length > 34 &&
-                    !strncmp( "WAVEFORMATEXTENSIBLE_CHANNEL_MASK=", (char *) comment->entry, 34 ) )
+                    !strncasecmp( "WAVEFORMATEXTENSIBLE_CHANNEL_MASK=", (char *) comment->entry, 34 ) )
                 {
-                    char *endptr = (char *) &comment->entry[34] + comment->length;
-                    const uint32_t i_wfxmask = strtoul( (char *) &comment->entry[34], &endptr, 16 );
-                    const unsigned i_wfxchannels = stdc_count_ones( i_wfxmask );
-                    if( i_wfxchannels > 0 && i_wfxchannels <= AOUT_CHAN_MAX )
-                    {
-                        /* Create the vlc bitmap from wfx channels */
-                        uint32_t i_vlcmask = 0;
-                        for( uint32_t i_chan = 1; i_chan && i_chan <= i_wfxmask; i_chan <<= 1 )
-                        {
-                            if( (i_chan & i_wfxmask) == 0 )
-                                continue;
-                            for( size_t j=0; j<MAPPED_WFX_CHANNELS; j++ )
-                            {
-                                if( wfx_remapping[j][0] == i_chan )
-                                    i_vlcmask |= wfx_remapping[j][1];
-                            }
-                        }
-                        /* Check if we have the 1 to 1 mapping */
-                        if( stdc_count_ones(i_vlcmask) != i_wfxchannels )
-                        {
-                            msg_Warn( p_dec, "Unsupported channel mask %x", i_wfxmask );
-                            return;
-                        }
-
-                        /* Compute the remapping */
-                        uint8_t neworder[AOUT_CHAN_MAX] = {0};
-                        aout_CheckChannelReorder( wfx_chans_order, NULL,
-                                                  i_vlcmask, neworder );
-
-                        /* /!\ Invert our source/dest reordering,
-                         * as Interleave() here works source indexes */
-                        for( unsigned j=0; j<i_wfxchannels; j++ )
-                            p_sys->rgi_channels_reorder[neworder[j]] = j;
-
-                        p_dec->fmt_out.audio.i_physical_channels = i_vlcmask;
-                        p_dec->fmt_out.audio.i_channels = i_wfxchannels;
-                    }
-
+                    char *value = strndup( (char *)&comment->entry[34], comment->length - 34 );
+                    if( !value )
+                        return;
+                    char *endptr = NULL;
+                    const uint32_t i_wfxmask = strtoul( value, &endptr, 16 );
+                    free( value );
+                    if(endptr == value)
+                        return;
+                    p_sys->i_wfxmask = i_wfxmask;
                     break;
                 }
             }
@@ -438,6 +475,7 @@ static int OpenDecoder( vlc_object_t *p_this )
 
     /* Misc init */
     p_sys->b_stream_info = false;
+    p_sys->i_wfxmask = 0;
     memset(p_sys->rgi_channels_reorder, 0, AOUT_CHAN_MAX);
     p_sys->p_block = NULL;
 
