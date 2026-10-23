@@ -226,6 +226,8 @@ input_item_node_Delete
 input_item_ReplaceInfos
 input_item_SetDuration
 input_item_SetLibvlcOwner
+input_item_AddObserver
+input_item_RemoveObserver
 input_item_SetMeta
 input_item_SetName
 input_item_SetURI
