@@ -375,7 +375,7 @@ static int Control(demux_t *demux, int query, va_list args)
             return VLC_EGENERIC;
 
         case DEMUX_GET_LENGTH:
-            if (sys->length == VLC_TICK_INVALID)
+            if (sys->length == 0)
                 return VLC_EGENERIC;
             *va_arg(args, vlc_tick_t *) = sys->length;
             break;
@@ -447,7 +447,7 @@ static int Open(vlc_object_t *obj)
         if (SeekSet0(demux))
             return VLC_EGENERIC;
     } else {
-        sys->length = VLC_TICK_INVALID;
+        sys->length = 0;
         offset -= hdrlen;
 
         if ((size_t)vlc_stream_Read(stream, NULL, offset) != offset)
