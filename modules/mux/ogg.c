@@ -349,6 +349,7 @@ static int AddStream( sout_mux_t *p_mux, sout_input_t *p_input )
 
     if( es_format_Copy( &p_stream->fmt, &p_input->fmt ) != VLC_SUCCESS )
     {
+        es_format_Clean( &p_stream->fmt );
         free( p_stream );
         return VLC_ENOMEM;
     }

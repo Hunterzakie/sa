@@ -2426,6 +2426,7 @@ static es_out_id_t *EsOutAddLocked(es_out_sys_t *p_sys,
 
     if( es_format_Copy( &es->fmt, fmt ) != VLC_SUCCESS )
     {
+        es_format_Clean( &es->fmt );
         free( es );
         return NULL;
     }

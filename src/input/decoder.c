@@ -545,6 +545,7 @@ static int DecoderThread_Reload( vlc_input_decoder_t *p_owner,
     if( es_format_Copy( &fmt_in, p_fmt ) != VLC_SUCCESS )
     {
         p_owner->error = true;
+        es_format_Clean( &fmt_in );
         return VLC_EGENERIC;
     }
 

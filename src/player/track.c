@@ -125,6 +125,7 @@ vlc_player_track_priv_New(vlc_es_id_t *id, const char *name, const es_format_t *
     int ret = es_format_Copy(&track->fmt, fmt);
     if (ret != VLC_SUCCESS)
     {
+        es_format_Clean(&track->fmt);
         free((char *)track->name);
         free(track);
         return NULL;
@@ -182,8 +183,10 @@ vlc_player_track_priv_Update(struct vlc_player_track_priv *trackpriv,
 
     es_format_t fmtdup;
     int ret = es_format_Copy(&fmtdup, fmt);
-    if (ret != VLC_SUCCESS)
+    if (ret != VLC_SUCCESS) {
+        es_format_Clean(&fmtdup);
         return ret;
+    }
 
     es_format_Clean(&track->fmt);
     track->fmt = fmtdup;
