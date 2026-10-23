@@ -71,7 +71,7 @@ Item {
                     text: {
                         const text = modelData.name
 
-                        if (MainCtx.controlbarProfileModel.currentModel?.getModel(identifier).dirty)
+                        if (MainCtx.controlbarProfileModel.currentModel?.getModel(identifier)?.dirty)
                             return _markDirty(text)
                         else
                             return text
@@ -133,24 +133,45 @@ Item {
 
                     spacing: VLCStyle.margin_small
 
+                    Widgets.LabelExt {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        visible: !layout.model
+
+                        elide: Text.ElideRight
+                        font.pixelSize: VLCStyle.fontSize_xlarge
+                        color: theme.fg.primary
+                        verticalAlignment: Text.AlignVCenter
+                        horizontalAlignment: Text.AlignHCenter
+
+                        background: Rectangle {
+                            border.width: 1
+                            border.color: theme.border
+                            color: "transparent"
+                        }
+
+                        text: "%1\n%2\n%3".arg(qsTr("The selected profile is old and does not support this player configuration."))
+                                          .arg(qsTr("If you delete all profiles, the new default profiles will support the new player."))
+                                          .arg(qsTr("Alternatively, you can clone this profile and the cloned profile would support it as well."))
+                    }
+
                     Repeater {
                         id: repeater
 
-                        model: 3 // left, center, and right
+                        model: layout.model ? 3 : undefined // left, center, and right
+
+                        visible: (count > 0)
 
                         function getModel(index) {
-                            if (!!layout.model) {
-                                switch (index) {
-                                case 0:
-                                    return layout.model.left
-                                case 1:
-                                    return layout.model.center
-                                case 2:
-                                    return layout.model.right
-                                default:
-                                    return undefined
-                                }
-                            } else {
+                            switch (index) {
+                            case 0:
+                                return layout.model.left
+                            case 1:
+                                return layout.model.center
+                            case 2:
+                                return layout.model.right
+                            default:
                                 return undefined
                             }
                         }
@@ -166,7 +187,7 @@ Item {
                             }
                         }
 
-                        Loader {
+                        delegate: Loader {
                             id : playerBtnDND
                             active: !!repeater.getModel(index)
 
