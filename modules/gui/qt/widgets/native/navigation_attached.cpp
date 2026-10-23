@@ -47,10 +47,32 @@ void NavigationAttached::defaultNavigationGeneric(QJSValue& jsCallback, QQuickIt
 
     if (directionItem)
     {
-        NavigationAttached* nextItem = qobject_cast<NavigationAttached*>(qmlAttachedPropertiesObject<NavigationAttached>(directionItem));
+        NavigationAttached* nextItem = qobject_cast<NavigationAttached*>(qmlAttachedPropertiesObject<NavigationAttached>(directionItem, false));
+
+        const bool isFocusScope = directionItem->isFocusScope() && (directionItem->childItems().size() > 0);
+        const QQuickItem *scopedFocusItem;
+        const NavigationAttached* scopedFocusItemNavigation;
+        if (isFocusScope)
+        {
+            scopedFocusItem = directionItem->scopedFocusItem(); // null pointer if not focus scope
+            if (scopedFocusItem)
+            {
+                scopedFocusItemNavigation = qobject_cast<NavigationAttached*>(qmlAttachedPropertiesObject<NavigationAttached>(scopedFocusItem, false));
+            }
+            else
+            {
+                qDebug() << directionItem << "is focus scope, but has no scoped focus item. This is not expected. Not requesting focus in the focus scope to prevent focus loss!";
+                scopedFocusItemNavigation = nullptr;
+            }
+        }
+
         if (directionItem->isVisible()
             && directionItem->isEnabled()
-            && (!nextItem || nextItem->getnavigable()))
+            && (!nextItem || nextItem->getnavigable())
+            && (!isFocusScope || (scopedFocusItem &&
+                                  scopedFocusItem->isVisible() &&
+                                  scopedFocusItem->isEnabled() &&
+                                  (!scopedFocusItemNavigation || scopedFocusItemNavigation->getnavigable()))))
         {
             directionItem->forceActiveFocus(reason);
             directionItem->setProperty("focusReason", reason); // Control's focus reason sometimes is not adjusted with `forceActiveFocus()`, Qt bug?
