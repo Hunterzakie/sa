@@ -1018,8 +1018,12 @@ bool h264_get_profile_level(const es_format_t *p_fmt, uint8_t *pi_profile,
             *pi_nal_length_size = 1 + (p[4]&0x03);
         p += 8;
     }
-    else if(!p[0] && !p[1]) /* FIXME: WTH is setting AnnexB data here ? */
+    else if(!p[0] && !p[1])
     {
+        /* Annex B start code detected in extradata.
+         * This function expects AVC configuration format, but some streams
+         * incorrectly provide Annex B. Attempt to skip the start code.
+         */
         if (!p[2] && p[3] == 1)
             p += 4;
         else if (p[2] == 1)
