@@ -4894,58 +4894,46 @@ static int ProbeFragments( demux_t *p_demux, bool b_force, bool *pb_fragmented )
                 return VLC_EGENERIC;
             }
 
-            stime_t *pi_track_times = calloc( p_sys->i_tracks, sizeof(*pi_track_times) );
-            if( !pi_track_times )
+            for( unsigned track_num=0; track_num<p_sys->i_tracks; track_num++ )
             {
-                MP4_Fragments_Index_Delete( p_sys->p_fragsindex );
-                p_sys->p_fragsindex = NULL;
-                MP4_BoxFree( p_vroot );
-                return VLC_EGENERIC;
-            }
+                stime_t fragment_time = 0;
+                unsigned fragment = 0;
 
-            unsigned index = 0;
-
-            for( MP4_Box_t *p_moof = p_vroot->p_first; p_moof; p_moof = p_moof->p_next )
-            {
-                if( p_moof->i_type != ATOM_moof )
-                    continue;
-
-                for( unsigned i=0; i<p_sys->i_tracks; i++ )
+                for( MP4_Box_t *p_moof = p_vroot->p_first; p_moof; p_moof = p_moof->p_next )
                 {
+                    if( p_moof->i_type != ATOM_moof )
+                        continue;
+
                     MP4_Box_t *p_tfdt = NULL;
-                    MP4_Box_t *p_traf = MP4_GetTrafByTrackID( p_moof, p_sys->track[i].i_track_ID );
+                    MP4_Box_t *p_traf = MP4_GetTrafByTrackID( p_moof, p_sys->track[track_num].i_track_ID );
                     if( p_traf )
                         p_tfdt = MP4_BoxGet( p_traf, "tfdt" );
 
                     if( p_tfdt && BOXDATA(p_tfdt) && p_tfdt->data.p_tfdt->i_base_media_decode_time <= INT64_MAX)
                     {
-                        pi_track_times[i] = p_tfdt->data.p_tfdt->i_base_media_decode_time;
+                        fragment_time = p_tfdt->data.p_tfdt->i_base_media_decode_time;
                     }
-                    else if( index == 0 ) /* Set first fragment time offset from moov */
+                    else if( fragment == 0 ) /* Set first fragment time offset from moov */
                     {
-                        stime_t i_duration = GetMoovTrackDuration( p_sys, p_sys->track[i].i_track_ID );
-                        pi_track_times[i] = MP4_rescale( i_duration, p_sys->i_timescale, p_sys->track[i].i_timescale );
+                        stime_t i_duration = GetMoovTrackDuration( p_sys, p_sys->track[track_num].i_track_ID );
+                        fragment_time = MP4_rescale( i_duration, p_sys->i_timescale, p_sys->track[track_num].i_timescale );
                     }
 
-                    stime_t i_movietime = MP4_rescale( pi_track_times[i], p_sys->track[i].i_timescale, p_sys->i_timescale );
-                    p_sys->p_fragsindex->p_times[index * p_sys->i_tracks + i] = i_movietime;
+                    stime_t i_movietime = MP4_rescale( fragment_time, p_sys->track[track_num].i_timescale, p_sys->i_timescale );
+                    p_sys->p_fragsindex->p_times[fragment * p_sys->i_tracks + track_num] = i_movietime;
 
                     stime_t i_duration = 0;
-                    if( GetMoofTrackDuration( p_sys->p_moov, p_moof, p_sys->track[i].i_track_ID, &i_duration ) )
-                        pi_track_times[i] += i_duration;
+                    if( GetMoofTrackDuration( p_sys->p_moov, p_moof, p_sys->track[track_num].i_track_ID, &i_duration ) )
+                        fragment_time += i_duration;
+
+                    p_sys->p_fragsindex->pi_pos[fragment++] = p_moof->i_pos;
                 }
 
-                p_sys->p_fragsindex->pi_pos[index++] = p_moof->i_pos;
-            }
-
-            for( unsigned i=0; i<p_sys->i_tracks; i++ )
-            {
-                stime_t i_movietime = MP4_rescale( pi_track_times[i], p_sys->track[i].i_timescale, p_sys->i_timescale );
+                stime_t i_movietime = MP4_rescale( fragment_time, p_sys->track[track_num].i_timescale, p_sys->i_timescale );
                 if( p_sys->p_fragsindex->i_last_time < i_movietime )
                     p_sys->p_fragsindex->i_last_time = i_movietime;
             }
 
-            free( pi_track_times );
 #ifdef MP4_VERBOSE
             MP4_Fragments_Index_Dump( VLC_OBJECT(p_demux), p_sys->p_fragsindex, p_sys->i_timescale );
 #endif
