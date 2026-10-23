@@ -23,6 +23,8 @@
 #include <string.h>
 #include <inttypes.h>
 #include <math.h>
+#include <limits.h>
+#include <stdckdint.h>
 
 #define PARAM1_DEFAULT 4.0
 #define PARAM2_DEFAULT 3.0
@@ -117,7 +119,10 @@ static void deNoise(unsigned char *Frame,        // mpi->planes[x]
     unsigned short* FrameAnt=(*FrameAntPtr);
 
     if(!FrameAnt){
-        (*FrameAntPtr)=FrameAnt=malloc(W*H*sizeof(unsigned short));
+        size_t framebytes;
+        if(ckd_mul(&framebytes, W, H) || ckd_mul(&framebytes, framebytes, sizeof(unsigned short)))
+            return;
+        (*FrameAntPtr)=FrameAnt=malloc(framebytes);
         if(!FrameAnt)
             return;
         for (long Y = 0; Y < H; Y++){

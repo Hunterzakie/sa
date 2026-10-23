@@ -131,9 +131,20 @@ static int Open(filter_t *filter)
     sys->chroma = chroma;
 
     for (int i = 0; i < 3; ++i) {
-        sys->w[i] = fmt_in->i_width  * chroma->p[i].w.num / chroma->p[i].w.den;
+        unsigned v;
+        if (ckd_mul(&v, fmt_in->i_width, chroma->p[i].w.num / chroma->p[i].w.den) || v > INT_MAX)
+        {
+            free(sys);
+            return VLC_EGENERIC;
+        }
+        sys->w[i] = v;
         if (sys->w[i] > wmax) wmax = sys->w[i];
-        sys->h[i] = fmt_out->i_height * chroma->p[i].h.num / chroma->p[i].h.den;
+        if (ckd_mul(&v, fmt_in->i_height, chroma->p[i].h.num / chroma->p[i].h.den) || v > INT_MAX)
+        {
+            free(sys);
+            return VLC_EGENERIC;
+        }
+        sys->h[i] = v;
     }
     cfg->Line = malloc(wmax*sizeof(unsigned int));
     if (!cfg->Line) {
