@@ -80,7 +80,7 @@
 
 /* Maximum width of a scaled source picture - this should be relatively high,
  * since higher stream values will result in no display at all. */
-#define VOUT_MAX_WIDTH                  4096
+#define VOUT_MAX_WIDTH                  8192
 
 /* Number of planes in a picture */
 #define VOUT_MAX_PLANES                 5
