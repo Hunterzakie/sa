@@ -200,7 +200,7 @@ helper_load_sei(struct hxxx_helper *hh, const uint8_t *p_nal, size_t i_nal)
 static int
 h264_helper_parse_nal(struct hxxx_helper *hh, const uint8_t *p_nal, size_t i_nal)
 {
-    if (i_nal < 2)
+    if (i_nal < 1)
         return VLC_EGENERIC;
 
     const enum h264_nal_unit_type_e i_nal_type = p_nal[0] & 0x1F;
@@ -208,6 +208,8 @@ h264_helper_parse_nal(struct hxxx_helper *hh, const uint8_t *p_nal, size_t i_nal
 
     if (i_nal_type == H264_NAL_SPS)
     {
+        if (i_nal < 2)
+            return VLC_EGENERIC;
         h264_get_xps_id(p_nal, i_nal, &i_id);
         LOAD_xPS(hh->h264.sps_list, hh->h264.i_sps_count,
                  i_id, H264_MAX_NUM_SPS,
@@ -219,6 +221,8 @@ h264_helper_parse_nal(struct hxxx_helper *hh, const uint8_t *p_nal, size_t i_nal
     }
     else if (i_nal_type == H264_NAL_PPS)
     {
+        if (i_nal < 2)
+            return VLC_EGENERIC;
         h264_get_xps_id(p_nal, i_nal, &i_id);
         LOAD_xPS(hh->h264.pps_list, hh->h264.i_pps_count,
                  i_id, H264_MAX_NUM_PPS,
@@ -229,6 +233,8 @@ h264_helper_parse_nal(struct hxxx_helper *hh, const uint8_t *p_nal, size_t i_nal
     }
     else if(i_nal_type == H264_NAL_SPS_EXT)
     {
+        if (i_nal < 2)
+            return VLC_EGENERIC;
         h264_get_xps_id(p_nal, i_nal, &i_id);
         LOAD_xPS(hh->h264.spsext_list, hh->h264.i_spsext_count,
                  i_id, H264_MAX_NUM_SPSEXT,
@@ -240,6 +246,8 @@ h264_helper_parse_nal(struct hxxx_helper *hh, const uint8_t *p_nal, size_t i_nal
     else if (i_nal_type <= H264_NAL_SLICE_IDR
              && i_nal_type != H264_NAL_UNKNOWN)
     {
+        if (i_nal < 2)
+            return VLC_EGENERIC;
         if (hh->h264.i_sps_count > 1)
         {
             /* There is more than one SPS. Get the PPS id of the current
