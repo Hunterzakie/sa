@@ -773,7 +773,7 @@ echo ""
 echo "Building VLC for $VLC_HOST_ARCH"
 
 # Set flags for VLC build
-set_host_envvars "-g"
+set_host_envvars "-g -Werror=partial-availability"
 
 # Combine settings from config file
 VLC_CONFIG_OPTIONS=( "${VLC_CONFIG_OPTIONS_BASE[@]}" )
