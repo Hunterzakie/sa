@@ -1154,12 +1154,16 @@ static int StartVideoToolbox(decoder_t *p_dec)
     if (decoderConfiguration == NULL)
         goto error;
 
-    /* create video format description */
+    /* create video format description
+     *
+     * This needs to be the full frame size, not the visible size, because
+     * that is the size of the video data that's being decoded.
+     */
     OSStatus status = CMVideoFormatDescriptionCreate(
                                             kCFAllocatorDefault,
                                             p_sys->codec,
-                                            p_dec->fmt_out.video.i_visible_width,
-                                            p_dec->fmt_out.video.i_visible_height,
+                                            p_dec->fmt_out.video.i_width,
+                                            p_dec->fmt_out.video.i_height,
                                             decoderConfiguration,
                                             &p_sys->videoFormatDescription);
     if (status)
