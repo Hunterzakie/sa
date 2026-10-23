@@ -90,6 +90,16 @@ http://www.yourtube.com/watch?v=gg64x</string>
         </item>
        </layout>
       </item>
+      <item row="3" column="0">
+       <widget class="QCheckBox" name="privatePlaybackCheckbox">
+        <property name="text">
+         <string>Private Playback</string>
+        </property>
+        <property name="toolTip">
+         <string>Do not keep this stream in history.</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -113,6 +123,7 @@ http://www.yourtube.com/watch?v=gg64x</string>
  </widget>
  <tabstops>
   <tabstop>urlComboBox</tabstop>
+  <tabstop>privatePlaybackCheckbox</tabstop>
  </tabstops>
  <resources/>
  <connections/>

@@ -713,10 +713,13 @@ NetOpenPanel::NetOpenPanel( QWidget *_parent, qt_intf_t *_p_intf ) :
     /* QComboBox is by default case insensitive when editable */
     ui.urlComboBox->completer()->setCaseSensitivity( Qt::CaseSensitive );
     ui.urlComboBox->setFocus();
+
+    ui.privatePlaybackCheckbox->setChecked( getSettings()->value( "OpenDialog/netPrivate", false ).toBool() );
 }
 
 NetOpenPanel::~NetOpenPanel()
 {
+    getSettings()->setValue( "OpenDialog/netPrivate", ui.privatePlaybackCheckbox->isChecked() );
     if( !b_recentList ) return;
 
     /* Create the list with the current items */
@@ -740,6 +743,11 @@ void NetOpenPanel::clear()
 
 void NetOpenPanel::onAccept()
 {
+    if( ui.privatePlaybackCheckbox->isChecked() ){
+        clear();
+        return;
+    }
+
     if( ui.urlComboBox->findText( ui.urlComboBox->currentText() ) == -1 )
         ui.urlComboBox->insertItem( 0, ui.urlComboBox->currentText());
 }
