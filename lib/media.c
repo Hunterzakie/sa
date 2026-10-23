@@ -437,6 +437,27 @@ char *libvlc_media_get_meta( libvlc_media_t *p_md, libvlc_meta_t e_meta )
     return psz_meta;
 }
 
+// Getter for custom meta information
+char *libvlc_media_get_custom_meta( libvlc_media_t *p_md, const char *psz_key )
+{
+    assert( p_md );
+
+    input_item_t *item = p_md->p_input_item;
+
+    vlc_mutex_lock( &item->lock );
+    if ( psz_key != NULL && item != NULL && item->p_meta != NULL)
+    {
+        const char *psz_meta = vlc_meta_GetExtra(item->p_meta, psz_key );
+        if ( psz_meta != NULL )
+        {
+            vlc_mutex_unlock( &item->lock );
+            return strdup( psz_meta );
+        }
+    }
+    vlc_mutex_unlock( &item->lock );
+    return NULL;
+}
+
 // Set the meta of the media
 void libvlc_media_set_meta( libvlc_media_t *p_md, libvlc_meta_t e_meta, const char *psz_value )
 {

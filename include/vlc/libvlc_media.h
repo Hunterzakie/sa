@@ -428,6 +428,17 @@ LIBVLC_API libvlc_media_t *libvlc_media_duplicate( libvlc_media_t *p_md );
 LIBVLC_API char *libvlc_media_get_meta( libvlc_media_t *p_md,
                                              libvlc_meta_t e_meta );
 
+
+/**
+ * Read the custom meta of the media
+ *
+ * \param p_md the media descriptor
+ * \param psz_key custom meta key
+ * \return the media's custom meta
+ */
+LIBVLC_API char *libvlc_media_get_custom_meta( libvlc_media_t *p_md,
+                                                 const char *psz_key );
+
 /**
  * Set the meta of the media (this function will not save the meta, call
  * libvlc_media_save_meta in order to save the meta)
