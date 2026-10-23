@@ -1,7 +1,10 @@
 # Do we build the main VLC binary?
-build_vlc = get_option('vlc')
+vlc_option = get_option('vlc').require(
+    (host_system != 'darwin' or have_osx) and not have_win_store and host_system != 'android',
+    error_message: 'The VLC executable is not available on this platform')
+build_vlc = vlc_option.allowed()
 
-if build_vlc and (host_system != 'darwin' or have_osx) and not have_win_store and host_system != 'android'
+if build_vlc
     vlc_sources = []
 
     vlc_deps = [m_lib, dl_lib, threads_dep]
@@ -60,7 +63,7 @@ if build_vlc and (host_system != 'darwin' or have_osx) and not have_win_store an
     vlc_top_builddir_def = '-DTOP_BUILDDIR="@0@"'.format(vlc_build_root)
     vlc_top_srcdir_def = '-DTOP_SRCDIR="@0@"'.format(vlc_src_root)
 
-    executable('vlc-static',
+    vlc_static = executable('vlc-static',
         vlc_sources,
         link_with: [libvlc, libvlccore],
         link_args: gc_sections_linkargs,

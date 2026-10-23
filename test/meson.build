@@ -162,3 +162,9 @@ executable('vlc-window', 'vlc-window.c',
     c_args: common_args,
     install: false,
     win_subsystem: 'console')
+
+# Test of the vlc binary
+test('run_vlc', find_program('run_vlc.sh'),
+    workdir: vlc_build_root,
+    depends: vlc_symlink,
+    suite: 'test')

@@ -41,6 +41,8 @@ vlc_package_name = meson.project_name().to_lower()
 vlc_src_root = meson.current_source_dir()
 vlc_build_root = meson.current_build_dir()
 
+fs = import('fs')
+
 cdata = configuration_data()
 
 cargo_rustc_static_libs = find_program('buildsystem/cargo-rustc-static-libs.py')
@@ -1224,6 +1226,19 @@ subdir('modules')
 
 # VLC binaries
 subdir('bin')
+
+# create ./vlc symlink
+if build_vlc and host_system != 'windows'
+    vlc_symlink = custom_target('vlc',
+        output: 'vlc',
+        command: [find_program('ln'), '-sf',
+                  fs.relative_to(vlc_static, meson.current_build_dir()),
+                  '@OUTPUT@'],
+        depends: vlc_static,
+        build_by_default: true)
+else
+    vlc_symlink = disabler()
+endif
 
 # OS specific packaging
 if host_system == 'windows'
