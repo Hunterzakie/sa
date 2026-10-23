@@ -340,6 +340,17 @@ static const struct input_item_parser_cbs_t parserCallbacks =
     return [names copy];
 }
 
+NSString *VLCPreferredDisplayTitle(VLCInputItem *inputItem, VLCMediaLibraryMediaItem *libraryItem)
+{
+    if (inputItem.isStream) {
+        NSString * const streamTitle = inputItem.title;
+        return streamTitle.length > 0 ? streamTitle : libraryItem.title;
+    }
+
+    NSString * const libraryTitle = libraryItem.title;
+    return libraryTitle.length > 0 ? libraryTitle : inputItem.title;
+}
+
 - (nullable NSString *)extraMetaForKey:(NSString *)key
 {
     char * const psz_value = input_item_GetMetaExtra(_vlcInputItem, [key UTF8String]);

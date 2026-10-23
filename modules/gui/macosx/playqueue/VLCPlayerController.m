@@ -776,7 +776,12 @@ static int BossCallback(vlc_object_t *p_this,
 
 - (nullable VLCMediaLibraryMediaItem *)currentMediaLibraryItem
 {
-    NSURL * const url = [NSURL URLWithString:self.currentMedia.MRL];
+    VLCInputItem * const currentMedia = self.currentMedia;
+    if (currentMedia.inputType == ITEM_TYPE_STREAM) {
+        return nil;
+    }
+
+    NSURL * const url = [NSURL URLWithString:currentMedia.MRL];
     return [VLCMediaLibraryMediaItem mediaItemForURL:url];
 }
 
