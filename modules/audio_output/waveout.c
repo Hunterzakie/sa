@@ -695,31 +695,60 @@ static void WaveOutClearBuffer( HWAVEOUT h_waveout, WAVEHDR *p_waveheader )
 static int ReloadWaveoutDevices( char const *psz_name,
                                  char ***values, char ***descs )
 {
-    int n = 0, nb_devices = waveOutGetNumDevs();
+    UINT nb_devices = waveOutGetNumDevs();
+    int n = 1;
+
+    /* config_GetPszChoices callback signature returns int */
+    if( nb_devices > INT_MAX - 1 )
+        nb_devices = INT_MAX - 1;
 
     VLC_UNUSED( psz_name );
 
-    *values = xmalloc( (nb_devices + 1) * sizeof(char *) );
-    *descs = xmalloc( (nb_devices + 1) * sizeof(char *) );
+    /* no check for UINT_MAX overflow to 0 will fail alloc, and even before */
+    *values = vlc_alloc( nb_devices + 1, sizeof(char *) );
+    *descs = vlc_alloc( nb_devices + 1, sizeof(char *) );
+    if( !values || !descs )
+    {
+        free( values );
+        free( descs );
+        return 0;
+    }
 
-    (*values)[n] = strdup( "wavemapper" );
-    (*descs)[n] = strdup( _("Microsoft Soundmapper") );
-    n++;
+    (*values)[0] = strdup( "wavemapper" );
+    (*descs)[0] = strdup( _("Microsoft Soundmapper") );
+    if( (*values)[0] == NULL || (*descs)[0] == NULL )
+    {
+        free( (*values)[0] );
+        free( (*descs)[0] );
+        free( values );
+        free( descs );
+        return 0;
+    }
 
-    for(int i = 0; i < nb_devices; i++)
+    for(UINT i = 0; i < nb_devices; i++)
     {
         WAVEOUTCAPS caps;
-        wchar_t dev_name[MAXPNAMELEN+32];
+        wchar_t dev_name[MAXPNAMELEN+32+1] = {};
 
         if(waveOutGetDevCaps(i, &caps, sizeof(WAVEOUTCAPS))
                                                            != MMSYSERR_NOERROR)
             continue;
 
-        _snwprintf(dev_name, MAXPNAMELEN + 32, device_name_fmt,
-                   caps.szPname, caps.wMid, caps.wPid);
+        if(_snwprintf(dev_name, MAXPNAMELEN + 32, device_name_fmt,
+                      caps.szPname, caps.wMid, caps.wPid) < 0)
+            continue;
         (*values)[n] = FromWide( dev_name );
         (*descs)[n] = strdup( (*values)[n] );
-        n++;
+        if(likely((*values)[n] && (*descs)[n]))
+        {
+            n++;
+        }
+        else
+        {
+           free((*values)[n]);
+           free((*descs)[n]);
+           break;
+        }
     }
 
     return n;
@@ -743,16 +772,17 @@ static uint32_t findDeviceID(char *psz_device_name)
     for( uint32_t i = 0; i < wave_devices; i++ )
     {
         WAVEOUTCAPS caps;
-        wchar_t dev_name[MAXPNAMELEN+32];
+        wchar_t dev_name[MAXPNAMELEN+32+1] = {};
 
         if( waveOutGetDevCaps( i, &caps, sizeof(WAVEOUTCAPS) )
                                                           != MMSYSERR_NOERROR )
             continue;
 
-        _snwprintf( dev_name, MAXPNAMELEN + 32, device_name_fmt,
-                  caps.szPname, caps.wMid, caps.wPid );
+        if(_snwprintf( dev_name, MAXPNAMELEN + 32, device_name_fmt,
+                       caps.szPname, caps.wMid, caps.wPid ) < 0)
+            continue;
         char *u8 = FromWide(dev_name);
-        if( !_stricmp(u8, psz_device_name) )
+        if( !u8 || !_stricmp(u8, psz_device_name) )
         {
             free( u8 );
             return i;
