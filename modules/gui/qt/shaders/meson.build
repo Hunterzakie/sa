@@ -45,7 +45,7 @@ foreach shader: shader_sources
     shader_qsb += shader_target_name
 
     target = custom_target(shader_target_name,
-      depend_files: ['Common.glsl'],
+      depend_files: ['Common.glsl', 'SDF.glsl'],
       input: shader,
       output: shader_target_name,
       command: [qsb, qsb_params, '--output', '@OUTPUT@', '@INPUT@']

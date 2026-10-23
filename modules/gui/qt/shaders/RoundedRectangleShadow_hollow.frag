@@ -32,6 +32,7 @@
 #extension GL_GOOGLE_include_directive : enable
 
 #include "Common.glsl"
+#include "SDF.glsl"
 
 // This is provided by the default vertex shader even when there is no texture:
 layout(location = 0) in vec2 qt_TexCoord0;
@@ -110,8 +111,19 @@ void main()
     vec2 denormalCoord = size * qt_TexCoord0;
 
 #ifdef HOLLOW
-    if (denormalCoord.x >= compensatedOffset.x && denormalCoord.x <= (size.x - compensatedOffset.x) &&
-        denormalCoord.y >= compensatedOffset.y && denormalCoord.y <= (size.y - compensatedOffset.y))
+    if (radius > 0)
+    {
+      vec2 center = compensatedOffset + (size - 2.0 * compensatedOffset) * 0.5;
+      vec2 halfSize  = (size - 2.0 * compensatedOffset) * 0.5;
+      vec2 p = denormalCoord - center;
+
+      float dist = sdRoundBox(p, halfSize, vec4(radius));
+
+      if (dist < 0)
+        discard;
+    }
+    else if (denormalCoord.x >= compensatedOffset.x && denormalCoord.x <= (size.x - compensatedOffset.x) &&
+             denormalCoord.y >= compensatedOffset.y && denormalCoord.y <= (size.y - compensatedOffset.y))
       discard;
 #endif
 

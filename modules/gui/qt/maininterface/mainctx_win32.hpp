@@ -89,6 +89,10 @@ public:
 public:
     bool getDisableVolumeKeys() const;
 
+    // Although the system compositor rounds the window starting with Windows 11, in previous Windows versions rectangle border is added by the system
+    // when frameless window is not used (we intentionally do not use it at the moment unless Windows 7 is used since it has many disadvantages). For
+    // that reason we do not round the interface ourselves on Windows 8 and 10. This is not a big deal, because on Windows 11 it is done by the compositor.
+    Q_INVOKABLE bool platformHandlesRoundingWithCSD() const override { return (QOperatingSystemVersion::current() >= QOperatingSystemVersion::Windows8); };
     Q_INVOKABLE bool platformHandlesShadowsWithCSD() const override { return (QOperatingSystemVersion::current() >= QOperatingSystemVersion::Windows8); };
     Q_INVOKABLE bool platformHandlesResizeWithCSD() const override { return (QOperatingSystemVersion::current() >= QOperatingSystemVersion::Windows8); };
 
