@@ -264,6 +264,7 @@ static int VolumeSet (audio_output_t *aout, float fvol)
     if (!sys->mute && !sio_setvol (sys->hdl, volume))
         return -1;
     sys->volume = volume;
+    aout_VolumeReport (aout, (float)sys->volume / SIO_MAXVOL);
     return 0;
 }
 
@@ -275,6 +276,7 @@ static int MuteSet (audio_output_t *aout, bool mute)
         return -1;
 
     sys->mute = mute;
+    aout_MuteReport (aout, mute);
     return 0;
 }
 
@@ -288,7 +290,8 @@ static int Open (vlc_object_t *obj)
     aout->sys = sys;
     aout->start = Start;
     aout->stop = Stop;
-    /* FIXME: set volume/mute here */
+    sys->mute = 0;
+    sys->volume = SIO_MAXVOL;
     return VLC_SUCCESS;
 }
 
