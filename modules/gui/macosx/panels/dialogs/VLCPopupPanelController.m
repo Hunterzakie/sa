@@ -46,7 +46,7 @@
         _completionBlock(sender == _okButton ? NSModalResponseOK : NSModalResponseCancel, [_popupButton indexOfSelectedItem]);
 }
 
-- (void)runModalForWindow:(NSWindow *)window completionHandler:(PopupPanelCompletionBlock)handler;
+- (void)runModalForWindow:(NSWindow *)window completionHandler:(PopupPanelCompletionBlock)handler
 {
     [self window];
 

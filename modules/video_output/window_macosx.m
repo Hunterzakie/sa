@@ -280,7 +280,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Initializes the window controller with the given module delegate
  */
-- (instancetype)initWithModuleDelegate:(VLCVideoWindowModuleDelegate *)delegate;
+- (instancetype)initWithModuleDelegate:(VLCVideoWindowModuleDelegate *)delegate
 {
     VLC_ASSERT_MAINTHREAD;
 
@@ -407,7 +407,7 @@ NS_ASSUME_NONNULL_BEGIN
     NSTrackingArea *_trackingArea;
 }
 
-- (instancetype)initWithModuleDelegate:(VLCVideoWindowModuleDelegate *)delegate;
+- (instancetype)initWithModuleDelegate:(VLCVideoWindowModuleDelegate *)delegate
 {
     self = [super init];
     if (self) {
