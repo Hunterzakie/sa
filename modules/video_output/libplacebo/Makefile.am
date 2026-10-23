@@ -16,13 +16,83 @@ libplacebo_plugin_la_SOURCES = $(LIBPLACEBO_COMMONSOURCES) \
 			  video_output/libplacebo/display.c
 libplacebo_plugin_la_CFLAGS = $(AM_CFLAGS) $(LIBPLACEBO_CFLAGS)
 libplacebo_plugin_la_LIBADD = $(LIBPLACEBO_LIBS) libplacebo_utils.la
+if HAVE_VULKAN
+libplacebo_plugin_la_CFLAGS += $(VULKAN_CFLAGS) -DHAVE_VULKAN
+libplacebo_plugin_la_LIBADD += libplacebo_vkinterop.la
+endif
 
 vout_PLUGINS += libplacebo_plugin.la
+
+### vkinterop loader (hardware decoder interop) ###
+libplacebo_vkinterop_la_SOURCES = \
+	video_output/libplacebo/vk_interop.h \
+	video_output/libplacebo/vk_interop.c \
+	video_output/vulkan/common.h \
+	video_output/vulkan/common.c \
+	video_output/vulkan/device.h \
+	video_output/vulkan/device.c \
+	video_output/vulkan/device_utils.h \
+	video_output/vulkan/device_utils.c \
+	video_output/vulkan/vk_funcs.h
+libplacebo_vkinterop_la_CFLAGS = $(AM_CFLAGS) $(LIBPLACEBO_CFLAGS) $(VULKAN_CFLAGS)
+libplacebo_vkinterop_la_LIBADD = $(LIBPLACEBO_LIBS)
+libplacebo_vkinterop_la_LDFLAGS = -static -undefined
+
+if HAVE_VULKAN
+noinst_LTLIBRARIES += libplacebo_vkinterop.la
+endif
+
+### NVDEC interop
+libplacebo_nvdec_plugin_la_SOURCES = \
+	video_output/libplacebo/interop/nvdec.c \
+	hw/nvdec/nvdec_fmt.h \
+	hw/nvdec/nvdec_priv.h
+libplacebo_nvdec_plugin_la_CFLAGS = $(AM_CFLAGS) $(LIBPLACEBO_CFLAGS) \
+				  $(VULKAN_CFLAGS) $(FFNVCODEC_CFLAGS)
+libplacebo_nvdec_plugin_la_LIBADD = $(LIBPLACEBO_LIBS) $(LIBDL) \
+				  libplacebo_vkinterop.la
+libplacebo_nvdec_plugin_la_LDFLAGS = $(AM_LDFLAGS) $(vout_RPATH)
+
+if HAVE_VULKAN
+if HAVE_NVDEC
+vout_PLUGINS += libplacebo_nvdec_plugin.la
+endif
+endif
+
+### VA-API interop
+libplacebo_vaapi_plugin_la_SOURCES = \
+	video_output/libplacebo/interop/vaapi.c \
+	hw/vaapi/vlc_vaapi.c \
+	hw/vaapi/vlc_vaapi.h
+libplacebo_vaapi_plugin_la_CFLAGS = $(AM_CFLAGS) $(LIBPLACEBO_CFLAGS) \
+				  $(VULKAN_CFLAGS) $(LIBVA_CFLAGS)
+libplacebo_vaapi_plugin_la_LIBADD = $(LIBPLACEBO_LIBS) $(LIBVA_LIBS) \
+				  libplacebo_vkinterop.la
+libplacebo_vaapi_plugin_la_LDFLAGS = $(AM_LDFLAGS) $(vout_RPATH)
+
+if HAVE_VULKAN
+if HAVE_VAAPI
+vout_PLUGINS += libplacebo_vaapi_plugin.la
+endif
+endif
+
+### Software interop
+libplacebo_sw_plugin_la_SOURCES = $(LIBPLACEBO_COMMONSOURCES) \
+				  video_output/libplacebo/interop/sw.c
+libplacebo_sw_plugin_la_CFLAGS = $(AM_CFLAGS) $(LIBPLACEBO_CFLAGS) $(VULKAN_CFLAGS)
+libplacebo_sw_plugin_la_LIBADD = $(LIBPLACEBO_LIBS) libplacebo_utils.la \
+				  libplacebo_vkinterop.la
+libplacebo_sw_plugin_la_LDFLAGS = $(AM_LDFLAGS) $(vout_RPATH)
+
+if HAVE_VULKAN
+vout_PLUGINS += libplacebo_sw_plugin.la
+endif
 
 ### Vulkan ###
 libplacebo_vk_plugin_la_SOURCES = $(LIBPLACEBO_COMMONSOURCES) \
 				  video_output/vulkan/platform.h \
 				  video_output/vulkan/platform.c \
+				  video_output/libplacebo/instance_vulkan.h \
 				  video_output/libplacebo/instance_vulkan.c
 libplacebo_vk_plugin_la_CFLAGS = $(AM_CFLAGS) $(LIBPLACEBO_CFLAGS) $(VULKAN_CFLAGS)
 libplacebo_vk_plugin_la_LIBADD = $(LIBPLACEBO_LIBS) $(VULKAN_LIBS)

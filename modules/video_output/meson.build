@@ -31,7 +31,7 @@ if drm_dep.found()
 endif
 
 # Declared here, as it's used by both the libplacebo and wayland subfolders
-vulkan_dep = dependency('vulkan', version: '>= 1.0.26', required: get_option('vulkan'))
+vulkan_dep = dependency('vulkan', version: '>= 1.2', required: get_option('vulkan'))
 
 if host_system == 'darwin'
     subdir('apple')

@@ -3477,7 +3477,7 @@ AC_ARG_ENABLE([libplacebo],
 
 have_libplacebo_gl="no"
 AS_IF([test "$enable_libplacebo" != "no"], [
-  PKG_CHECK_MODULES([LIBPLACEBO], [libplacebo >= 4.192], [
+  PKG_CHECK_MODULES([LIBPLACEBO], [libplacebo >= 5.237], [
     AC_DEFINE([HAVE_LIBPLACEBO], [1], [Define to 1 if libplacebo is enabled.])
 
     AS_IF([test "$enable_vulkan" != "no"], [
@@ -3581,7 +3581,7 @@ dnl
 dnl Vulkan
 dnl
 AS_IF([test "$enable_vulkan" != "no"], [
-  PKG_CHECK_MODULES([VULKAN], [vulkan >= 1.0.26], [
+  PKG_CHECK_MODULES([VULKAN], [vulkan >= 1.2], [
   ], [
     AS_IF([test -n "${enable_vulkan}"], [
       AC_MSG_ERROR([${VULKAN_PKG_ERRORS}.])
