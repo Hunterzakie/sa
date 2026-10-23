@@ -189,7 +189,9 @@ static block_t *DoWork( filter_t *p_filter, block_t *p_in_buf )
 
     if (p_sys->silence) {
         /* 2 - store the new value */
-        ValueDate_t *new = xmalloc(sizeof(*new));
+        ValueDate_t *new = malloc(sizeof(*new));
+        if( new == NULL )
+            return NULL;
         new->value = 0.0;
         for (int j = 0; j<nbChannels; j++) {
             float ch = i_value[j];

@@ -2011,8 +2011,14 @@ static int FindDevices( const char *psz_name, char ***vp, char ***tp )
     }
 
     unsigned count = 2 + list_devices.size(), i = 2;
-    char **values = (char **)xmalloc( count * sizeof(*values) );
-    char **texts = (char **)xmalloc( count * sizeof(*texts) );
+    char **values = (char **) vlc_alloc( count, sizeof(*values) );
+    char **texts = (char **) vlc_alloc( count, sizeof(*texts) );
+    if( !values || !texts )
+    {
+        free( values );
+        free( texts );
+        return 0;
+    }
 
     values[0] = strdup( "" );
     texts[0] = strdup( _("Default") );
