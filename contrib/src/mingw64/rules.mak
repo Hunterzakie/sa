@@ -14,7 +14,7 @@ PKGS += winrt_headers alloweduwp
 else  # !HAVE_WINSTORE
 PKGS += dcomp
 endif # !HAVE_WINSTORE
-PKGS += dxva dxvahd mingw11-fixes mingw12-fixes mft10 d3d12 uiautomationcore
+PKGS += dxva dxvahd mingw11-fixes mingw12-fixes mft10 d3d12 uiautomationcore ioringapi
 ifeq ($(ARCH),i386)
 PKGS += dxva_x86
 endif
@@ -35,7 +35,7 @@ ifeq ($(call mingw_at_least, 12), true)
 PKGS_FOUND += mingw11-fixes d3d12
 endif # MINGW 12
 ifeq ($(call mingw_at_least, 13), true)
-PKGS_FOUND += mingw12-fixes dxvahd alloweduwp
+PKGS_FOUND += mingw12-fixes dxvahd alloweduwp ioringapi
 ifeq ($(ARCH),i386)
 PKGS_FOUND += dxva_x86
 endif
@@ -242,4 +242,20 @@ ifeq ($(ARCH),i386)
 	+$(MAKEBUILD) -C mingw-w64-crt LIBRARIES=$(MINGW64_BUILDDIR)/libdxva2.a DATA= HEADERS=
 	+$(MAKEBUILD) -C mingw-w64-crt $(MINGW64_BUILDDIR)_LIBRARIES=$(MINGW64_BUILDDIR)/libdxva2.a install-$(MINGW64_BUILDDIR)LIBRARIES
 endif
+	touch $@
+
+.sum-ioringapi: .sum-mingw64
+	touch $@
+
+.ioringapi: mingw64
+	install -d "$(PREFIX)/include"
+	install $</mingw-w64-headers/include/ntioring_x.h             "$(PREFIX)/include"
+	install $</mingw-w64-headers/include/ioringapi.h              "$(PREFIX)/include"
+	# `winbase.h` contains enums `FILE_WRITE_FLAGS` and `FILE_FLUSH_MODE` that `ioringapi.h` refers to:
+	install $</mingw-w64-headers/include/winbase.h                "$(PREFIX)/include"
+	install $</mingw-w64-headers/include/minwinbase.h             "$(PREFIX)/include"
+
+	# We currently do not provide libkernel32.a that has the newer ioring functions,
+	# because the symbols are resolved at run time.
+
 	touch $@
