@@ -60,6 +60,8 @@
 
 
 static int  Open ( vlc_object_t * );
+static int  DemuxOpen ( vlc_object_t * );
+static int  DemuxOpenAudio ( vlc_object_t * );
 static void Close( vlc_object_t * );
 
 vlc_module_begin ()
@@ -85,6 +87,18 @@ vlc_module_begin ()
         set_capability( "demux", 6 )
         add_shortcut( "iso" )
         set_callbacks( Open, Close )
+    add_submodule()
+        set_description( N_("DVDRead demuxer (no menu support)") )
+        set_subcategory( SUBCAT_INPUT_DEMUX )
+        set_capability( "demux", 0 )
+        add_shortcut( "dvdsimple" )
+        set_callbacks( DemuxOpen, Close )
+    add_submodule()
+        set_description( N_("DVDRead DVD-Audio demuxer") )
+        set_subcategory( SUBCAT_INPUT_DEMUX )
+        set_capability( "demux", 0 )
+        add_shortcut( "dvda" )
+        set_callbacks( DemuxOpenAudio, Close )
 vlc_module_end ()
 
 /* how many blocks DVDRead will read in each loop */
@@ -109,15 +123,107 @@ static void DvdReadLog( void *foo, dvd_logger_level_t i, const char *p, va_list 
 }
 #endif
 /*****************************************************************************
+ * CommonOpen: everything the entry points share, from an already-open
+ * libdvdread onwards.
+ *****************************************************************************/
+static int CommonOpen( vlc_object_t *p_this, dvd_reader_t *p_dvdread,
+                       dvd_type_t type, const dvdread_ops_t *video_ops )
+{
+    demux_t      *p_demux = (demux_t*)p_this;
+    demux_sys_t  *p_sys;
+    ifo_handle_t *p_vmg_file;
+
+    /* Ifo allocation & initialisation */
+    if( !( p_vmg_file = ifoOpen( p_dvdread, 0 ) ) )
+    {
+        char rgsz_volid[32];
+        if( DVDUDFVolumeInfo( p_dvdread, rgsz_volid, 32, NULL, 0 ) )
+        {
+            if( DVDISOVolumeInfo( p_dvdread, rgsz_volid, 32, NULL, 0 ) == 0 )
+            {
+                vlc_dialog_display_error( p_demux, _("Playback failure"),
+                              _("Cannot play a non-UDF mastered DVD." ) );
+                msg_Err( p_demux, "Invalid UDF DVD. (Found ISO9660 '%s')", rgsz_volid );
+            }
+        }
+        msg_Warn( p_demux, "cannot open %s info", ( type == DVD_V ? "VMG" : type == DVD_VR ? "RTAV_VMGI" : "AMG" ) );
+        DVDClose( p_dvdread );
+        return VLC_EGENERIC;
+    }
+    msg_Dbg( p_demux, "%s opened", ( type == DVD_V ? "VMG" : type == DVD_VR ? "RTAV_VMGI" : "AMG" ) );
+
+    /* Fill p_demux field */
+    DEMUX_INIT_COMMON(); p_sys = p_demux->p_sys;
+
+    ps_track_init( p_sys->tk );
+    p_sys->i_sar_num = 0;
+    p_sys->i_sar_den = 0;
+
+    p_sys->p_dvdread = p_dvdread;
+    p_sys->p_vmg_file = p_vmg_file;
+    p_sys->p_title = NULL;
+    p_sys->p_vts_file = NULL;
+
+    p_sys->updates = 0;
+    p_sys->i_title = p_sys->i_chapter = -1;
+    p_sys->cur_title = p_sys->cur_chapter = 0;
+    p_sys->i_mux_rate = 0;
+
+    /* reset anchors so the first cell seen after open captures fresh timestamps */
+    DvdReadResetCellTs( p_sys );
+
+    p_sys->i_angle = var_CreateGetInteger( p_demux, "dvdread-angle" );
+    if( p_sys->i_angle <= 0 ) p_sys->i_angle = 1;
+
+    /* store type state internally */
+    /* if open2 is called, in 7.1.0 dvd may force the type */
+#if defined(DVDREAD_HAS_DVDAUDIO)
+    switch( p_sys->p_vmg_file->ifo_format )
+    {
+#ifdef DVDREAD_HAS_DVDVIDEORECORDING
+        case IFO_VIDEO_RECORDING:
+            p_sys->type = DVD_VR;
+            p_sys->ud_pgcit = p_sys->p_vmg_file->ud_pgcit;
+            p_sys->pgc_gi = p_sys->p_vmg_file->pgc_gi;
+            break;
+#endif
+        case IFO_AUDIO:
+            p_sys->type = DVD_A;
+            break;
+        default:
+            p_sys->type = type;
+            break;
+    }
+#else
+    p_sys->type = type;
+#endif
+    DvdReadSetOps( p_sys, video_ops );
+    if( unlikely( p_sys->ops == NULL ) )
+    {
+        msg_Err( p_demux, "internal error: dvdread ops not initialized" );
+        Close( p_this );
+        return VLC_EGENERIC;
+    }
+
+    DemuxTitles( p_demux, &p_sys->i_angle );
+    if( p_sys->ops->set_area( p_demux, 0, 0, p_sys->i_angle ) != VLC_SUCCESS )
+    {
+        msg_Err( p_demux, "DvdReadSetArea(0,0,%i) failed (can't decrypt DVD?)",
+                 p_sys->i_angle );
+        Close( p_this );
+        return VLC_EGENERIC;
+    }
+    return VLC_SUCCESS;
+}
+
+/*****************************************************************************
  * Open:
  *****************************************************************************/
 int OpenCommonDvdread( vlc_object_t *p_this , dvd_type_t type,
                        const dvdread_ops_t *video_ops )
 {
     demux_t      *p_demux = (demux_t*)p_this;
-    demux_sys_t  *p_sys;
     char         *psz_file;
-    ifo_handle_t *p_vmg_file;
 
     if (p_demux->out == NULL)
         return VLC_EGENERIC;
@@ -209,87 +315,88 @@ int OpenCommonDvdread( vlc_object_t *p_this , dvd_type_t type,
     }
     free( psz_file );
 
-    /* Ifo allocation & initialisation */
-    if( !( p_vmg_file = ifoOpen( p_dvdread, 0 ) ) )
+    return CommonOpen( p_this, p_dvdread, type, video_ops );
+}
+
+/*****************************************************************************
+ * dvdread stream callbacks
+ *****************************************************************************/
+static int stream_cb_seek( void *demux, uint64_t pos )
+{
+    return vlc_stream_Seek( ((demux_t *)demux)->s, pos );
+}
+
+static int stream_cb_read( void *demux, void *buffer, int size )
+{
+    return vlc_stream_Read( ((demux_t *)demux)->s, buffer, size );
+}
+
+static dvd_reader_stream_cb stream_cb =
+{
+    .pf_seek = stream_cb_seek,
+    .pf_read = stream_cb_read,
+    /* NULL, as in dvdnav: libdvdread's stream input reads through pf_read only */
+    .pf_readv = NULL,
+};
+
+
+/*****************************************************************************
+ * DemuxOpenCommon: the stream-based entry point.
+ *****************************************************************************/
+static int DemuxOpenCommon( vlc_object_t *p_this, const char *psz_shortcut,
+                            dvd_type_t type, const dvdread_ops_t *video_ops )
+{
+    demux_t *p_demux = (demux_t*)p_this;
+    bool b_seekable = false;
+
+    if( p_demux->out == NULL )
+        return VLC_EGENERIC;
+
+    /* Forced only, never probed. */
+    if( p_demux->psz_name == NULL
+     || strcmp( p_demux->psz_name, psz_shortcut ) )
+        return VLC_EGENERIC;
+
+    vlc_stream_Control( p_demux->s, STREAM_CAN_SEEK, &b_seekable );
+    if( !b_seekable )
     {
-        char rgsz_volid[32];
-        if( DVDUDFVolumeInfo( p_dvdread, rgsz_volid, 32, NULL, 0 ) )
-        {
-            if( DVDISOVolumeInfo( p_dvdread, rgsz_volid, 32, NULL, 0 ) == 0 )
-            {
-                vlc_dialog_display_error( p_demux, _("Playback failure"),
-                              _("Cannot play a non-UDF mastered DVD." ) );
-                msg_Err( p_demux, "Invalid UDF DVD. (Found ISO9660 '%s')", rgsz_volid );
-            }
-        }
-        msg_Warn( p_demux, "cannot open %s info", ( type == DVD_V ? "VMG" : type == DVD_VR ? "RTAV_VMGI" : "AMG" ) );
-        DVDClose( p_dvdread );
+        msg_Warn( p_demux, "stream is not seekable" );
         return VLC_EGENERIC;
     }
-    msg_Dbg( p_demux, "%s opened", ( type == DVD_V ? "VMG" : type == DVD_VR ? "RTAV_VMGI" : "AMG" ) );
 
-    /* Fill p_demux field */
-    DEMUX_INIT_COMMON(); p_sys = p_demux->p_sys;
-
-    ps_track_init( p_sys->tk );
-    p_sys->i_sar_num = 0;
-    p_sys->i_sar_den = 0;
-
-    p_sys->p_dvdread = p_dvdread;
-    p_sys->p_vmg_file = p_vmg_file;
-    p_sys->p_title = NULL;
-    p_sys->p_vts_file = NULL;
-
-    p_sys->updates = 0;
-    p_sys->i_title = p_sys->i_chapter = -1;
-    p_sys->cur_title = p_sys->cur_chapter = 0;
-    p_sys->i_mux_rate = 0;
-
-    /* reset anchors so the first cell seen after open captures fresh timestamps */
-    DvdReadResetCellTs( p_sys );
-
-    p_sys->i_angle = var_CreateGetInteger( p_demux, "dvdread-angle" );
-    if( p_sys->i_angle <= 0 ) p_sys->i_angle = 1;
-
-    /* store type state internally */
-    /* if open2 is called, in 7.1.0 dvd may force the type */
-#if defined(DVDREAD_HAS_DVDAUDIO)
-    switch( p_sys->p_vmg_file->ifo_format )
-    {
-#ifdef DVDREAD_HAS_DVDVIDEORECORDING
-        case IFO_VIDEO_RECORDING:
-            p_sys->type = DVD_VR;
-            p_sys->ud_pgcit = p_sys->p_vmg_file->ud_pgcit;
-            p_sys->pgc_gi = p_sys->p_vmg_file->pgc_gi;
-            break;
-#endif
-        case IFO_AUDIO:
-            p_sys->type = DVD_A;
-            break;
-        default:
-            p_sys->type = type;
-            break;
-    }
+#if DVDREAD_VERSION >= DVDREAD_VERSION_CODE(6, 1, 0)
+    dvd_logger_cb cbs = { .pf_log = DvdReadLog };
+    dvd_reader_t *p_dvdread;
+# ifdef DVDREAD_HAS_DVDAUDIO
+    if( type == DVD_A )
+        p_dvdread = DVDOpenStreamAudio( p_demux, &cbs, &stream_cb );
+    else
+# endif
+        p_dvdread = DVDOpenStream2( p_demux, &cbs, &stream_cb );
 #else
-    p_sys->type = type;
+    dvd_reader_t *p_dvdread = DVDOpenStream( p_demux, &stream_cb );
 #endif
-    DvdReadSetOps( p_sys, video_ops );
-    if( unlikely( p_sys->ops == NULL ) )
+
+    if( p_dvdread == NULL )
     {
-        msg_Err( p_demux, "internal error: dvdread ops not initialized" );
-        Close( p_this );
+        msg_Warn( p_demux, "cannot open %s through the stream callbacks; "
+                  "no fallback to another DVD kind is attempted on this path",
+                  type == DVD_A ? "DVD-Audio" : "DVD-Video" );
         return VLC_EGENERIC;
     }
 
-    DemuxTitles( p_demux, &p_sys->i_angle );
-    if( p_sys->ops->set_area( p_demux, 0, 0, p_sys->i_angle ) != VLC_SUCCESS )
-    {
-        msg_Err( p_demux, "DvdReadSetArea(0,0,%i) failed (can't decrypt DVD?)",
-                 p_sys->i_angle );
-        Close( p_this );
-        return VLC_EGENERIC;
-    }
-    return VLC_SUCCESS;
+    /* No fallback cascade, unlike Open() below. */
+    return CommonOpen( p_this, p_dvdread, type, video_ops );
+}
+
+static int DemuxOpen( vlc_object_t *p_this )
+{
+    return DemuxOpenCommon( p_this, "dvdsimple", DVD_V, &DvdReadVideoOps );
+}
+
+static int DemuxOpenAudio( vlc_object_t *p_this )
+{
+    return DemuxOpenCommon( p_this, "dvda", DVD_A, NULL );
 }
 
 /*Call Backs*/
