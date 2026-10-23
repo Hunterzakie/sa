@@ -284,7 +284,15 @@ static int updatePalette(vlc_qt_theme_provider_t* obj)
         auto CS = VQTC_SET_TOOL_BUTTON;
         setGtkColorSetBg(obj, CS, VQTC_NAME_PRIMARY, TOOLBUTTON_SELECTOR);
         setGtkColorSetFg(obj, CS, VQTC_NAME_PRIMARY, TOOLBUTTON_SELECTOR);
-        setGtkColorSetBorder(obj, CS, TOOLBUTTON_SELECTOR);
+
+        GdkRGBA toolbuttonbg = GetBgColor(TOOLBUTTON_SELECTOR);
+        toolbuttonbg.alpha = 0.0;
+        setGtkColor(obj, CS, VQTC_SECTION_BG, VQTC_NAME_PRIMARY, VQTC_STATE_NORMAL, toolbuttonbg);
+        setGtkColor(obj, CS, VQTC_SECTION_BG, VQTC_NAME_PRIMARY, VQTC_STATE_DISABLED, toolbuttonbg);
+
+        GdkRGBA toolbuttonborder = GetBorderColor(TOOLBUTTON_SELECTOR);
+        toolbuttonborder.alpha = 0.0;
+        setGtkColor(obj, CS, VQTC_SECTION_DECORATION, VQTC_NAME_BORDER, VQTC_STATE_NORMAL, toolbuttonborder);
 
         setGtkColorSetBg(obj, CS, VQTC_NAME_NEGATIVE, TOOLBUTTON_SELECTOR ".error.destructive-action");
         setGtkColorSetFg(obj, CS, VQTC_NAME_NEGATIVE, TOOLBUTTON_SELECTOR ".error.destructive-action");

@@ -117,6 +117,7 @@ public:
     COLOR_DEFINITION(orange400, "#f89a06"); //FIXME name have been chosen randomly by me
     COLOR_DEFINITION(orange200, "#e29a06"); //FIXME name have been chosen randomly by me
 
+    COLOR_DEFINITION(darkGrey100, "#0F0F0F");
     COLOR_DEFINITION(darkGrey200, "#1E1E1E");
     COLOR_DEFINITION(darkGrey300, "#212121");
     COLOR_DEFINITION(darkGrey400, "#242424");
