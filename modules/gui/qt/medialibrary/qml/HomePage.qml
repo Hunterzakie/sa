@@ -217,6 +217,7 @@ Widgets.PageExt {
                 sectionProperty: ""
 
                 interactive: false
+                autoscroll: false
 
                 emptyLabel: null
 
@@ -297,6 +298,7 @@ Widgets.PageExt {
                 listSectionProperty: ""
 
                 interactive: false
+                autoscroll: false
 
                 emptyLabel: null
 
@@ -453,6 +455,7 @@ Widgets.PageExt {
                 listSectionProperty: ""
 
                 interactive: false
+                autoscroll: false
 
                 emptyLabel: null
 

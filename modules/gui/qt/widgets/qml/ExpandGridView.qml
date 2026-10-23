@@ -57,6 +57,9 @@ FocusScope {
     // default is true
     property bool reuseItems: true
 
+    //whether focusing an item or using keyboard navigation will adjust the flicable viewport
+    property bool autoscroll: true
+
     property int horizontalSpacing: VLCStyle.column_spacing
     property int verticalSpacing: VLCStyle.column_spacing
 
@@ -208,7 +211,8 @@ FocusScope {
     onCurrentIndexChanged: {
         if (expandIndex !== -1)
             retract()
-        positionViewAtIndex(currentIndex, ItemView.Contain)
+        if (autoscroll)
+            positionViewAtIndex(currentIndex, ItemView.Contain)
     }
 
     on_ExpandItemVerticalSpaceChanged: {
@@ -459,7 +463,8 @@ FocusScope {
             flickable.forceActiveFocus(reason);
 
         // NOTE: We make sure the current item is fully visible.
-        positionViewAtIndex(currentIndex, ItemView.Contain);
+        if (autoscroll)
+            positionViewAtIndex(currentIndex, ItemView.Contain);
 
         if (expandIndex !== -1) {
             // We clear expandIndex so we can apply the proper focus in _setupChild.
