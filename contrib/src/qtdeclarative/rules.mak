@@ -34,30 +34,34 @@ $(TARBALLS)/qtdeclarative-everywhere-src-$(QTDECLARATIVE_VERSION).tar.xz:
 
 qtdeclarative: qtdeclarative-everywhere-src-$(QTDECLARATIVE_VERSION).tar.xz .sum-qtdeclarative
 	$(UNPACK)
-	$(APPLY) $(SRC)/qtdeclarative/0001-QtQml-do-not-care-about-patch-version-when-checking-.patch
-	$(APPLY) $(SRC)/qtdeclarative/0001-QtQml-do-not-care-about-library-version-hash-when-ch.patch
 	# disable unused CLI tools: qml, qmleasing, qmldom, qmlformat, qmltc
 	sed -i.orig -e 's,add_subdirectory(qml),#add_subdirectory(qml),' $(UNPACK_DIR)/tools/CMakeLists.txt
 	sed -i.orig -e 's,add_subdirectory(qmleasing),#add_subdirectory(qmleasing),' $(UNPACK_DIR)/tools/CMakeLists.txt
 	sed -i.orig -e 's,add_subdirectory(qmldom),#add_subdirectory(qmldom),' $(UNPACK_DIR)/tools/CMakeLists.txt
 	sed -i.orig -e 's,add_subdirectory(qmlformat),#add_subdirectory(qmlformat),' $(UNPACK_DIR)/tools/CMakeLists.txt
 	sed -i.orig -e 's,add_subdirectory(qmltc),#add_subdirectory(qmltc),' $(UNPACK_DIR)/tools/CMakeLists.txt
-	# disable QT labs feature we don't use
-	sed -i.orig -e 's,add_subdirectory(labs),#add_subdirectory(labs),' $(UNPACK_DIR)/src/CMakeLists.txt
 	# disable unused svgtoqml tool:
 	sed -i.orig -e 's,add_subdirectory(svgtoqml),#add_subdirectory(svgtoqml),' $(UNPACK_DIR)/tools/CMakeLists.txt
-	sed -i.orig -e 's,add_subdirectory(quickdialogs),#add_subdirectory(quickdialogs),' $(UNPACK_DIR)/src/CMakeLists.txt
-	sed -i.orig -e 's,add_subdirectory(qmldom),#add_subdirectory(qmldom),' $(UNPACK_DIR)/src/CMakeLists.txt
 	sed -i.orig -e 's,add_subdirectory(quickwidgets),#add_subdirectory(quickwidgets),' $(UNPACK_DIR)/src/CMakeLists.txt
-	sed -i.orig -e 's,add_subdirectory(quickvectorimage),#add_subdirectory(quickvectorimage),' $(UNPACK_DIR)/src/CMakeLists.txt
 	$(MOVE)
 
 QT_DECLARATIVE_COMMON_CONFIG := \
 	-DFEATURE_qml_debug=OFF \
 	-DFEATURE_qml_profiler=OFF \
-	-DFEATURE_quick_designer=OFF \
-	-DFEATURE_quick_particles=OFF \
 	-DFEATURE_qml_preview=OFF \
+	-DFEATURE_qml_designsupport=OFF \
+	-DFEATURE_qml_network=OFF \
+	-DFEATURE_qml_labs=OFF \
+	-DQT_FEATURE_testlib=OFF
+
+QT_DECLARATIVE_CONFIG := $(QT_DECLARATIVE_COMMON_CONFIG) \
+	-DFEATURE_quick_animatedimage=OFF \
+	-DFEATURE_quick_canvas=OFF \
+	-DFEATURE_quick_designer=OFF \
+	-DFEATURE_quick_flipable=OFF \
+	-DFEATURE_quick_particles=OFF \
+	-DFEATURE_quick_path=OFF \
+	-DFEATURE_quick_sprite=OFF \
 	-DFEATURE_quickcontrols2_imagine=OFF \
 	-DFEATURE_quickcontrols2_material=OFF \
 	-DFEATURE_quickcontrols2_universal=OFF \
@@ -65,16 +69,10 @@ QT_DECLARATIVE_COMMON_CONFIG := \
 	-DFEATURE_quickcontrols2_ios=OFF \
 	-DFEATURE_quickcontrols2_fusion=OFF \
 	-DFEATURE_quickcontrols2_windows=OFF \
-	-DFEATURE_qml_network=OFF \
-	-DFEATURE_quick_animatedimage=OFF \
-	-DFEATURE_quick_flipable=OFF \
-	-DFEATURE_quick_sprite=OFF \
-	-DFEATURE_quick_canvas=OFF \
-	-DFEATURE_quick_path=OFF \
+	-DFEATURE_quickcontrols2_stylekit=OFF \
 	-DFEATURE_quicktemplates2_calendar=OFF \
-	-DQT_FEATURE_testlib=OFF
-
-QT_DECLARATIVE_CONFIG := $(QT_DECLARATIVE_COMMON_CONFIG) \
+	-DFEATURE_quick_dialogs=OFF \
+	-DFEATURE_quick_vectorimage=OFF \
 	$(QT_CMAKE_CONFIG)
 
 QT_DECLARATIVE_NATIVE_CONFIG := $(QT_DECLARATIVE_COMMON_CONFIG) \
@@ -83,7 +81,7 @@ QT_DECLARATIVE_NATIVE_CONFIG := $(QT_DECLARATIVE_COMMON_CONFIG) \
 	-DFEATURE_qml_itemmodel=OFF \
 	-DFEATURE_qml_object_model=OFF \
 	-DFEATURE_qml_table_model=OFF \
-	-DFEATURE_quick_shadereffect=OFF \
+	-DQT_GENERATE_SBOM=OFF \
 	-DCMAKE_TOOLCHAIN_FILE=$(QT_HOST_LIBS)/cmake/Qt6/qt.toolchain.cmake
 
 QT_DECLARATIVE_HOSTVARS = $(HOSTVARS_CMAKE)

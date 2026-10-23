@@ -1,0 +1,134 @@
+From a2946c81531e0fcec34d859e25f6d1637ef27751 Mon Sep 17 00:00:00 2001
+From: Fatih Uzunoglu <fuzun54@outlook.com>
+Date: Thu, 20 Aug 2026 19:34:54 +0300
+Subject: [PATCH] QIORing/win: fix availability with old MinGW
+
+Old MinGW support Windows IORing, but Qt
+can't make use of it because it does not
+provide the define for the queue full
+error code.
+
+It also enables all functionality when
+target Windows (NTDDI_VERSION) is low.
+---
+ src/corelib/CMakeLists.txt     |  2 ++
+ src/corelib/configure.cmake    | 27 ++++++++++++++-------------
+ src/corelib/io/qioring_p.h     |  4 ++--
+ src/corelib/io/qioring_win.cpp | 12 ++++++++++++
+ 4 files changed, 30 insertions(+), 15 deletions(-)
+
+diff --git a/src/corelib/CMakeLists.txt b/src/corelib/CMakeLists.txt
+index 182f7878a83..71fc377ffb7 100644
+--- a/src/corelib/CMakeLists.txt
++++ b/src/corelib/CMakeLists.txt
+@@ -789,6 +789,8 @@ qt_internal_extend_target(Core CONDITION QT_FEATURE_liburing
+ qt_internal_extend_target(Core CONDITION QT_FEATURE_windows_ioring
+     SOURCES
+         io/qioring.cpp io/qioring_win.cpp io/qioring_p.h
++    NO_PCH_SOURCES
++        io/qioring_win.cpp
+ )
+ 
+ # Workaround for QTBUG-101411
+diff --git a/src/corelib/configure.cmake b/src/corelib/configure.cmake
+index 0c3756acada..8b1b0e339f6 100644
+--- a/src/corelib/configure.cmake
++++ b/src/corelib/configure.cmake
+@@ -624,20 +624,12 @@ qt_config_compile_test(windows_ioring
+ "#include <windows.h>
+ #include <ioringapi.h>
+ 
++#ifndef _WIN64
++#error "qioring_win.cpp requires 64 bit build."
++#endif
++
+ int main(void)
+ {
+-    /* BEGIN TEST: */
+-    IORING_CREATE_FLAGS flags;
+-    memset(&flags, 0, sizeof(flags));
+-    HIORING ioRingHandle = nullptr;
+-    HRESULT hr = CreateIoRing(IORING_VERSION_3, flags, 1, 1, &ioRingHandle);
+-    if (hr == IORING_E_SUBMISSION_QUEUE_FULL) // not valid, but test that this #define exists
+-        return 0;
+-    IORING_HANDLE_REF ref(HANDLE(nullptr));
+-    IORING_BUFFER_REF bufRef(nullptr);
+-    // The newest API addition that we require:
+-    BuildIoRingWriteFile(ioRingHandle, ref, bufRef, -1, 0, FILE_WRITE_FLAGS_NONE, 0, IOSQE_FLAGS_NONE);
+-    /* END TEST: */
+     return 0;
+ }
+ "
+@@ -646,7 +638,16 @@ int main(void)
+ qt_config_compile_test(windows_ioring_skip_builder_param_checks
+     LABEL "Windows SDK: IORing IORING_CREATE_SKIP_BUILDER_PARAM_CHECKS"
+     CODE
+-"#include <windows.h>
++"#undef NTDDI_VERSION
++#define NTDDI_VERSION 0x0A00000B // NTDDI_WIN10_CO
++
++// Match with NTDDI_VERSION, otherwise build may fail:
++#undef WINVER
++#define WINVER 0x0A00 // _WIN32_WINNT_WIN10
++#undef _WIN32_WINNT
++#define _WIN32_WINNT 0x0A00
++
++#include <windows.h>
+ #include <ioringapi.h>
+ 
+ int main(void)
+diff --git a/src/corelib/io/qioring_p.h b/src/corelib/io/qioring_p.h
+index 525ef2c2bbc..aa56dd34a0f 100644
+--- a/src/corelib/io/qioring_p.h
++++ b/src/corelib/io/qioring_p.h
+@@ -32,7 +32,7 @@ struct io_uring_cqe;
+ #elif defined(Q_OS_WIN)
+ #  include <QtCore/qwineventnotifier.h>
+ #  include <qt_windows.h>
+-#  include <ioringapi.h>
++// Do not include <ioringapi.h> (provides ioring functionality depending on NTDDI version) or <windows.h> (provides enums <ioringapi.h> uses depending on NTDDI version) here.
+ #endif
+ 
+ #include <algorithm>
+@@ -236,7 +236,7 @@ private:
+     }
+ 
+     std::optional<QWinEventNotifier> notifier;
+-    HIORING ioRingHandle = nullptr;
++    struct HIORING__* ioRingHandle = nullptr;
+     HANDLE eventHandle = INVALID_HANDLE_VALUE;
+     const QtPrivate::IORingApiTable *apiTable;
+ 
+diff --git a/src/corelib/io/qioring_win.cpp b/src/corelib/io/qioring_win.cpp
+index 2d75f3dd7fe..2e2d10e64ec 100644
+--- a/src/corelib/io/qioring_win.cpp
++++ b/src/corelib/io/qioring_win.cpp
+@@ -2,6 +2,15 @@
+ // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+ // Qt-Security score:significant reason:default
+ 
++#undef NTDDI_VERSION
++#define NTDDI_VERSION 0xFFFFFFFF // Enable all existing and future ioring functionality
++
++// Match with NTDDI_VERSION (otherwise build may fail)
++#undef _WIN32_WINNT
++#define _WIN32_WINNT 0xFFFF
++#undef WINVER
++#define WINVER 0xFFFF
++
+ #include "qioring_p.h"
+ 
+ QT_REQUIRE_CONFIG(windows_ioring);
+@@ -642,6 +651,9 @@ auto QIORing::prepareRequest(GenericRequestType &request) -> RequestPrepResult
+         Q_UNREACHABLE_RETURN(RequestPrepResult::RequestCompleted);
+         break;
+     }
++#ifndef IORING_E_SUBMISSION_QUEUE_FULL
++#define IORING_E_SUBMISSION_QUEUE_FULL _HRESULT_TYPEDEF_(0x80460002) // https://github.com/mingw-w64/mingw-w64/commit/5356cf2974e5d67321423a4db89e7b14cf9fbd90
++#endif
+     if (hr == IORING_E_SUBMISSION_QUEUE_FULL)
+         return RequestPrepResult::QueueFull;
+     if (FAILED(hr)) {
+-- 
+2.55.0
+

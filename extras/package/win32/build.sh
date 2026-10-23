@@ -399,7 +399,7 @@ if [ -n "$BREAKPAD" ]; then
      CONTRIBFLAGS="$CONTRIBFLAGS --enable-breakpad"
 fi
 if [ -n "$DISABLEGUI" ]; then
-    CONTRIBFLAGS="$CONTRIBFLAGS --disable-qt --disable-qtsvg --disable-qtdeclarative --disable-qtshadertools --disable-qtwayland"
+    CONTRIBFLAGS="$CONTRIBFLAGS --disable-qt --disable-qtsvg --disable-qtdeclarative --disable-qtshadertools"
 fi
 if [ -n "$WITH_LTO" ]; then
     CONTRIBFLAGS="$CONTRIBFLAGS --enable-lto"
