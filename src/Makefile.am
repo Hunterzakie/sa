@@ -590,8 +590,10 @@ libvlccore_la_SOURCES += \
 	misc/update.h misc/update.c \
 	misc/update_crypto.c
 AM_CPPFLAGS += -DUPDATE_CHECK
+if !HAVE_WIN32
 AM_CFLAGS += $(GCRYPT_CFLAGS)
 libvlccore_la_LIBADD += $(GCRYPT_LIBS)
+endif
 endif
 
 libvlccore_la_LDFLAGS = \

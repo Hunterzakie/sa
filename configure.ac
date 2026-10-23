@@ -5071,11 +5071,13 @@ dnl update checking system
 dnl
 AC_ARG_ENABLE([update-check],
   AS_HELP_STRING([--enable-update-check], [update checking system (default disabled)]))
+    AS_IF([test "${SYS}" != "mingw32"], [
 if test "${enable_update_check}" = "yes"
 then
  AS_IF([test "${have_gcrypt}" != "yes"],[
     AC_MSG_ERROR([libgcrypt is required for update checking system]) ])
 fi
+])
 AM_CONDITIONAL([UPDATE_CHECK], [test "${enable_update_check}" = "yes"])
 
 dnl

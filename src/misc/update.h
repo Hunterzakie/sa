@@ -24,6 +24,10 @@
 
 #include <vlc_update.h>
 
+#ifdef _WIN32
+#define USE_BCRYPT_CRYPTO
+#endif
+
 enum    /* Packet types */
 {
     SIGNATURE_PACKET    = 0x02,
