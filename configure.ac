@@ -467,13 +467,12 @@ int foo() { return my_array[0]; }
     ;;
 esac
 
-ANDROID_API=17
 dnl Vendor-specific configuration
 case "${host_os}" in
   linux-android*)
     VENDOR=android
     AC_MSG_CHECKING([Check Android API version])
-    ANDROID_API="`echo ${host_os} | tr -c -d '[[:digit:]]'`"
+    ANDROID_API="`echo ${CC} | sed -r 's/.*(.{15}$)/\1/' | tr -c -d '[[:digit:]]'`"
     AC_MSG_RESULT([${ANDROID_API}])
     HAVE_PROCESS_SPAWN="0"
 
@@ -486,11 +485,6 @@ case "${host_os}" in
     AS_IF([test -n "$ANDROID_API" -a "$ANDROID_API" -lt "26"],[
         ac_cv_header_sys_shm_h=no
     ])
-
-    dnl Those functions and headers are not functional on android, use vlc_fixups instead
-    ac_cv_header_search_h=no
-    ac_cv_func_tdestroy=no
-    ac_cv_func_tfind=no
     ;;
 esac
 
