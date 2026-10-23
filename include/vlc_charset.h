@@ -152,6 +152,15 @@ VLC_API char * vlc_strcasestr(const char *, const char *) VLC_USED;
 VLC_API char * FromCharset( const char *charset, const void *data, size_t data_size ) VLC_USED;
 VLC_API void * ToCharset( const char *charset, const char *in, size_t *outsize ) VLC_USED;
 
+/**
+ * Guesses the character encoding of a text buffer.
+ *
+ * \param data sample of the text to analyze
+ * \param size size of the sample in bytes
+ * \return charset name or NULL on fail or UTF-8/ASCII
+ */
+VLC_API char * vlc_DetectCharset( const void *data, size_t size ) VLC_USED;
+
 #ifdef __APPLE__
 # include <CoreFoundation/CoreFoundation.h>
 
