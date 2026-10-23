@@ -319,8 +319,11 @@ public:
                 return S_OK;
         }
 
-        es_out_Del(demux_->out, sys->video_es);
-        sys->video_es = NULL;
+        if(sys->video_es)
+        {
+            es_out_Del(demux_->out, sys->video_es);
+            sys->video_es = NULL;
+        }
         if (GetModeSettings(demux_, mode, flags) != VLC_SUCCESS)
             return E_NOTIMPL;
         sys->video_es = es_out_Add(demux_->out, &sys->video_fmt);
@@ -355,9 +358,9 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
             return S_OK;
         }
 
-        const int width = videoFrame->GetWidth();
-        const int height = videoFrame->GetHeight();
-        const int stride = videoFrame->GetRowBytes();
+        const long width = videoFrame->GetWidth();
+        const long height = videoFrame->GetHeight();
+        const long stride = videoFrame->GetRowBytes();
 
         int bpp = 0;
         switch (sys->video_fmt.i_codec) {
@@ -369,12 +372,19 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
                 bpp = 2;
                 break;
         };
-        block_t *video_frame = block_Alloc(width * height * bpp);
+
+        size_t block_size;
+        if(mul_overflow(width, height, &block_size) ||
+           mul_overflow(block_size, bpp, &block_size))
+            return E_INVALIDARG;
+
+        block_t *video_frame = block_Alloc(block_size);
         if (!video_frame)
             return S_OK;
 
         const uint32_t *frame_bytes;
-        videoFrame->GetBytes((void**)&frame_bytes);
+        if(videoFrame->GetBytes((void**)&frame_bytes) != S_OK)
+            return E_FAIL;
 
         BMDTimeValue stream_time, frame_duration;
         videoFrame->GetStreamTime(&stream_time, &frame_duration, CLOCK_FREQ);
@@ -391,7 +401,7 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
                         break;
                     std::vector<uint16_t> dec(width);
                     v210_convert(&dec.front(), buf, width, 1);
-                    block_t *cc = vanc_to_cc(demux_, &dec.front(), width * 2);
+                    block_t *cc = vanc_to_cc(demux_, &dec.front(), (size_t)width * 2);
                     if (!cc)
                         continue;
                     cc->i_pts = cc->i_dts = VLC_TICK_0 + stream_time;
@@ -414,14 +424,14 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
                 }
                 vanc->Release();
             }
-        } else if (sys->video_fmt.i_codec == VLC_CODEC_UYVY) {
+        } else if (sys->video_fmt.i_codec == VLC_CODEC_UYVY && stride != width) {
             for (int y = 0; y < height; ++y) {
                 const uint8_t *src = (const uint8_t *)frame_bytes + stride * y;
-                uint8_t *dst = video_frame->p_buffer + width * 2 * y;
-                memcpy(dst, src, width * 2);
+                uint8_t *dst = video_frame->p_buffer + (size_t)width * 2 * y;
+                memcpy(dst, src, (size_t)width * 2);
             }
         } else {
-                memcpy(video_frame->p_buffer, frame_bytes, width * height * bpp);
+                memcpy(video_frame->p_buffer, frame_bytes, (size_t)width * height * bpp);
         }
 
         vlc_mutex_lock(&sys->pts_lock);
@@ -430,39 +440,51 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
         vlc_mutex_unlock(&sys->pts_lock);
 
         es_out_SetPCR(demux_->out, video_frame->i_pts);
-        es_out_Send(demux_->out, sys->video_es, video_frame);
+        if(sys->video_es)
+            es_out_Send(demux_->out, sys->video_es, video_frame);
+        else
+            block_Release(video_frame);
     }
 
     if (audioFrame && audioFrame->GetSampleFrameCount())
     {
-        const int bytes = audioFrame->GetSampleFrameCount() * sizeof(int16_t) * sys->channels;
+        size_t bytes;
+        if(mul_overflow(audioFrame->GetSampleFrameCount(), sizeof(int16_t) * sys->channels, &bytes))
+            return E_INVALIDARG;
+
         BMDTimeValue packet_time;
         void *frame_bytes;
 
-        audioFrame->GetBytes(&frame_bytes);
+        if(audioFrame->GetBytes(&frame_bytes) != S_OK)
+            return E_FAIL;
+
         audioFrame->GetPacketTime(&packet_time, CLOCK_FREQ);
 
         if(sys->audio_streams > 1)
         {
+            const size_t bytes_per_sample = sizeof(int16_t) * 2; // each audio stream is a stereo tuple
             for(int i=0; i<sys->audio_streams; i++)
             {
-                size_t i_samples = bytes / (sys->audio_streams * 4);
-                block_t *p_frame = block_Alloc(i_samples * 4);
+                size_t i_samples = bytes / (sys->audio_streams * bytes_per_sample);
+                block_t *p_frame = block_Alloc(i_samples * bytes_per_sample);
                 if (!p_frame)
                     continue;
 
                 for(size_t j=0; j<i_samples; j++) /* for each pair sample */
                 {
-                    memcpy(&p_frame->p_buffer[j * 4],
-                           &reinterpret_cast<uint8_t *>(frame_bytes)[(j * sys->audio_streams + i) * 4],
-                           4);
+                    memcpy(&p_frame->p_buffer[j * bytes_per_sample],
+                           &reinterpret_cast<uint8_t *>(frame_bytes)[(j * sys->audio_streams + i) * bytes_per_sample],
+                           bytes_per_sample);
                 }
 
                 p_frame->i_pts = p_frame->i_dts = VLC_TICK_0 + packet_time;
-                es_out_Send(demux_->out, sys->audio_es[i], p_frame);
+                if(sys->audio_es[i])
+                    es_out_Send(demux_->out, sys->audio_es[i], p_frame);
+                else
+                    block_Release(p_frame);
             }
         }
-        else
+        else if(sys->audio_es[0])
         {
             block_t *audio_frame = block_Alloc(bytes);
             if (!audio_frame)

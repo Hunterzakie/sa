@@ -27,7 +27,7 @@ extern "C" {
 
 #include <inttypes.h>
 
-void v210_convert(uint16_t *dst, const uint32_t *bytes, const int width, const int height);
+void v210_convert(uint16_t *dst, const uint32_t *bytes, const long width, const long height);
 
 block_t *vanc_to_cc(vlc_object_t *, uint16_t *, size_t);
 #define vanc_to_cc(obj, buf, words) vanc_to_cc(VLC_OBJECT(obj), buf, words)

@@ -36,9 +36,9 @@ static inline uint32_t av_le2ne32(uint32_t val)
     return (u.b[0] << 0) | (u.b[1] << 8) | (u.b[2] << 16) | (u.b[3] << 24);
 }
 
-void v210_convert(uint16_t *dst, const uint32_t *bytes, const int width, const int height)
+void v210_convert(uint16_t *dst, const uint32_t *bytes, const long width, const long height)
 {
-    const int stride = ((width + 47) / 48) * 48 * 8 / 3 / 4;
+    const long stride = ((width + 47) / 48) * 48 * 8 / 3 / 4;
     uint16_t *y = &dst[0];
     uint16_t *u = &dst[width * height * 2 / 2];
     uint16_t *v = &dst[width * height * 3 / 2];
@@ -54,7 +54,7 @@ void v210_convert(uint16_t *dst, const uint32_t *bytes, const int width, const i
     for (int h = 0; h < height; h++) {
         const uint32_t *src = bytes;
         uint32_t val = 0;
-        int w;
+        long w;
         for (w = 0; w < width - 5; w += 6) {
             READ_PIXELS(u, y, v);
             READ_PIXELS(y, u, y);
