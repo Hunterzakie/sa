@@ -47,6 +47,9 @@ T.ItemDelegate {
 
     required  property MLDragItem dragTarget
 
+    // When `minimalWidthState` is set, the text is not visible:
+    property bool minimalWidthState: false
+
     // Aliases
     // Private
 
@@ -63,12 +66,17 @@ T.ItemDelegate {
     height: VLCStyle.play_cover_small + (VLCStyle.margin_xsmall * 2)
 
     verticalPadding: VLCStyle.margin_xsmall
-    horizontalPadding: VLCStyle.margin_normal
+    horizontalPadding: minimalWidthState ? VLCStyle.margin_xsmall : VLCStyle.margin_normal
 
     hoverEnabled: true
 
     Accessible.onPressAction: root.itemClicked()
 
+    T.ToolTip.visible: (visible && (visualFocus || hovered) && (!artistName.visible || (artistName.implicitWidth > artistName.width)))
+    T.ToolTip.timeout: visualFocus ? VLCStyle.duration_humanMoment : 0 // we should not obstruct forever with visual focus
+    T.ToolTip.text: artistName.text
+    T.ToolTip.delay: VLCStyle.delayToolTipAppear
+    
     Component.onCompleted: {
         // Qt Quick AbstractButton sets a cursor for itself, unset it so that if the view has
         // busy cursor, it is visible over the delegate:
@@ -206,6 +214,8 @@ T.ItemDelegate {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
+            visible: !root.minimalWidthState
+
             Widgets.ListLabel {
                 id: artistName
 
@@ -217,6 +227,8 @@ T.ItemDelegate {
                                    : qsTr("Unknown artist")
 
                 color: theme.fg.primary
+
+                T.ToolTip.visible: false
             }
         }
     }
