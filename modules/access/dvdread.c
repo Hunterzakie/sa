@@ -166,8 +166,11 @@ int OpenCommonDvdread( vlc_object_t *p_this , dvd_type_t type,
         case DVD_A:
             p_dvdread = DVDOpenAudio( p_demux, &cbs, psz_path );
             break;
-#ifndef DVDREAD_HAS_DVDVIDEORECORDING
         case DVD_VR:
+#ifdef DVDREAD_HAS_DVDVIDEORECORDING
+            p_dvdread = DVDOpenVideoRecording( p_demux, &cbs, psz_path );
+            break;
+#else
             msg_Err( p_demux, "Version of libdvdread does not support DVD-VideoRecording" );
             free( psz_file );
             return VLC_EGENERIC;
@@ -226,7 +229,6 @@ int OpenCommonDvdread( vlc_object_t *p_this , dvd_type_t type,
         DVDClose( p_dvdread );
         return VLC_EGENERIC;
     }
-    msg_Dbg( p_demux, "%s opened", ( type == DVD_V ? "VMG" : type == DVD_VR ? "RTAV_VMGI" : "AMG" ) );
 
     /* Fill p_demux field */
     DEMUX_INIT_COMMON(); p_sys = p_demux->p_sys;
@@ -273,6 +275,7 @@ int OpenCommonDvdread( vlc_object_t *p_this , dvd_type_t type,
 #else
     p_sys->type = type;
 #endif
+    msg_Dbg( p_demux, "%s opened", ( p_sys->type == DVD_V ? "VMG" : p_sys->type == DVD_VR ? "RTAV_VMGI" : "AMG" ) );
     DvdReadSetOps( p_sys, video_ops );
     if( unlikely( p_sys->ops == NULL ) )
     {
@@ -726,9 +729,9 @@ static int Demux( demux_t *p_demux )
         while( k < p_sys->i_titles &&
                p_sys->ops->set_area( p_demux, ++k, 0, -1 ) != VLC_SUCCESS )
         {
-            msg_Err(p_demux, "Failed next title, trying another: %i", k );
             if( k >= p_sys->i_titles )
                 return 0; // EOF
+            msg_Err(p_demux, "Failed next title, trying another: %i", k );
         }
     }
 
