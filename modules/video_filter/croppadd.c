@@ -117,7 +117,83 @@ typedef struct
     int i_paddbottom;
     int i_paddleft;
     int i_paddright;
+    vlc_fourcc_t i_chroma;
+    unsigned pixel_size;
+    bool b_bigendian;
+    uint16_t padd_color[4];
 } filter_sys_t;
+
+/* Picture byte order follows the L/B suffix convention, P010/P012/P016
+ * are little-endian MSB-aligned. Keep in sync with src/misc/fourcc.c. */
+static bool CroppaddIsBigEndian( vlc_fourcc_t fcc )
+{
+    switch( fcc )
+    {
+        case VLC_CODEC_GBR_PLANAR_9B:
+        case VLC_CODEC_GBR_PLANAR_10B:
+        case VLC_CODEC_GBR_PLANAR_12B:
+        case VLC_CODEC_GBR_PLANAR_14B:
+        case VLC_CODEC_GBR_PLANAR_16B:
+        case VLC_CODEC_GBRA_PLANAR_10B:
+        case VLC_CODEC_GBRA_PLANAR_12B:
+        case VLC_CODEC_GBRA_PLANAR_16B:
+        case VLC_CODEC_I420_9B:
+        case VLC_CODEC_I420_10B:
+        case VLC_CODEC_I420_12B:
+        case VLC_CODEC_I420_16B:
+        case VLC_CODEC_I422_9B:
+        case VLC_CODEC_I422_10B:
+        case VLC_CODEC_I422_12B:
+        case VLC_CODEC_I422_16B:
+        case VLC_CODEC_I444_9B:
+        case VLC_CODEC_I444_10B:
+        case VLC_CODEC_I444_12B:
+        case VLC_CODEC_I444_16B:
+        case VLC_CODEC_YUVA_444_10B:
+        case VLC_CODEC_YUVA_444_12B:
+        case VLC_CODEC_GREY_10B:
+        case VLC_CODEC_GREY_12B:
+        case VLC_CODEC_GREY_16B:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static void CroppaddFill( uint8_t *dst, ptrdiff_t pixels,
+                          uint16_t value, unsigned pixel_size,
+                          bool b_bigendian )
+{
+    if( pixels <= 0 )
+        return;
+    if( pixel_size == 1 )
+    {
+        memset( dst, (uint8_t)value, pixels );
+        return;
+    }
+    if( value == 0 )
+    {
+        memset( dst, 0, pixels * pixel_size );
+        return;
+    }
+    if( b_bigendian )
+    {
+        for( ptrdiff_t i = 0; i < pixels; i++ )
+        {
+            dst[0] = value >> 8;
+            dst[1] = value & 0xff;
+            dst += 2;
+        }
+        return;
+    }
+    for( ptrdiff_t i = 0; i < pixels; i++ )
+    {
+        dst[0] = value & 0xff;
+        dst[1] = value >> 8;
+        dst += 2;
+    }
+}
+
 #define IDX_TOP 0
 #define IDX_LEFT 1
 #define IDX_BOTTOM 2
@@ -171,6 +247,34 @@ static int OpenFilter( filter_t *p_filter )
         msg_Err( p_filter, "Unsupported input chroma %4.4s", (char*)&p_chroma->fcc );
         return VLC_EGENERIC;
     }
+    if( p_chroma->subtype == VLC_CHROMA_SUBTYPE_OTHER )
+    {
+        msg_Err( p_filter, "Unsupported input chroma %4.4s", (char*)&p_chroma->fcc );
+        return VLC_EGENERIC;
+    }
+    if( vlc_chroma_description_IsYUV( p_chroma )
+     && p_chroma->pixel_size != 1 && p_chroma->pixel_size != 2 )
+    {
+        msg_Err( p_filter, "Unsupported packed high bit-depth chroma %4.4s",
+                 (char*)&p_chroma->fcc );
+        return VLC_EGENERIC;
+    }
+    if( p_chroma->plane_count == 1 && p_chroma->pixel_size == 2
+     && p_chroma->color_bits > 8
+     && p_chroma->subtype != VLC_CHROMA_SUBTYPE_GREY
+     && p_chroma->subtype != VLC_CHROMA_SUBTYPE_RGB )
+    {
+        msg_Err( p_filter, "Unsupported packed high bit-depth chroma %4.4s",
+                 (char*)&p_chroma->fcc );
+        return VLC_EGENERIC;
+    }
+    if( p_chroma->pixel_size == 2
+     && (p_chroma->pixel_bits < 9 || p_chroma->pixel_bits > 16) )
+    {
+        msg_Err( p_filter, "Unsupported bit-depth for chroma %4.4s",
+                 (char*)&p_chroma->fcc );
+        return VLC_EGENERIC;
+    }
 
     p_filter->p_sys = vlc_obj_malloc( VLC_OBJECT(p_filter), sizeof( filter_sys_t ) );
     if( unlikely(!p_filter->p_sys) ) return VLC_ENOMEM;
@@ -209,6 +313,75 @@ static int OpenFilter( filter_t *p_filter )
     p_sys->i_paddbottom = padd[tx->idx_top ^ 2];
     p_sys->i_paddright = padd[tx->idx_left ^ 2];
 
+    /* Derive the per-plane padding color (opaque black) for this chroma. */
+    p_sys->i_chroma = p_filter->fmt_in.video.i_chroma;
+    p_sys->pixel_size = p_chroma->pixel_size;
+    p_sys->b_bigendian = CroppaddIsBigEndian( p_sys->i_chroma );
+
+    if( p_sys->pixel_size == 1 )
+    {
+        if( vlc_chroma_description_IsYUV( p_chroma )
+         && p_chroma->plane_count > 1 )
+        {
+            p_sys->padd_color[0] = 0x00;
+            p_sys->padd_color[1] = 0x80;
+            p_sys->padd_color[2] = 0x80;
+            p_sys->padd_color[3] = 0xff;
+        }
+        else
+        {
+            p_sys->padd_color[0] = 0x00;
+            p_sys->padd_color[1] = 0x00;
+            p_sys->padd_color[2] = 0x00;
+            p_sys->padd_color[3] = 0xff;
+        }
+    }
+    else if( p_sys->pixel_size > 2 )
+    {
+        p_sys->padd_color[0] = 0x0000;
+        p_sys->padd_color[1] = 0x0000;
+        p_sys->padd_color[2] = 0x0000;
+        p_sys->padd_color[3] = 0x0000;
+    }
+    else
+    {
+        unsigned bits = p_chroma->pixel_bits;
+        uint16_t mid = 0x8000;
+        uint16_t max;
+        if( p_sys->i_chroma == VLC_CODEC_P010 )
+            max = 0xffc0;
+        else if( p_sys->i_chroma == VLC_CODEC_P012 )
+            max = 0xfff0;
+        else if( p_sys->i_chroma == VLC_CODEC_P016 )
+            max = 0xffff;
+        else
+        {
+            mid = (uint16_t)(1u << (bits - 1));
+            max = (bits == 16) ? 0xffff : (uint16_t)((1u << bits) - 1);
+        }
+        if( vlc_chroma_description_IsYUV( p_chroma ) )
+        {
+            p_sys->padd_color[0] = 0x0000;
+            p_sys->padd_color[1] = mid;
+            p_sys->padd_color[2] = mid;
+            p_sys->padd_color[3] = max;
+        }
+        else if( p_chroma->subtype == VLC_CHROMA_SUBTYPE_GREY )
+        {
+            p_sys->padd_color[0] = 0x0000;
+            p_sys->padd_color[1] = 0x0000;
+            p_sys->padd_color[2] = 0x0000;
+            p_sys->padd_color[3] = 0x0000;
+        }
+        else
+        {
+            p_sys->padd_color[0] = 0x0000;
+            p_sys->padd_color[1] = 0x0000;
+            p_sys->padd_color[2] = 0x0000;
+            p_sys->padd_color[3] = max;
+        }
+    }
+
     p_filter->fmt_out.video.i_height =
     p_filter->fmt_out.video.i_visible_height =
         p_filter->fmt_in.video.i_visible_height
@@ -246,8 +419,8 @@ static void Filter( filter_t *p_filter, picture_t *p_pic, picture_t *p_outpic )
     filter_sys_t *p_sys = p_filter->p_sys;
     int i_width, i_height, i_xcrop, i_ycrop,
         i_outwidth, i_outheight, i_xpadd, i_ypadd;
-
-    const int p_padd_color[] = { 0x00, 0x80, 0x80, 0xff };
+    const unsigned i_pixel_size = p_sys->pixel_size;
+    const bool b_bigendian = p_sys->b_bigendian;
 
     for( int i_plane = 0; i_plane < p_pic->i_planes; i_plane++ )
     /* p_pic and p_outpic have the same chroma/number of planes but that's
@@ -258,8 +431,8 @@ static void Filter( filter_t *p_filter, picture_t *p_pic, picture_t *p_outpic )
         uint8_t *p_in = p_plane->p_pixels;
         uint8_t *p_out = p_outplane->p_pixels;
         int i_pixel_pitch = p_plane->i_pixel_pitch;
-        int i_padd_color = i_plane > 3 ? p_padd_color[0]
-                                       : p_padd_color[i_plane];
+        uint16_t i_padd_color = i_plane > 3 ? p_sys->padd_color[0]
+                                            : p_sys->padd_color[i_plane];
 
         /* These assignments assume that the first plane always has
          * a width and height equal to the picture's */
@@ -290,7 +463,8 @@ static void Filter( filter_t *p_filter, picture_t *p_pic, picture_t *p_outpic )
         p_in += i_ycrop * p_plane->i_pitch;
 
         /* Padd on the top */
-        memset( p_out, i_padd_color, i_ypadd * p_outplane->i_pitch );
+        CroppaddFill( p_out, (ptrdiff_t)i_ypadd * p_outplane->i_pitch / i_pixel_size,
+                      i_padd_color, i_pixel_size, b_bigendian );
         p_out += i_ypadd * p_outplane->i_pitch;
 
         for( int i_line = 0; i_line < i_height; i_line++ )
@@ -302,7 +476,8 @@ static void Filter( filter_t *p_filter, picture_t *p_pic, picture_t *p_outpic )
             p_in += i_xcrop * i_pixel_pitch;
 
             /* Padd on the left */
-            memset( p_out, i_padd_color, i_xpadd * i_pixel_pitch );
+            CroppaddFill( p_out, i_xpadd, i_padd_color, i_pixel_size,
+                          b_bigendian );
             p_out += i_xpadd * i_pixel_pitch;
 
             /* Copy the image and crop on the right */
@@ -311,8 +486,8 @@ static void Filter( filter_t *p_filter, picture_t *p_pic, picture_t *p_outpic )
             p_in += i_width * i_pixel_pitch;
 
             /* Padd on the right */
-            memset( p_out, i_padd_color,
-                        ( i_outwidth - i_xpadd - i_width ) * i_pixel_pitch );
+            CroppaddFill( p_out, i_outwidth - i_xpadd - i_width,
+                          i_padd_color, i_pixel_size, b_bigendian );
 
             /* Got to beginning of the next line */
             p_in = p_in_next;
@@ -320,7 +495,9 @@ static void Filter( filter_t *p_filter, picture_t *p_pic, picture_t *p_outpic )
         }
 
         /* Padd on the bottom */
-        memset( p_out, i_padd_color,
-                 ( i_outheight - i_ypadd - i_height ) * p_outplane->i_pitch );
+        CroppaddFill( p_out,
+                      (ptrdiff_t)( i_outheight - i_ypadd - i_height )
+                          * p_outplane->i_pitch / i_pixel_size,
+                      i_padd_color, i_pixel_size, b_bigendian );
     }
 }
