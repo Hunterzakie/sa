@@ -32,6 +32,8 @@
 #include <vlc_codec.h>
 #include <vlc_ancillary.h>
 
+#include <stdckdint.h>
+
 /*****************************************************************************
  * decoder_sys_t : raw video decoder descriptor
  *****************************************************************************/
@@ -120,14 +122,30 @@ static int OpenCommon( decoder_t *p_dec )
 
     for( unsigned i = 0; i < dsc->plane_count; i++ )
     {
-        unsigned pitch = ((p_dec->fmt_in->video.i_width + (dsc->p[i].w.den - 1)) / dsc->p[i].w.den)
-                         * dsc->p[i].w.num * dsc->pixel_size;
-        unsigned lines = ((p_dec->fmt_in->video.i_height + (dsc->p[i].h.den - 1)) / dsc->p[i].h.den)
-                         * dsc->p[i].h.num;
+        /* Round width/height up to the next chroma block boundary */
+        unsigned width_padded, height_padded;
+        if( ckd_add(&width_padded, p_dec->fmt_in->video.i_width, dsc->p[i].w.den - 1) ||
+            ckd_add(&height_padded, p_dec->fmt_in->video.i_height, dsc->p[i].h.den - 1) )
+            return VLC_EGENERIC;
+
+        unsigned width_in_blocks = width_padded / dsc->p[i].w.den;
+        unsigned height_in_blocks = height_padded / dsc->p[i].h.den;
+
+        /* pitch = width_in_blocks * w.num * pixel_size (bytes per row)
+         * lines = height_in_blocks * h.num (rows per plane) */
+        unsigned pitch, lines;
+        if( ckd_mul(&pitch, width_in_blocks, dsc->p[i].w.num) ||
+            ckd_mul(&pitch, pitch, dsc->pixel_size) ||
+            ckd_mul(&lines, height_in_blocks, dsc->p[i].h.num) )
+            return VLC_EGENERIC;
 
         p_sys->pitches[i] = pitch;
         p_sys->lines[i] = lines;
-        p_sys->size += pitch * lines;
+
+        size_t plane_size;
+        if( ckd_mul(&plane_size, (size_t)pitch, lines) ||
+            ckd_add(&p_sys->size, p_sys->size, plane_size) )
+            return VLC_EGENERIC;
     }
 
     p_dec->p_sys           = p_sys;
@@ -219,8 +237,8 @@ static void FillPicture( decoder_t *p_dec, block_t *p_block, picture_t *p_pic )
         {
             memcpy( p_dst, p_src, p_pic->p[i].i_visible_pitch );
             /*Fix chroma sign.*/
-            if( p_dec->fmt_in->i_codec == VLC_CODEC_YUV2 ) {
-                for( int y = 0; y < p_pic->p[i].i_visible_pitch; y++ ) {
+            if( p_dec->fmt_in->i_codec == VLC_CODEC_YUV2 ) { //[Y0][U0][Y1][V0]
+                for( int y = 0; y < p_pic->p[i].i_visible_pitch/2; y++ ) {
                     p_dst[2*y + 1] ^= 0x80;
                 }
             }
