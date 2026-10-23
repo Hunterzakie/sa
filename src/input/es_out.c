@@ -157,6 +157,7 @@ struct es_out_id_t
 
     vlc_mouse_event mouse_event_cb;
     void* mouse_event_userdata;
+    /* Used by mouse callback */
     vlc_mouse_t oldmouse;
     bool mouse_being_dragged;
 };
@@ -407,7 +408,9 @@ static void MouseEventCb(const vlc_mouse_t *newmouse, void *userdata)
         return;
     }
 
+    vlc_mutex_lock( &p_sys->lock );
     const es_format_t *fmt = id->fmt_out.i_cat != UNKNOWN_ES ? &id->fmt_out : &id->fmt;
+    vlc_mutex_unlock( &p_sys->lock );
 
     if (fmt->video.projection_mode != PROJECTION_MODE_RECTANGULAR) {
         if (vlc_mouse_HasDragged( &id->oldmouse, newmouse )) {
