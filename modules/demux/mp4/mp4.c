@@ -3631,7 +3631,7 @@ static int TrackTimeToSampleChunk( demux_t *p_demux, mp4_track_t *p_track,
         const MP4_Box_data_sgpd_entry_t *p_entrydesc;
         if( MP4_SampleToGroupInfo( p_track->p_stbl, i_sample,
                                   SAMPLEGROUP_roll, 0, &i_group_sample_entry,
-                                  SAMPLE_GROUP_MATCH_EXACT, &p_entrydesc ) )
+                                  SAMPLE_GROUP_MATCH_EXACT, &p_entrydesc ) && p_entrydesc )
         {
             msg_Dbg(p_demux, "track[Id 0x%x] preroll offset: %"PRId16" samples",
                     p_track->i_track_ID, p_entrydesc->roll.i_roll_distance );
