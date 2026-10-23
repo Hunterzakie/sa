@@ -142,6 +142,9 @@ static const char * bluray_event_debug_strings[] =
 #define BD_REGION_LONGTEXT  N_("Blu-Ray player region code. "\
                                 "Some discs can be played only with a correct region code.")
 
+#define BD_TITLE_TEXT       N_("Direct title play")
+#define BD_TITLE_LONGTEXT   N_("Play a specific title skipping the Blu-ray menu")
+
 #define BD_BDJ_SETTINGS_TEXT        N_("BD-J")
 #define BD_BDJ_JAVA_HOME_TEXT       N_("JAVA_HOME")
 #define BD_BDJ_JAVA_HOME_LONGTEXT   N_(\
@@ -190,6 +193,7 @@ vlc_module_begin ()
     add_bool("bluray-menu", true, BD_MENU_TEXT, BD_MENU_LONGTEXT)
     add_string("bluray-region", ppsz_region_code[REGION_DEFAULT], BD_REGION_TEXT, BD_REGION_LONGTEXT)
         change_string_list(ppsz_region_code, ppsz_region_code_text)
+    add_integer ("bluray-title", -1, BD_TITLE_TEXT, BD_TITLE_LONGTEXT)
 
 #if defined(BLURAY_SET_JAVA_HOME) || defined(BLURAY_ENABLE_PERSISTENT_STORAGE)
     set_section(BD_BDJ_SETTINGS_TEXT, NULL)
@@ -955,7 +959,13 @@ static int blurayOpen(vlc_object_t *object)
     p_sys->i_cover_idx = -1;
     attachThumbnail(p_demux);
 
-    p_sys->b_menu = var_InheritBool(p_demux, "bluray-menu");
+    /* Check for menu override */
+    int title = var_InheritInteger(p_demux, "bluray-title");
+    if (title != -1) {
+        p_sys->b_menu = false;
+    } else {
+        p_sys->b_menu = var_InheritBool(p_demux, "bluray-menu");
+    }
 
     /* Check BD-J capability */
     if (p_sys->b_menu && disc_info->bdj_detected && !disc_info->bdj_handled) {
@@ -979,8 +989,13 @@ static int blurayOpen(vlc_object_t *object)
     /* Registering overlay event handler */
     bd_register_overlay_proc(p_sys->bluray, p_demux, blurayOverlayProc);
 
-    if (p_sys->b_menu) {
-
+    if (title != -1) {
+        /* set requested title */
+        if (bluraySetTitle(p_demux, title) != VLC_SUCCESS) {
+            msg_Err(p_demux, "Could not set the title %d", title);
+            goto error;
+        }
+    } else if (p_sys->b_menu) {
         /* Register ARGB overlay handler for BD-J */
         if (disc_info->num_bdj_titles)
             bd_register_argb_overlay_proc(p_sys->bluray, p_demux, blurayArgbOverlayProc, NULL);
