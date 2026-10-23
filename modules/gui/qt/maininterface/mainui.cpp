@@ -181,6 +181,19 @@ bool MainUI::setup(QQmlEngine* engine)
 #endif
         return false;
     }
+
+    // Sanity check for `VLC.MediaLibrary` module and `HomeDisplay` it provides.
+    if (m_mainCtx->getEffectiveMainInterfaceMode() == MainCtx::MAININTERFACE_MODE_MAINDISPLAY)
+    {
+        if (m_mainCtx->hasMediaLibrary())
+        {
+            const auto ml = m_mainCtx->getMediaLibrary();
+            assert(ml);
+            if (!ml->homeDisplayComponent(engine))
+                return false;
+        }
+    }
+
     return true;
 }
 

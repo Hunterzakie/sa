@@ -104,12 +104,22 @@ FocusScope {
             MainCtx.sendHotkey(event.key, event.modifiers);
     }
 
+    // If `NoMedialibHome` is fundamentally broken,
+    // this will break the current type. This is
+    // intentional, because if it is the case the
+    // interface does not start and another interface
+    // is tried.
+    Component {
+        id: noMediaLibHomeComponent
+
+        NoMedialibHome { }
+    }
+
     readonly property var pageModel: [
         {
             name: "home",
-            url: MainCtx.mediaLibraryAvailable ?
-                 "qrc:///qt/qml/VLC/MediaLibrary/HomeDisplay.qml" :
-                 "qrc:///qt/qml/VLC/MainInterface/NoMedialibHome.qml"
+            component: MainCtx.mediaLibraryAvailable ? MainCtx.mediaLibrary.homeDisplayComponent
+                                                     : noMediaLibHomeComponent
         }, {
             name: "video",
             url: "qrc:///qt/qml/VLC/MediaLibrary/VideoDisplay.qml"

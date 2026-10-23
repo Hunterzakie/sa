@@ -24,6 +24,7 @@
 #include <utility>
 
 #include <QQmlEngine>
+#include <QQmlComponent>
 
 MediaLib::MediaLib(qt_intf_t *_intf, vlc::playlist::PlaylistController* playlistController, QObject *_parent)
     : QObject( _parent )
@@ -339,6 +340,34 @@ void MediaLib::mlInputItem(const QVector<MLItemId>& itemIdVector, QJSValue callb
 
         m_inputItemQuery.erase(it);
     });
+}
+
+QQmlComponent *MediaLib::homeDisplayComponent(QQmlEngine *engine)
+{
+    if (!m_homeDisplayComponent)
+    {
+        if (!engine)
+            engine = qmlEngine(this);
+
+        assert(engine); // Call this method when bound to the engine (singleton registration)
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+        m_homeDisplayComponent = new QQmlComponent(engine, "VLC.MediaLibrary", "HomeDisplay", this);
+#else
+        m_homeDisplayComponent = new QQmlComponent(engine, "qrc:/qt/qml/VLC/MediaLibrary/HomeDisplay.qml", this);
+#endif
+
+        if ((*m_homeDisplayComponent)->status() != QQmlComponent::Ready)
+        {
+            for (const auto& error : (*m_homeDisplayComponent)->errors())
+                qCritical() << qtu(error.description()) << qtu(error.url().toString()) << ":" << error.line();
+            delete *m_homeDisplayComponent;
+            m_homeDisplayComponent = nullptr;
+            return nullptr;
+        }
+    }
+
+    return *m_homeDisplayComponent;
 }
 
 vlc_ml_event_callback_t* MediaLib::registerEventListener( void (*callback)(void*, const vlc_ml_event_t*), void* data)
