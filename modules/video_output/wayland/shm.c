@@ -130,7 +130,10 @@ static void Prepare(vout_display_t *vd, picture_t *pic,
 
     wl_buffer_add_listener(buf, &buffer_cbs, d);
     wl_surface_attach(surface, buf, 0, 0);
-    wl_surface_damage(surface, 0, 0, vd->cfg->display.width, vd->cfg->display.height);
+    if (wl_surface_get_version(surface) >= WL_SURFACE_DAMAGE_BUFFER_SINCE_VERSION)
+        wl_surface_damage_buffer(surface, 0, 0, vd->fmt->i_visible_width, vd->fmt->i_visible_height);
+    else
+        wl_surface_damage(surface, 0, 0, vd->cfg->display.width, vd->cfg->display.height);
     wl_display_flush(display);
 
     sys->active_buffers++;

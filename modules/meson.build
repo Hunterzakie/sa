@@ -32,7 +32,7 @@ if (host_system != 'darwin' and host_system != 'windows') or get_option('xcb').e
         required: get_option('wayland'))
 
     wayland_deps = [
-        dependency('wayland-client', version: '>= 1.5.91', required: get_option('wayland')),
+        dependency('wayland-client', version: '>= 1.19.91', required: get_option('wayland')),
         dependency('wayland-cursor', required: get_option('wayland')),
         dependency('wayland-egl', required: get_option('wayland')),
         wayland_scanner_dep,
