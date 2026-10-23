@@ -559,6 +559,13 @@ static int OpenDecoder(vlc_object_t *p_this)
 
     cc_Init(&p_sys->cc);
 
+    if (dec->fmt_in->video.i_frame_rate > 0 &&
+        dec->fmt_in->video.i_frame_rate_base > 0)
+    {
+        dec->fmt_out.video.i_frame_rate      = dec->fmt_in->video.i_frame_rate;
+        dec->fmt_out.video.i_frame_rate_base = dec->fmt_in->video.i_frame_rate_base;
+    }
+
     return VLC_SUCCESS;
 }
 

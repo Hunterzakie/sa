@@ -170,6 +170,53 @@ bool AV1_get_frame_rate(const av1_OBU_sequence_header_t *, unsigned *, unsigned 
 bool AV1_get_super_res(const av1_OBU_sequence_header_t *);
 vlc_fourcc_t AV1_get_chroma(const av1_OBU_sequence_header_t *);
 
+/* Map the raw AV1 color-description bits (as carried by, e.g., the
+ * AV1/MPEG-TS descriptor) to a VLC chroma fourcc.
+ * Returns 0 when the combination is not a valid AV1 bitstream configuration. */
+static inline vlc_fourcc_t
+AV1_get_chroma_from_bits(bool high_bitdepth, bool twelve_bit, bool monochrome,
+                         bool subsampling_x, bool subsampling_y)
+{
+    /* Per AV1 spec 5.5.2 (color_config): twelve_bit may only be set when
+     * high_bitdepth is set, and monochrome forces subsampling_x=subsampling_y=1. */
+    if (twelve_bit && !high_bitdepth)
+        return 0;
+    if (monochrome && (!subsampling_x || !subsampling_y))
+        return 0;
+
+    const unsigned bitdepth = twelve_bit ? 2 : high_bitdepth ? 1 : 0;
+
+    if (monochrome) {
+        static const vlc_fourcc_t grey[3] = {
+            VLC_CODEC_GREY, VLC_CODEC_GREY_10L, VLC_CODEC_GREY_12L,
+        };
+        return grey[bitdepth];
+    }
+
+    /* AV1 supports 4:2:0 (x=1,y=1), 4:2:2 (x=1,y=0) and 4:4:4 (x=0,y=0).
+     * 4:1:1 (x=0,y=1) is not a valid AV1 configuration. */
+    if (!subsampling_x && subsampling_y)
+        return 0;
+
+    if (subsampling_x && subsampling_y) {
+        static const vlc_fourcc_t i420[3] = {
+            VLC_CODEC_I420, VLC_CODEC_I420_10L, VLC_CODEC_I420_12L,
+        };
+        return i420[bitdepth];
+    }
+    if (subsampling_x /* && !subsampling_y */) {
+        static const vlc_fourcc_t i422[3] = {
+            VLC_CODEC_I422, VLC_CODEC_I422_10L, VLC_CODEC_I422_12L,
+        };
+        return i422[bitdepth];
+    }
+    /* 4:4:4 */
+    static const vlc_fourcc_t i444[3] = {
+        VLC_CODEC_I444, VLC_CODEC_I444_10L, VLC_CODEC_I444_12L,
+    };
+    return i444[bitdepth];
+}
+
 bool AV1_sequence_header_equal(const av1_OBU_sequence_header_t *,const av1_OBU_sequence_header_t *);
 
 

@@ -48,6 +48,7 @@
 
 #include "../../codec/jpeg2000.h"
 #include "../../codec/opus_header.h"
+#include "../../packetizer/av1_obu.h"
 #include "../../packetizer/dts_header.h"
 
 #include "sections.h"
@@ -1192,6 +1193,83 @@ explicit_config_too_short:
     msg_Err(demux, "Opus descriptor too short");
 }
 
+/* AV1/MPEG-TS descriptor (https://aomediacodec.github.io/av1-mpeg2-ts/, §2.3).
+ * Layout of the 4 mandatory bytes in a descriptor_tag 0x80:
+ *   p_data[0] : version / reserved
+ *   p_data[1] : seq_profile (3 bits) | seq_level_idx_0 (5 bits)
+ *   p_data[2] : high_bitdepth, twelve_bit, monochrome, subsampling_x,
+ *               subsampling_y, chroma_sample_position (2 bits), reserved
+ *   p_data[3] : hdr_wcg_idc (2 bits) | reserved (6 bits)
+ * Optional 4 additional bytes: frame rate numerator/denominator (big endian). */
+enum {
+    AV1_HDR_WCG_SDR_BT709     = 0, /* SDR with Rec. ITU-R BT.709 */
+    AV1_HDR_WCG_WCG_BT2020    = 1, /* WCG with Rec. ITU-R BT.2020 */
+    AV1_HDR_WCG_HDR_AND_WCG   = 2, /* both HDR and WCG */
+    AV1_HDR_WCG_UNSPECIFIED   = 3, /* no indication */
+};
+
+static void AV1Setup( demux_t *demux, ts_stream_t *p_pes,
+                      const dvbpsi_pmt_es_t *p_dvbpsies )
+{
+    dvbpsi_descriptor_t *desc = PMTEsFindDescriptor( p_dvbpsies, 0x80 );
+    if( desc == NULL || desc->i_length < 4 )
+        return;
+
+    es_format_t *p_fmt = &p_pes->p_es->fmt;
+    es_format_Change( p_fmt, VIDEO_ES, VLC_CODEC_AV1 );
+    p_fmt->i_original_fourcc = VLC_CODEC_AV1;
+    p_fmt->i_profile = (desc->p_data[1] & 0xe0) >> 5;
+    p_fmt->i_level   = (desc->p_data[1] & 0x1f);
+
+    const uint8_t hdr_wcg_idc = (desc->p_data[3] & 0xc0) >> 6;
+    switch( hdr_wcg_idc )
+    {
+        case AV1_HDR_WCG_SDR_BT709:
+        case AV1_HDR_WCG_HDR_AND_WCG:
+            p_fmt->video.space     = COLOR_SPACE_BT709;
+            p_fmt->video.transfer  = TRANSFER_FUNC_BT709;
+            p_fmt->video.primaries = COLOR_PRIMARIES_BT709;
+            break;
+        case AV1_HDR_WCG_WCG_BT2020:
+            p_fmt->video.space     = COLOR_SPACE_BT2020;
+            p_fmt->video.transfer  = TRANSFER_FUNC_BT2020;
+            p_fmt->video.primaries = COLOR_PRIMARIES_BT2020;
+            break;
+        case AV1_HDR_WCG_UNSPECIFIED:
+        default:
+            p_fmt->video.space     = COLOR_SPACE_UNDEF;
+            p_fmt->video.transfer  = TRANSFER_FUNC_UNDEF;
+            p_fmt->video.primaries = COLOR_PRIMARIES_UNDEF;
+            break;
+    }
+
+    /* Extract the structured color-description bits and map them via the
+     * shared AV1 helper; reject streams whose combination is not valid. */
+    const bool high_bitdepth  = (desc->p_data[2] & 0x80) != 0;
+    const bool twelve_bit     = (desc->p_data[2] & 0x40) != 0;
+    const bool monochrome     = (desc->p_data[2] & 0x20) != 0;
+    const bool subsampling_x  = (desc->p_data[2] & 0x10) != 0;
+    const bool subsampling_y  = (desc->p_data[2] & 0x08) != 0;
+
+    const vlc_fourcc_t fcc =
+        AV1_get_chroma_from_bits( high_bitdepth, twelve_bit, monochrome,
+                                  subsampling_x, subsampling_y );
+    if( fcc == 0 )
+    {
+        msg_Warn( demux, "AV1/TS: unsupported chroma bits 0x%02x, rejecting stream",
+                  desc->p_data[2] );
+        es_format_Change( p_fmt, UNKNOWN_ES, 0 );
+        return;
+    }
+    p_fmt->video.i_chroma = fcc;
+
+    if( desc->i_length >= 8 )
+    {
+        p_fmt->video.i_frame_rate      = GetWBE(&desc->p_data[4]);
+        p_fmt->video.i_frame_rate_base = GetWBE(&desc->p_data[6]);
+    }
+}
+
 static void PMTSetupEs0x02( ts_es_t *p_es,
                             const dvbpsi_pmt_es_t *p_dvbpsies )
 {
@@ -1279,6 +1357,10 @@ static void PMTSetupEs0x06( demux_t *p_demux, ts_stream_t *p_pes,
              PMTEsFindDescriptor( p_dvbpsies, 0x81 ) ) /* AC-3 channel (also in EAC3) */
     {
         es_format_Change( p_fmt, AUDIO_ES, VLC_CODEC_A52 );
+    }
+    else if( PMTEsHasRegistration( p_demux, p_dvbpsies, "AV01" ) )
+    {
+        AV1Setup( p_demux, p_pes, p_dvbpsies );
     }
     else if( PMTEsHasRegistration( p_demux, p_dvbpsies, "DTS1" ) || /* 512 Bpf */
              PMTEsHasRegistration( p_demux, p_dvbpsies, "DTS2" ) || /* 1024 Bpf */

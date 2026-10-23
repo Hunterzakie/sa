@@ -274,6 +274,54 @@ static block_t *GatherAndValidateChain(decoder_t *p_dec, block_t *p_outputchain)
     return p_output;
 }
 
+/* AV1 in MPEG-TS (aomediacodec.github.io/av1-mpeg2-ts) wraps each OBU in a
+ * 3-byte start code (0x00 0x00 0x01) and uses a 0x00 0x00 0x03 XX emulation
+ * prevention sequence identical to H.26x Annex-B framing. The packetizer
+ * receives these blocks and must unwrap them before OBU parsing. */
+static bool AV1_TsOBUHasStartCode(const uint8_t *p_buf, size_t i_len)
+{
+    return i_len >= 3 && p_buf[0] == 0x00 && p_buf[1] == 0x00 && p_buf[2] == 0x01;
+}
+
+static bool AV1_TsOBUHasEmulationCode(const uint8_t *p_buf, size_t i_len)
+{
+    return i_len >= 3 && p_buf[0] == 0x00 && p_buf[1] == 0x00 && p_buf[2] == 0x03;
+}
+
+static void ParseTsOBUBlock(decoder_t *p_dec, block_t *p_block)
+{
+    size_t bytes = 0;
+
+    for (size_t i = 0; i < p_block->i_buffer; i++) {
+        if (AV1_TsOBUHasStartCode(&p_block->p_buffer[i], p_block->i_buffer - i)) {
+            i += 3;
+            if (i >= p_block->i_buffer)
+                break;
+        }
+        if (((i + 4) < p_block->i_buffer) &&
+            AV1_TsOBUHasEmulationCode(&p_block->p_buffer[i], p_block->i_buffer - i)) {
+            p_block->p_buffer[bytes++] = p_block->p_buffer[i];
+            p_block->p_buffer[bytes++] = p_block->p_buffer[i + 1];
+            /* Per the AV1/MPEG-TS spec, only 0x00..0x03 may follow the
+             * 0x00 0x00 0x03 escape. Anything else indicates a corrupted
+             * stream: strip the escape so the loop stays in sync with the
+             * byte stream, but flag the block so the decoder can resync on
+             * the next keyframe instead of consuming a malformed OBU. */
+            if (p_block->p_buffer[i + 3] > 0x03) {
+                msg_Warn(p_dec, "AV1/TS: invalid emulation sequence (0x%02x), "
+                                "marking block corrupted",
+                         p_block->p_buffer[i + 3]);
+                p_block->i_flags |= BLOCK_FLAG_CORRUPTED;
+            }
+            p_block->p_buffer[bytes++] = p_block->p_buffer[i + 3];
+            i += 3;
+        } else {
+            p_block->p_buffer[bytes++] = p_block->p_buffer[i];
+        }
+    }
+    p_block->i_buffer = bytes;
+}
+
 static block_t *ParseOBUBlock(decoder_t *p_dec, block_t *p_obu)
 {
     av1_sys_t *p_sys = p_dec->p_sys;
@@ -450,6 +498,9 @@ static block_t *PacketizeOBU(decoder_t *p_dec, block_t **pp_block)
                 return NULL;
             }
         }
+
+        if (AV1_TsOBUHasStartCode(p_block->p_buffer, p_block->i_buffer))
+            ParseTsOBUBlock(p_dec, p_block);
 
         if(!AV1_OBUIsValid(p_block->p_buffer, p_block->i_buffer))
         {
