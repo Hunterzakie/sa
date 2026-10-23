@@ -95,8 +95,14 @@ static int Control(stream_t *access, int query, va_list args)
             break;
 
         case STREAM_GET_PTS_DELAY:
-            *va_arg(args, vlc_tick_t *) = DEFAULT_PTS_DELAY;
+        {
+            vlc_tick_t delay = VLC_TICK_FROM_MS(
+                    var_InheritInteger(access, "imem-pts-delay"));
+            if (delay < 0)
+                delay = DEFAULT_PTS_DELAY;
+            *va_arg(args, vlc_tick_t *) = delay;
             break;
+        }
 
         case STREAM_SET_PAUSE_STATE:
             break;
@@ -150,6 +156,8 @@ static void Close(vlc_object_t *object)
         sys->cbs->close(sys->opaque);
 }
 
+#define IMEM_PTS_DELAY_TEXT "PTS delay in milliseconds"
+#define IMEM_PTS_DELAY_LONGTEXT "Delay of presentation timestamp used in buffering, in milliseconds"
 vlc_module_begin()
     set_shortname(N_("Memory stream"))
     set_description(N_("In-memory stream input"))
@@ -158,4 +166,8 @@ vlc_module_begin()
     add_shortcut("imem")
     set_capability("access", 0)
     set_callbacks(Open, Close)
+
+    add_integer("imem-pts-delay", DEFAULT_PTS_DELAY,
+                IMEM_PTS_DELAY_TEXT, IMEM_PTS_DELAY_LONGTEXT)
+        change_volatile()
 vlc_module_end()
