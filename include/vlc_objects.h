@@ -251,6 +251,9 @@ static inline void vlc_object_release(vlc_object_t *o)
  * @param size byte size of the memory allocation
  *
  * @return a pointer to the allocated memory, or NULL on error (errno is set).
+ *
+ * @deprecated Some context will not properly deallocate memory
+ *             allocated from this function.
  */
 VLC_API VLC_MALLOC void *vlc_obj_malloc(vlc_object_t *obj, size_t size);
 #define vlc_obj_malloc(o, s) vlc_obj_malloc(VLC_OBJECT(o), s)
@@ -266,6 +269,9 @@ VLC_API VLC_MALLOC void *vlc_obj_malloc(vlc_object_t *obj, size_t size);
  * @param size byte size of a table entry
  *
  * @return a pointer to the allocated memory, or NULL on error (errno is set).
+ *
+ * @deprecated Some context will not properly deallocate memory
+ *             allocated from this function.
  */
 VLC_API VLC_MALLOC void *vlc_obj_calloc(vlc_object_t *obj, size_t nmemb,
                                         size_t size);
@@ -281,6 +287,9 @@ VLC_API VLC_MALLOC void *vlc_obj_calloc(vlc_object_t *obj, size_t nmemb,
  * @param str string to copy
  *
  * @return a pointer to the copy, or NULL on error (errno is set).
+ *
+ * @deprecated Some context will not properly deallocate memory
+ *             allocated from this function.
  */
 VLC_API VLC_MALLOC char *vlc_obj_strdup(vlc_object_t *obj, const char *str);
 #define vlc_obj_strdup(o, s) vlc_obj_strdup(VLC_OBJECT(o), s)
