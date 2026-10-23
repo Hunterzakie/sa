@@ -16,12 +16,12 @@ build-npapi: package-win-install
 endif
 
 if HAVE_ARM64
-WINVERSION=vlc-$(VERSION)-winarm64
+WINVERSION=$(PACKAGE_TARNAME)-$(VERSION)-winarm64
 else
 if HAVE_WIN64
-WINVERSION=vlc-$(VERSION)-win64
+WINVERSION=$(PACKAGE_TARNAME)-$(VERSION)-win64
 else
-WINVERSION=vlc-$(VERSION)-win32
+WINVERSION=$(PACKAGE_TARNAME)-$(VERSION)-win32
 endif
 endif
 
@@ -158,17 +158,17 @@ endif
 
 package-win32-zip: package-win-strip
 	rm -f -- $(WINVERSION).zip
-	zip -r -9 $(WINVERSION).zip vlc-$(VERSION) --exclude \*.nsi \*NSIS\* \*languages\* \*sdk\* \*helpers\* spad\*
+	zip -r -9 $(WINVERSION).zip $(PACKAGE_TARNAME)-$(VERSION) --exclude \*.nsi \*NSIS\* \*languages\* \*sdk\* \*helpers\* spad\*
 
 package-win32-debug-zip: package-win-common
 	rm -f -- $(WINVERSION)-debug.zip
-	zip -r -9 $(WINVERSION)-debug.zip vlc-$(VERSION)
+	zip -r -9 $(WINVERSION)-debug.zip $(PACKAGE_TARNAME)-$(VERSION)
 
 package-win32-7zip: package-win-strip
-	$(SEVENZIP) a $(7ZIP_OPTS) $(WINVERSION).7z vlc-$(VERSION)
+	$(SEVENZIP) a $(7ZIP_OPTS) $(WINVERSION).7z $(PACKAGE_TARNAME)-$(VERSION)
 
 package-win32-debug-7zip: package-win-common
-	$(SEVENZIP) a $(7ZIP_OPTS) $(WINVERSION)-debug.7z vlc-$(VERSION)
+	$(SEVENZIP) a $(7ZIP_OPTS) $(WINVERSION)-debug.7z $(PACKAGE_TARNAME)-$(VERSION)
 
 package-win32-cleanup:
 	rm -Rf $(win32_destdir) $(win32_debugdir)

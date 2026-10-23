@@ -2,7 +2,7 @@ dnl Autoconf settings for vlc
 
 AC_COPYRIGHT([Copyright 1999-2026 VLC authors and VideoLAN])
 
-AC_INIT([vlc], [4.0.0-dev])
+AC_INIT([VLC], [4.0.0-dev])
 VERSION_MAJOR=4
 VERSION_MINOR=0
 VERSION_REVISION=0
@@ -34,6 +34,8 @@ LIBVLC_ABI_MICRO=0
 CONFIGURE_LINE="`echo "$0 $ac_configure_args" | sed -e 's/\\\/\\\\\\\/g'`"
 CODENAME="Otto Chriek"
 COPYRIGHT_YEARS="1996-2026"
+PACKAGE_FULL_NAME="VLC media player"
+PACKAGE_VENDOR="VideoLAN"
 
 AC_CONFIG_SRCDIR([src/libvlc.c])
 AC_CONFIG_AUX_DIR([autotools])
@@ -356,7 +358,7 @@ int foo() { return my_array[0]; }
 
     AC_ARG_WITH(packagedir,
       AS_HELP_STRING([--with-packagedir=DIR],
-        [output the packaged VLC files in DIR (default vlc-$PACKAGE_VERSION)]))
+        [output the packaged VLC files in DIR (default $PACKAGE_TARNAME-$PACKAGE_VERSION)]))
     AS_IF([test "${with_packagedir}" != ""], [
         AS_IF([test -d "${with_packagedir}"], [
             PACKAGE_DIR=`cd "${with_packagedir}" && pwd -P`
@@ -365,7 +367,7 @@ int foo() { return my_array[0]; }
             PACKAGE_DIR="${with_packagedir}"
         ])
     ], [
-        PACKAGE_DIR=`pwd -P`"/vlc-${PACKAGE_VERSION}"
+        PACKAGE_DIR=`pwd -P`"/${PACKAGE_TARNAME}-${PACKAGE_VERSION}"
     ])
     AC_SUBST([PACKAGE_DIR])
 
@@ -5239,6 +5241,8 @@ AC_DEFINE_UNQUOTED([PACKAGE_VERSION_DEV],"${VERSION_DEV}", [version development 
 AC_DEFINE_UNQUOTED([LIBVLC_ABI_MAJOR],${LIBVLC_ABI_MAJOR}, [libvlc version major number])
 AC_DEFINE_UNQUOTED([LIBVLC_ABI_MINOR],${LIBVLC_ABI_MINOR}, [libvlc version minor number])
 AC_DEFINE_UNQUOTED([LIBVLC_ABI_MICRO],${LIBVLC_ABI_MICRO}, [libvlc version micro number])
+AC_DEFINE_UNQUOTED([PACKAGE_VENDOR],"${PACKAGE_VENDOR}", [Company distributing this version of VLC])
+AC_DEFINE_UNQUOTED([PACKAGE_FULL_NAME],"${PACKAGE_FULL_NAME}", [Full name of the program])
 AC_SUBST([COPYRIGHT_MESSAGE])
 AC_SUBST([VERSION_MESSAGE])
 AC_SUBST([VERSION_MAJOR])
@@ -5249,6 +5253,8 @@ AC_SUBST([LIBVLC_ABI_MAJOR])
 AC_SUBST([LIBVLC_ABI_MINOR])
 AC_SUBST([LIBVLC_ABI_MICRO])
 AC_SUBST([COPYRIGHT_YEARS])
+AC_SUBST([PACKAGE_VENDOR])
+AC_SUBST([PACKAGE_FULL_NAME])
 AS_IF([test -z "$VLC_COMPILE_BY"],[
    VLC_COMPILE_BY=`whoami|sed -e 's/\\\/\\\\\\\/g'`
 ])

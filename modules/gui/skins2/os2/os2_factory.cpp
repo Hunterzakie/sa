@@ -163,7 +163,7 @@ OS2Factory::OS2Factory( intf_thread_t *pIntf ):
 
 bool OS2Factory::init()
 {
-    PCSZ vlc_name = "VLC Media Player";
+    PCSZ vlc_name = PACKAGE_FULL_NAME;
     PCSZ vlc_icon = "VLC_ICON";
     PCSZ vlc_class = "SkinWindowClass";
 

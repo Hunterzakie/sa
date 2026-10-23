@@ -124,7 +124,7 @@ static const int kCurrentPreferencesVersion = 4;
         // Do NOT add the current plist file here as this would conflict with caching.
         // Instead, just reset below.
         NSArray *ourPreferences = @[[[NSURL alloc] initFileURLWithPath:[preferences stringByAppendingPathComponent:@"org.videolan.vlc"]],
-                                    [[NSURL alloc] initFileURLWithPath:[preferences stringByAppendingPathComponent:@"VLC"]]];
+                                    [[NSURL alloc] initFileURLWithPath:[preferences stringByAppendingPathComponent:@PACKAGE_NAME]]];
 
         [NSWorkspace.sharedWorkspace recycleURLs:ourPreferences completionHandler:^(NSDictionary * __unused newURLs, NSError * __unused error){
             [self resetAndReinitializeUserDefaults];

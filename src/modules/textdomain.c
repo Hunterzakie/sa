@@ -54,17 +54,17 @@ int vlc_bindtextdomain (const char *domain)
      * Unfortunately, we cannot ask UTF-8 for strerror_r(), strsignal_r()
      * and other functions that are not part of our text domain.
      */
-    if (bind_textdomain_codeset (PACKAGE_NAME, "UTF-8") == NULL)
+    if (bind_textdomain_codeset (PACKAGE, "UTF-8") == NULL)
     {
         fprintf (stderr, "%s: UTF-8 encoding not available\n", domain);
         // Unbinds the text domain to avoid broken encoding
-        bindtextdomain (PACKAGE_NAME, "/DOES_NOT_EXIST");
+        bindtextdomain (PACKAGE, "/DOES_NOT_EXIST");
         return -1;
     }
 
     /* LibVLC does NOT set the default textdomain, since it is a library.
      * This could otherwise break programs using LibVLC (other than VLC).
-     * textdomain (PACKAGE_NAME);
+     * textdomain (PACKAGE);
      */
 
 #else /* !ENABLE_NLS */
@@ -81,7 +81,7 @@ const char *vlc_gettext(const char *msgid)
 {
 #ifdef ENABLE_NLS
     if (likely(*msgid))
-        return dgettext (PACKAGE_NAME, msgid);
+        return dgettext (PACKAGE, msgid);
 #endif
     return msgid;
 }
@@ -91,7 +91,7 @@ const char *vlc_ngettext(const char *msgid, const char *plural,
 {
 #ifdef ENABLE_NLS
     if (likely(*msgid))
-        return dngettext (PACKAGE_NAME, msgid, plural, n);
+        return dngettext (PACKAGE, msgid, plural, n);
 #endif
     return ((n == 1) ? msgid : plural);
 }

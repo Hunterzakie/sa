@@ -53,7 +53,7 @@ static struct vlc_http_msg *vlc_http_tunnel_open(struct vlc_http_conn *conn,
         return NULL;
 
     vlc_http_msg_add_header(req, "ALPN", "h2, http%%2F1.1");
-    vlc_http_msg_add_agent(req, PACKAGE_NAME "/" PACKAGE_VERSION);
+    vlc_http_msg_add_agent(req, PACKAGE "/" PACKAGE_VERSION);
     if (username != NULL)
         vlc_http_msg_add_creds_basic(req, true, username,
                                      (password != NULL) ? password : "");

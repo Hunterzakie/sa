@@ -56,7 +56,7 @@ VLC_WEAK GdkPixbuf *gtk_icon_theme_load_icon(GtkIconTheme *,
 static int  Open    ( vlc_object_t * );
 static void Close   ( vlc_object_t * );
 
-#define APPLICATION_NAME "VLC media player"
+#define APPLICATION_NAME PACKAGE_FULL_NAME
 
 #define TIMEOUT_TEXT N_("Timeout (ms)")
 #define TIMEOUT_LONGTEXT N_("How long the notification will be displayed.")
@@ -260,7 +260,7 @@ static void on_current_media_changed(vlc_player_t *player,
     {   /* Load icon from share/ */
         GError *p_error = NULL;
         char *psz_pixbuf = config_GetSysPath(VLC_SYSDATA_DIR,
-                                     "icons/hicolor/48x48/"PACKAGE_NAME".png");
+                                     "icons/hicolor/48x48/"PACKAGE".png");
         if (psz_pixbuf != NULL)
         {
             pix = gdk_pixbuf_new_from_file( psz_pixbuf, &p_error );

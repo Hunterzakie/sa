@@ -109,8 +109,8 @@ static FILE *config_OpenConfigFile( libvlc_int_t *p_obj )
                     FILE *p_readme = vlc_fopen( psz_readme, "wt" );
                     if( p_readme )
                     {
-                        fprintf( p_readme, "The VLC media player "
-                                 "configuration folder has moved to comply\n"
+                        fprintf( p_readme, "The " PACKAGE_FULL_NAME
+                                 " configuration folder has moved to comply\n"
                                  "with the XDG Base Directory Specification "
                                  "version 0.6. Your\nconfiguration has been "
                                  "copied to the new location:\n%s\nYou can "
@@ -383,7 +383,7 @@ int (config_SaveConfigFile) (libvlc_int_t *p_this)
 
     fprintf( file,
         "\xEF\xBB\xBF###\n"
-        "###  "PACKAGE_NAME" "PACKAGE_VERSION"\n"
+        "###  "PACKAGE" "PACKAGE_VERSION"\n"
         "###\n"
         "\n"
         "###\n"

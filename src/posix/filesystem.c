@@ -90,7 +90,7 @@ int vlc_mkstemp (char *template)
 
 VLC_WEAK int vlc_memfd(void)
 {
-    char bufpath[] = "/tmp/"PACKAGE_NAME"XXXXXX";
+    char bufpath[] = "/tmp/"PACKAGE"XXXXXX";
     int fd;
 
     fd = vlc_mkstemp (bufpath);

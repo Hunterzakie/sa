@@ -330,7 +330,7 @@ static int  CmdExecutePrivControl(struct es_out_timeshift *, ts_cmd_privcontrol_
 static int GetTmpFile( char **filename, const char *dirname )
 {
     if( dirname != NULL
-     && asprintf( filename, "%s"DIR_SEP PACKAGE_NAME"-timeshift.XXXXXX",
+     && asprintf( filename, "%s"DIR_SEP PACKAGE"-timeshift.XXXXXX",
                   dirname ) >= 0 )
     {
         vlc_mkdir( dirname, 0700 );
@@ -342,7 +342,7 @@ static int GetTmpFile( char **filename, const char *dirname )
         free( *filename );
     }
 
-    *filename = strdup( DIR_SEP"tmp"DIR_SEP PACKAGE_NAME"-timeshift.XXXXXX" );
+    *filename = strdup( DIR_SEP"tmp"DIR_SEP PACKAGE"-timeshift.XXXXXX" );
     if( unlikely(*filename == NULL) )
         return -1;
 
@@ -526,7 +526,7 @@ ControlLockedGetWakeup(struct es_out_timeshift *p_sys,
 
     return VLC_SUCCESS;
 }
-static int 
+static int
 ControlLockedGetBuffering(struct es_out_timeshift *p_sys,
                           input_source_t *in,
                           bool *pb_buffering)

@@ -195,7 +195,7 @@ static char *config_GetAppDir (void)
     {
         char *psz_parent = GetFolderName(folder);
         if (psz_parent == NULL
-         || asprintf (&psz_dir, "%s\\vlc", psz_parent) == -1)
+         || asprintf (&psz_dir, "%s\\" PACKAGE_TARNAME, psz_parent) == -1)
             psz_dir = NULL;
         free(psz_parent);
     }

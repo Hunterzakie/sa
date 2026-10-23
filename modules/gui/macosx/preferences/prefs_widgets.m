@@ -46,7 +46,7 @@
 
 #import "views/VLCUIUnits.h"
 
-NSString * const VLCPrefsWidgetModuleDragType = @"VLC media player module";
+NSString * const VLCPrefsWidgetModuleDragType = @( PACKAGE_FULL_NAME " module" );
 
 #define CONFIG_ITEM_STRING_LIST (CONFIG_ITEM_STRING + 10)
 #define CONFIG_ITEM_RANGED_INTEGER (CONFIG_ITEM_INTEGER + 10)

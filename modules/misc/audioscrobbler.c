@@ -820,7 +820,7 @@ static void *Run(void *data)
         vlc_memstream_printf(&req, "POST %s HTTP/1.1\r\n", url->psz_path);
         vlc_memstream_printf(&req, "Host: %s\r\n", url->psz_host);
         vlc_memstream_puts(&req, "User-Agent:"
-                                 " "PACKAGE_NAME"/"PACKAGE_VERSION"\r\n");
+                                 " "PACKAGE"/"PACKAGE_VERSION"\r\n");
         vlc_memstream_puts(&req, "Connection: close\r\n");
         vlc_memstream_puts(&req, "Accept-Encoding: identity\r\n");
         vlc_memstream_puts(&req, "Content-Type:"

@@ -9,7 +9,7 @@
 	<key>NSRequiresAquaSystemAppearance</key>
 	<false/>
 	<key>CFBundleExecutable</key>
-	<string>VLC</string>
+	<string>@PACKAGE_NAME@</string>
 	<key>CFBundleIconFile</key>
 	<string>VLC.icns</string>
 	<key>CFBundleIdentifier</key>
@@ -17,17 +17,17 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>VLC</string>
+	<string>@PACKAGE_NAME@</string>
 	<key>CFBundleDisplayName</key>
-	<string>VLC</string>
+	<string>@PACKAGE_NAME@</string>
 	<key>CFBundleShortVersionString</key>
 	<string>@VERSION@</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleSignature</key>
-	<string>VLC#</string>
+	<string>@PACKAGE_NAME@#</string>
 	<key>BreakpadProduct</key>
-	<string>VLC</string>
+	<string>@PACKAGE_NAME@</string>
 	<key>BreakpadVendor</key>
 	<string>VideoLAN</string>
 	<key>BreakpadRequestComments</key>
@@ -66,21 +66,21 @@
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright (c) @COPYRIGHT_YEARS@ VLC authors and VideoLAN</string>
 	<key>NSCameraUsageDescription</key>
-	<string>VLC wants to access the camera as requested by the user.</string>
+	<string>@PACKAGE_NAME@ wants to access the camera as requested by the user.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>VLC wants to access the microphone as requested by the user.</string>
+	<string>@PACKAGE_NAME@ wants to access the microphone as requested by the user.</string>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>VLC wants to pause and resume external media players.</string>
+	<string>@PACKAGE_NAME@ wants to pause and resume external media players.</string>
 	<key>NSDesktopFolderUsageDescription</key>
-	<string>VLC wants to access the desktop folder as requested by the user.</string>
+	<string>@PACKAGE_NAME@ wants to access the desktop folder as requested by the user.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
-	<string>VLC wants to access the documents folder as requested by the user.</string>
+	<string>@PACKAGE_NAME@ wants to access the documents folder as requested by the user.</string>
 	<key>NSDownloadsFolderUsageDescription</key>
-	<string>VLC wants to access the downloads folder as requested by the user.</string>
+	<string>@PACKAGE_NAME@ wants to access the downloads folder as requested by the user.</string>
 	<key>NSNetworkVolumesUsageDescription</key>
-	<string>VLC wants to access a network volume as requested by the user.</string>
+	<string>@PACKAGE_NAME@ wants to access a network volume as requested by the user.</string>
 	<key>NSRemovableVolumesUsageDescription</key>
-	<string>VLC wants to access a removable volume as requested by the user.</string>
+	<string>@PACKAGE_NAME@ wants to access a removable volume as requested by the user.</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -213,7 +213,7 @@
 			<key>CFBundleTypeIconFile</key>
 			<string>playlist.icns</string>
 			<key>CFBundleTypeName</key>
-			<string>VLC file</string>
+			<string>@PACKAGE_NAME@ file</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 		</dict>
@@ -1657,7 +1657,7 @@
 	<array>
 		<dict>
 			<key>UTTypeDescription</key>
-			<string>VLC playlist file</string>
+			<string>@PACKAGE_NAME@ playlist file</string>
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>public.text</string>

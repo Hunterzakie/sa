@@ -512,8 +512,14 @@
 /* Define to the full name of this package. */
 #mesondefine PACKAGE_NAME
 
+/* Full name of the program */
+#mesondefine PACKAGE_FULL_NAME
+
 /* Define to the full name and version of this package. */
 #mesondefine PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#mesondefine PACKAGE_TARNAME
 
 /* Define to the version of this package. */
 #mesondefine PACKAGE_VERSION
@@ -532,6 +538,9 @@
 
 /* version revision number */
 #mesondefine PACKAGE_VERSION_REVISION
+
+/* Company distributing this version of VLC */
+#mesondefine PACKAGE_VENDOR
 
 /* Enable GNU extensions on systems that have them.  */
 #ifndef _GNU_SOURCE

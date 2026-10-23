@@ -154,7 +154,7 @@ int main(int argc, const char *argv[])
 #ifndef ALLOW_RUN_AS_ROOT
     if (geteuid () == 0)
     {
-        fprintf (stderr, "VLC is not supposed to be run as root. Sorry.\n"
+        fprintf (stderr, PACKAGE_NAME " is not supposed to be run as root. Sorry.\n"
         "If you need to use real-time priorities and/or privileged TCP ports\n"
         "you can use %s-wrapper (make sure it is Set-UID root and\n"
         "cannot be run by non-trusted users first).\n", argv[0]);
@@ -167,7 +167,7 @@ int main(int argc, const char *argv[])
     if (isatty (STDERR_FILENO))
         /* This message clutters error logs. It is printed only on a TTY.
          * Fortunately, LibVLC prints version info with -vv anyway. */
-        fprintf (stderr, "VLC media player %s (revision %s)\n",
+        fprintf (stderr, PACKAGE_FULL_NAME " %s (revision %s)\n",
                  libvlc_get_version(), libvlc_get_changeset());
 
     sigset_t set;
@@ -243,8 +243,8 @@ int main(int argc, const char *argv[])
 
     int ret = 1;
     libvlc_SetExitHandler(vlc->p_libvlc_int, vlc_kill, &self);
-    libvlc_set_app_id (vlc, "org.VideoLAN.VLC", PACKAGE_VERSION, PACKAGE_NAME);
-    libvlc_set_user_agent (vlc, "VLC media player", "VLC/"PACKAGE_VERSION);
+    libvlc_set_app_id (vlc, "org." PACKAGE_VENDOR "." PACKAGE_NAME, PACKAGE_VERSION, PACKAGE);
+    libvlc_set_user_agent (vlc, PACKAGE_FULL_NAME, "VLC/"PACKAGE_VERSION);
 
     if (libvlc_InternalAddIntf (vlc->p_libvlc_int, NULL))
     {

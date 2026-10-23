@@ -191,7 +191,7 @@ int libvlc_InternalInit( libvlc_int_t *p_libvlc, int i_argc,
      */
 #if defined( ENABLE_NLS ) \
      && ( defined( HAVE_GETTEXT ) || defined( HAVE_INCLUDED_GETTEXT ) )
-    vlc_bindtextdomain (PACKAGE_NAME);
+    vlc_bindtextdomain (PACKAGE);
 #endif
     /*xgettext: Translate "C" to the language code: "fr", "en_GB", "nl", "ru"... */
     msg_Dbg( p_libvlc, "translation test: code is \"%s\"", _("C") );
@@ -248,15 +248,14 @@ int libvlc_InternalInit( libvlc_int_t *p_libvlc, int i_argc,
      * must be created (in place of libvlc_new()) and set to VLC defaults
      * (in place of VLC main()) *here*. */
     var_Create( p_libvlc, "user-agent", VLC_VAR_STRING );
-    var_SetString( p_libvlc, "user-agent",
-                   "VLC media player (LibVLC "VERSION")" );
+    var_SetString( p_libvlc, "user-agent", PACKAGE_FULL_NAME " (LibVLC "VERSION")" );
     var_Create( p_libvlc, "http-user-agent", VLC_VAR_STRING );
     var_SetString( p_libvlc, "http-user-agent",
                    "VLC/"PACKAGE_VERSION" LibVLC/"PACKAGE_VERSION );
     var_Create( p_libvlc, "app-icon-name", VLC_VAR_STRING );
-    var_SetString( p_libvlc, "app-icon-name", PACKAGE_NAME );
+    var_SetString( p_libvlc, "app-icon-name", PACKAGE );
     var_Create( p_libvlc, "app-id", VLC_VAR_STRING );
-    var_SetString( p_libvlc, "app-id", "org.VideoLAN.VLC" );
+    var_SetString( p_libvlc, "app-id", "org."PACKAGE_VENDOR"."PACKAGE_NAME );
     var_Create( p_libvlc, "app-version", VLC_VAR_STRING );
     var_SetString( p_libvlc, "app-version", PACKAGE_VERSION );
 

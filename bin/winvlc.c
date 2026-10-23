@@ -164,7 +164,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
     {
         PWSTR copath;
         if( S_OK != SHGetKnownFolderPath(&FOLDERID_RoamingAppData, KF_FLAG_CREATE, 0, &copath) )
-            fprintf( stderr, "Can't open the vlc conf PATH\n" );
+            fprintf( stderr, "Can't open the " PACKAGE " conf PATH\n" );
         else
         {
             const size_t pathlen = wcslen( copath );
@@ -172,7 +172,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
             if ( path != NULL)
             {
                 memcpy( path, copath, pathlen * sizeof(*path) );
-                memcpy( &path[pathlen], L"\\vlc\\crashdump", (wcslen(L"\\vlc\\crashdump") + 1)  * sizeof(*path) );
+                memcpy( &path[pathlen], L"\\vlc\\crashdump", (wcslen(L"\\" TEXT(PACKAGE_TARNAME) L"\\crashdump") + 1)  * sizeof(*path) );
                 CheckCrashDump( path );
                 eh = InstallCrashHandler( path );
                 free( path );
@@ -190,7 +190,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
     if (!lang)
     {
         HKEY h_key;
-        if( RegOpenKeyEx( HKEY_CURRENT_USER, TEXT("Software\\VideoLAN\\VLC\\"), 0, KEY_READ, &h_key )
+        if( RegOpenKeyEx( HKEY_CURRENT_USER, TEXT("Software\\") TEXT(PACKAGE_VENDOR) TEXT("\\") TEXT(PACKAGE_NAME) TEXT("\\"), 0, KEY_READ, &h_key )
                 == ERROR_SUCCESS )
         {
             WCHAR szData[256];
@@ -216,9 +216,8 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
         HANDLE sem = CreateSemaphore(NULL, 0, 1, NULL);
 
         libvlc_SetExitHandler(vlc->p_libvlc_int, vlc_kill, &sem);
-        libvlc_set_app_id (vlc, "org.VideoLAN.VLC", PACKAGE_VERSION,
-                           PACKAGE_NAME);
-        libvlc_set_user_agent (vlc, "VLC media player", "VLC/"PACKAGE_VERSION);
+        libvlc_set_app_id (vlc, "org." PACKAGE_VENDOR "." PACKAGE_NAME, PACKAGE_VERSION, PACKAGE);
+        libvlc_set_user_agent (vlc, PACKAGE_FULL_NAME, "VLC/"PACKAGE_VERSION);
         libvlc_InternalAddIntf (vlc->p_libvlc_int, NULL);
         libvlc_InternalPlay (vlc->p_libvlc_int);
 
@@ -228,9 +227,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
         libvlc_release (vlc);
     }
     else
-        MessageBox (NULL, TEXT("VLC media player could not start.\n"
+        MessageBox (NULL, TEXT(PACKAGE_FULL_NAME) TEXT(" could not start.\n"
                     "Either the command line options were invalid or no plugins were found.\n"),
-                    TEXT("VLC media player"),
+                    TEXT(PACKAGE_FULL_NAME),
                     MB_OK|MB_ICONERROR);
 
 

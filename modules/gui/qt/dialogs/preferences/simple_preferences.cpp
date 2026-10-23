@@ -709,7 +709,7 @@ SPrefsPanel::SPrefsPanel( qt_intf_t *_p_intf, QWidget *_parent,
 
             HKEY h_key;
             char *langReg = NULL;
-            if( RegOpenKeyEx( HKEY_CURRENT_USER, TEXT("Software\\VideoLAN\\VLC\\"), 0, KEY_READ, &h_key )
+            if( RegOpenKeyEx( HKEY_CURRENT_USER, TEXT("Software\\") TEXT(PACKAGE_VENDOR) TEXT("\\") TEXT(PACKAGE_NAME) TEXT("\\"), 0, KEY_READ, &h_key )
                     == ERROR_SUCCESS )
             {
                 WCHAR szData[256];
@@ -1378,9 +1378,9 @@ void SPrefsPanel::configML()
 
 void SPrefsPanel::cleanLang() {
     QVLCRegistry qvReg( HKEY_CURRENT_USER );
-    qvReg.DeleteValue( "Software\\VideoLAN\\VLC\\", "Lang" );
-    qvReg.DeleteKey( "Software\\VideoLAN\\", "VLC" );
-    qvReg.DeleteKey( "Software\\", "VideoLAN" );
+    qvReg.DeleteValue( "Software\\" PACKAGE_VENDOR "\\" PACKAGE_NAME "\\", "Lang" );
+    qvReg.DeleteKey( "Software\\" PACKAGE_VENDOR "\\", PACKAGE_NAME );
+    qvReg.DeleteKey( "Software\\", PACKAGE_VENDOR );
 }
 
 void SPrefsPanel::saveLang() {
@@ -1392,7 +1392,7 @@ void SPrefsPanel::saveLang() {
     else
     {
         QVLCRegistry qvReg( HKEY_CURRENT_USER );
-        qvReg.WriteRegistry( "Software\\VideoLAN\\VLC\\", "Lang", lang );
+        qvReg.WriteRegistry( "Software\\" PACKAGE_VENDOR "\\" PACKAGE_NAME "\\", "Lang", lang );
     }
 }
 
@@ -1400,7 +1400,7 @@ bool SPrefsPanel::addType( const char * psz_ext, QTreeWidgetItem* current,
                            QTreeWidgetItem* parent, QVLCRegistry *qvReg )
 {
     bool b_temp;
-    const char* psz_VLC = "VLC";
+    const char* psz_VLC = PACKAGE_NAME;
     current = new QTreeWidgetItem( parent, QStringList( psz_ext ) );
 
     char* psz_reg = qvReg->ReadRegistry( psz_ext, "", "" );
@@ -1435,7 +1435,7 @@ void SPrefsPanel::assoDialog()
                                 NULL, CLSCTX_INPROC_SERVER,
                                 IID_PPV_ARGS(&p_regui));
             if( SUCCEEDED(hr) )
-                p_regui->LaunchAdvancedAssociationUI(L"VLC" );
+                p_regui->LaunchAdvancedAssociationUI( TEXT(PACKAGE_NAME) );
         }
         CoUninitialize();
     }
@@ -1580,7 +1580,7 @@ void SPrefsPanel::updateCheckBoxes(QTreeWidgetItem* item, int column)
 
 void addAsso( QVLCRegistry *qvReg, const char *psz_ext )
 {
-    QString s_path( "VLC" ); s_path += psz_ext;
+    QString s_path( PACKAGE_NAME ); s_path += psz_ext;
     QString s_path2 = s_path;
 
     /* Save a backup if already assigned */
@@ -1602,7 +1602,7 @@ void addAsso( QVLCRegistry *qvReg, const char *psz_ext )
 
         /* Get the installer path */
         QVLCRegistry qvReg2( HKEY_LOCAL_MACHINE );
-        QString str_temp = qvReg2.ReadRegistry( "Software\\VideoLAN\\VLC", "", "" );
+        QString str_temp = qvReg2.ReadRegistry( "Software\\" PACKAGE_VENDOR "\\" PACKAGE_NAME, "", "" );
 
         if( str_temp.size() )
         {
@@ -1617,7 +1617,7 @@ void addAsso( QVLCRegistry *qvReg, const char *psz_ext )
 
 void delAsso( QVLCRegistry *qvReg, const char *psz_ext )
 {
-    QString s_path( "VLC"); s_path += psz_ext;
+    QString s_path( PACKAGE_NAME ); s_path += psz_ext;
     char *psz_value = qvReg->ReadRegistry( psz_ext, "", "" );
 
     if( psz_value && !strcmp( qtu(s_path), psz_value ) )

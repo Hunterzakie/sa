@@ -81,7 +81,7 @@ static void Win32DebugOutputMsg (int type, const vlc_log_t *p_item,
 static void vlc_LogSpam(vlc_object_t *obj)
 {
     /* Announce who we are */
-    msg_Dbg(obj, "VLC media player - %s", VERSION_MESSAGE);
+    msg_Dbg(obj, PACKAGE_FULL_NAME " - %s", VERSION_MESSAGE);
     msg_Dbg(obj, "%s", COPYRIGHT_MESSAGE);
     msg_Dbg(obj, "revision %s", psz_vlc_changeset);
     msg_Dbg(obj, "configured with %s", CONFIGURE_LINE);

@@ -113,9 +113,9 @@ vlc_module_begin ()
     set_capability( "sout access", 0 )
     set_subcategory( SUBCAT_SOUT_ACO )
     add_shortcut( "shout" )
-    add_string( SOUT_CFG_PREFIX "name", "VLC media player - Live stream",
+    add_string( SOUT_CFG_PREFIX "name", PACKAGE_FULL_NAME " - Live stream",
                 NAME_TEXT, NAME_LONGTEXT )
-    add_string( SOUT_CFG_PREFIX "description", "Live stream from VLC media player",
+    add_string( SOUT_CFG_PREFIX "description", "Live stream from " PACKAGE_FULL_NAME,
                 DESCRIPTION_TEXT, DESCRIPTION_LONGTEXT )
     add_bool(   SOUT_CFG_PREFIX "mp3", false,
                 MP3_TEXT, MP3_LONGTEXT )
@@ -208,7 +208,7 @@ static int Open( vlc_object_t *p_this )
          || shout_set_password( p_shout, url.psz_password ) != SHOUTERR_SUCCESS
          || shout_set_mount( p_shout, url.psz_path ) != SHOUTERR_SUCCESS
          || shout_set_user( p_shout, url.psz_username ) != SHOUTERR_SUCCESS
-         || shout_set_agent( p_shout, "VLC media player " VERSION ) != SHOUTERR_SUCCESS
+         || shout_set_agent( p_shout, PACKAGE_FULL_NAME " " VERSION ) != SHOUTERR_SUCCESS
          || shout_set_meta( p_shout, SHOUT_META_NAME, psz_name ) != SHOUTERR_SUCCESS
          || shout_set_meta( p_shout, SHOUT_META_DESCRIPTION, psz_description ) != SHOUTERR_SUCCESS
          || shout_set_meta( p_shout, SHOUT_META_GENRE, psz_genre ) != SHOUTERR_SUCCESS

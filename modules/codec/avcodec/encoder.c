@@ -395,7 +395,7 @@ int InitVideoEnc( vlc_object_t *p_this )
         msg_Err( p_enc, "cannot find encoder %s\n"
 "*** Your Libav/FFmpeg installation is crippled.   ***\n"
 "*** Please check with your Libav/FFmpeg packager. ***\n"
-"*** This is NOT a VLC media player issue.   ***", psz_namecodec );
+"*** This is NOT a " PACKAGE_FULL_NAME " issue.   ***", psz_namecodec );
 
 #if !defined(_WIN32)
         vlc_dialog_display_error( p_enc, _("Streaming / Transcoding failed"), _(

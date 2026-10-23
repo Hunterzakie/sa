@@ -64,7 +64,7 @@ static void AndroidPrintMsg(void *opaque, int type, const vlc_log_t *p_item,
         case VLC_MSG_DBG:
             prio = ANDROID_LOG_DEBUG;
     }
-    __android_log_vprint(prio, "VLC", format2, ap);
+    __android_log_vprint(prio, PACKAGE_NAME, format2, ap);
     free(format2);
 }
 

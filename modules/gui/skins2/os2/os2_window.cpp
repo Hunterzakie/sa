@@ -43,7 +43,7 @@ OS2Window::OS2Window( intf_thread_t *pIntf, GenericWindow &rWindow,
     (void)hParentWindow;
     OS2Factory *pFactory = (OS2Factory*)OS2Factory::instance( getIntf() );
 
-    PCSZ  vlc_name  = "VlC Media Player";
+    PCSZ  vlc_name  = PACKAGE_FULL_NAME;
     PCSZ  vlc_class = "SkinWindowClass";
     ULONG flFrame = 0;
 

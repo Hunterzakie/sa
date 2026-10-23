@@ -78,7 +78,7 @@ static char * GetDefaultArtUri( void )
 {
     char *psz_uri = NULL;
     char *psz_path = config_GetSysPath(VLC_SYSDATA_DIR, "icons/hicolor/"
-                                       "128x128/"PACKAGE_NAME".png");
+                                       "128x128/"PACKAGE".png");
     if( psz_path != NULL )
     {
         psz_uri = vlc_path2uri( psz_path, NULL );
