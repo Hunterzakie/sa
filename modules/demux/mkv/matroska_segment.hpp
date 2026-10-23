@@ -27,8 +27,10 @@
 #include "demux.hpp"
 #include "mkv.hpp"
 #include "matroska_segment_seeker.hpp"
+#include <optional>
 #include <vector>
 #include <string>
+#include <array>
 
 #include <map>
 #include <set>
@@ -202,6 +204,11 @@ private:
     bool TrackInit( mkv_track_t * p_tk );
     void ComputeTrackPriority();
     bool EnsureDuration(KaxCluster &);
+    void EnsureDuration();
+    std::array<tracks_map_t::key_type, ES_CATEGORY_COUNT>  resolve_forced_and_default() const;
+    std::optional <tracks_map_t::key_type> most_preferred_default(std::vector<tracks_map_t::key_type> &defaults, const char* arg_str) const;
+    std::optional <tracks_map_t::key_type> find_preferred_track_id (const std::vector<tracks_map_t::key_type> &default_track_ids, const std::vector<std::string> &lang_splits) const;
+    std::vector<tracks_map_t::key_type> get_defaults_of_cat(es_format_category_e cat) const;
 
     SegmentSeeker _seeker;
 

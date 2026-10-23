@@ -329,7 +329,7 @@ void matroska_segment_c::ParseTrackEntry( const KaxTrackEntry *m )
             vars.tk->b_default = static_cast<uint32_t>( fdef );
             debug( vars, "Track Default=%u", vars.tk->b_default );
         }
-        E_CASE( KaxTrackFlagForced, ffor ) // UNUSED
+        E_CASE( KaxTrackFlagForced, ffor )
         {
             vars.tk->b_forced = static_cast<uint32_t>( ffor );
 
