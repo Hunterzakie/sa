@@ -303,6 +303,17 @@ static inline bool vlc_input_decoder_IsSynchronous( const vlc_input_decoder_t *d
     return dec->p_sout != NULL;
 }
 
+/* Callback for vout window close event */
+static void decoder_on_vout_window_close(vout_thread_t *vout, void *data)
+{
+    vlc_input_decoder_t *p_owner = data;
+    decoder_Notify(p_owner, on_window_close, vout);
+}
+
+static const struct vlc_vout_callbacks decoder_vout_cbs = {
+    .on_window_close = decoder_on_vout_window_close,
+};
+
 static void Decoder_SeekPreviousFrame(vlc_input_decoder_t *owner, int steps,
                                       bool failed)
 {
@@ -799,6 +810,7 @@ static int ModuleThread_UpdateVideoFormat( decoder_t *p_dec, vlc_video_context *
         .str_id = p_owner->psz_id,
         .fmt = &p_dec->fmt_out.video,
         .mouse_event = MouseEvent, .mouse_opaque = p_dec,
+        .owner = { .cbs = &decoder_vout_cbs, .opaque = p_owner },
     };
     vlc_fifo_Unlock(p_owner->p_fifo);
 

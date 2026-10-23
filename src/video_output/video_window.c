@@ -89,9 +89,11 @@ static void vout_display_window_ResizeNotify(vlc_window_t *window,
 
 static void vout_display_window_CloseNotify(vlc_window_t *window)
 {
-    /* TODO: Nowhere to dispatch to currently.
-     * Needs callback to ES output to deselect ES? */
-    msg_Err(window, "window closed");
+    vout_display_window_t *state = window->owner.sys;
+    vout_thread_t *vout = state->vout;
+
+    msg_Dbg(window, "window closed, notifying vout");
+    vout_SendWindowClose(vout);
 }
 
 static void vout_display_window_StateNotify(vlc_window_t *window,

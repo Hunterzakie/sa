@@ -34,6 +34,7 @@
 #include <vlc_codec.h>
 #include <vlc_filter.h>
 #include <vlc_vout_display.h>
+#include <vlc_window.h>
 
 #include "input_decoder.h"
 
@@ -45,6 +46,8 @@ static struct scenario_data
     bool skip_decoder;
     bool has_reload;
     bool stream_out_sent;
+    bool window_close_reported;
+    bool video_track_deselected;
     size_t decoder_image_sent;
     size_t cc_track_idx;
 } scenario_data;
@@ -508,6 +511,17 @@ static void display_prepare_noop(vout_display_t *vd, picture_t *pic)
     (void)vd; (void) pic;
 }
 
+static void display_prepare_close_window(vout_display_t *vd, picture_t *pic)
+{
+    (void)pic;
+    if (scenario_data.window_close_reported)
+        return;
+    scenario_data.window_close_reported = true;
+    assert(vd->cfg);
+    assert(vd->cfg->window);
+    vlc_window_ReportClose(vd->cfg->window);
+}
+
 static void cc_text_renderer_render(filter_t *filter, const subpicture_region_t *region_in)
 {
     (void) filter;
@@ -607,6 +621,18 @@ static void cc_text_renderer_render_608_02(filter_t *filter,
     vlc_sem_post(&scenario_data.wait_stop);
 }
 
+static void on_track_selection_changed_close_window(vlc_player_t *player,
+        vlc_es_id_t *unselected_id, vlc_es_id_t *selected_id)
+{
+    (void)player;
+    if (unselected_id == NULL || selected_id != NULL)
+        return;
+    if (strcmp(vlc_es_id_GetStrId(unselected_id), "video/0") != 0)
+        return;
+    scenario_data.video_track_deselected = true;
+    vlc_sem_post(&scenario_data.wait_stop);
+}
+
 static const vlc_fourcc_t subpicture_chromas[] = {
     VLC_CODEC_RGBA, 0
 };
@@ -629,6 +655,14 @@ struct input_decoder_scenario input_decoder_scenarios[] =
     .decoder_flush = decoder_flush_signal,
     .display_prepare = display_prepare_signal,
     .interface_setup = interface_setup_check_flush,
+},
+{
+    .name = "closing the window deselects the video track",
+    .source = source_800_600,
+    .decoder_setup = decoder_i420_800_600_update,
+    .decoder_decode = decoder_decode,
+    .display_prepare = display_prepare_close_window,
+    .on_track_selection_changed = on_track_selection_changed_close_window,
 },
 {
     /* Check that stream output is also flushed:
@@ -769,6 +803,8 @@ void input_decoder_scenario_init(void)
     scenario_data.skip_decoder = false;
     scenario_data.has_reload = false;
     scenario_data.stream_out_sent = false;
+    scenario_data.window_close_reported = false;
+    scenario_data.video_track_deselected = false;
     scenario_data.decoder_image_sent = 0;
     scenario_data.cc_track_idx = 1;
     vlc_sem_init(&scenario_data.wait_stop, 0);

@@ -283,6 +283,7 @@ struct vlc_input_event_vout
     enum {
         VLC_INPUT_EVENT_VOUT_STARTED,
         VLC_INPUT_EVENT_VOUT_STOPPED,
+        VLC_INPUT_EVENT_VOUT_WINDOW_CLOSE,
     } action;
     vout_thread_t *vout;
     enum vlc_vout_order order;

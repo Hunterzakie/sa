@@ -820,6 +820,11 @@ vlc_player_input_HandleVoutEvent(struct vlc_player_input *input,
                                  VLC_PLAYER_VOUT_STOPPED, ev->vout,
                                  VLC_VOUT_ORDER_NONE, ev->id);
             break;
+        case VLC_INPUT_EVENT_VOUT_WINDOW_CLOSE:
+            msg_Dbg(input->thread, "window closed, deselecting video track");
+            input_ControlPushEsHelper(input->thread, INPUT_CONTROL_UNSET_ES,
+                                      ev->id);
+            break;
         default:
             vlc_assert_unreachable();
     }

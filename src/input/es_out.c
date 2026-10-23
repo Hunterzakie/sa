@@ -474,6 +474,28 @@ decoder_on_vout_stopped(vlc_input_decoder_t *decoder, vout_thread_t *vout, void 
 }
 
 static void
+decoder_on_window_close(vlc_input_decoder_t *decoder, vout_thread_t *vout, void *userdata)
+{
+    (void) decoder;
+
+    es_out_id_t *id = userdata;
+    struct vlc_input_es_out *out = id->out;
+    es_out_sys_t *p_sys = PRIV(&out->out);
+
+    if (!p_sys->p_input)
+        return;
+
+    struct vlc_input_event_vout event = {
+        .action = VLC_INPUT_EVENT_VOUT_WINDOW_CLOSE,
+        .vout = vout,
+        .order = VLC_VOUT_ORDER_NONE,
+        .id = &id->id,
+    };
+
+    input_SendEventVout(p_sys->p_input, &event);
+}
+
+static void
 decoder_on_output_paused(vlc_input_decoder_t *decoder, bool paused,
                          vlc_tick_t paused_date, void *userdata)
 {
@@ -670,6 +692,7 @@ decoder_get_attachments(vlc_input_decoder_t *decoder,
 static const struct vlc_input_decoder_callbacks decoder_cbs = {
     .on_vout_started = decoder_on_vout_started,
     .on_vout_stopped = decoder_on_vout_stopped,
+    .on_window_close = decoder_on_window_close,
     .on_output_paused = decoder_on_output_paused,
     .on_thumbnail_ready = decoder_on_thumbnail_ready,
     .on_new_video_stats = decoder_on_new_video_stats,

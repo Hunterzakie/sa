@@ -28,6 +28,7 @@
 typedef struct vout_display_t vout_display_t;
 typedef struct intf_thread_t intf_thread_t;
 typedef struct decoder_cc_desc_t decoder_cc_desc_t;
+typedef struct vlc_es_id_t vlc_es_id_t;
 
 struct input_decoder_scenario {
     const char *name;
@@ -50,6 +51,9 @@ struct input_decoder_scenario {
     void (*sout_filter_flush)(sout_stream_t *stream, void *id);
     void (*on_track_list_changed)(enum vlc_player_list_action action,
                                   const struct vlc_player_track *track);
+    void (*on_track_selection_changed)(vlc_player_t *player,
+                                       vlc_es_id_t *unselected_id,
+                                       vlc_es_id_t *selected_id);
 };
 
 

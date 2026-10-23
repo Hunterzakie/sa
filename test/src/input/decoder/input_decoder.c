@@ -343,6 +343,15 @@ static void on_track_list_changed(vlc_player_t *player,
         scenario->on_track_list_changed(action, track);
 }
 
+static void on_track_selection_changed(vlc_player_t *player,
+        vlc_es_id_t *unselected_id, vlc_es_id_t *selected_id, void *data)
+{
+    (void)player; (void)data;
+    struct input_decoder_scenario *scenario = &input_decoder_scenarios[current_scenario];
+    if (scenario->on_track_selection_changed != NULL)
+        scenario->on_track_selection_changed(player, unselected_id, selected_id);
+}
+
 static void play_scenario(intf_thread_t *intf, struct input_decoder_scenario *scenario)
 {
     assert(scenario->name != NULL);
@@ -366,6 +375,7 @@ static void play_scenario(intf_thread_t *intf, struct input_decoder_scenario *sc
     static const struct vlc_player_cbs player_cbs = {
         .on_state_changed = on_state_changed,
         .on_track_list_changed = on_track_list_changed,
+        .on_track_selection_changed = on_track_selection_changed,
     };
 
     vlc_player_Lock(player);

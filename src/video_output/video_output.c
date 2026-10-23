@@ -175,6 +175,14 @@ typedef struct vout_thread_sys_t
     vlc_atomic_rc_t rc;
 
     picture_pool_t  *private_pool; // interactive + static filters & blending
+
+    /* Owner callbacks for vout events */
+    struct {
+        vlc_mutex_t lock;
+        bool window_enabled;
+        const struct vlc_vout_callbacks *cbs;
+        void *opaque;
+    } owner;
 } vout_thread_sys_t;
 
 #define VOUT_THREAD_TO_SYS(vout) \
@@ -1850,6 +1858,17 @@ void vout_ChangeSpuRate(vout_thread_t *vout, size_t channel_id, float rate)
     spu_SetClockRate(sys->spu, channel_id, rate);
 }
 
+void vout_SendWindowClose(vout_thread_t *vout)
+{
+    vout_thread_sys_t *sys = VOUT_THREAD_TO_SYS(vout);
+
+    vlc_mutex_lock(&sys->owner.lock);
+    if (sys->owner.window_enabled
+     && sys->owner.cbs != NULL && sys->owner.cbs->on_window_close != NULL)
+        sys->owner.cbs->on_window_close(vout, sys->owner.opaque);
+    vlc_mutex_unlock(&sys->owner.lock);
+}
+
 static int vout_Start(vout_thread_sys_t *vout, vlc_video_context *vctx, const vout_configuration_t *cfg)
 {
     vout_thread_sys_t *sys = vout;
@@ -2121,6 +2140,11 @@ void vout_Stop(vout_thread_t *vout)
         vout_StopDisplay(vout);
 
     vout_DisableWindow(sys);
+    vlc_mutex_lock(&sys->owner.lock);
+    sys->owner.cbs = NULL;
+    sys->owner.opaque = NULL;
+    sys->owner.window_enabled = false;
+    vlc_mutex_unlock(&sys->owner.lock);
 }
 
 void vout_Close(vout_thread_t *vout)
@@ -2174,7 +2198,8 @@ void vout_Release(vout_thread_t *vout)
     vlc_object_delete(VLC_OBJECT(vout));
 }
 
-static vout_thread_sys_t *vout_CreateCommon(vlc_object_t *object)
+static vout_thread_sys_t *
+vout_CreateCommon(vlc_object_t *object)
 {
     /* Allocate descriptor */
     vout_thread_sys_t *vout = vlc_custom_create(object,
@@ -2188,6 +2213,10 @@ static vout_thread_sys_t *vout_CreateCommon(vlc_object_t *object)
     vout_thread_sys_t *sys = vout;
     vlc_atomic_rc_init(&sys->rc);
     vlc_mouse_Init(&sys->mouse);
+    vlc_mutex_init(&sys->owner.lock);
+    sys->owner.window_enabled = false;
+    sys->owner.cbs = NULL;
+    sys->owner.opaque = NULL;
     return vout;
 }
 
@@ -2428,9 +2457,20 @@ int vout_Request(const vout_configuration_t *cfg, vlc_video_context *vctx, input
     sys->displayed.projection = original.projection_mode;
     vout_InitSource(vout);
 
+    vlc_mutex_lock(&sys->owner.lock);
+    sys->owner.cbs = cfg->owner.cbs;
+    sys->owner.opaque = cfg->owner.opaque;
+    sys->owner.window_enabled = true;
+    vlc_mutex_unlock(&sys->owner.lock);
+
     if (EnableWindowLocked(vout, &original) != 0)
     {
         /* the window was not enabled, nor the display started */
+        vlc_mutex_lock(&sys->owner.lock);
+        sys->owner.cbs = NULL;
+        sys->owner.opaque = NULL;
+        sys->owner.window_enabled = false;
+        vlc_mutex_unlock(&sys->owner.lock);
         msg_Err(cfg->vout, "failed to enable window");
         vlc_mutex_unlock(&sys->window_lock);
         assert(sys->display == NULL);
@@ -2480,6 +2520,11 @@ error_thread:
     vout_ReleaseDisplay(vout);
 error_display:
     vout_DisableWindow(vout);
+    vlc_mutex_lock(&sys->owner.lock);
+    sys->owner.cbs = NULL;
+    sys->owner.opaque = NULL;
+    sys->owner.window_enabled = false;
+    vlc_mutex_unlock(&sys->owner.lock);
     if (sys->clock_listener_id != NULL)
     {
         vlc_clock_Lock(sys->clock);
