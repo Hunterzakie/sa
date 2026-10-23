@@ -87,7 +87,8 @@ endif
 
 if HAVE_WIN32
 libqt_plugin_la_CXXFLAGS += $(LIBCOMCXXFLAGS)
-libqt_plugin_la_LIBADD += $(LIBCOM) -lcomctl32 -luuid -ldwmapi
+libqt_plugin_la_LIBADD += $(LIBCOM) -lcomctl32 -luuid -ldwmapi \
+	-ladvapi32 -lcrypt32 -lshell32 -lshlwapi -lole32
 endif
 if UPDATE_CHECK
 libqt_plugin_la_CPPFLAGS += -DUPDATE_CHECK
@@ -126,6 +127,7 @@ libqt_plugin_la_SOURCES = \
 	dialogs/fingerprint/fingerprintdialog.cpp \
 	dialogs/fingerprint/fingerprintdialog.hpp \
 	dialogs/firstrun/firstrunwizard.cpp dialogs/firstrun/firstrunwizard.hpp \
+	dialogs/firstrun/firstrunwizard_associations.cpp \
 	dialogs/gototime/gototime.cpp dialogs/gototime/gototime.hpp \
 	dialogs/help/aboutmodel.hpp \
 	dialogs/help/help.cpp dialogs/help/help.hpp \
@@ -570,6 +572,11 @@ nodist_libqt_plugin_la_SOURCES += \
 if HAVE_WIN32
 
 libqt_plugin_la_SOURCES += \
+	dialogs/preferences/win32_association_dialog.cpp \
+	dialogs/preferences/win32_association_dialog.hpp \
+	util/win32_association_task.cpp \
+	util/win32_association_task.hpp \
+	util/win32_association_types.hpp \
 	maininterface/mainctx_win32.cpp \
 	maininterface/mainctx_win32.hpp \
 	maininterface/compositor_win7.cpp \
@@ -578,7 +585,14 @@ libqt_plugin_la_SOURCES += \
 	maininterface/win32windoweffects_module.cpp \
 	maininterface/win32windoweffects_module.hpp \
 	util/csdmenu_win32.c \
-	util/csdmenu_win32.h
+	util/csdmenu_win32.h \
+	util/userchoice_hash.cpp \
+	util/userchoice_hash.hpp \
+	util/userchoice_latest_hash/HashCodec.cpp \
+	util/userchoice_latest_hash/HashCommon.h \
+	util/userchoice_latest_hash/HashTables.cpp \
+	util/win32_associations.cpp \
+	util/win32_associations.hpp
 
 nodist_libqt_plugin_la_SOURCES += maininterface/mainctx_win32.moc.cpp \
 	maininterface/compositor_win7.moc.cpp
@@ -779,6 +793,9 @@ libqt_plugin_la_UI = \
 	dialogs/vlm/vlm.ui
 EXTRA_DIST += $(libqt_plugin_la_UI)
 
+# Keep the suffix variable so Automake retains its per-target compile recipe.
+dialogs/firstrun/libqt_plugin_la-firstrunwizard_associations.$(LTOBJEXT): dialogs/firstrun/ui_firstrunwizard.h
+
 ui_%.h: %.ui
 	$(AM_V_at)$(MKDIR_P) "ui"
 	$(AM_V_at)rm -f $@ $@.tmp
@@ -937,6 +954,7 @@ libqt_plugin_la_RES = \
 	pixmaps/menu/volume-low.svg \
 	pixmaps/menu/volume-muted.svg \
 	pixmaps/misc/cone.svg \
+	pixmaps/misc/default_apps_artwork.png \
 	pixmaps/misc/new_indicator.svg \
 	pixmaps/misc/theme_dark.svg \
 	pixmaps/misc/theme_daynight.svg \
@@ -1754,6 +1772,57 @@ base_model_test_LDFLAGS = $(AM_LDFLAGS) $(QT_LDFLAGS)
 check_PROGRAMS = base_model_test
 TESTS = base_model_test
 
+if HAVE_WIN32
+test_win32_association_decisions_SOURCES = \
+	tests/test_win32_association_decisions.cpp \
+	util/win32_associations.hpp \
+	util/win32_association_types.hpp
+test_win32_association_decisions_CXXFLAGS = $(AM_CXXFLAGS) $(CXXFLAGS_qt)
+check_PROGRAMS += test_win32_association_decisions
+TESTS += test_win32_association_decisions
+
+test_userchoice_latest_hash_SOURCES = \
+	tests/test_userchoice_latest_hash.cpp \
+	util/userchoice_latest_hash/HashCodec.cpp \
+	util/userchoice_latest_hash/HashCommon.h \
+	util/userchoice_latest_hash/HashTables.cpp
+test_userchoice_latest_hash_CXXFLAGS = $(AM_CXXFLAGS) $(CXXFLAGS_qt)
+test_userchoice_latest_hash_LDADD = -ladvapi32 -lcrypt32
+check_PROGRAMS += test_userchoice_latest_hash
+TESTS += test_userchoice_latest_hash
+
+test_userchoice_hash_SOURCES = \
+	tests/test_userchoice_hash.cpp \
+	util/userchoice_hash.cpp \
+	util/userchoice_hash.hpp \
+	util/userchoice_latest_hash/HashCodec.cpp \
+	util/userchoice_latest_hash/HashCommon.h \
+	util/userchoice_latest_hash/HashTables.cpp
+test_userchoice_hash_CXXFLAGS = $(AM_CXXFLAGS) $(CXXFLAGS_qt)
+test_userchoice_hash_LDADD = -ladvapi32 -lcrypt32
+check_PROGRAMS += test_userchoice_hash
+TESTS += test_userchoice_hash
+
+test_win32_association_registry_SOURCES = \
+	tests/test_win32_association_registry.cpp \
+	util/userchoice_hash.cpp \
+	util/userchoice_hash.hpp \
+	util/userchoice_latest_hash/HashCodec.cpp \
+	util/userchoice_latest_hash/HashCommon.h \
+	util/userchoice_latest_hash/HashTables.cpp
+test_win32_association_registry_CXXFLAGS = $(AM_CXXFLAGS) $(CXXFLAGS_qt)
+test_win32_association_registry_LDADD = -ladvapi32 -lcrypt32 -lshell32 -lshlwapi -lole32 -luuid
+check_PROGRAMS += test_win32_association_registry
+TESTS += test_win32_association_registry
+
+endif
+
+EXTRA_DIST += \
+	util/LICENSE \
+	util/userchoice_latest_hash/LICENSE \
+	util/userchoice_latest_hash/README.md \
+	util/userchoice_latest_hash/UserChoiceLatestHashTables.inc
+
 if HAVE_QT_QTEST
 
 LIBVLC = ../../../lib/libvlc.la
@@ -1761,6 +1830,46 @@ QT_QTEST_COMMON_cppflags = $(libqt_plugin_la_CPPFLAGS) -I$(builddir)/tests -DTOP
 QT_QTEST_COMMON_cxxflags = $(AM_CXXFLAGS) $(QT_CFLAGS) $(QT_QTEST_CFLAGS) -fPIC $(CXXFLAGS_qt)
 QT_QTEST_COMMON_ldadd = $(QT_LIBS) $(LIBS_qt) $(QT_QTEST_LIBS) $(LIBVLCCORE) $(LIBVLC)
 QT_QTEST_COMMON_ldflags = $(AM_LDFLAGS) $(QT_LDFLAGS) $(QT_QTEST_LDFLAGS)
+
+if HAVE_WIN32
+test_win32_association_ui_SOURCES = \
+	tests/test_win32_association_ui.cpp \
+	util/win32_association_task.cpp util/win32_association_task.hpp \
+	util/win32_association_types.hpp util/win32_associations.hpp
+nodist_test_win32_association_ui_SOURCES = \
+	tests/test_win32_association_ui.moc util/asynctask.moc.cpp
+BUILT_SOURCES += tests/test_win32_association_ui.moc
+CLEANFILES += tests/test_win32_association_ui.moc
+test_win32_association_ui_CPPFLAGS = $(QT_QTEST_COMMON_cppflags)
+test_win32_association_ui_CXXFLAGS = $(QT_QTEST_COMMON_cxxflags)
+test_win32_association_ui_LDADD = $(QT_QTEST_COMMON_ldadd)
+test_win32_association_ui_LDFLAGS = $(QT_QTEST_COMMON_ldflags)
+tests/test_win32_association_ui-test_win32_association_ui.$(OBJEXT): tests/test_win32_association_ui.moc
+check_PROGRAMS += test_win32_association_ui
+TESTS += test_win32_association_ui
+
+# The fixture isolates VLC configuration/ML; the association lifecycle and
+# button wiring are the production implementation, with a stubbed backend.
+test_win32_firstrun_SOURCES = \
+	tests/test_win32_firstrun.cpp \
+	dialogs/firstrun/firstrunwizard.hpp \
+	util/win32_association_task.cpp util/win32_association_task.hpp
+nodist_test_win32_firstrun_SOURCES = \
+	tests/test_win32_firstrun.moc util/asynctask.moc.cpp \
+	dialogs/firstrun/firstrunwizard.moc.cpp \
+	dialogs/firstrun/ui_firstrunwizard.h
+BUILT_SOURCES += tests/test_win32_firstrun.moc
+CLEANFILES += tests/test_win32_firstrun.moc
+test_win32_firstrun_CPPFLAGS = $(QT_QTEST_COMMON_cppflags)
+test_win32_firstrun_CXXFLAGS = $(QT_QTEST_COMMON_cxxflags)
+test_win32_firstrun_LDADD = $(QT_QTEST_COMMON_ldadd)
+test_win32_firstrun_LDFLAGS = $(QT_QTEST_COMMON_ldflags)
+tests/test_win32_firstrun-test_win32_firstrun.$(OBJEXT): tests/test_win32_firstrun.moc
+tests/test_win32_firstrun-test_win32_firstrun.$(OBJEXT) \
+dialogs/firstrun/test_win32_firstrun-firstrunwizard.moc.$(OBJEXT): dialogs/firstrun/ui_firstrunwizard.h
+check_PROGRAMS += test_win32_firstrun
+TESTS += test_win32_firstrun
+endif
 
 
 # test_ml_model
@@ -1917,3 +2026,5 @@ EXTRA_DIST += tests/tst_FSM.qml
 TESTS += tests/tst_FSM.qml
 endif
 endif
+
+EXTRA_DIST += tests/win32_association_smoke.cpp tests/win32_association_smoke.md

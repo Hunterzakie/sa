@@ -691,6 +691,7 @@ modules/gui/qt/dialogs/fingerprint/fingerprintdialog.cpp
 modules/gui/qt/dialogs/fingerprint/fingerprintdialog.hpp
 modules/gui/qt/dialogs/firstrun/firstrunwizard.cpp
 modules/gui/qt/dialogs/firstrun/firstrunwizard.hpp
+modules/gui/qt/dialogs/firstrun/firstrunwizard_associations.cpp
 modules/gui/qt/dialogs/gototime/gototime.cpp
 modules/gui/qt/dialogs/gototime/gototime.hpp
 modules/gui/qt/dialogs/help/help.cpp
@@ -727,6 +728,7 @@ modules/gui/qt/dialogs/preferences/preferences_widgets.cpp
 modules/gui/qt/dialogs/preferences/preferences_widgets.hpp
 modules/gui/qt/dialogs/preferences/simple_preferences.cpp
 modules/gui/qt/dialogs/preferences/simple_preferences.hpp
+modules/gui/qt/dialogs/preferences/win32_association_dialog.cpp
 modules/gui/qt/dialogs/sout/convert.cpp
 modules/gui/qt/dialogs/sout/convert.hpp
 modules/gui/qt/dialogs/sout/profile_selector.cpp

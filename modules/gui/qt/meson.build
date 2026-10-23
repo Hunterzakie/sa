@@ -233,6 +233,7 @@ qt_plugin_sources = files(
     'dialogs/fingerprint/fingerprintdialog.cpp',
     'dialogs/fingerprint/fingerprintdialog.hpp',
     'dialogs/firstrun/firstrunwizard.cpp',
+    'dialogs/firstrun/firstrunwizard_associations.cpp',
     'dialogs/firstrun/firstrunwizard.hpp',
     'dialogs/gototime/gototime.cpp',
     'dialogs/gototime/gototime.hpp',
@@ -541,6 +542,11 @@ qt_plugin_sources = files(
 
 if host_system == 'windows'
     qt_plugin_sources += files(
+        'dialogs/preferences/win32_association_dialog.cpp',
+        'dialogs/preferences/win32_association_dialog.hpp',
+        'util/win32_association_task.cpp',
+        'util/win32_association_task.hpp',
+        'util/win32_association_types.hpp',
         'maininterface/mainctx_win32.cpp',
         'maininterface/mainctx_win32.hpp',
         'maininterface/compositor_win7.cpp',
@@ -548,6 +554,13 @@ if host_system == 'windows'
         'style/windowsthemeprovider.cpp',
         'util/csdmenu_win32.c',
         'util/csdmenu_win32.h',
+        'util/userchoice_hash.cpp',
+        'util/userchoice_hash.hpp',
+        'util/userchoice_latest_hash/HashCodec.cpp',
+        'util/userchoice_latest_hash/HashCommon.h',
+        'util/userchoice_latest_hash/HashTables.cpp',
+        'util/win32_associations.cpp',
+        'util/win32_associations.hpp',
         'maininterface/compositor_dcomp.cpp',
         'maininterface/compositor_dcomp_acrylicsurface.cpp',
     )
@@ -1089,8 +1102,14 @@ if qt6_dep.found()
     # Qt plugins
     if host_system == 'windows'
         qt_extra_deps += [
+            cc.find_library('advapi32'),
+            cc.find_library('crypt32'),
             cc.find_library('dwmapi'),
             cc.find_library('comctl32'),
+            cc.find_library('ole32'),
+            cc.find_library('uuid'),
+            cc.find_library('shell32'),
+            cc.find_library('shlwapi'),
         ]
     endif
 
@@ -1303,8 +1322,95 @@ if qt6_dep.found()
         'dependencies': [qt6_dep, qt_extra_deps],
     }
 
+    if host_system == 'windows'
+        vlc_tests += {
+            'name': 'test_win32_association_decisions',
+            'sources': files(
+                'tests/test_win32_association_decisions.cpp'),
+            'suite': ['qt'],
+        }
+
+        vlc_tests += {
+            'name': 'test_userchoice_latest_hash',
+            'sources': files(
+                'tests/test_userchoice_latest_hash.cpp',
+                'util/userchoice_latest_hash/HashCodec.cpp',
+                'util/userchoice_latest_hash/HashTables.cpp'),
+            'suite': ['qt'],
+            'dependencies': [
+                cc.find_library('advapi32'),
+                cc.find_library('crypt32'),
+            ],
+        }
+
+        vlc_tests += {
+            'name': 'test_userchoice_hash',
+            'sources': files(
+                'tests/test_userchoice_hash.cpp',
+                'util/userchoice_hash.cpp',
+                'util/userchoice_latest_hash/HashCodec.cpp',
+                'util/userchoice_latest_hash/HashTables.cpp'),
+            'suite': ['qt'],
+            'dependencies': [
+                cc.find_library('advapi32'),
+                cc.find_library('crypt32'),
+            ],
+        }
+
+        vlc_tests += {
+            'name': 'test_win32_association_registry',
+            'sources': files(
+                'tests/test_win32_association_registry.cpp',
+                'util/userchoice_hash.cpp',
+                'util/userchoice_latest_hash/HashCodec.cpp',
+                'util/userchoice_latest_hash/HashTables.cpp'),
+            'suite': ['qt'],
+            'dependencies': [
+                cc.find_library('advapi32'),
+                cc.find_library('crypt32'),
+                cc.find_library('ole32'),
+                cc.find_library('uuid'),
+                cc.find_library('shell32'),
+                cc.find_library('shlwapi'),
+            ],
+        }
+    endif
+
     qtest_qt6_dep = dependency('qt6', version: '=' + qt6_dep.version(), modules: ['Test'], required: false)
     if qtest_qt6_dep.found()
+        if host_system == 'windows'
+            vlc_tests += {
+                'name': 'test_win32_association_ui',
+                'sources': files(
+                    'tests/test_win32_association_ui.cpp',
+                    'util/win32_association_task.cpp'),
+                'moc_sources': files('tests/test_win32_association_ui.cpp'),
+                'moc_headers': files('util/asynctask.hpp'),
+                'suite': ['qt'],
+                'include_directories': qt_include_dir,
+                'link_with': [libvlccore],
+                'link_args': qt_link_args,
+                'dependencies': [qt6_dep, qt_extra_deps, qtest_qt6_dep],
+            }
+            vlc_tests += {
+                'name': 'test_win32_firstrun',
+                'sources': files(
+                    'tests/test_win32_firstrun.cpp',
+                    'util/win32_association_task.cpp') + qt6.preprocess(
+                    ui_files: files('dialogs/firstrun/firstrunwizard.ui'),
+                    include_directories: qt_include_dir,
+                    dependencies: qt6_dep),
+                'moc_sources': files('tests/test_win32_firstrun.cpp'),
+                'moc_headers': files('util/asynctask.hpp',
+                                     'dialogs/firstrun/firstrunwizard.hpp'),
+                'suite': ['qt'],
+                'include_directories': qt_include_dir,
+                'link_with': [libvlccore],
+                'link_args': qt_link_args,
+                'dependencies': [qt6_dep, qt_extra_deps, qtest_qt6_dep],
+            }
+        endif
+
         vlc_tests += {
             'name': 'test_qt_ml_model',
             'sources': files(
