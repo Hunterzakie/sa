@@ -465,38 +465,33 @@ FocusScope {
                 rightPadding: playlistLoader.shown ? 0 : VLCStyle.applicationHorizontalMargin
 
                 // Top-left corner rounding:
-                Widgets.AcrylicBackground {
+                Loader {
                     id: topLeftCornerBackground
 
-                    z: 99
-                    color: sidebar.background.color
-                    visible: sidebar.visible && (stackViewTopLeftRadiusRectangle.topLeftRadius !== undefined)
-
                     anchors.left: stackView.left
-                    anchors.leftMargin: -1
+                    anchors.leftMargin: 0.0
                     anchors.top: stackView.top
 
-                    // (-1) is to prevent seams
-                    width: stackViewTopLeftRadiusRectangle.width - 1
-                    height: stackViewTopLeftRadiusRectangle.height - 1
+                    z: 99
 
-                    Rectangle {
-                        id: stackViewTopLeftRadiusRectangle
+                    visible: active && sidebar.visible
 
-                        width: (stackViewTopLeftRadiusRectangle.topLeftRadius * 2)
-                        height: (stackViewTopLeftRadiusRectangle.topLeftRadius * 2)
 
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.leftMargin: 1
+                    // `RoundedCornerMask` replaces the area outside of the arc with anti-aliasing,
+                    // regardless of the page content, but it requires RHI. Otherwise, we don't draw the rounded corner
+                    active: GraphicsInfo.shaderType === GraphicsInfo.RhiShader
 
-                        color: stackViewParent.color
+                    sourceComponent: roundedCornerMaskComponent
 
-                        property real implicitTopLeftRadius: VLCStyle.mainView_topLeftRadius
+                    Component {
+                        id: roundedCornerMaskComponent
 
-                        Component.onCompleted: {
-                            if (stackViewTopLeftRadiusRectangle.topLeftRadius !== undefined) // TODO: Directly set when minimum Qt is 6.7
-                                stackViewTopLeftRadiusRectangle.topLeftRadius = Qt.binding(() => stackViewTopLeftRadiusRectangle.implicitTopLeftRadius)
+                        Widgets.RoundedCornerMask {
+                            width: radius
+                            height: radius
+
+                            radius: VLCStyle.mainView_topLeftRadius
+                            color: sidebar.background.color
                         }
                     }
                 }

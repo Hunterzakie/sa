@@ -24,6 +24,8 @@ shader_sources = [
     'DualKawaseBlur_downsample.frag',
     'DualKawaseBlur_upsample.frag',
     'DualKawaseBlur_upsample_postprocess.frag',
+    'RoundedCornerMask.frag',
+    'RoundedCornerMask.vert',
 ]
 
 shader_files = files(shader_sources)
