@@ -25,7 +25,7 @@
 #endif
 #include <QQuickItem>
 
-#ifdef QT5_DECLARATIVE_PRIVATE
+#ifdef QT_DECLARATIVE_PRIVATE
 #include <private/qquickwindow_p.h>
 #endif
 
@@ -106,7 +106,7 @@ void DummyRenderWindow::render()
     return;
 }
 
-#ifdef QT5_DECLARATIVE_PRIVATE
+#ifdef QT_DECLARATIVE_PRIVATE
 
 class OffscreenWindowPrivate: public QQuickWindowPrivate
 {
