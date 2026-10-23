@@ -96,6 +96,11 @@ typedef struct
 */
 static const uint64_t kCHUNK_SIZE_EOF = UINT64_C( 0xffffffffffffffff );
 
+#define kCHUNK_DATA (1<<0)
+#define kCHUNK_PAKT (1<<1)
+#define kCHUNK_DESC (1<<2)
+#define kCHUNK_KUKI (1<<3)
+
 /*****************************************************************************
  * Various Utility Functions
  *****************************************************************************/
@@ -843,7 +848,7 @@ static int Open( vlc_object_t *p_this )
 
     vlc_fourcc_t i_fcc;
     uint64_t i_size;
-    uint64_t i_idx = 0;
+    int chunks = 0;
 
     while( NextChunk( p_demux, &i_fcc, &i_size ) == VLC_SUCCESS )
     {
@@ -853,29 +858,37 @@ static int Open( vlc_object_t *p_this )
         {
             case VLC_FOURCC( 'd', 'e', 's', 'c' ):
 
-                if( i_idx != 0 )
+                if( chunks != 0 )
                 {
                     msg_Err( p_demux, "The audio description chunk must be the first chunk in a caf file." );
                     i_error = VLC_EGENERIC;
                     goto caf_open_end;
                 }
-
+                chunks |= kCHUNK_DESC;
                 i_error = ReadDescChunk( p_demux );
                 break;
 
             case VLC_FOURCC( 'd', 'a', 't', 'a' ):
 
                 i_error = ReadDataChunk( p_demux, i_size );
+                chunks |= kCHUNK_DATA;
                 break;
 
             case VLC_FOURCC( 'p', 'a', 'k', 't' ):
 
                 i_error = ReadPaktChunk( p_demux );
+                chunks |= kCHUNK_PAKT;
                 break;
 
             case VLC_FOURCC( 'k', 'u', 'k', 'i' ):
 
+                if((chunks & (kCHUNK_KUKI|kCHUNK_DESC)) != kCHUNK_DESC)
+                {
+                    i_error = VLC_EGENERIC;
+                    goto caf_open_end;
+                }
                 i_error = ReadKukiChunk( p_demux, i_size );
+                chunks |= kCHUNK_KUKI;
                 break;
 
             default:
@@ -897,8 +910,6 @@ static int Open( vlc_object_t *p_this )
 
         if( vlc_stream_Seek( p_demux->s, vlc_stream_Tell( p_demux->s ) + i_size ) != VLC_SUCCESS )
             break;
-
-        i_idx++;
     }
 
     if ( !p_sys->i_data_offset || p_sys->fmt.i_cat != AUDIO_ES || !p_sys->fmt.audio.i_rate ||
