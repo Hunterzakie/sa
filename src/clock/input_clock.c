@@ -482,9 +482,19 @@ void input_clock_SetJitter( input_clock_t *cl,
         cl->late.i_index = ( cl->late.i_index + 1 ) % INPUT_CLOCK_LATE_COUNT;
     }
 
-    /* TODO always save the value, and when rebuffering use the new one if smaller
-     * TODO when increasing -> force rebuffering
-     */
+    /* The PTS delay is only increased here.
+    * Smaller delay values are intentionally ignored during playback
+    * to avoid sudden clock jumps and A/V desynchronization.
+    *
+    * The logic is incomplete: the requested smaller delay is not stored
+    * and therefore cannot be applied later (e.g. after rebuffering),
+    * which is why this function still needs more work.
+    *
+    * TODO always save the requested delay value
+    * TODO apply smaller delay safely when playback is restarted
+    * TODO when increasing -> force rebuffering
+    */
+
     if( cl->i_pts_delay < i_pts_delay )
         cl->i_pts_delay = i_pts_delay;
 
