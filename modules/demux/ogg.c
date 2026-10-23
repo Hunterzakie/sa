@@ -3478,7 +3478,7 @@ bool Ogg_GetBoundsUsingSkeletonIndex( logical_stream_t *p_stream, vlc_tick_t i_t
     return false;
 }
 
-static uint32_t dirac_uint( bs_t *p_bs )
+static uint32_t dirac_uint( bs_t *p_bs, bool * ok )
 {
     uint32_t u_count = 0, u_value = 0;
 
@@ -3488,6 +3488,10 @@ static uint32_t dirac_uint( bs_t *p_bs )
         u_value <<= 1;
         u_value |= bs_read( p_bs, 1 );
     }
+
+    *ok = (u_count < 32);
+    if ( !*ok )
+        return UINT32_MAX;
 
     return (1<<u_count) - 1 + u_value;
 }
@@ -3517,6 +3521,7 @@ static bool Ogg_ReadDiracHeader( logical_stream_t *p_stream,
     static const size_t u_dirac_vidfmt_frate = ARRAY_SIZE(pu_dirac_vidfmt_frate);
 
     bs_t bs;
+    bool parsing_ok;
 
     /* Backing up stream headers is not required -- seqhdrs are repeated
      * throughout the stream at suitable decoding start points */
@@ -3525,13 +3530,17 @@ static bool Ogg_ReadDiracHeader( logical_stream_t *p_stream,
     /* read in useful bits from sequence header */
     bs_init( &bs, p_oggpacket->packet, p_oggpacket->bytes );
     bs_skip( &bs, 13*8); /* parse_info_header */
-    dirac_uint( &bs ); /* major_version */
-    dirac_uint( &bs ); /* minor_version */
-    dirac_uint( &bs ); /* profile */
-    dirac_uint( &bs ); /* level */
+    dirac_uint( &bs, &parsing_ok ); /* major_version */
+    if ( !parsing_ok ) return false;
+    dirac_uint( &bs, &parsing_ok ); /* minor_version */
+    if ( !parsing_ok ) return false;
+    dirac_uint( &bs, &parsing_ok ); /* profile */
+    if ( !parsing_ok ) return false;
+    dirac_uint( &bs, &parsing_ok ); /* level */
+    if ( !parsing_ok ) return false;
 
-    uint32_t u_video_format = dirac_uint( &bs ); /* index */
-    if( u_video_format >= u_dirac_vidfmt_frate )
+    uint32_t u_video_format = dirac_uint( &bs, &parsing_ok ); /* index */
+    if( !parsing_ok || u_video_format >= u_dirac_vidfmt_frate )
     {
         /* don't know how to parse this ogg dirac stream */
         return false;
@@ -3539,18 +3548,24 @@ static bool Ogg_ReadDiracHeader( logical_stream_t *p_stream,
 
     if( dirac_bool( &bs ) )
     {
-        dirac_uint( &bs ); /* frame_width */
-        dirac_uint( &bs ); /* frame_height */
+        dirac_uint( &bs, &parsing_ok ); /* frame_width */
+        if ( !parsing_ok ) return false;
+        dirac_uint( &bs, &parsing_ok ); /* frame_height */
+        if ( !parsing_ok ) return false;
     }
 
     if( dirac_bool( &bs ) )
     {
-        dirac_uint( &bs ); /* chroma_format */
+        dirac_uint( &bs, &parsing_ok ); /* chroma_format */
+        if ( !parsing_ok ) return false;
     }
 
     if( dirac_bool( &bs ) )
     {
-        p_stream->special.dirac.b_interlaced = dirac_uint( &bs ); /* scan_format */
+        uint32_t scan_format = dirac_uint( &bs, &parsing_ok );
+        if ( !parsing_ok || scan_format > 1)
+            return false;
+        p_stream->special.dirac.b_interlaced = scan_format;
     }
     else
         p_stream->special.dirac.b_interlaced = false;
@@ -3560,8 +3575,8 @@ static bool Ogg_ReadDiracHeader( logical_stream_t *p_stream,
     u_d = __MAX( u_d, 1 );
     if( dirac_bool( &bs ) )
     {
-        uint32_t u_frame_rate_index = dirac_uint( &bs );
-        if( u_frame_rate_index >= u_dirac_frate_tbl )
+        uint32_t u_frame_rate_index = dirac_uint( &bs, &parsing_ok );
+        if( !parsing_ok || u_frame_rate_index >= u_dirac_frate_tbl )
         {
             /* something is wrong with this stream */
             return false;
@@ -3570,8 +3585,12 @@ static bool Ogg_ReadDiracHeader( logical_stream_t *p_stream,
         u_d = p_dirac_frate_tbl[u_frame_rate_index].u_d;
         if( u_frame_rate_index == 0 )
         {
-            u_n = dirac_uint( &bs ); /* frame_rate_numerator */
-            u_d = dirac_uint( &bs ); /* frame_rate_denominator */
+            u_n = dirac_uint( &bs, &parsing_ok ); /* frame_rate_numerator */
+            if ( !parsing_ok )
+                return false;
+            u_d = dirac_uint( &bs, &parsing_ok ); /* frame_rate_denominator */
+            if ( !parsing_ok )
+                return false;
         }
     }
 
