@@ -408,6 +408,96 @@ debian-meson:
             - html-coverage/
             - ${CI_PROJECT_DIR}/build-meson/meson-logs/testlog-gdb.junit.xml
 
+nightly-debian-meson-vcpkg:
+    rules:
+        - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    extends: .base-template
+    coverage: '/^coverage result: (\d+.\d+)$/'
+    image:
+        name: $VLC_DEBIAN_IMAGE
+    script:
+        - |
+            export NCPU=$(getconf _NPROCESSORS_ONLN)
+            echo "Building branch '${CI_COMMIT_BRANCH}' (default: '${CI_DEFAULT_BRANCH}')"
+        - |
+            echo -e "\e[0Ksection_start:$(date +%s):build_tools_section\r\e[0KTools build"
+            # Build tools
+            ( cd extras/tools && ./bootstrap && make -j$NCPU --output-sync=recurse )
+            export PATH="$(pwd)/extras/tools/build/bin:$PATH"
+            echo -e "\e[0Ksection_end:$(date +%s):build_tools_section\r\e[0K"
+        - |
+            echo -e "\e[0Ksection_start:$(date +%s):vcpkg_setup_section\r\e[0Kvcpkg setup"
+            # clone unzip
+            ( git clone https://git.launchpad.net/ubuntu/+source/unzip -b debian/bookworm )
+            # compile unzip
+            ( cd unzip && make -f unix/Makefile linux_noasm && cd .. )
+            # Add unzip to path
+            export PATH="${PWD}/unzip:${PATH}"
+            # do not cache vcpkg
+            export VCPKG_FEATURE_FLAGS=-binarycaching
+            # clone vcpkg
+            ( git clone https://github.com/microsoft/vcpkg )
+            # bootstrap vcpkg
+            ( vcpkg/bootstrap-vcpkg.sh -disableMetrics )
+            # install packges
+            ( vcpkg/vcpkg x-set-installed pkgconf libpng x265 )
+            echo -e "\e[0Ksection_end:$(date +%s):vcpkg_setup_section\r\e[0K"
+        - |
+            echo -e "\e[0Ksection_start:$(date +%s):setup_meson_section\r\e[0KMeson setup"
+            # Setup meson build dir
+            meson setup build-meson \
+                --native-file meson-vcpkg.txt \
+                -Db_coverage=true \
+                -Dextra_checks=true \
+            || (echo "ERROR: Meson setup failed!" >&2 ; cat build-meson/meson-logs/meson-log.txt >&2 ; exit 1)
+            echo -e "\e[0Ksection_end:$(date +%s):setup_meson_section\r\e[0K"
+        - |
+            echo -e "\e[0Ksection_start:$(date +%s):build_meson_section\r\e[0KVLC build"
+            # Build VLC
+            ninja -C build-meson || (echo "ERROR: Build failed!" >&2 ; exit 2)
+            echo -e "\e[0Ksection_end:$(date +%s):build_meson_section\r\e[0K"
+        - |
+            echo -e "\e[0Ksection_start:$(date +%s):tests_meson_section\r\e[0KVLC tests"
+            # Run tests
+            meson test -C build-meson || (echo "ERROR: Tests failed!" >&2 ; cat build-meson/meson-logs/testlog.txt >&2 ; exit 3)
+            echo -e "\e[0Ksection_end:$(date +%s):tests_meson_section\r\e[0K"
+        - |
+            # We split in two different commands to handle the case where
+            # the coverage will be generated on different jobs later.
+            # Note: qt generated files need to be remove from the report since their
+            # coverage should not be checked. It leads to gcovr having trouble
+            # parsing the coverage otherwise.
+            gcovr -r "${CI_PROJECT_DIR}/" --json "${CI_PROJECT_DIR}/${CI_JOB_NAME}.cov.json" -j$NCPU --gcov-ignore-parse-errors=negative_hits.warn_once_per_file --exclude "build-meson/modules/gui/qt/.*_qrc.cpp" --exclude "build-meson/modules/gui/qt/.*_assets.cpp"
+
+        - mkdir html-coverage
+        - >
+            gcovr --add-tracefile "${CI_PROJECT_DIR}/${CI_JOB_NAME}.cov.json"
+            --xml="cobertura.xml"
+            --html="html-coverage/vlc.html"
+            --html-details -s -j$NCPU
+        - |
+            # Ensure that sources are reported from CI_PROJECT_DIR directory so
+            # that gitlab can associate the files correctly.
+            sed -i 's,<source>.*</source>,<source>'"${CI_PROJECT_DIR}"'</source>,' cobertura.xml
+        # Expose the line coverage percentage to gitlab from the cobertura XML.
+        - >
+            grep -Eo 'line-rate="[^"]+"' cobertura.xml | head -n 1 |
+            grep -Eo '[0-9.]+' | awk '{ print "coverage result:", $1 * 100 } ' ||
+            true
+    allow_failure: true
+    variables: *variables-debian
+    artifacts:
+        reports:
+            junit: build-meson/meson-logs/testlog.junit.xml
+            coverage_report:
+                coverage_format: cobertura
+                path: cobertura.xml
+        paths:
+            - ${CI_PROJECT_DIR}/${CI_JOB_NAME}.cov.json
+            - cobertura.xml
+            - html-coverage/
+            - ${CI_PROJECT_DIR}/build-meson/meson-logs/testlog.junit.xml
+
 #
 # Snap builds
 #

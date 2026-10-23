@@ -1,0 +1,25 @@
+[constants]
+vcpkg_base_path = '@GLOBAL_SOURCE_ROOT@/vcpkg/'
+vcpkg_base_install_dir = vcpkg_base_path + 'installed/'
+vcpkg_target_triplet = 'x64-linux'
+vcpkg_host_triplet = 'x64-linux'
+vcpkg_installed_dir =  vcpkg_base_install_dir + vcpkg_target_triplet + '/'
+vcpkg_host_installed_dir = vcpkg_base_install_dir + vcpkg_host_triplet + '/'
+vcpkg_toolchain_file =  vcpkg_base_path + 'scripts/toolchains/linux.cmake'
+vcpkg_cmake_toolchain_file = vcpkg_base_path + 'scripts/buildsystems/vcpkg.cmake'
+
+[binaries]
+vcpkg = [ vcpkg_base_path + 'vcpkg']
+pkg-config = [ vcpkg_installed_dir + 'tools/pkgconf/pkgconf']
+
+[cmake]
+VCPKG_TARGET_TRIPLET = vcpkg_target_triplet
+VCPKG_HOST_TRIPLET = vcpkg_host_triplet
+VCPKG_INSTALLED_DIR = vcpkg_installed_dir
+
+[properties]
+cmake_toolchain_file = vcpkg_cmake_toolchain_file
+
+[paths]
+cmake_prefix_path = [ vcpkg_installed_dir ]
+pkg_config_path = [ vcpkg_installed_dir + '/lib/pkgconfig', vcpkg_installed_dir + '/share/pkgconfig' ]
