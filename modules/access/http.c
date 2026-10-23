@@ -321,7 +321,8 @@ connect:
         vlc_credential_store( &credential, p_access );
 
     if( ( p_sys->i_code == 301 || p_sys->i_code == 302 ||
-          p_sys->i_code == 303 || p_sys->i_code == 307 ) &&
+          p_sys->i_code == 303 || p_sys->i_code == 307 ||
+          p_sys->i_code == 308 ) &&
         p_sys->psz_location != NULL )
     {
         p_access->psz_url = p_sys->psz_location;
