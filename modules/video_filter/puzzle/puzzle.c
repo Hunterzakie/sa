@@ -30,6 +30,7 @@
 # include "config.h"
 #endif
 #include <math.h>
+#include <limits.h>
 
 #include <vlc_common.h>
 #include <vlc_configuration.h>
@@ -124,6 +125,9 @@ const char *const ppsz_filter_options[] = {
 static int Open( filter_t *p_filter )
 {
     filter_sys_t *p_sys;
+
+    if( p_filter->fmt_in.video.i_width > INT_MAX || p_filter->fmt_in.video.i_height > INT_MAX )
+        return VLC_EGENERIC;
 
     /* Assert video in match with video out */
     if( !es_format_IsSimilar( &p_filter->fmt_in, &p_filter->fmt_out ) ) {

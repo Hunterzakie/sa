@@ -52,7 +52,7 @@ point_t *puzzle_scale_curve_H(int32_t i_width, int32_t i_lines, uint8_t i_pts_nb
 
     uint8_t i_last_pt = (3 * (i_pts_nbr-1) + 1);
 
-    point_t *ps_new_pt = malloc( sizeof( point_t ) * i_last_pt );
+    point_t *ps_new_pt = vlc_alloc( i_last_pt, sizeof( point_t ) );
     if (ps_new_pt == NULL)
         return NULL;
 
@@ -139,7 +139,7 @@ point_t *puzzle_curve_H_2_V(uint8_t i_pts_nbr, point_t *ps_pt)
     if (ps_pt == NULL)
         return NULL;
 
-    point_t *ps_new_pt = malloc( sizeof( point_t ) * (3 * (i_pts_nbr-1) + 1) );
+    point_t *ps_new_pt = vlc_alloc( (size_t) 3 * (i_pts_nbr-1) + 1, sizeof( point_t ) );
 
     if (ps_new_pt == NULL)
         return NULL;
@@ -160,7 +160,7 @@ point_t *puzzle_curve_H_2_negative(uint8_t i_pts_nbr, point_t *ps_pt)
     if (ps_pt == NULL)
         return NULL;
 
-    point_t *ps_new_pt = malloc( sizeof( point_t ) * (3 * (i_pts_nbr-1) + 1) );
+    point_t *ps_new_pt = vlc_alloc( (size_t) 3 * (i_pts_nbr-1) + 1, sizeof( point_t ) );
     if (ps_new_pt == NULL)
         return NULL;
 
@@ -180,7 +180,7 @@ point_t *puzzle_curve_V_2_negative(uint8_t i_pts_nbr, point_t *ps_pt)
     if (ps_pt == NULL)
         return NULL;
 
-    point_t *ps_new_pt = malloc( sizeof( point_t ) * (3 * (i_pts_nbr-1) + 1) );
+    point_t *ps_new_pt = vlc_alloc( (size_t) 3 * (i_pts_nbr-1) + 1, sizeof( point_t ) );
     if (ps_new_pt == NULL)
         return NULL;
 
@@ -316,7 +316,7 @@ point_t *puzzle_rand_bezier(uint8_t i_pts_nbr)
     uint8_t i_last_pt = (3 * (i_pts_nbr-1) + 1);
     uint8_t i_item = ((uint16_t) vlc_mrand48()) %  NB_PRIM;
 
-    point_t *ps_new_pt = malloc( sizeof( point_t ) * i_last_pt );
+    point_t *ps_new_pt = vlc_alloc( i_last_pt, sizeof( point_t ) );
     if (ps_new_pt == NULL)
         return NULL;
 

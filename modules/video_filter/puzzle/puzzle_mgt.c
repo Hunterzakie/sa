@@ -72,25 +72,25 @@ int puzzle_bake( filter_t *p_filter, picture_t *p_pic_out, picture_t *p_pic_in)
     p_sys->s_allocated.i_auto_solve_speed =   p_sys->s_current_param.i_auto_solve_speed;
     p_sys->s_allocated.i_rotate =        p_sys->s_current_param.i_rotate;
 
-    p_sys->ps_puzzle_array = malloc( sizeof( puzzle_array_t** ) * (p_sys->s_allocated.i_rows + 1));
+    p_sys->ps_puzzle_array = vlc_alloc( p_sys->s_allocated.i_rows + 1, sizeof( puzzle_array_t** ) );
     if( !p_sys->ps_puzzle_array )
         return VLC_ENOMEM;
 
     for (int32_t r=0; r < p_sys->s_allocated.i_rows + 1; r++) {
-        p_sys->ps_puzzle_array[r] = malloc( sizeof( puzzle_array_t* ) * (p_sys->s_allocated.i_cols + 1));
+        p_sys->ps_puzzle_array[r] = vlc_alloc( p_sys->s_allocated.i_cols + 1, sizeof( puzzle_array_t* ) );
         if( !p_sys->ps_puzzle_array[r] )
             return VLC_ENOMEM;
         for (int32_t c=0; c < p_sys->s_allocated.i_cols + 1; c++) {
-            p_sys->ps_puzzle_array[r][c] = malloc( sizeof( puzzle_array_t ) * p_sys->s_allocated.i_planes);
+            p_sys->ps_puzzle_array[r][c] = vlc_alloc( p_sys->s_allocated.i_planes, sizeof( puzzle_array_t ) );
             if( !p_sys->ps_puzzle_array[r][c] )
                 return VLC_ENOMEM;
         }
     }
 
-    p_sys->ps_desk_planes = malloc( sizeof( puzzle_plane_t ) * p_sys->s_allocated.i_planes);
+    p_sys->ps_desk_planes = vlc_alloc( p_sys->s_allocated.i_planes, sizeof( puzzle_plane_t ) );
     if( !p_sys->ps_desk_planes )
         return VLC_ENOMEM;
-    p_sys->ps_pict_planes = malloc( sizeof( puzzle_plane_t ) * p_sys->s_allocated.i_planes);
+    p_sys->ps_pict_planes = vlc_alloc( p_sys->s_allocated.i_planes, sizeof( puzzle_plane_t ) );
     if( !p_sys->ps_pict_planes )
         return VLC_ENOMEM;
 
@@ -373,11 +373,11 @@ int puzzle_allocate_ps_pieces( filter_t *p_filter)
     filter_sys_t *p_sys = p_filter->p_sys;
     puzzle_free_ps_pieces(p_filter);
     p_sys->s_allocated.i_pieces_nbr = p_sys->s_allocated.i_rows * p_sys->s_allocated.i_cols;
-    p_sys->ps_pieces = malloc( sizeof( piece_t) * p_sys->s_allocated.i_pieces_nbr );
+    p_sys->ps_pieces = vlc_alloc( p_sys->s_allocated.i_pieces_nbr, sizeof( piece_t) );
     if( !p_sys->ps_pieces )
         return VLC_ENOMEM;
     for (uint32_t p = 0; p < p_sys->s_allocated.i_pieces_nbr; p++) {
-        p_sys->ps_pieces[p].ps_piece_in_plane = malloc( sizeof( piece_in_plane_t) * p_sys->s_allocated.i_planes );
+        p_sys->ps_pieces[p].ps_piece_in_plane = vlc_alloc( p_sys->s_allocated.i_planes, sizeof( piece_in_plane_t) );
         if( !p_sys->ps_pieces[p].ps_piece_in_plane ) {
             for (uint32_t i=0;i<p;i++)
                 free(p_sys->ps_pieces[i].ps_piece_in_plane);
@@ -387,7 +387,7 @@ int puzzle_allocate_ps_pieces( filter_t *p_filter)
         }
     }
 
-    p_sys->ps_pieces_tmp = malloc( sizeof( piece_t) * p_sys->s_allocated.i_pieces_nbr );
+    p_sys->ps_pieces_tmp = vlc_alloc( p_sys->s_allocated.i_pieces_nbr, sizeof( piece_t ) );
     if( !p_sys->ps_pieces_tmp ) {
         for (uint32_t i=0;i<p_sys->s_allocated.i_pieces_nbr;i++)
             free(p_sys->ps_pieces[i].ps_piece_in_plane);
@@ -395,7 +395,7 @@ int puzzle_allocate_ps_pieces( filter_t *p_filter)
         p_sys->ps_pieces = NULL;
         return VLC_ENOMEM;
     }
-    p_sys->pi_group_qty = malloc( sizeof( int32_t ) * (p_sys->s_allocated.i_pieces_nbr));
+    p_sys->pi_group_qty = vlc_alloc( p_sys->s_allocated.i_pieces_nbr, sizeof( int32_t ) );
     if( !p_sys->pi_group_qty ) {
         for (uint32_t i=0;i<p_sys->s_allocated.i_pieces_nbr;i++)
             free(p_sys->ps_pieces[i].ps_piece_in_plane);
@@ -497,7 +497,7 @@ int puzzle_piece_foreground( filter_t *p_filter, int32_t i_piece) {
     piece_t *ps_pieces_tmp;        /* list [piece] of pieces data. Sort as per layers */
     uint32_t i_group_ID = p_sys->ps_pieces[i_piece].i_group_ID;
 
-    ps_pieces_tmp = malloc( sizeof( piece_t) * p_sys->s_allocated.i_pieces_nbr );
+    ps_pieces_tmp = vlc_alloc( p_sys->s_allocated.i_pieces_nbr, sizeof( piece_t ) );
     if (!ps_pieces_tmp)
         return VLC_ENOMEM;
 
@@ -716,7 +716,7 @@ int puzzle_sort_layers( filter_t *p_filter)
 
     free( p_sys->ps_pieces );
     p_sys->ps_pieces = p_sys->ps_pieces_tmp;
-    p_sys->ps_pieces_tmp = malloc( sizeof( piece_t) * p_sys->s_allocated.i_pieces_nbr );
+    p_sys->ps_pieces_tmp = vlc_alloc( p_sys->s_allocated.i_pieces_nbr, sizeof( piece_t ) );
     if (!p_sys->ps_pieces_tmp)
         return VLC_ENOMEM;
 
