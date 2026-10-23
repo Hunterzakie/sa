@@ -38,6 +38,8 @@ libkaraoke_plugin_la_SOURCES = audio_filter/karaoke.c
 libnormvol_plugin_la_SOURCES = audio_filter/normvol.c
 libnormvol_plugin_la_LIBADD = $(LIBM)
 libgain_plugin_la_SOURCES = audio_filter/gain.c
+liblowpass_plugin_la_SOURCES = audio_filter/lowpass.c
+liblowpass_plugin_la_LIBADD = $(LIBM)
 libparam_eq_plugin_la_SOURCES = audio_filter/param_eq.c
 libparam_eq_plugin_la_LIBADD = $(LIBM)
 libscaletempo_plugin_la_SOURCES = audio_filter/scaletempo.c
@@ -74,6 +76,7 @@ audio_filter_PLUGINS += \
 	libkaraoke_plugin.la \
 	libnormvol_plugin.la \
 	libgain_plugin.la \
+	liblowpass_plugin.la \
 	libparam_eq_plugin.la \
 	libscaletempo_plugin.la \
 	libscaletempo_pitch_plugin.la \
