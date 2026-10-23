@@ -100,6 +100,9 @@ vlc_gl_filter_LoadModule(vlc_object_t *parent, const char *name,
     if (!filter->module)
         return VLC_EGENERIC;
 
+    var_Create(filter, "module-name", VLC_VAR_STRING);
+    var_SetString(filter, "module-name", module_get_object(filter->module));
+
     assert(filter->ops->draw);
     return VLC_SUCCESS;
 }
