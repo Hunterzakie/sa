@@ -175,7 +175,8 @@ static int Open( vlc_object_t *p_this )
     p_sys->p_frame = NULL;
     p_sys->pp_last = &p_sys->p_frame;
 
-    if( p_dec->fmt_in->video.i_frame_rate && p_dec->fmt_in->video.i_frame_rate_base )
+    if( p_dec->fmt_in->video.i_frame_rate && p_dec->fmt_in->video.i_frame_rate_base &&
+        p_dec->fmt_in->video.i_frame_rate <= UINT_MAX/2 )
         date_Init( &p_sys->dts, p_dec->fmt_in->video.i_frame_rate * 2,
                                 p_dec->fmt_in->video.i_frame_rate_base );
     else
