@@ -451,7 +451,7 @@ static int ReadBlockHeader( demux_t *p_demux )
 
         if( p_sys->p_es == NULL )
         {
-            memcpy( &p_sys->fmt, &new_fmt, sizeof( p_sys->fmt ) );
+            es_format_Copy( &p_sys->fmt, &new_fmt );
             date_Change( &p_sys->pts, p_sys->fmt.audio.i_rate, 1 );
             p_sys->p_es = es_out_Add( p_demux->out, &p_sys->fmt );
             if( unlikely(p_sys->p_es == NULL) )
