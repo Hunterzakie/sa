@@ -55,8 +55,9 @@ static char *input_xml( input_item_t *p_item, char *(*func)(input_item_t *) )
  * \param p_file file to write xml-converted item to
  * \param p_i_count counter for track identifiers
  */
-static void xspf_export_item( input_item_t *p_input, FILE *p_file, uint64_t id)
+static void xspf_export_item( input_item_t *p_input, struct vlc_playlist_export *p_export, size_t prefix_len, uint64_t id)
 {
+    FILE *p_file = p_export->file;
     char *psz;
     vlc_tick_t i_duration;
 
@@ -66,7 +67,17 @@ static void xspf_export_item( input_item_t *p_input, FILE *p_file, uint64_t id)
 
     char *psz_uri = input_xml( p_input, input_item_GetURI );
     if( psz_uri && *psz_uri )
-        fprintf( p_file, "\t\t\t<location>%s</location>\n", psz_uri );
+    {
+        /* We cannot really know if relative or absolute URL is better. As a
+         * heuristic, we write a relative URL if the item is in the same
+         * directory as the playlist, or a sub-directory thereof. */
+        size_t skip = 0;
+        if( likely(prefix_len != (size_t)-1)
+         && !strncmp( p_export->base_url, psz_uri, prefix_len ) )
+            skip = prefix_len;
+
+        fprintf( p_file, "\t\t\t<location>%s</location>\n", psz_uri + skip );
+    }
 
     /* -> the name/title (only if different from uri)*/
     psz = input_xml( p_input, input_item_GetTitle );
@@ -163,6 +174,14 @@ int xspf_export_playlist( vlc_object_t *p_this )
 {
     struct vlc_playlist_export *p_export = (struct vlc_playlist_export *) p_this;
 
+    size_t prefix_len = -1;
+    if( likely(p_export->base_url != NULL) )
+    {
+        const char *p = strrchr( p_export->base_url, '/' );
+        assert(p != NULL);
+        prefix_len = (p + 1) - p_export->base_url;
+    }
+
     /* write XSPF XML header */
     fprintf( p_export->file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" );
     fprintf( p_export->file,
@@ -178,7 +197,7 @@ int xspf_export_playlist( vlc_object_t *p_this )
             vlc_playlist_view_Get(p_export->playlist_view, i);
         input_item_t *media = vlc_playlist_item_GetMedia(item);
 
-        xspf_export_item(media, p_export->file, i);
+        xspf_export_item(media, p_export, prefix_len, i);
     }
 
     fprintf( p_export->file, "\t</trackList>\n" );
