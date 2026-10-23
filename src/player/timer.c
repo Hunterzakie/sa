@@ -733,8 +733,6 @@ vlc_player_timer_point_Interpolate(const struct vlc_player_timer_point *point,
             return VLC_EGENERIC;
         if (pos > 1.f)
             pos = 1.f;
-        if (ts > point->length)
-            ts = point->length;
     }
 
     if (out_ts)
