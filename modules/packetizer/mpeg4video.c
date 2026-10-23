@@ -556,7 +556,10 @@ static int ParseVOP( decoder_t *p_dec, block_t *p_vop )
         }
     }
 
-    if( p_sys->i_fps_num < 5 && /* Work-around buggy streams */
+    /* Correct interpolated dts when we receive a new pts/dts */
+    if( p_vop->i_pts != VLC_TICK_INVALID )
+        p_sys->i_interpolated_pts = p_vop->i_pts;
+    else if( p_sys->i_fps_num < 5 && /* Work-around buggy streams */
         p_dec->fmt_in->video.i_frame_rate > 0 &&
         p_dec->fmt_in->video.i_frame_rate_base > 0 )
     {
@@ -564,48 +567,40 @@ static int ParseVOP( decoder_t *p_dec, block_t *p_vop )
         p_dec->fmt_in->video.i_frame_rate_base,
         p_dec->fmt_in->video.i_frame_rate);
     }
-    else
+    else if( p_sys->i_fps_num )
     {
         int64_t i_time_diff = (i_time_ref + i_time_increment) - (p_sys->i_last_time + p_sys->i_last_timeincr);
         p_sys->i_interpolated_pts += vlc_tick_from_samples( i_time_diff, p_sys->i_fps_num );
     }
 
-#if 0
-    msg_Err( p_dec, "interp dts/pts (%"PRId64",%"PRId64"), dts/pts (%"PRId64",%"PRId64") %"PRId64" mod %d inc %"PRId64,
-             p_sys->i_interpolated_dts, p_sys->i_interpolated_pts,
-             p_vop->i_dts, p_vop->i_pts, p_sys->i_time_ref, i_modulo_time_base, i_time_increment );
-#endif
-
-    p_sys->i_last_time = i_time_ref;
-    if( p_sys->i_fps_num )
-        p_sys->i_last_timeincr = i_time_increment;
-
-    /* Correct interpolated dts when we receive a new pts/dts */
-    if( p_vop->i_pts != VLC_TICK_INVALID )
-        p_sys->i_interpolated_pts = p_vop->i_pts;
-    if( p_vop->i_dts != VLC_TICK_INVALID )
-        p_sys->i_interpolated_dts = p_vop->i_dts;
-
     if( (p_sys->i_flags & BLOCK_FLAG_TYPE_B) || !p_sys->b_frame )
     {
         /* Trivial case (DTS == PTS) */
 
-        p_sys->i_interpolated_dts = p_sys->i_interpolated_pts;
-
-        if( p_vop->i_pts != VLC_TICK_INVALID )
-            p_sys->i_interpolated_dts = p_vop->i_pts;
         if( p_vop->i_dts != VLC_TICK_INVALID )
             p_sys->i_interpolated_dts = p_vop->i_dts;
+        else if( p_vop->i_pts != VLC_TICK_INVALID )
+            p_sys->i_interpolated_dts = p_vop->i_pts;
+        else
+            p_sys->i_interpolated_dts = p_sys->i_interpolated_pts;
+    }
+    else if( p_sys->i_last_ref_pts != VLC_TICK_INVALID )
+        p_sys->i_interpolated_dts = p_sys->i_last_ref_pts;
+    else if( p_vop->i_dts != VLC_TICK_INVALID )
+        p_sys->i_interpolated_dts = p_vop->i_dts;
 
+    if( (p_sys->i_flags & BLOCK_FLAG_TYPE_B) || !p_sys->b_frame )
+    {
         p_sys->i_interpolated_pts = p_sys->i_interpolated_dts;
     }
     else
     {
-        if( p_sys->i_last_ref_pts != VLC_TICK_INVALID )
-            p_sys->i_interpolated_dts = p_sys->i_last_ref_pts;
-
         p_sys->i_last_ref_pts = p_sys->i_interpolated_pts;
     }
+
+    p_sys->i_last_time = i_time_ref;
+    if( p_sys->i_fps_num )
+        p_sys->i_last_timeincr = i_time_increment;
 
     return VLC_SUCCESS;
 }
