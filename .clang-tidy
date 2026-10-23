@@ -1,0 +1,17 @@
+Checks:         'clang-diagnostic-*,clang-analyzer-*,performance-*,portability-*,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,-clang-analyzer-optin.performance.Padding,-clang-analyzer-optin.portability.UnixAPI,-clang-analyzer-security.insecureAPI.strcpy,-readability-braces-around-statements,-readability-identifier-length,-performance-enum-size,-performance-noexcept-move-constructor,-performance-move-const-arg,-portability-template-virtual-member-function'
+
+# -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling: we use memcpy and not memcpy_s
+# -clang-analyzer-optin.performance.Padding:      our internal/external structures are not optimized for performance
+# -clang-analyzer-optin.portability.UnixAPI:      malloc/calloc of size 0 detection
+# -clang-analyzer-security.insecureAPI.strcpy:    we allow strcpy unlike other projects
+# -performance-noexcept-move-constructor:         very verbose in Qt headers
+# -performance-move-const-arg:                    very verbose in Qt headers
+# -portability-template-virtual-member-function:  we don't have public C++ API's
+
+
+# ,bugprone-*,-bugprone-easily-swappable-parameters,-bugprone-macro-parentheses,-bugprone-reserved-identifier
+# ,llvm-*,-llvm-header-guard,-llvm-include-order
+# ,misc-*,-misc-no-recursion,-misc-unused-parameters,-misc-use-anonymous-namespace
+
+# HeaderFilterRegex: '.*/vlc/.*'
+ExcludeHeaderFilterRegex: '.*/contrib/.*'
