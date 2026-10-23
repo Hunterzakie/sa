@@ -44,6 +44,7 @@ pluginsinclude_HEADERS.h = \
 	../include/vlc_cpu.h \
 	../include/vlc_clock.h \
 	../include/vlc_chroma_probe.h \
+	../include/vlc_clipboard.h \
 	../include/vlc_decoder.h \
 	../include/vlc_demux.h \
 	../include/vlc_dialog.h \
@@ -462,7 +463,7 @@ libvlccore_la_SOURCES += \
 if HAVE_WINSTORE
 libvlccore_la_SOURCES += posix/timer.c win32/dirs-uap.c
 else
-libvlccore_la_SOURCES += win32/timer.c win32/dirs.c win32/spawn.c
+libvlccore_la_SOURCES += win32/timer.c win32/dirs.c win32/spawn.c win32/clipboard.c
 libvlccore_la_LIBADD += -lwinmm -lole32 -luuid
 endif
 libvlccore_la_LIBADD += -lbcrypt
@@ -493,6 +494,7 @@ libvlccore_la_SOURCES += \
 	darwin/specific.c \
 	darwin/thread.c
 libvlccore_objc_la_SOURCES = \
+	darwin/clipboard.m \
 	darwin/dirs.m \
 	darwin/netconf.m
 noinst_LTLIBRARIES = libvlccore_objc.la
@@ -617,6 +619,9 @@ libvlccore_objc_la_OBJCFLAGS = $(AM_OBJCFLAGS) -fobjc-arc
 libvlccore_objc_la_LDFLAGS = -static
 libvlccore_la_LIBADD += libvlccore_objc.la
 libvlccore_la_LDFLAGS +=  -Wl,-framework,Foundation -Xlinker -install_name -Xlinker @rpath/libvlccore.dylib
+if HAVE_OSX
+libvlccore_la_LDFLAGS += -Wl,-framework,AppKit
+endif
 endif
 
 # iOS and tvOS applications cannot install global shared libraries and

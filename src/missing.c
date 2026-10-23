@@ -38,6 +38,7 @@
 #include <assert.h>
 
 #include <vlc_process.h>
+#include <vlc_clipboard.h>
 
 #ifndef ENABLE_VLM
 # include <vlc_vlm.h>
@@ -229,4 +230,18 @@ vlc_process_fd_Write(struct vlc_process *process, const uint8_t *buf, size_t siz
     vlc_assert_unreachable();
     return -1;
 }
+#endif
+
+#if !defined(_WIN32) || defined(HAVE_WINSTORE)
+VLC_WEAK
+int vlc_clipboard_CopyImage(vlc_object_t *obj,
+                            const block_t *p_image,
+                            const char *psz_mime)
+{
+    VLC_UNUSED(obj);
+    VLC_UNUSED(p_image);
+    VLC_UNUSED(psz_mime);
+    return VLC_ENOTSUP;
+}
+
 #endif
