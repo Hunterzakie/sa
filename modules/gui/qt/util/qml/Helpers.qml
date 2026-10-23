@@ -83,22 +83,30 @@ QtObject {
         return Math.round(a / b) * b
     }
 
-    // Currently only supports .25, .5, .75
-    function denominatorForFloat(number : real) : int {
-        const fraction = number % 1
+    // Returns the smallest size, not smaller than `size`, that spans a whole
+    // number of device pixels with the given device pixel ratio, so that a
+    // texture with that many pixels can be displayed without stretching.
+    // To use when an item is displayed through a texture, such as a layer or
+    // a `ShaderEffectSource`: both the captured area and the item displaying
+    // the texture should get the aligned size.
+    function alignUpToDevicePixel(size : real, dpr : real) : real {
+        // Tolerate floating point error, so that an already aligned size
+        // is not extended by an extra pixel:
+        return Math.ceil(size * dpr - 0.001) / dpr
+    }
 
-        if (fraction === 0)
-            return 1
-        else if (compareFloat(fraction, 0.25))
-            return 4
-        else if (compareFloat(fraction, 0.50))
-            return 2
-        else if (compareFloat(fraction, 0.75))
-            return 4
-        else {
-            console.error("Can not find denominator for number", number, "!")
-            return 1
+    // Returns the smallest integer `n` such that `number * n` is an integer.
+    // Denominators bigger than 10 are not considered, as aligning to them
+    // would deviate too much (for example, `PIPPlayer` position would move
+    // by steps that big when dragged), in which case 1 is returned.
+    function denominatorForFloat(number : real) : int {
+        for (let n = 1; n <= 10; ++n) {
+            const product = number * n
+            // Tolerate floating point error:
+            if (Math.abs(product - Math.round(product)) < 0.001)
+                return n
         }
+        return 1
     }
 
     function isSortedIntegerArrayConsecutive(array : var) : bool {

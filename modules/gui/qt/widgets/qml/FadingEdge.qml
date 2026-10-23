@@ -48,14 +48,13 @@ Item {
     property real fadeSize: VLCStyle.margin_normal
 
     // Display scale may be a fractional size, but textures can not. Pixel aligned
-    // aligns the visual size to the nearest multiple of number, depending on
-    // the window/screen fraction, so that the layer texture can be displayed
-    // without stretching. For example, if the display scale is 1.25, the
-    // visual size would be aligned up to the nearest multiple of 4. Note that
-    // using this property is going to make the visual to deviate from the
-    // size intended, which may increase greatly depending on the fraction
-    // of the display scale. Also note that if the QML item size is fractional
-    // itself, it is ceiled regardless of the display scale or this property.
+    // aligns the visual size up to a whole number of device pixels, so that the
+    // layer texture can be displayed without stretching. For example, if the
+    // display scale is 1.6, a visual size of 101 would be aligned up to 101.25
+    // (162 device pixels). Note that using this property is going to make the
+    // visual to deviate from the size intended, by less than one device pixel.
+    // Also note that if the QML item size is fractional itself, it is ceiled
+    // regardless of the display scale or this property.
     property bool pixelAlignedForDPR: true
 
     readonly property bool effectCompatible: (GraphicsInfo.shaderType === GraphicsInfo.RhiShader)
@@ -218,7 +217,7 @@ Item {
             anchors.left: parent.left
 
             property real eDPR: MainCtx.effectiveDevicePixelRatio(Window.window) || 1.0
-            readonly property int alignNumber: pixelAlignedForDPR ? Helpers.denominatorForFloat(eDPR) : 1
+            readonly property real alignDPR: pixelAlignedForDPR ? eDPR : 1.0
 
             Connections {
                 target: MainCtx
@@ -228,8 +227,16 @@ Item {
                 }
             }
 
-            implicitWidth: Helpers.alignUp((parent.width + (root.orientation === Qt.Horizontal ? (root.beginningMargin + root.endMargin) : 0)), alignNumber)
-            implicitHeight: Helpers.alignUp((parent.height + (root.orientation === Qt.Vertical ? (root.beginningMargin + root.endMargin) : 0)), alignNumber)
+            implicitWidth: Helpers.alignUpToDevicePixel((parent.width + (root.orientation === Qt.Horizontal ? (root.beginningMargin + root.endMargin) : 0)), alignDPR)
+            implicitHeight: Helpers.alignUpToDevicePixel((parent.height + (root.orientation === Qt.Vertical ? (root.beginningMargin + root.endMargin) : 0)), alignDPR)
+
+            // Before Qt 6.12, Qt derives the texture size from the ceiled logical size, which does
+            // not match the device pixel aligned size above when it is fractional (QTBUG-149373):
+            Binding on textureSize {
+                when: MainCtx.qtVersion() < MainCtx.qtVersionCheck(6, 12, 0)
+                value: Qt.size(Math.round(shaderEffectSource.width * shaderEffectSource.eDPR),
+                               Math.round(shaderEffectSource.height * shaderEffectSource.eDPR))
+            }
 
             // When `live` is set, Qt releases the layer when `sourceItem` becomes `null`. For that reason
             // we do not need to set `parent` to null. The important thing is to get rid  of the layer

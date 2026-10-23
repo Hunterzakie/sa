@@ -341,11 +341,18 @@ FocusScope {
             // effect does not support having an extension area for postprocessing.
             layer.sourceRect: Qt.rect(stackView.x - edgeExtension,
                                       0,
-                                      Helpers.alignUp(stackView.width + (2 * edgeExtension), alignNumber),
-                                      Helpers.alignUp(height + edgeExtension, alignNumber))
+                                      Helpers.alignUpToDevicePixel(stackView.width + (2 * edgeExtension), eDPR),
+                                      Helpers.alignUpToDevicePixel(height + edgeExtension, eDPR))
+
+            // Before Qt 6.12, Qt derives the texture size from the ceiled logical size, which does
+            // not match the device pixel aligned size above when it is fractional (QTBUG-149373):
+            Binding on layer.textureSize {
+                when: MainCtx.qtVersion() < MainCtx.qtVersionCheck(6, 12, 0)
+                value: Qt.size(Math.round(stackViewParent.layer.sourceRect.width * stackViewParent.eDPR),
+                               Math.round(stackViewParent.layer.sourceRect.height * stackViewParent.eDPR))
+            }
 
             property real eDPR: MainCtx.effectiveDevicePixelRatio(Window.window) || 1.0
-            readonly property int alignNumber: Helpers.denominatorForFloat(eDPR)
 
             Connections {
                 target: MainCtx
@@ -356,15 +363,15 @@ FocusScope {
             }
 
             Rectangle {
-                // Extension of parent rectangle for edge and fractional scale alignment extension.
+                // Extension of parent rectangle for edge and device pixel alignment extension.
                 anchors.fill: parent
-                anchors.margins: -(stackViewParent.edgeExtension + fractionalScaleExtensionSize)
+                anchors.margins: -(stackViewParent.edgeExtension + devicePixelAlignmentExtensionSize)
 
-                // With fractional scale, if we align up the layer size to make sure the size is
-                // an integer, we also need to extend here because the background must cover the
-                // extension area. 8 should be enough for the fractions that we care (.25, .5, .75).
-                // Note that the background extension here does not consume additional video memory.
-                readonly property real fractionalScaleExtensionSize: (stackViewParent.alignNumber > 1 ? 8.0 : 0.0)
+                // Since we align up the layer size to device pixels, we also need to extend here
+                // because the background must cover the extension area, which is less than one
+                // device pixel. Note that the background extension here does not consume
+                // additional video memory.
+                readonly property real devicePixelAlignmentExtensionSize: Math.ceil(1.0 / stackViewParent.eDPR)
 
                 visible: stackViewParent.layer.enabled && (height > 0 && width > 0)
                 // We can't simply adjust the color because the color might not be opaque,
