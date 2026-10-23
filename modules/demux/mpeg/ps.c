@@ -342,6 +342,22 @@ static int Probe( demux_t *p_demux, bool b_end )
     return VLC_DEMUXER_SUCCESS;
 }
 
+/* Probing may read past the end of a title, and an access with titles then
+ * goes on with the next one: go back to the title probing started from. */
+static void RestoreTitle( demux_t *p_demux, unsigned i_title )
+{
+    unsigned i_current;
+
+    if( vlc_stream_Control( p_demux->s, STREAM_GET_TITLE,
+                            &i_current ) == VLC_SUCCESS &&
+        i_current != i_title )
+    {
+        msg_Dbg( p_demux, "probing ran into title %u, back to %u",
+                 i_current, i_title );
+        vlc_stream_Control( p_demux->s, STREAM_SET_TITLE, (int)i_title );
+    }
+}
+
 static bool FindLength( demux_t *p_demux )
 {
     demux_sys_t *p_sys = p_demux->p_sys;
@@ -352,10 +368,17 @@ static bool FindLength( demux_t *p_demux )
     if( p_sys->i_length == VLC_TICK_INVALID ) /* First time */
     {
         p_sys->i_length = VLC_TICK_0;
+
+        unsigned i_title;
+        const bool b_title = vlc_stream_Control( p_demux->s, STREAM_GET_TITLE,
+                                                 &i_title ) == VLC_SUCCESS;
+
         /* Check beginning */
         int i = 0;
         uint64_t i_current_pos = vlc_stream_Tell( p_demux->s );
         while( i < 40 && Probe( p_demux, false ) > 0 ) i++;
+        if( b_title )
+            RestoreTitle( p_demux, i_title );
 
         /* Check end */
         uint64_t i_size;
@@ -366,6 +389,8 @@ static bool FindLength( demux_t *p_demux )
         {
             i = 0;
             while( i < 400 && Probe( p_demux, true ) > 0 ) i++;
+            if( b_title )
+                RestoreTitle( p_demux, i_title );
             if( vlc_stream_Seek( p_demux->s, i_current_pos ) != VLC_SUCCESS )
                     return false;
         }
@@ -389,6 +414,35 @@ static bool FindLength( demux_t *p_demux )
         }
     }
     return true;
+}
+
+/* Forget what FindLength() measured, so that it measures again: the stream
+ * changed title, and the size and timestamps along with it. */
+static void ResetLength( demux_sys_t *p_sys )
+{
+    p_sys->i_length = VLC_TICK_INVALID;
+    p_sys->i_time_track_index = -1;
+    p_sys->i_first_scr = VLC_TICK_INVALID;
+    p_sys->i_current_pts = VLC_TICK_INVALID;
+
+    for( int i = 0; i < PS_TK_COUNT; i++ )
+    {
+        p_sys->tk[i].i_first_pts = VLC_TICK_INVALID;
+        p_sys->tk[i].i_last_pts = VLC_TICK_INVALID;
+    }
+}
+
+/* The access moved on to the next title by itself, while the offsets of the
+ * stream layers above it kept counting from the start of the previous one.
+ * Selecting the title explicitly restarts them from zero along with the
+ * access, which goes back to the start of that title. */
+static void AcknowledgeTitle( demux_t *p_demux )
+{
+    demux_sys_t *p_sys = p_demux->p_sys;
+
+    msg_Dbg( p_demux, "access moved on to title %d", p_sys->current_title );
+    vlc_stream_Control( p_demux->s, STREAM_SET_TITLE, p_sys->current_title );
+    ResetLength( p_sys );
 }
 
 static void NotifyDiscontinuity( ps_track_t *p_tk, es_out_t *out )
@@ -661,7 +715,11 @@ static int Demux( demux_t *p_demux )
         break;
     }
 
+    const int i_title = p_sys->current_title;
     demux_UpdateTitleFromStream( p_demux );
+    if( p_sys->current_title != i_title )
+        AcknowledgeTitle( p_demux );
+
     return VLC_DEMUXER_SUCCESS;
 }
 
@@ -792,7 +850,19 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
         }
 
         case DEMUX_SET_TITLE:
-            return vlc_stream_vaControl( p_demux->s, STREAM_SET_TITLE, args );
+        {
+            const int i_title = va_arg( args, int );
+
+            if( vlc_stream_Control( p_demux->s, STREAM_SET_TITLE,
+                                    i_title ) != VLC_SUCCESS )
+                return VLC_EGENERIC;
+
+            p_sys->current_title = i_title;
+            p_sys->current_seekpoint = 0;
+            p_sys->updates |= INPUT_UPDATE_TITLE | INPUT_UPDATE_SEEKPOINT;
+            ResetLength( p_sys );
+            return VLC_SUCCESS;
+        }
 
         case DEMUX_SET_SEEKPOINT:
             return vlc_stream_vaControl( p_demux->s, STREAM_SET_SEEKPOINT,

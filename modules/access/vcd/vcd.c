@@ -63,6 +63,8 @@ vlc_module_end ()
 #define VCD_BLOCKS_ONCE 20
 #define VCD_DATA_ONCE   (VCD_BLOCKS_ONCE * VCD_DATA_SIZE)
 
+#define VCD_GAP_MAX_SECTORS 300
+
 typedef struct
 {
     vcddev_t    *vcddev;                            /* vcd device descriptor */
@@ -75,6 +77,8 @@ typedef struct
     {
         uint64_t *seekpoints;
         size_t    count;
+        int       i_start;
+        int       i_end;
     } titles[99];                        /* No more that 99 track in a vcd ? */
     int         i_current_title;
     unsigned    i_current_seekpoint;
@@ -87,6 +91,129 @@ static int      Control( stream_t *, int, va_list );
 static int      EntryPoints( stream_t * );
 
 /*****************************************************************************
+ * FindPackSector: Looks for a sector carrying a pack in [i_first, i_last)
+ *****************************************************************************
+ * The scan runs from i_first upwards, unless b_backward is set, in which case
+ * it runs from i_last downwards. Sectors are read VCD_BLOCKS_ONCE at a time.
+ *****************************************************************************/
+static int FindPackSector( stream_t *p_access, int i_first, int i_last,
+                           bool b_backward )
+{
+    access_sys_t *p_sys = p_access->p_sys;
+    uint8_t *p_buffer = vlc_alloc( VCD_BLOCKS_ONCE, VCD_DATA_SIZE );
+    int i_found = -1;
+
+    if( unlikely(p_buffer == NULL) )
+        return -1;
+
+    for( int i_done = 0; i_done < i_last - i_first; )
+    {
+        int i_read = i_last - i_first - i_done;
+        if( i_read > VCD_BLOCKS_ONCE )
+            i_read = VCD_BLOCKS_ONCE;
+
+        const int i_sector = b_backward ? i_last - i_done - i_read
+                                        : i_first + i_done;
+
+        if( ioctl_ReadSectors( VLC_OBJECT(p_access), p_sys->vcddev,
+                               i_sector, p_buffer, i_read, VCD_TYPE ) < 0 )
+            break;
+
+        for( int i = 0; i < i_read; i++ )
+        {
+            const int i_index = b_backward ? i_read - 1 - i : i;
+            const uint8_t *p_sector = &p_buffer[i_index * VCD_DATA_SIZE];
+
+            if( p_sector[0] == 0x00 && p_sector[1] == 0x00 &&
+                p_sector[2] == 0x01 && p_sector[3] == 0xBA )
+            {
+                i_found = i_sector + i_index;
+                break;
+            }
+        }
+
+        if( i_found >= 0 )
+            break;
+
+        i_done += i_read;
+    }
+
+    free( p_buffer );
+
+    return i_found;
+}
+
+/*****************************************************************************
+ * TitleStart: Logical start of a title: the first sector carrying a pack.
+ *****************************************************************************/
+static int TitleStart( stream_t *p_access, int i_title )
+{
+    access_sys_t *p_sys = p_access->p_sys;
+    const vcddev_toc_t *p_toc = p_sys->p_toc;
+
+    if( p_sys->titles[i_title].i_start >= 0 )
+        return p_sys->titles[i_title].i_start;
+
+    const int i_track = p_toc->p_sectors[i_title + 1].i_lba;
+
+    int i_limit = i_track + VCD_GAP_MAX_SECTORS;
+    if( i_limit > p_toc->p_sectors[i_title + 2].i_lba )
+        i_limit = p_toc->p_sectors[i_title + 2].i_lba;
+
+    int i_first = FindPackSector( p_access, i_track, i_limit, false );
+    if( i_first < 0 )
+        i_first = i_track;
+
+    if( i_first != i_track )
+        msg_Dbg( p_access, "skipping %d pregap sector(s), first pack at %d",
+                 i_first - i_track, i_first );
+
+    p_sys->titles[i_title].i_start = i_first;
+
+    /* EntryPoints() counted the seekpoints from the track address */
+    const uint64_t i_pregap = (uint64_t)(i_first - i_track) * VCD_DATA_SIZE;
+    for( size_t i = 0; i < p_sys->titles[i_title].count; i++ )
+    {
+        uint64_t *p_seekpoint = &p_sys->titles[i_title].seekpoints[i];
+
+        *p_seekpoint = ( *p_seekpoint > i_pregap )
+                       ? *p_seekpoint - i_pregap : 0;
+    }
+
+    return i_first;
+}
+
+/*****************************************************************************
+ * TitleEnd: one sector past the last one carrying a pack.
+ *****************************************************************************/
+static int TitleEnd( stream_t *p_access, int i_title )
+{
+    access_sys_t *p_sys = p_access->p_sys;
+    const vcddev_toc_t *p_toc = p_sys->p_toc;
+
+    if( p_sys->titles[i_title].i_end >= 0 )
+        return p_sys->titles[i_title].i_end;
+
+    const int i_next = p_toc->p_sectors[i_title + 2].i_lba;
+    const int i_start = TitleStart( p_access, i_title );
+
+    int i_limit = i_next - VCD_GAP_MAX_SECTORS;
+    if( i_limit < i_start )
+        i_limit = i_start;
+
+    int i_last = FindPackSector( p_access, i_limit, i_next, true );
+    i_last = ( i_last < 0 ) ? i_next : i_last + 1;
+
+    if( i_last != i_next )
+        msg_Dbg( p_access, "skipping %d postgap sector(s), last pack at %d",
+                 i_next - i_last, i_last - 1 );
+
+    p_sys->titles[i_title].i_end = i_last;
+
+    return i_last;
+}
+
+/*****************************************************************************
  * VCDOpen: open vcd
  *****************************************************************************/
 static int Open( vlc_object_t *p_this )
@@ -97,6 +224,7 @@ static int Open( vlc_object_t *p_this )
         return VLC_EGENERIC;
 
     char *psz_dup = ToLocaleDup( p_access->psz_filepath );
+
     char *psz;
     int i_title = 0;
     int i_chapter = 0;
@@ -148,7 +276,11 @@ static int Open( vlc_object_t *p_this )
     p_sys->offset = 0;
 
     for( size_t i = 0; i < ARRAY_SIZE(p_sys->titles); i++ )
+    {
         p_sys->titles[i].seekpoints = NULL;
+        p_sys->titles[i].i_start = -1;
+        p_sys->titles[i].i_end = -1;
+    }
 
     /* We read the Table Of Content information */
     p_sys->p_toc = ioctl_GetTOC( VLC_OBJECT(p_access), p_sys->vcddev );
@@ -182,12 +314,14 @@ static int Open( vlc_object_t *p_this )
     }
 
     /* Starting title/chapter and sector */
-    if( i_title > USABLE_TITLES(p_sys->p_toc->i_tracks) )
+    if( i_title < 0 || i_title >= USABLE_TITLES(p_sys->p_toc->i_tracks) )
         i_title = 0;
     if( (unsigned)i_chapter >= p_sys->titles[i_title].count )
         i_chapter = 0;
 
-    p_sys->i_sector = p_sys->p_toc->p_sectors[1+i_title].i_lba;
+    const int i_start = TitleStart( p_access, i_title );
+
+    p_sys->i_sector = i_start;
     if( i_chapter > 0 )
         p_sys->i_sector += p_sys->titles[i_title].seekpoints[i_chapter]
                            / VCD_DATA_SIZE;
@@ -200,8 +334,7 @@ static int Open( vlc_object_t *p_this )
 
     p_sys->i_current_title = i_title;
     p_sys->i_current_seekpoint = i_chapter;
-    p_sys->offset = (uint64_t)(p_sys->i_sector - p_sys->p_toc->p_sectors[1+i_title].i_lba) *
-                               VCD_DATA_SIZE;
+    p_sys->offset = (uint64_t)(p_sys->i_sector - i_start) * VCD_DATA_SIZE;
 
     return VLC_SUCCESS;
 
@@ -251,8 +384,8 @@ static int Control( stream_t *p_access, int i_query, va_list args )
             int i = p_sys->i_current_title;
 
             *va_arg( args, uint64_t * ) =
-                (p_sys->p_toc->p_sectors[i + 2].i_lba -
-                 p_sys->p_toc->p_sectors[i + 1].i_lba) * (uint64_t)VCD_DATA_SIZE;
+                (TitleEnd( p_access, i ) -
+                 TitleStart( p_access, i )) * (uint64_t)VCD_DATA_SIZE;
             break;
         }
 
@@ -293,16 +426,13 @@ static int Control( stream_t *p_access, int i_query, va_list args )
         case STREAM_SET_TITLE:
         {
             int i = va_arg( args, int );
-            if( i != p_sys->i_current_title )
-            {
-                /* Update info */
-                p_sys->offset = 0;
-                p_sys->i_current_title = i;
-                p_sys->i_current_seekpoint = 0;
+            if( i < 0 || i >= USABLE_TITLES(p_sys->p_toc->i_tracks) )
+                return VLC_EGENERIC;
 
-                /* Next sector to read */
-                p_sys->i_sector = p_sys->p_toc->p_sectors[1+i].i_lba;
-            }
+            p_sys->offset = 0;
+            p_sys->i_current_title = i;
+            p_sys->i_current_seekpoint = 0;
+            p_sys->i_sector = TitleStart( p_access, i );
             break;
         }
 
@@ -315,11 +445,13 @@ static int Control( stream_t *p_access, int i_query, va_list args )
             {
                 p_sys->i_current_seekpoint = i;
 
-                p_sys->i_sector = p_sys->p_toc->p_sectors[1 + i_title].i_lba +
+                const int i_start = TitleStart( p_access, i_title );
+
+                p_sys->i_sector = i_start +
                     p_sys->titles[i_title].seekpoints[i] / VCD_DATA_SIZE;
 
                 p_sys->offset = (uint64_t)(p_sys->i_sector -
-                    p_sys->p_toc->p_sectors[1 + i_title].i_lba) * VCD_DATA_SIZE;
+                    i_start) * VCD_DATA_SIZE;
             }
             break;
         }
@@ -341,7 +473,7 @@ static block_t *Block( stream_t *p_access, bool *restrict eof )
     block_t *p_block;
 
     /* Check end of title */
-    while( p_sys->i_sector >= p_toc->p_sectors[p_sys->i_current_title + 2].i_lba )
+    while( p_sys->i_sector >= TitleEnd( p_access, p_sys->i_current_title ) )
     {
         if( p_sys->i_current_title + 2 > USABLE_TITLES(p_toc->i_tracks) )
         {
@@ -352,13 +484,13 @@ static block_t *Block( stream_t *p_access, bool *restrict eof )
         p_sys->i_current_title++;
         p_sys->i_current_seekpoint = 0;
         p_sys->offset = 0;
+        p_sys->i_sector = TitleStart( p_access, p_sys->i_current_title );
     }
 
     /* Don't read after the end of a title */
-    if( p_sys->i_sector + i_blocks >=
-        p_toc->p_sectors[p_sys->i_current_title + 2].i_lba )
+    if( p_sys->i_sector + i_blocks >= TitleEnd( p_access, p_sys->i_current_title ) )
     {
-        i_blocks = p_toc->p_sectors[p_sys->i_current_title + 2 ].i_lba - p_sys->i_sector;
+        i_blocks = TitleEnd( p_access, p_sys->i_current_title ) - p_sys->i_sector;
     }
 
     /* Do the actual reading */
@@ -417,13 +549,12 @@ static block_t *Block( stream_t *p_access, bool *restrict eof )
 static int Seek( stream_t *p_access, uint64_t i_pos )
 {
     access_sys_t *p_sys = p_access->p_sys;
-    const vcddev_toc_t *p_toc = p_sys->p_toc;
     int i_title = p_sys->i_current_title;
     unsigned i_seekpoint;
 
     /* Next sector to read */
     p_sys->offset = i_pos;
-    p_sys->i_sector = i_pos / VCD_DATA_SIZE + p_toc->p_sectors[i_title + 1].i_lba;
+    p_sys->i_sector = i_pos / VCD_DATA_SIZE + TitleStart( p_access, i_title );
 
     /* Update current seekpoint */
     for( i_seekpoint = 0; i_seekpoint < p_sys->titles[i_title].count; i_seekpoint++ )
