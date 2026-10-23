@@ -523,13 +523,15 @@ VLC_METADATA_EXPORTS
     vlc_config_set (VLC_CONFIG_LIST, \
                     ARRAY_SIZE(list), \
                     VLC_CHECKED_TYPE(const char *const *, list), \
-                    VLC_CHECKED_TYPE(const char *const *, list_text));
+                    VLC_CHECKED_TYPE(const char *const *, list_text)); \
+    _Static_assert(ARRAY_SIZE(list) == ARRAY_SIZE(list_text), "Mismatched list values/text");
 
 #define change_integer_list( list, list_text ) \
     vlc_config_set (VLC_CONFIG_LIST, \
                     ARRAY_SIZE(list), \
                     VLC_CHECKED_TYPE(const int *, list), \
-                    VLC_CHECKED_TYPE(const char *const *, list_text));
+                    VLC_CHECKED_TYPE(const char *const *, list_text)); \
+    _Static_assert(ARRAY_SIZE(list) == ARRAY_SIZE(list_text), "Mismatched list values/text");
 
 #define change_integer_range( minv, maxv ) \
     vlc_config_set (VLC_CONFIG_RANGE, VLC_CHECKED_TYPE(int64_t, minv), \
