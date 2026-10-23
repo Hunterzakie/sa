@@ -1549,7 +1549,7 @@ endif
 # registered with the sources as prerequisites
 shaders/shaders.deps: Makefile
 	$(AM_V_at)$(MKDIR_P) $(@D)
-	$(AM_V_GEN){ \
+	$(AM_V_at){ \
 	  for s in $(libqt_plugin_la_SHADER_FRAG) $(libqt_plugin_la_SHADER_VERT); do \
 	    echo "$$s.qsb: $(srcdir)/$$s"; \
 	  done; \
@@ -1574,7 +1574,7 @@ QML_RULES_DEPS = $(libqt_plugin_la_QML_MODULES:=/qml.deps)
 # to get the module name.
 $(QML_RULES_DEPS): Makefile
 	$(AM_V_at)$(MKDIR_P) $(@D)
-	$(AM_V_GEN){ \
+	$(AM_V_at){ \
 	  echo '$(@D)/qmldir.qrc: $(@D)/qmldir'; \
 	  echo '$(@D)/res.qrc $(@D)/qmldir: $(@D)/qml_modules.stamp'; \
 	  echo '$(@D)/qmlcachegen.rsp: $$(builddir)/$(@D)/res.qrc'; \
