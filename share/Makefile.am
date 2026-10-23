@@ -27,6 +27,7 @@ LUA_MODULES = \
 	lua/playlist/cue.lua \
 	lua/playlist/dailymotion.lua \
 	lua/playlist/extreme.lua \
+	lua/playlist/enigma2_iptv_userbouquet.lua \
 	lua/playlist/france2.lua \
 	lua/playlist/jamendo.lua \
 	lua/playlist/katsomo.lua \
