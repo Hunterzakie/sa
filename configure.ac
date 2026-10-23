@@ -174,6 +174,7 @@ case "${host_os}" in
     SYS=openbsd
     CPPFLAGS="${CPPFLAGS} -I/usr/local/include -I/usr/X11R6/include"
     LDFLAGS="${LDFLAGS} -L/usr/local/lib -L/usr/X11R6/lib/"
+    ac_cv_ld_z_defs=no
     ;;
   netbsd*)
     SYS=netbsd
