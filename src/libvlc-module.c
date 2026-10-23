@@ -696,6 +696,14 @@ static const char *const ppsz_clock_descriptions[] =
 #define INPUT_SUBTRACK_ID_LONGTEXT N_( \
     "Stream ID of the subtitle track to use.")
 
+#define INPUT_STT_LOADER_TEXT N_("Speech-To-Text implementation")
+#define INPUT_STT_LOADER_LONGTEXT N_("Engine used to transcribe the audio " \
+    "track. \"Automatic\" picks the highest priority one available.")
+
+#define INPUT_STT_TEXT N_("Enable Speech-To-Text")
+#define INPUT_STT_LONGTEXT N_("Automatically create a speech-to-text " \
+                              "subtitle track")
+
 #define INPUT_CAPTIONS_TEXT N_(N_("Preferred Closed Captions decoder"))
 static const int pi_captions[] = { 608, 708 };
 static const char *const ppsz_captions[] = { "EIA/CEA 608", "CEA 708" };
@@ -1882,6 +1890,9 @@ vlc_module_begin ()
     add_string( "sub-track-id", NULL,
                  INPUT_SUBTRACK_ID_TEXT, INPUT_SUBTRACK_ID_LONGTEXT )
         change_safe ()
+    add_bool( "stt", true, INPUT_STT_TEXT, INPUT_STT_LONGTEXT )
+    add_module( "stt-loader", "stt loader", "any",
+                INPUT_STT_LOADER_TEXT, INPUT_STT_LOADER_LONGTEXT )
     add_integer( "captions", 608,
                  INPUT_CAPTIONS_TEXT, NULL )
         change_integer_list( pi_captions, ppsz_captions )

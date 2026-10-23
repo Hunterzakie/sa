@@ -209,6 +209,24 @@ struct decoder_cc_desc_t
     int i_reorder_depth;     /* reorder depth, -1 for no reorder, 0 for old P/B flag based */
 };
 
+struct vlc_stt_ctx;
+
+/**
+ * Structure used to transport the audio format and the model ctx through
+ * the extra pointer in es_format.
+ */
+struct vlc_stt_extra {
+    /**
+     * Audio format in input.
+     */
+    audio_format_t fmt;
+
+    /**
+     * Struct storing stt context information and data
+     */
+    struct vlc_stt_ctx *ctx;
+};
+
 /**
  * @}
  */

@@ -1,0 +1,24 @@
+From: Gabriel Lafond-Thenaille <gabriel@videolabs.io>
+Subject: [PATCH] ggml: preserve lib prefix when cross-compiling for Windows
+
+ggml clears CMAKE_STATIC_LIBRARY_PREFIX unconditionally on WIN32,
+which strips the "lib" prefix from ggml-base.a, ggml-cpu.a, etc.
+when cross-compiling from Linux.  This breaks pkg-config consumers
+that reference those libraries as -lggml-base etc.
+
+Restrict the prefix removal to native Windows builds only.
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -76,7 +76,7 @@
+ endif()
+ 
+ # remove the lib prefix on win32 mingw
+-if (WIN32)
++if (WIN32 AND NOT CMAKE_CROSSCOMPILING)
+     set(CMAKE_STATIC_LIBRARY_PREFIX "")
+     set(CMAKE_SHARED_LIBRARY_PREFIX "")
+     set(CMAKE_SHARED_MODULE_PREFIX  "")

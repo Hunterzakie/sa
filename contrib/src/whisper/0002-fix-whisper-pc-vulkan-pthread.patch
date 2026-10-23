@@ -1,0 +1,50 @@
+From: Gabriel Lafond-Thenaille <gabriel@videolabs.io>
+Subject: [PATCH] fix whisper.pc PRIVATE_LIBS: Vulkan, pthread, dedup
+
+Three issues in the @PRIVATE_LIBS@ cmake code introduced by the
+previous linking-problems patch:
+
+1. ggml-vulkan has a PRIVATE dep on Vulkan::Vulkan.  On Windows, the
+   Vulkan loader is an import library (libvulkan-1.dll.a); the static
+   linker cannot find it via -lvulkan-1 when -static is in effect.
+   Use -l:libvulkan-1.dll.a (exact filename) on WIN32; -lvulkan elsewhere.
+
+2. CMAKE_CXX_IMPLICIT_LINK_LIBRARIES may contain entries of the form
+   "-l:libpthread.a" (VLC's static-thread flag).  The generic else()
+   branch prepends another -l giving "-l-l:libpthread.a" which the
+   linker rejects.  Pass -l:filename.a entries through verbatim.
+
+3. -lunwind appears multiple times (once from the elseif match, once
+   from the generic "unwind" entry in the implicit list).  Call
+   REMOVE_DUPLICATES before REMOVE_ITEM to collapse them.
+
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -210,5 +210,13 @@ if(GGML_AVAILABLE_BACKENDS)
+ endif()
+
++if(GGML_VULKAN)
++    if(WIN32)
++        list(APPEND LIBLIST "-l:libvulkan-1.dll.a")
++    else()
++        list(APPEND LIBLIST "-lvulkan")
++    endif()
++endif()
++
+ if(APPLE AND GGML_ACCELERATE)
+     list(APPEND LIBLIST "-framework Accelerate")
+ endif()
+@@ -238,10 +246,13 @@ foreach(LIB ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
+     elseif(${LIB} MATCHES "-l:libunwind.a") # android toolchain
+         list(APPEND LIBLIST "-lunwind")
++    elseif(${LIB} MATCHES "^-l:")
++        list(APPEND LIBLIST "${LIB}")
+     else()
+         list(APPEND LIBLIST "-l${LIB}")
+     endif()
+ endforeach()
+
+ if(LIBLIST)
++    list(REMOVE_DUPLICATES LIBLIST)
+     # Remove standard libraries
+     list(REMOVE_ITEM LIBLIST "-lc" "-lpthread" "-lmingwex" "-lmingwthrd"

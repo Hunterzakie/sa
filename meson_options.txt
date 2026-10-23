@@ -841,6 +841,16 @@ option('wix',
        value: 'auto',
        description: 'Generate WIX files to create Windows MSI installer')
 
+option('whisper',
+    type: 'feature',
+    value: 'auto',
+    description: 'whisper.cpp inference library')
+
+option('llama',
+    type: 'feature',
+    value: 'auto',
+    description: 'llama.cpp LLM inference library')
+
 # TODO: Missing rpi-omxil
 # TODO: Missing gst-decode
 # TODO: Missing libva

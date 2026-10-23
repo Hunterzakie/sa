@@ -25,6 +25,7 @@
 
 #include <vlc_common.h>
 #include <vlc_mouse.h>
+#include <vlc_stt.h>
 #include "../video_output/vout_internal.h"
 
 enum input_resource_vout_state
@@ -95,5 +96,28 @@ void input_resource_StopFreeVout( input_resource_t * );
 input_resource_t *input_resource_Hold( input_resource_t * );
 
 void input_resource_ResetAout( input_resource_t * );
+
+/**
+ * Call the vlc_stt_loader_callbacks when the ctx is loaded or set vlc_stt_ctx
+ * if it's already loaded.
+ *
+ * On cached-ctx reuse, cbs/data are re-bound onto the existing context.
+ * Caller must call input_resource_DetachSttCtx() with the same @p data
+ * before cbs/data become invalid.
+ *
+ * @param resource input_resource struture.
+ * @param cbs stt callbacks structure.
+ * @param data owner data.
+ *
+ * @return the new context or NULL in case of an error.
+ */
+struct vlc_stt_ctx *
+input_resource_GetOrCreateSttCtx(input_resource_t *resource,
+                                 const struct vlc_stt_ctx_callbacks *cbs,
+                                 void *data);
+
+/* Unregister cbs/data on the cached stt ctx, if owner.data still matches. */
+void
+input_resource_DetachSttCtx(input_resource_t *resource, void *data);
 
 #endif

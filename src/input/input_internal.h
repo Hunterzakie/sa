@@ -624,6 +624,8 @@ enum input_control_e
     INPUT_CONTROL_RESTART_ES,
     INPUT_CONTROL_SET_ES_CAT_IDS,
 
+    INPUT_CONTROL_SET_STT_ENABLED,
+
     INPUT_CONTROL_SET_VIEWPOINT,    // new absolute viewpoint
     INPUT_CONTROL_SET_INITIAL_VIEWPOINT, // set initial viewpoint (generally from video)
     INPUT_CONTROL_UPDATE_VIEWPOINT, // update viewpoint relative to current

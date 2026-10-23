@@ -2287,6 +2287,10 @@ static bool Control( input_thread_t *p_input,
                                 param.cat_ids.str_ids );
             break;
 
+        case INPUT_CONTROL_SET_STT_ENABLED:
+            es_out_SetSttEnabled(priv->p_es_out_display, param.val.b_bool);
+            break;
+
         case INPUT_CONTROL_SET_VIEWPOINT:
         case INPUT_CONTROL_SET_INITIAL_VIEWPOINT:
         case INPUT_CONTROL_UPDATE_VIEWPOINT:

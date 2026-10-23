@@ -123,4 +123,45 @@ if build_vlc and (host_system != 'darwin' or have_osx) and not have_win_store an
         win_subsystem: 'windows'
     )
 
+
+    if whisper_enabled
+
+        vlc_whisper_sources = [
+          '../modules/codec/whisper/process.c',
+          '../modules/codec/whisper/backend_thread.c',
+          '../modules/codec/whisper/loader.c',
+          '../modules/codec/whisper/run.c',
+          '../modules/codec/whisper/translate.c',
+          '../modules/codec/whisper/protocol.c',
+        ]
+
+        vlc_whisper_deps = vlc_deps + [whisper_dep, llama_dep]
+
+        if gcrypt_dep.found()
+            vlc_whisper_deps += gcrypt_dep
+        endif
+
+        executable('vlc-whisper',
+            vlc_whisper_sources,
+            link_with: [libvlc, libvlccore, vlc_libcompat],
+            include_directories: [vlc_include_dirs],
+            dependencies: vlc_whisper_deps,
+            install: true,
+            install_dir: pkglibexecdir_path,
+            win_subsystem: 'windows'
+        )
+
+        executable('vlc-whisper-static',
+            vlc_whisper_sources,
+            link_with: [libvlc, libvlccore, vlc_libcompat],
+            include_directories: [vlc_include_dirs],
+            dependencies: vlc_whisper_deps,
+            c_args: [vlc_top_builddir_def, vlc_top_srcdir_def],
+            objc_args: [vlc_top_builddir_def, vlc_top_srcdir_def],
+            install_dir: get_option('libexecdir'),
+            win_subsystem: 'windows'
+        )
+
+    endif
+
 endif

@@ -139,6 +139,8 @@ libqt_plugin_la_SOURCES = \
 	dialogs/plugins/plugins.cpp dialogs/plugins/plugins.hpp \
 	dialogs/podcast/podcast_configuration.cpp \
 	dialogs/podcast/podcast_configuration.hpp \
+	dialogs/preferences/aimodelstable.cpp \
+	dialogs/preferences/aimodelstable.hpp \
 	dialogs/preferences/complete_preferences.cpp \
 	dialogs/preferences/complete_preferences.hpp \
 	dialogs/preferences/expert_model.cpp \
@@ -429,6 +431,7 @@ nodist_libqt_plugin_la_SOURCES = \
 	dialogs/open/openurl.moc.cpp \
 	dialogs/plugins/plugins.moc.cpp \
 	dialogs/podcast/podcast_configuration.moc.cpp \
+	dialogs/preferences/aimodelstable.moc.cpp \
 	dialogs/preferences/complete_preferences.moc.cpp \
 	dialogs/preferences/expert_model.moc.cpp \
 	dialogs/preferences/expert_view.moc.cpp \
@@ -554,6 +557,7 @@ nodist_libqt_plugin_la_SOURCES += \
 	dialogs/open/ui_open_file.h \
 	dialogs/open/ui_open_net.h \
 	dialogs/podcast/ui_podcast_configuration.h \
+	dialogs/preferences/ui_sprefs_ai.h \
 	dialogs/preferences/ui_sprefs_audio.h \
 	dialogs/preferences/ui_sprefs_input.h \
 	dialogs/preferences/ui_sprefs_interface.h \
@@ -768,6 +772,7 @@ libqt_plugin_la_UI = \
 	dialogs/open/open_file.ui \
 	dialogs/open/open_net.ui \
 	dialogs/podcast/podcast_configuration.ui \
+	dialogs/preferences/sprefs_ai.ui \
 	dialogs/preferences/sprefs_audio.ui \
 	dialogs/preferences/sprefs_input.ui \
 	dialogs/preferences/sprefs_interface.ui \

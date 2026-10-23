@@ -110,6 +110,7 @@ pluginsinclude_HEADERS.h = \
 	../include/vlc_stream.h \
 	../include/vlc_stream_extractor.h \
 	../include/vlc_strings.h \
+	../include/vlc_stt.h \
 	../include/vlc_subpicture.h \
 	../include/vlc_text_style.h \
 	../include/vlc_threads.h \
@@ -439,6 +440,8 @@ libvlccore_la_SOURCES = \
 	misc/sort.c \
 	misc/subpicture.c \
 	misc/subpicture.h \
+	misc/stt.c \
+	misc/stt.h \
 	misc/medialibrary.c \
 	misc/viewpoint.c
 libvlccore_la_LIBADD = $(LIBS_libvlccore) \

@@ -262,6 +262,13 @@ extern const CGFloat VLCVolumeDefault;
 - (instancetype)initWithPlayer:(vlc_player_t *)player;
 
 /**
+ * The underlying core player.
+ * @note Use with care and only from the main thread.
+ * @return the vlc_player_t backing this controller
+ */
+@property (readonly) vlc_player_t *p_player;
+
+/**
  * Start playback of the current media
  * @return VLC_SUCCESS on success, otherwise a VLC error
  */

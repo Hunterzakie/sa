@@ -1373,6 +1373,13 @@ static void GetCcChannels(vlc_input_decoder_t *owner, size_t *max_channels,
     }
 }
 
+static bool SubDecoderIsStt(vlc_input_decoder_t *subdec)
+{
+    return subdec->cat == SPU_ES &&
+           subdec->dec.fmt_in->i_extra == sizeof(struct vlc_stt_extra) &&
+           subdec->dec.fmt_in->i_codec == VLC_CODEC_STT;
+}
+
 static bool SubDecoderIsCc(vlc_input_decoder_t *subdec)
 {
     return subdec->cat == SPU_ES &&
@@ -1679,6 +1686,51 @@ static int ModuleThread_PlayAudio( vlc_input_decoder_t *p_owner, vlc_frame_t *p_
         block_Release(p_audio);
         return ret;
     }
+
+    vlc_mutex_lock(&p_owner->subdecs.lock);
+
+    vlc_input_decoder_t *it;
+    vlc_list_foreach(it, &p_owner->subdecs.list, node) {
+        if (!SubDecoderIsStt(it)) {
+            continue;
+        }
+        vlc_frame_t *dup = vlc_frame_Duplicate(p_audio);
+        if (dup != NULL) {
+            bool discontinuity = false;
+
+#define STT_AUDIO_FIFO_MAX_BYTES (512 * 1024 * 1024)
+
+            vlc_fifo_Lock(it->p_fifo);
+            while (!vlc_fifo_IsEmpty(it->p_fifo) &&
+                   (dup->i_buffer >= STT_AUDIO_FIFO_MAX_BYTES ||
+                    vlc_fifo_GetBytes(it->p_fifo) >
+                    STT_AUDIO_FIFO_MAX_BYTES - dup->i_buffer)) {
+                vlc_frame_t *old = vlc_fifo_DequeueUnlocked(it->p_fifo);
+                vlc_frame_Release(old);
+                discontinuity = true;
+            }
+
+#undef STT_AUDIO_FIFO_MAX_BYTES
+
+            if (discontinuity) {
+                vlc_frame_t *remaining =
+                    vlc_fifo_DequeueAllUnlocked(it->p_fifo);
+                if (remaining != NULL) {
+                    remaining->i_flags |= VLC_FRAME_FLAG_DISCONTINUITY;
+                    vlc_frame_ChainAppend(&remaining, dup);
+                    vlc_fifo_QueueUnlocked(it->p_fifo, remaining);
+                } else {
+                    dup->i_flags |= VLC_FRAME_FLAG_DISCONTINUITY;
+                    vlc_fifo_QueueUnlocked(it->p_fifo, dup);
+                }
+            } else {
+                vlc_fifo_QueueUnlocked(it->p_fifo, dup);
+            }
+            vlc_fifo_Unlock(it->p_fifo);
+        }
+        break;
+    }
+    vlc_mutex_unlock(&p_owner->subdecs.lock);
 
     int status = vlc_aout_stream_Play( p_astream, p_audio );
     if( status == AOUT_DEC_CHANGED )
@@ -2519,7 +2571,8 @@ static void RemoveCcDecoder(vlc_input_decoder_t *owner,
         if (it == subdec)
         {
             vlc_list_remove(&it->node);
-            owner->cc.count--;
+            if (SubDecoderIsCc(it))
+                owner->cc.count--;
             vlc_mutex_unlock(&owner->subdecs.lock);
             return;
         }
@@ -2879,7 +2932,8 @@ vlc_input_decoder_CreateSubDec(vlc_input_decoder_t *p_owner,
     assert(p_ccowner->dec.p_module != NULL);
 
     vlc_list_append(&p_ccowner->node, &p_owner->subdecs.list);
-    p_owner->cc.count++;
+    if (SubDecoderIsCc(p_ccowner))
+        p_owner->cc.count++;
     p_ccowner->master_dec = p_owner;
 
     vlc_mutex_unlock(&p_owner->subdecs.lock);

@@ -71,6 +71,36 @@
 @property (readwrite, weak) IBOutlet NSButton *mediaLibraryBanFolderButton;
 @property (readwrite, weak) IBOutlet NSButton *mediaLibraryReloadFolderButton;
 
+// AI pane
+@property (readwrite, strong) IBOutlet NSView *aiView;
+@property (readwrite, weak) IBOutlet NSTextField *ai_restartNoticeLabel;
+@property (readwrite, weak) IBOutlet NSButton *ai_sttEnableCheckbox;
+@property (readwrite, weak) IBOutlet NSTextField *ai_sttLoaderLabel;
+@property (readwrite, weak) IBOutlet NSPopUpButton *ai_sttLoaderPopup;
+@property (readwrite, weak) IBOutlet NSBox *ai_whisperBox;
+@property (readwrite, weak) IBOutlet NSTextField *ai_whisperModelLabel;
+@property (readwrite, weak) IBOutlet NSPopUpButton *ai_whisperModelPopup;
+@property (readwrite, weak) IBOutlet NSTextField *ai_whisperLanguageLabel;
+@property (readwrite, weak) IBOutlet NSPopUpButton *ai_whisperLanguagePopup;
+@property (readwrite, weak) IBOutlet NSTextField *ai_whisperTranslationLabel;
+@property (readwrite, weak) IBOutlet NSPopUpButton *ai_whisperTranslationPopup;
+@property (readwrite, weak) IBOutlet NSTextField *ai_whisperThreadLabel;
+@property (readwrite, weak) IBOutlet NSTextField *ai_whisperThreadField;
+@property (readwrite, weak) IBOutlet NSStepper *ai_whisperThreadStepper;
+@property (readwrite, weak) IBOutlet NSTextField *ai_whisperLengthLabel;
+@property (readwrite, weak) IBOutlet NSTextField *ai_whisperLengthField;
+@property (readwrite, weak) IBOutlet NSButton *ai_sttPreloadButton;
+@property (readwrite, weak) IBOutlet NSProgressIndicator *ai_sttPreloadProgress;
+@property (readwrite, weak) IBOutlet NSTextField *ai_sttPreloadStatusLabel;
+@property (readwrite, strong) IBOutlet NSLayoutConstraint *ai_sttPreloadTopConstraint;
+@property (readwrite, weak) IBOutlet NSBox *ai_modelsBox;
+@property (readwrite, weak) IBOutlet NSTextField *ai_modelsPathLabel;
+@property (readwrite, weak) IBOutlet NSButton *ai_modelsReloadButton;
+@property (readwrite, weak) IBOutlet NSButton *ai_modelsRemoveButton;
+@property (readwrite, weak) IBOutlet NSTableView *ai_modelsTableView;
+@property (readwrite, weak) IBOutlet NSTableColumn *ai_modelsNameColumn;
+@property (readwrite, weak) IBOutlet NSTableColumn *ai_modelsSizeColumn;
+
 // hotkeys pane
 @property (readwrite, strong) IBOutlet NSView *hotkeysView;
 
@@ -251,6 +281,10 @@
 /* input & codecs */
 - (IBAction)inputSettingChanged:(id)sender;
 - (IBAction)urlHandlerAction:(id)sender;
+
+/* AI */
+- (IBAction)aiSettingChanged:(id)sender;
+- (IBAction)aiPreloadAction:(id)sender;
 
 /* hotkeys */
 - (IBAction)hotkeySettingChanged:(id)sender;

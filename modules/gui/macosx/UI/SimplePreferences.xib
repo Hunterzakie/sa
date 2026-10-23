@@ -8,6 +8,34 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="VLCSimplePrefsController">
             <connections>
+                <outlet property="aiView" destination="ai-root" id="ai-c000"/>
+                <outlet property="ai_restartNoticeLabel" destination="ai-001" id="ai-c001"/>
+                <outlet property="ai_sttEnableCheckbox" destination="ai-002" id="ai-c002"/>
+                <outlet property="ai_sttLoaderLabel" destination="ai-005" id="ai-c025"/>
+                <outlet property="ai_sttLoaderPopup" destination="ai-006" id="ai-c026"/>
+                <outlet property="ai_whisperBox" destination="ai-003" id="ai-c003"/>
+                <outlet property="ai_whisperModelLabel" destination="ai-010" id="ai-c004"/>
+                <outlet property="ai_whisperModelPopup" destination="ai-011" id="ai-c005"/>
+                <outlet property="ai_whisperLanguageLabel" destination="ai-012" id="ai-c006"/>
+                <outlet property="ai_whisperLanguagePopup" destination="ai-013" id="ai-c007"/>
+                <outlet property="ai_whisperTranslationLabel" destination="ai-014" id="ai-c008"/>
+                <outlet property="ai_whisperTranslationPopup" destination="ai-015" id="ai-c009"/>
+                <outlet property="ai_whisperThreadLabel" destination="ai-016" id="ai-c010"/>
+                <outlet property="ai_whisperThreadField" destination="ai-017" id="ai-c011"/>
+                <outlet property="ai_whisperThreadStepper" destination="ai-018" id="ai-c012"/>
+                <outlet property="ai_whisperLengthLabel" destination="ai-019" id="ai-c013"/>
+                <outlet property="ai_whisperLengthField" destination="ai-020" id="ai-c014"/>
+                <outlet property="ai_sttPreloadButton" destination="ai-021" id="ai-c015"/>
+                <outlet property="ai_sttPreloadProgress" destination="ai-022" id="ai-c016"/>
+                <outlet property="ai_sttPreloadStatusLabel" destination="ai-023" id="ai-c017"/>
+                <outlet property="ai_sttPreloadTopConstraint" destination="ai-z018" id="ai-c027"/>
+                <outlet property="ai_modelsBox" destination="ai-004" id="ai-c018"/>
+                <outlet property="ai_modelsPathLabel" destination="ai-030" id="ai-c019"/>
+                <outlet property="ai_modelsReloadButton" destination="ai-031" id="ai-c020"/>
+                <outlet property="ai_modelsRemoveButton" destination="ai-037" id="ai-c024"/>
+                <outlet property="ai_modelsTableView" destination="ai-033" id="ai-c021"/>
+                <outlet property="ai_modelsNameColumn" destination="ai-034" id="ai-c022"/>
+                <outlet property="ai_modelsSizeColumn" destination="ai-035" id="ai-c023"/>
                 <outlet property="audioView" destination="2330" id="gZc-yc-OH9"/>
                 <outlet property="audio_autosavevolMatrix" destination="3664" id="qcu-Km-dKV"/>
                 <outlet property="audio_autosavevol_noButtonCell" destination="3666" id="BQT-wK-ru5"/>
@@ -167,10 +195,10 @@
         <window title="Preferences" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="sprefs" animationBehavior="default" id="2265" userLabel="Simple Preferences" customClass="VLCSimplePrefsWindow">
             <windowStyleMask key="styleMask" titled="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="105" y="903" width="580" height="620"/>
+            <rect key="contentRect" x="105" y="903" width="580" height="760"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1800" height="1125"/>
             <view key="contentView" id="2266">
-                <rect key="frame" x="0.0" y="0.0" width="580" height="620"/>
+                <rect key="frame" x="0.0" y="0.0" width="580" height="760"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <scrollView autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="b28-nA-RR5">
@@ -3140,6 +3168,340 @@ Gw
                 <constraint firstItem="AsR-G7-aHo" firstAttribute="top" secondItem="gbE-0a-hRm" secondAttribute="bottom" constant="14" id="tvU-aS-f8N"/>
             </constraints>
             <point key="canvasLocation" x="139" y="1098"/>
+        </customView>
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="ai-root" userLabel="AI">
+            <rect key="frame" x="0.0" y="0.0" width="597" height="622"/>
+            <subviews>
+                <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-001">
+                    <rect key="frame" x="21" y="588" width="555" height="16"/>
+                    <textFieldCell key="cell" lineBreakMode="wordWrap" title="VLC needs to be restarted for some changes to take effect" id="ai-001c">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <button mirrorLayoutDirectionWhenInternationalizing="always" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-002">
+                    <rect key="frame" x="21" y="558" width="180" height="18"/>
+                    <buttonCell key="cell" type="check" title="Enable speech-to-text" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="ai-002c">
+                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <action selector="aiSettingChanged:" target="-2" id="ai-a002"/>
+                    </connections>
+                </button>
+                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-005">
+                    <rect key="frame" x="21" y="528" width="190" height="16"/>
+                    <textFieldCell key="cell" lineBreakMode="truncatingTail" title="Speech-To-Text implementation" usesSingleLineMode="YES" id="ai-005c">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-006">
+                    <rect key="frame" x="219" y="523" width="357" height="25"/>
+                    <popUpButtonCell key="cell" type="push" bezelStyle="rounded" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" id="ai-006c">
+                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="message"/>
+                        <menu key="menu" title="OtherViews" id="ai-006m"/>
+                    </popUpButtonCell>
+                    <connections>
+                        <action selector="aiSettingChanged:" target="-2" id="ai-a006"/>
+                    </connections>
+                </popUpButton>
+                <box borderType="line" title="Speech-to-Text (Whisper)" translatesAutoresizingMaskIntoConstraints="NO" id="ai-003">
+                    <rect key="frame" x="21" y="310" width="557" height="201"/>
+                    <view key="contentView" id="ai-cw">
+                        <rect key="frame" x="4" y="5" width="549" height="181"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-010">
+                                <rect key="frame" x="17" y="153" width="120" height="16"/>
+                                <textFieldCell key="cell" lineBreakMode="truncatingTail" title="Model name" usesSingleLineMode="YES" id="ai-010c">
+                                    <font key="font" metaFont="system"/>
+                                    <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                            </textField>
+                            <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-011">
+                                <rect key="frame" x="150" y="147" width="382" height="25"/>
+                                <popUpButtonCell key="cell" type="push" bezelStyle="rounded" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" id="ai-011c">
+                                    <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="message"/>
+                                    <menu key="menu" title="OtherViews" id="ai-011m"/>
+                                </popUpButtonCell>
+                                <connections>
+                                    <action selector="aiSettingChanged:" target="-2" id="ai-a011"/>
+                                </connections>
+                            </popUpButton>
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-012">
+                                <rect key="frame" x="17" y="121" width="120" height="16"/>
+                                <textFieldCell key="cell" lineBreakMode="truncatingTail" title="Language" usesSingleLineMode="YES" id="ai-012c">
+                                    <font key="font" metaFont="system"/>
+                                    <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                            </textField>
+                            <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-013">
+                                <rect key="frame" x="150" y="115" width="382" height="25"/>
+                                <popUpButtonCell key="cell" type="push" bezelStyle="rounded" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" id="ai-013c">
+                                    <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="message"/>
+                                    <menu key="menu" title="OtherViews" id="ai-013m"/>
+                                </popUpButtonCell>
+                                <connections>
+                                    <action selector="aiSettingChanged:" target="-2" id="ai-a013"/>
+                                </connections>
+                            </popUpButton>
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-014">
+                                <rect key="frame" x="17" y="89" width="120" height="16"/>
+                                <textFieldCell key="cell" lineBreakMode="truncatingTail" title="Translation language" usesSingleLineMode="YES" id="ai-014c">
+                                    <font key="font" metaFont="system"/>
+                                    <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                            </textField>
+                            <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-015">
+                                <rect key="frame" x="150" y="83" width="382" height="25"/>
+                                <popUpButtonCell key="cell" type="push" bezelStyle="rounded" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" id="ai-015c">
+                                    <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="message"/>
+                                    <menu key="menu" title="OtherViews" id="ai-015m"/>
+                                </popUpButtonCell>
+                                <connections>
+                                    <action selector="aiSettingChanged:" target="-2" id="ai-a015"/>
+                                </connections>
+                            </popUpButton>
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-016">
+                                <rect key="frame" x="17" y="53" width="120" height="16"/>
+                                <textFieldCell key="cell" lineBreakMode="truncatingTail" title="Number of threads" usesSingleLineMode="YES" id="ai-016c">
+                                    <font key="font" metaFont="system"/>
+                                    <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                            </textField>
+                            <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-017">
+                                <rect key="frame" x="150" y="50" width="80" height="21"/>
+                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" alignment="right" borderStyle="bezel" drawsBackground="YES" id="ai-017c">
+                                    <font key="font" metaFont="system"/>
+                                    <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                                <connections>
+                                    <action selector="aiSettingChanged:" target="-2" id="ai-a017"/>
+                                    <outlet property="delegate" destination="-2" id="ai-d017"/>
+                                </connections>
+                            </textField>
+                            <stepper verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-018">
+                                <rect key="frame" x="236" y="48" width="19" height="27"/>
+                                <stepperCell key="cell" continuous="YES" alignment="left" minValue="0" maxValue="999" doubleValue="0.0" id="ai-018c"/>
+                                <connections>
+                                    <action selector="aiSettingChanged:" target="-2" id="ai-a018"/>
+                                </connections>
+                            </stepper>
+                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-019">
+                                <rect key="frame" x="17" y="17" width="120" height="16"/>
+                                <textFieldCell key="cell" lineBreakMode="truncatingTail" title="Sample length (ms)" usesSingleLineMode="YES" id="ai-019c">
+                                    <font key="font" metaFont="system"/>
+                                    <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                            </textField>
+                            <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-020">
+                                <rect key="frame" x="150" y="14" width="100" height="21"/>
+                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" alignment="right" borderStyle="bezel" drawsBackground="YES" id="ai-020c">
+                                    <font key="font" metaFont="system"/>
+                                    <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                                <connections>
+                                    <action selector="aiSettingChanged:" target="-2" id="ai-a020"/>
+                                    <outlet property="delegate" destination="-2" id="ai-d020"/>
+                                </connections>
+                            </textField>
+                        </subviews>
+                        <constraints>
+                            <constraint firstItem="ai-011" firstAttribute="leading" secondItem="ai-cw" secondAttribute="leading" constant="150" id="ai-x001"/>
+                            <constraint firstAttribute="trailing" secondItem="ai-011" secondAttribute="trailing" constant="17" id="ai-x002"/>
+                            <constraint firstItem="ai-011" firstAttribute="top" secondItem="ai-cw" secondAttribute="top" constant="12" id="ai-x003"/>
+                            <constraint firstItem="ai-010" firstAttribute="leading" secondItem="ai-cw" secondAttribute="leading" constant="17" id="ai-x004"/>
+                            <constraint firstItem="ai-010" firstAttribute="centerY" secondItem="ai-011" secondAttribute="centerY" id="ai-x005"/>
+                            <constraint firstItem="ai-013" firstAttribute="leading" secondItem="ai-cw" secondAttribute="leading" constant="150" id="ai-x006"/>
+                            <constraint firstAttribute="trailing" secondItem="ai-013" secondAttribute="trailing" constant="17" id="ai-x007"/>
+                            <constraint firstItem="ai-013" firstAttribute="top" secondItem="ai-011" secondAttribute="bottom" constant="10" id="ai-x008"/>
+                            <constraint firstItem="ai-012" firstAttribute="leading" secondItem="ai-cw" secondAttribute="leading" constant="17" id="ai-x009"/>
+                            <constraint firstItem="ai-012" firstAttribute="centerY" secondItem="ai-013" secondAttribute="centerY" id="ai-x010"/>
+                            <constraint firstItem="ai-015" firstAttribute="leading" secondItem="ai-cw" secondAttribute="leading" constant="150" id="ai-x011"/>
+                            <constraint firstAttribute="trailing" secondItem="ai-015" secondAttribute="trailing" constant="17" id="ai-x012"/>
+                            <constraint firstItem="ai-015" firstAttribute="top" secondItem="ai-013" secondAttribute="bottom" constant="10" id="ai-x013"/>
+                            <constraint firstItem="ai-014" firstAttribute="leading" secondItem="ai-cw" secondAttribute="leading" constant="17" id="ai-x014"/>
+                            <constraint firstItem="ai-014" firstAttribute="centerY" secondItem="ai-015" secondAttribute="centerY" id="ai-x015"/>
+                            <constraint firstItem="ai-017" firstAttribute="leading" secondItem="ai-cw" secondAttribute="leading" constant="150" id="ai-x016"/>
+                            <constraint firstItem="ai-017" firstAttribute="width" relation="equal" constant="80" id="ai-x017"/>
+                            <constraint firstItem="ai-017" firstAttribute="top" secondItem="ai-015" secondAttribute="bottom" constant="14" id="ai-x018"/>
+                            <constraint firstItem="ai-016" firstAttribute="leading" secondItem="ai-cw" secondAttribute="leading" constant="17" id="ai-x019"/>
+                            <constraint firstItem="ai-016" firstAttribute="centerY" secondItem="ai-017" secondAttribute="centerY" id="ai-x020"/>
+                            <constraint firstItem="ai-018" firstAttribute="leading" secondItem="ai-017" secondAttribute="trailing" constant="6" id="ai-x021"/>
+                            <constraint firstItem="ai-018" firstAttribute="centerY" secondItem="ai-017" secondAttribute="centerY" id="ai-x022"/>
+                            <constraint firstItem="ai-020" firstAttribute="leading" secondItem="ai-cw" secondAttribute="leading" constant="150" id="ai-x023"/>
+                            <constraint firstItem="ai-020" firstAttribute="width" relation="equal" constant="100" id="ai-x024"/>
+                            <constraint firstItem="ai-020" firstAttribute="top" secondItem="ai-017" secondAttribute="bottom" constant="12" id="ai-x025"/>
+                            <constraint firstItem="ai-019" firstAttribute="leading" secondItem="ai-cw" secondAttribute="leading" constant="17" id="ai-x026"/>
+                            <constraint firstItem="ai-019" firstAttribute="centerY" secondItem="ai-020" secondAttribute="centerY" id="ai-x027"/>
+                            <constraint firstAttribute="bottom" secondItem="ai-020" secondAttribute="bottom" constant="14" id="ai-x037"/>
+                        </constraints>
+                    </view>
+                </box>
+                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-021">
+                    <rect key="frame" x="19" y="266" width="92" height="32"/>
+                    <buttonCell key="cell" type="push" title="Load now" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="ai-021c">
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <action selector="aiPreloadAction:" target="-2" id="ai-a021"/>
+                    </connections>
+                </button>
+                <progressIndicator hidden="YES" wantsLayer="YES" maxValue="100" bezeled="NO" indeterminate="YES" style="bar" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-022">
+                    <rect key="frame" x="123" y="272" width="453" height="20"/>
+                </progressIndicator>
+                <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-023">
+                    <rect key="frame" x="21" y="244" width="555" height="14"/>
+                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" title="" id="ai-023c">
+                        <font key="font" metaFont="message" size="11"/>
+                        <color key="textColor" name="tertiaryLabelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <box borderType="line" title="Downloaded models" translatesAutoresizingMaskIntoConstraints="NO" id="ai-004">
+                    <rect key="frame" x="21" y="21" width="557" height="213"/>
+                    <view key="contentView" id="ai-cm">
+                        <rect key="frame" x="4" y="5" width="549" height="193"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-030">
+                                <rect key="frame" x="17" y="171" width="515" height="14"/>
+                                <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="truncatingHead" selectable="YES" title="" id="ai-030c">
+                                    <font key="font" metaFont="message" size="11"/>
+                                    <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                            </textField>
+                            <scrollView autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ai-032">
+                                <rect key="frame" x="17" y="55" width="515" height="106"/>
+                                <clipView key="contentView" id="ai-032c">
+                                    <rect key="frame" x="1" y="1" width="513" height="104"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                    <subviews>
+                                        <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" multipleSelection="NO" autosaveColumns="NO" headerView="ai-033h" id="ai-033">
+                                            <rect key="frame" x="0.0" y="0.0" width="513" height="81"/>
+                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                            <size key="intercellSpacing" width="3" height="2"/>
+                                            <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                            <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
+                                            <tableColumns>
+                                                <tableColumn editable="NO" width="393" minWidth="40" maxWidth="1000" id="ai-034">
+                                                    <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" title="Name">
+                                                        <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
+                                                        <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
+                                                    </tableHeaderCell>
+                                                    <textFieldCell key="dataCell" lineBreakMode="truncatingTail" selectable="YES" editable="NO" alignment="left" title="Text Cell" id="ai-034d">
+                                                        <font key="font" metaFont="system"/>
+                                                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                        <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                    </textFieldCell>
+                                                    <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
+                                                </tableColumn>
+                                                <tableColumn editable="NO" width="115" minWidth="40" maxWidth="1000" id="ai-035">
+                                                    <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" title="Size">
+                                                        <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
+                                                        <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
+                                                    </tableHeaderCell>
+                                                    <textFieldCell key="dataCell" lineBreakMode="truncatingTail" selectable="YES" editable="NO" alignment="right" title="Text Cell" id="ai-035d">
+                                                        <font key="font" metaFont="system"/>
+                                                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                        <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                    </textFieldCell>
+                                                    <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
+                                                </tableColumn>
+                                            </tableColumns>
+                                        </tableView>
+                                    </subviews>
+                                </clipView>
+                                <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="ai-032h">
+                                    <rect key="frame" x="1" y="89" width="513" height="16"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                </scroller>
+                                <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="ai-032v">
+                                    <rect key="frame" x="498" y="1" width="16" height="104"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                </scroller>
+                                <tableHeaderView key="headerView" id="ai-033h">
+                                    <rect key="frame" x="0.0" y="0.0" width="513" height="25"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                </tableHeaderView>
+                            </scrollView>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-031">
+                                <rect key="frame" x="15" y="13" width="80" height="32"/>
+                                <buttonCell key="cell" type="push" title="Reload" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="ai-031c">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </button>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ai-037">
+                                <rect key="frame" x="103" y="13" width="120" height="32"/>
+                                <buttonCell key="cell" type="push" title="Remove" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="ai-037c">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </button>
+                        </subviews>
+                        <constraints>
+                            <constraint firstItem="ai-030" firstAttribute="top" secondItem="ai-cm" secondAttribute="top" constant="12" id="ai-y001"/>
+                            <constraint firstItem="ai-030" firstAttribute="leading" secondItem="ai-cm" secondAttribute="leading" constant="17" id="ai-y002"/>
+                            <constraint firstAttribute="trailing" secondItem="ai-030" secondAttribute="trailing" constant="17" id="ai-y003"/>
+                            <constraint firstItem="ai-032" firstAttribute="top" secondItem="ai-030" secondAttribute="bottom" constant="10" id="ai-y004"/>
+                            <constraint firstItem="ai-032" firstAttribute="leading" secondItem="ai-cm" secondAttribute="leading" constant="17" id="ai-y005"/>
+                            <constraint firstAttribute="trailing" secondItem="ai-032" secondAttribute="trailing" constant="17" id="ai-y006"/>
+                            <constraint firstItem="ai-032" firstAttribute="height" relation="greaterThanOrEqual" constant="180" id="ai-y007"/>
+                            <constraint firstItem="ai-031" firstAttribute="top" secondItem="ai-032" secondAttribute="bottom" constant="12" id="ai-y008"/>
+                            <constraint firstItem="ai-031" firstAttribute="leading" secondItem="ai-cm" secondAttribute="leading" constant="15" id="ai-y009"/>
+                            <constraint firstAttribute="bottom" secondItem="ai-031" secondAttribute="bottom" constant="14" id="ai-y010"/>
+                            <constraint firstItem="ai-037" firstAttribute="leading" secondItem="ai-031" secondAttribute="trailing" constant="8" id="ai-y011"/>
+                            <constraint firstItem="ai-037" firstAttribute="centerY" secondItem="ai-031" secondAttribute="centerY" id="ai-y012"/>
+                        </constraints>
+                    </view>
+                </box>
+            </subviews>
+            <constraints>
+                <constraint firstItem="ai-001" firstAttribute="top" secondItem="ai-root" secondAttribute="top" constant="18" id="ai-z001"/>
+                <constraint firstItem="ai-001" firstAttribute="leading" secondItem="ai-root" secondAttribute="leading" constant="21" id="ai-z002"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="ai-001" secondAttribute="trailing" constant="21" id="ai-z003"/>
+                <constraint firstItem="ai-002" firstAttribute="top" secondItem="ai-001" secondAttribute="bottom" constant="12" id="ai-z004"/>
+                <constraint firstItem="ai-002" firstAttribute="leading" secondItem="ai-root" secondAttribute="leading" constant="21" id="ai-z005"/>
+                <constraint firstItem="ai-006" firstAttribute="top" secondItem="ai-002" secondAttribute="bottom" constant="10" id="ai-z013"/>
+                <constraint firstItem="ai-005" firstAttribute="leading" secondItem="ai-root" secondAttribute="leading" constant="21" id="ai-z014"/>
+                <constraint firstItem="ai-005" firstAttribute="centerY" secondItem="ai-006" secondAttribute="centerY" id="ai-z015"/>
+                <constraint firstItem="ai-006" firstAttribute="leading" secondItem="ai-005" secondAttribute="trailing" constant="8" id="ai-z016"/>
+                <constraint firstAttribute="trailing" secondItem="ai-006" secondAttribute="trailing" constant="21" id="ai-z017"/>
+                <constraint firstItem="ai-003" firstAttribute="top" secondItem="ai-006" secondAttribute="bottom" constant="12" id="ai-z006"/>
+                <constraint firstItem="ai-003" firstAttribute="leading" secondItem="ai-root" secondAttribute="leading" constant="21" id="ai-z007"/>
+                <constraint firstAttribute="trailing" secondItem="ai-003" secondAttribute="trailing" constant="19" id="ai-z008"/>
+                <constraint firstItem="ai-021" firstAttribute="top" secondItem="ai-003" secondAttribute="bottom" constant="12" id="ai-z018"/>
+                <constraint firstItem="ai-021" firstAttribute="top" secondItem="ai-006" secondAttribute="bottom" priority="250" constant="12" id="ai-z019"/>
+                <constraint firstItem="ai-021" firstAttribute="leading" secondItem="ai-root" secondAttribute="leading" constant="19" id="ai-z020"/>
+                <constraint firstItem="ai-022" firstAttribute="leading" secondItem="ai-021" secondAttribute="trailing" constant="12" id="ai-z021"/>
+                <constraint firstItem="ai-022" firstAttribute="centerY" secondItem="ai-021" secondAttribute="centerY" id="ai-z022"/>
+                <constraint firstAttribute="trailing" secondItem="ai-022" secondAttribute="trailing" constant="21" id="ai-z023"/>
+                <constraint firstItem="ai-023" firstAttribute="leading" secondItem="ai-root" secondAttribute="leading" constant="21" id="ai-z024"/>
+                <constraint firstItem="ai-023" firstAttribute="top" secondItem="ai-021" secondAttribute="bottom" constant="8" id="ai-z025"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="ai-023" secondAttribute="trailing" constant="21" id="ai-z026"/>
+                <constraint firstItem="ai-004" firstAttribute="top" secondItem="ai-023" secondAttribute="bottom" constant="10" id="ai-z009"/>
+                <constraint firstItem="ai-004" firstAttribute="leading" secondItem="ai-003" secondAttribute="leading" id="ai-z010"/>
+                <constraint firstItem="ai-004" firstAttribute="trailing" secondItem="ai-003" secondAttribute="trailing" id="ai-z011"/>
+                <constraint firstAttribute="bottom" secondItem="ai-004" secondAttribute="bottom" constant="21" id="ai-z012"/>
+            </constraints>
+            <point key="canvasLocation" x="800" y="1098"/>
         </customView>
     </objects>
 </document>

@@ -24,6 +24,8 @@ if HAVE_EMSCRIPTEN
 AM_CFLAGS += -sMAIN_MODULE=1
 endif
 
+pkglibexec_PROGRAMS =
+
 #
 # Main VLC executable
 #
@@ -114,7 +116,7 @@ vlc_win32_rc.$(OBJEXT): vlc_win32_rc.rc $(top_builddir)/extras/package/win32/vlc
 # Plug-ins cache generator
 #
 if HAVE_DYNAMIC_PLUGINS
-pkglibexec_PROGRAMS = vlc-cache-gen
+pkglibexec_PROGRAMS += vlc-cache-gen
 endif
 vlc_cache_gen_SOURCES = cachegen.c
 vlc_cache_gen_LDADD = \
@@ -164,3 +166,59 @@ endif
 	fi
 
 include preparser/Makefile.am
+
+### Should prevent process creation for other than LINUX OSX and WIN32 ###
+if HAVE_WHISPER
+if HAVE_LLAMA
+
+if BUILD_VLC
+pkglibexec_PROGRAMS += vlc-whisper
+noinst_PROGRAMS += vlc-whisper-static
+endif
+
+vlc_whisper_SOURCES = ../modules/codec/whisper/process.c \
+					  ../modules/codec/whisper/backend_thread.c \
+					  ../modules/codec/whisper/loader.c \
+					  ../modules/codec/whisper/run.c \
+					  ../modules/codec/whisper/translate.c \
+					  ../modules/codec/whisper/protocol.c
+
+vlc_whisper_LDADD = $(vlc_LDADD) \
+					../compat/libcompat.la \
+					$(LLAMA_LIBS) $(WHISPER_LIBS) $(LIBM)
+vlc_whisper_CFLAGS = $(vlc_CFLAGS) $(WHISPER_CFLAGS) $(LLAMA_CFLAGS)
+vlc_whisper_LDFLAGS = $(vlc_LDFLAGS)
+if HAVE_GCRYPT
+vlc_whisper_LDADD += $(GCRYPT_LIBS)
+vlc_whisper_CFLAGS += $(GCRYPT_CFLAGS)
+endif
+
+if HAVE_OSX
+vlc_whisper_LDFLAGS += -Xlinker -rpath -Xlinker "$(libdir)"
+if HAVE_BREAKPAD
+vlc_whisper_LDFLAGS += -Wl,-framework,Breakpad
+vlc_whisper_OBJCFLAGS = -F$(CONTRIB_DIR)/Frameworks
+endif
+endif
+
+vlc_whisper_static_SOURCES = $(vlc_whisper_SOURCES)
+vlc_whisper_static_CFLAGS = $(AM_CFLAGS) \
+	$(WHISPER_CFLAGS) $(LLAMA_CFLAGS) \
+	-DTOP_BUILDDIR=\"$(abs_top_builddir)\" \
+	-DTOP_SRCDIR=\"$(abs_top_srcdir)\" \
+	$(NULL)
+if HAVE_GCRYPT
+vlc_whisper_static_CFLAGS += $(GCRYPT_CFLAGS)
+endif
+vlc_whisper_static_LDADD = $(vlc_whisper_LDADD)
+if HAVE_OSX
+vlc_whisper_static_LDFLAGS = $(vlc_whisper_LDFLAGS) -static
+vlc_whisper_static_LDFLAGS += -Xlinker -rpath -Xlinker "@executable_path/../lib/.libs/"
+vlc_whisper_static_LDFLAGS += -Xlinker -rpath -Xlinker "@executable_path/../src/.libs/"
+vlc_whisper_static_LDFLAGS += -Xlinker -rpath -Xlinker "@executable_path/../Frameworks/"
+else
+vlc_whisper_static_LDFLAGS = $(vlc_whisper_LDFLAGS) -no-install -static
+endif
+
+endif
+endif

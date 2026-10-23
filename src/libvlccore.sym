@@ -865,6 +865,8 @@ vlc_player_CycleTrack
 vlc_player_DisplayPosition
 vlc_player_DecrementRate
 vlc_player_Delete
+vlc_player_DetachSttCtx
+vlc_player_PreloadSttCtx
 vlc_player_GetAtoBLoop
 vlc_player_GetCapabilities
 vlc_player_GetCategoryDelay
@@ -901,6 +903,7 @@ vlc_player_IsRecording
 vlc_player_IsTeletextEnabled
 vlc_player_IsTeletextTransparent
 vlc_player_IsTrackCategoryEnabled
+vlc_player_SetSpeechToTextEnabled
 vlc_player_Lock
 vlc_player_Navigate
 vlc_player_New

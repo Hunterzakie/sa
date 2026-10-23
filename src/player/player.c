@@ -1939,6 +1939,21 @@ vlc_player_IsTrackCategoryEnabled(vlc_player_t *player,
 }
 
 void
+vlc_player_SetSpeechToTextEnabled(vlc_player_t *player, bool enabled)
+{
+    vlc_player_assert_locked(player);
+    var_SetBool(player, "stt", enabled);
+
+    struct vlc_player_input *input = vlc_player_get_input_locked(player);
+    if (input != NULL)
+    {
+        var_SetBool(input->thread, "stt", enabled);
+        input_ControlPushHelper(input->thread, INPUT_CONTROL_SET_STT_ENABLED,
+                                &(vlc_value_t){ .b_bool = enabled });
+    }
+}
+
+void
 vlc_player_SetSubtitleTextScale(vlc_player_t *player, unsigned scale)
 {
     assert(scale >= 10 && scale <= 500);
@@ -2155,6 +2170,7 @@ vlc_player_New(vlc_object_t *parent, enum vlc_player_lock_type lock_type)
     VAR_CREATE("sout-audio", VLC_VAR_BOOL | VLC_VAR_DOINHERIT);
     VAR_CREATE("spu", VLC_VAR_BOOL | VLC_VAR_DOINHERIT);
     VAR_CREATE("sout-spu", VLC_VAR_BOOL | VLC_VAR_DOINHERIT);
+    VAR_CREATE("stt", VLC_VAR_BOOL | VLC_VAR_DOINHERIT);
     VAR_CREATE("audio-language", VLC_VAR_STRING | VLC_VAR_DOINHERIT);
     VAR_CREATE("sub-language", VLC_VAR_STRING | VLC_VAR_DOINHERIT);
 
@@ -2209,4 +2225,29 @@ vlc_object_t *
 vlc_player_GetObject(vlc_player_t *player)
 {
     return VLC_OBJECT(player);
+}
+
+int
+vlc_player_PreloadSttCtx(vlc_player_t *player,
+                         const struct vlc_stt_ctx_callbacks *cbs, void *data)
+{
+    struct vlc_stt_ctx *ctx =
+        input_resource_GetOrCreateSttCtx(player->resource, cbs, data);
+    if (ctx == NULL) {
+        return VLC_EGENERIC;
+    }
+
+    vlc_mutex_lock(&ctx->lock);
+    enum vlc_stt_ctx_status status = ctx->status;
+    if (status == vlc_stt_ctx_status_done || status == vlc_stt_ctx_status_error) {
+        cbs->loaded(ctx, status, data);
+    }
+    vlc_mutex_unlock(&ctx->lock);
+    return VLC_SUCCESS;
+}
+
+void
+vlc_player_DetachSttCtx(vlc_player_t *player, void *data)
+{
+    input_resource_DetachSttCtx(player->resource, data);
 }

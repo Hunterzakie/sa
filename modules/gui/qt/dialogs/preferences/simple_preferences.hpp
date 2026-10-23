@@ -36,6 +36,7 @@
 #include "ui_sprefs_subtitles.h"
 #include "ui_sprefs_interface.h"
 #include "ui_sprefs_medialibrary.h"
+#include "ui_sprefs_ai.h"
 
 class MLFoldersEditor;
 
@@ -57,6 +58,7 @@ enum {
     SPrefsInputAndCodecs,
     SPrefsHotkeys,
     SPrefsMediaLibrary,
+    SPrefsAi,
     SPrefsMax
 };
 #define SPrefsDefaultCat SPrefsInterface
@@ -157,6 +159,9 @@ private:
     Ui::SPrefsInputAndCodecs m_inputCodecUI;
     Ui::SPrefsSubtitles m_subtitlesUI;
     Ui::SPrefsMediaLibrary m_medialibUI;
+    Ui::SPrefsAi m_aiUI;
+
+    void *m_sttPreload = nullptr;
 
 /* Display only the options for the selected audio output */
 private slots:

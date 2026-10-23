@@ -1,0 +1,41 @@
+From: Gabriel Lafond-Thenaille <gabriel@videolabs.io>
+Subject: [PATCH] ggml: export the GGML_USE_* backend macros
+
+The in-tree build puts GGML_USE_<BACKEND> on the ggml target as a PUBLIC
+compile definition, so consumers added with add_subdirectory() see which
+backends were built.  The installed CMake package does not, and code
+guarded by those macros silently compiles out once a consumer switches
+to find_package(ggml):
+
+  whisper.cpp   whisper_kv_cache_get_padding()  #ifdef GGML_USE_METAL
+  sam3.cpp      Metal backend init              #ifdef GGML_USE_METAL
+
+Derive them from GGML_AVAILABLE_BACKENDS and attach them to ggml::ggml.
+The CPU variants all map to GGML_USE_CPU, matching ggml_add_backend().
+---
+ cmake/ggml-config.cmake.in | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- a/cmake/ggml-config.cmake.in
++++ b/cmake/ggml-config.cmake.in
+@@ -183,7 +183,20 @@
+             endif()
+ 
+             list(APPEND _ggml_all_targets ggml::${_ggml_backend})
++
++            if(is_cpu_variant)
++                list(APPEND GGML_INTERFACE_COMPILE_DEFINITIONS GGML_USE_CPU)
++            else()
++                string(REGEX REPLACE "^ggml-" "" _ggml_backend_use "${_ggml_backend}")
++                string(TOUPPER "GGML_USE_${_ggml_backend_use}" _ggml_backend_use)
++                list(APPEND GGML_INTERFACE_COMPILE_DEFINITIONS ${_ggml_backend_use})
++            endif()
+         endforeach()
++
++        list(REMOVE_DUPLICATES GGML_INTERFACE_COMPILE_DEFINITIONS)
++        set_target_properties(ggml::ggml
++            PROPERTIES
++                INTERFACE_COMPILE_DEFINITIONS "${GGML_INTERFACE_COMPILE_DEFINITIONS}")
+     endif()
+ 
+     list(APPEND GGML_INTERFACE_LINK_LIBRARIES ggml::ggml-base "${_ggml_all_targets}")

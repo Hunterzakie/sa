@@ -299,6 +299,8 @@ libvlccore_sources_base = files(
     'misc/sort.c',
     'misc/subpicture.c',
     'misc/subpicture.h',
+    'misc/stt.c',
+    'misc/stt.h',
     'misc/medialibrary.c',
     'misc/viewpoint.c',
     'misc/rcu.c',
