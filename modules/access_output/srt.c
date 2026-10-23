@@ -32,6 +32,11 @@
 #include <vlc_block_helper.h>
 #include <vlc_network.h>
 
+#define VLC_SRT_LIVE_MAX_PLSIZE 1456
+
+_Static_assert(VLC_SRT_LIVE_MAX_PLSIZE == SRT_LIVE_MAX_PLSIZE,
+    "Missmatch of SRT_LIVE_MAX_PLSIZE and our define");
+
 typedef struct
 {
     SRTSOCKET     sock;
@@ -248,7 +253,7 @@ static ssize_t Write( sout_access_out_t *p_access, block_t *p_buffer )
     bool b_interrupted = false;
     ssize_t i_len = 0;
     int chunk_size;
-    uint8_t chunk[SRT_LIVE_MAX_PLSIZE];
+    uint8_t chunk[VLC_SRT_LIVE_MAX_PLSIZE];
 
     if ( p_buffer == NULL )
         return 0;
@@ -468,7 +473,7 @@ vlc_module_begin()
             NULL )
     add_integer( SRT_PARAM_PAYLOAD_SIZE, SRT_DEFAULT_PAYLOAD_SIZE,
             N_( "SRT maximum payload size (bytes)" ), NULL )
-        change_integer_range( 1, SRT_LIVE_MAX_PLSIZE )
+        change_integer_range( 1, VLC_SRT_LIVE_MAX_PLSIZE )
     add_integer( SRT_PARAM_BANDWIDTH_OVERHEAD_LIMIT,
             SRT_DEFAULT_BANDWIDTH_OVERHEAD_LIMIT,
             N_( "SRT maximum bandwidth ceiling (bytes)" ), NULL )
