@@ -43,7 +43,10 @@ Widgets.PageExt {
     ]
 
     function setCurrentItemFocus(reason) {
-        tracklistdisplay_id.setCurrentItemFocus(reason);
+        if (shuffleall.visible)
+            shuffleall.forceActiveFocus(reason);
+        else
+            tracklistdisplay_id.setCurrentItemFocus(reason);
     }
 
     function positionContentAtBeginning() {
@@ -61,10 +64,40 @@ Widgets.PageExt {
         property alias leftPadding: tracklistdisplay_id.leftPadding
         property alias rightPadding: tracklistdisplay_id.rightPadding
 
+        Widgets.NavigableRow {
+            id: shuffleall
+
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.leftMargin: tracklistdisplay_id.contentLeftPadding
+
+            visible: tracklistdisplay_id.model.count > 0
+
+            Navigation.parentItem: root
+            Navigation.upItem: root.header
+            Navigation.downItem: tracklistdisplay_id
+
+            Widgets.ActionButtonPrimary {
+                id: shuffleall_button
+
+                iconTxt: VLCIcons.shuffle
+                text: qsTr("Shuffle All")
+                showText: true
+
+                onClicked: MediaLib.shuffleAndPlay(tracklistdisplay_id.model.searchPattern, tracklistdisplay_id.model.favoriteOnly)
+            }
+        }
+
         MusicTrackListDisplay {
             id: tracklistdisplay_id
 
-            anchors.fill: parent
+            anchors.top: shuffleall.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.topMargin: VLCStyle.margin_normal
+
+            clip: true
 
             visible: model.count > 0
             focus: model.count > 0
@@ -74,7 +107,7 @@ Widgets.PageExt {
             sortCriteria: root.sort.criteria
 
             Navigation.parentItem: root
-            Navigation.upItem: root.header
+            Navigation.upItem: shuffleall
 
             Navigation.cancelAction: function() {
                 if (tracklistdisplay_id.currentIndex <= 0)

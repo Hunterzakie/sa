@@ -18,6 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
+#include "randomizer.h"
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -348,7 +349,6 @@ int
 vlc_playlist_Prev(vlc_playlist_t *playlist)
 {
     vlc_playlist_AssertLocked(playlist);
-
     if (!vlc_playlist_ComputeHasPrev(playlist))
         return VLC_EGENERIC;
 
@@ -415,6 +415,38 @@ vlc_playlist_GoTo(vlc_playlist_t *playlist, ssize_t index)
     }
 
     vlc_playlist_SetCurrentIndex(playlist, index);
+    return VLC_SUCCESS;
+}
+
+int
+vlc_playlist_PrioritizeAndPlay(vlc_playlist_t *playlist, size_t index, size_t count)
+{
+    vlc_playlist_AssertLocked(playlist);
+    assert(index + count <= playlist->items.size);
+
+    if (count == 0)
+        return VLC_EGENERIC;
+
+    if (playlist->order != VLC_PLAYLIST_PLAYBACK_ORDER_RANDOM)
+        vlc_playlist_SetPlaybackOrder(playlist, VLC_PLAYLIST_PLAYBACK_ORDER_RANDOM);
+
+    randomizer_Prioritize(&playlist->randomizer, &playlist->items.data[index], count);
+
+    vlc_playlist_item_t *item = randomizer_PeekNext(&playlist->randomizer);
+    ssize_t item_index = vlc_playlist_IndexOf(playlist, item);
+    assert(item_index != -1);
+
+    int ret = vlc_playlist_SetCurrentMedia(playlist, item_index);
+    if (ret != VLC_SUCCESS)
+        return ret;
+
+    if (playlist->current != item_index)
+    {
+        randomizer_Select(&playlist->randomizer, item);
+        vlc_playlist_SetCurrentIndex(playlist, item_index);
+
+    }
+
     return VLC_SUCCESS;
 }
 

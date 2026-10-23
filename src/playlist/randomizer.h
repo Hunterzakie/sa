@@ -43,6 +43,7 @@ struct randomizer {
     size_t head;
     size_t next;
     size_t history;
+    size_t priority;
 };
 
 /**
@@ -125,6 +126,16 @@ randomizer_Next(struct randomizer *randomizer);
 void
 randomizer_Select(struct randomizer *randomizer,
                   const vlc_playlist_item_t *item);
+
+/**
+ * Force a block of items to be played next.
+ *
+ * This function should be called when the user wants
+ * to play a specific set of items in the playlist.
+ */
+ void
+ randomizer_Prioritize(struct randomizer *randomizer,
+                     vlc_playlist_item_t *const items[], size_t count);
 
 /**
  * Add items to the randomizer.

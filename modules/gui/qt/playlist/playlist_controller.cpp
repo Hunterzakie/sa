@@ -470,6 +470,31 @@ PlaylistController::append(const QVector<Media> &media, bool startPlaying)
     }
 }
 
+void PlaylistController::prioritizeAndPlay(const QVector<Media> &media)
+{
+    Q_D(PlaylistController);
+
+    if (Q_UNLIKELY(media.isEmpty()))
+        return;
+
+    vlc_playlist_locker locker(d->m_playlist);
+
+    auto rawMedia = toRaw<input_item_t *>(media);
+    assert(rawMedia.size() > 0);
+
+    /* the new set is appended to the existing queue */
+    size_t index = vlc_playlist_Count(d->m_playlist);
+    int ret = vlc_playlist_Append(d->m_playlist, rawMedia.constData(), rawMedia.size());
+    if (ret != VLC_SUCCESS)
+        throw std::bad_alloc();
+
+    ret = vlc_playlist_PrioritizeAndPlay(d->m_playlist, index, rawMedia.size());
+    if (ret != VLC_SUCCESS)
+        return;
+
+    vlc_playlist_Start(d->m_playlist);
+}
+
 void
 PlaylistController::insert(size_t index, const QVector<Media> &media, bool startPlaying)
 {

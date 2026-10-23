@@ -66,6 +66,10 @@ NativeMenu {
             "visible": root.showPlayAsAlbumAction &&
                        (root.model instanceof MLAudioModel)
         }, {
+            "text": qsTr("Shuffle and play"),
+            "action": shuffleAndPlay,
+            "visible": _showShuffleAndPlay
+        }, {
             "text": qsTr("Enqueue"),
             "action": enqueue
         }, {
@@ -137,6 +141,10 @@ NativeMenu {
         model.ml.addAndPlay(_mlIDList(dataList), _playerOptions(options))
     }
 
+    function shuffleAndPlay(dataList, options, indexes) {
+        model.ml.shuffleAndPlay(_mlIDList(dataList), _playerOptions(options))
+    }
+
     function playAsAudio(dataList, options, indexes) {
         model.ml.addAndPlay(_mlIDList(dataList), _playerOptions(options, ":no-video"))
     }
@@ -196,7 +204,7 @@ NativeMenu {
 
     function deleteFileFromSource(dataList, options, indexes) {
         let confirm = DialogsProvider.questionDialog(qsTr("Are you sure you want to delete this file?"));
-        
+
         if (confirm) {
             model.deleteFileFromSource(indexes[0]);
             console.log("File Deleted !!");
@@ -218,6 +226,15 @@ NativeMenu {
             return false
 
         return (dataList[0][role] === expected)
+    }
+
+    function _showShuffleAndPlay(dataList, options, indexes) {
+        if ( root.model instanceof MLAlbumModel || root.model instanceof MLArtistModel
+            || root.model instanceof MLGenreModel || root.model instanceof MLVideoGroupsModel
+            || root.model instanceof MLVideoFoldersModel )
+            return true
+
+        return indexes.length > 1
     }
 
     function _showAddFavorite(dataList, options, indexes) {

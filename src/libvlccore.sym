@@ -1010,6 +1010,7 @@ vlc_playlist_HasNext
 vlc_playlist_Prev
 vlc_playlist_Next
 vlc_playlist_GoTo
+vlc_playlist_PrioritizeAndPlay
 vlc_playlist_RequestGoTo
 vlc_playlist_GetPlayer
 vlc_playlist_Start

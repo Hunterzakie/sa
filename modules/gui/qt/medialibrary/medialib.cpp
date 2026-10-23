@@ -22,6 +22,7 @@
 #include "util/shared_input_item.hpp"
 
 #include <utility>
+#include <vlc_rand.h>
 
 #include <QQmlEngine>
 
@@ -235,6 +236,62 @@ void MediaLib::insertIntoPlaylist(const size_t index, const QVariantList &itemId
     (quint64, Context& ctx) {
         if (!ctx.medias.isEmpty())
             m_playlistController->insert( index, ctx.medias );
+    });
+}
+
+void MediaLib::shuffleAndPlay(const QString &pattern, bool favorites, const QStringList &options)
+{
+    struct Context {
+        QVector<vlc::playlist::Media> medias;
+    };
+
+    const QByteArray patternBytes = pattern.toUtf8();
+    runOnMLThread<Context>(this,
+    //ML thread
+    [patternBytes, favorites, options]
+    (vlc_medialibrary_t* ml, Context& ctx)
+    {
+        vlc_ml_query_params_t params = vlc_ml_query_params_create();
+        // to prevent empty search returning nothing
+        params.psz_pattern = patternBytes.isEmpty() ? nullptr : patternBytes.constData();
+        params.i_nbResults = 0;
+        params.i_offset = 0;
+        params.b_favorite_only = favorites;
+
+        ml_unique_ptr<vlc_ml_media_list_t> media_list(vlc_ml_list_audio_media(ml, &params));
+        if (media_list == nullptr || media_list->i_nb_items == 0)
+            return;
+
+        for (size_t i = 0; i < media_list->i_nb_items; i++)
+        {
+            const vlc_ml_media_t & media = media_list->p_items[i];
+            SharedInputItem item(vlc_ml_get_input_item(ml, media.i_id), false);
+            if (item)
+                ctx.medias.push_back(vlc::playlist::Media(item.get(), options));
+        }
+
+    },
+    //UI thread
+    [this](quint64, Context& ctx){
+        m_playlistController->prioritizeAndPlay(ctx.medias);
+    });
+}
+
+void MediaLib::shuffleAndPlay(const QVariantList &itemIdList, const QStringList &options)
+{
+    struct Context {
+        QVector<vlc::playlist::Media> medias;
+    };
+    runOnMLThread<Context>(this,
+    //ML thread
+    [itemIdList, options]
+    (vlc_medialibrary_t* ml, Context& ctx)
+    {
+        convertQVariantListToPlaylistMedias(ml, itemIdList, options, ctx.medias);
+    },
+    //UI thread
+    [this](quint64, Context& ctx){
+        m_playlistController->prioritizeAndPlay(ctx.medias);
     });
 }
 

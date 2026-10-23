@@ -59,6 +59,9 @@ public:
     Q_INVOKABLE void addAndPlay(const QVariantList&itemIdList, const QStringList &options = {});
     Q_INVOKABLE void insertIntoPlaylist(size_t index, const QVariantList &itemIds /*QList<MLParentId>*/, const QStringList &options = {});
 
+    Q_INVOKABLE void shuffleAndPlay(const QString &pattern, bool favorites = false, const QStringList &options = {});
+    Q_INVOKABLE void shuffleAndPlay(const QVariantList &itemIdList, const QStringList &options = {});
+
     Q_INVOKABLE void reload();
 
     Q_INVOKABLE void mlInputItem(const QVector<MLItemId>& itemIdVector, QJSValue callback);
