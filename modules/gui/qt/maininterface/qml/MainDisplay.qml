@@ -815,8 +815,6 @@ FocusScope {
 
         focus: !!item
 
-        property int _updateStatusOnDismissal: -1
-
         readonly property bool shouldShow: {
             if (!updateModelIsAvailable)
                 return false
@@ -824,7 +822,7 @@ FocusScope {
             if (UpdateModel.explicitCheck) {
                 return (UpdateModel.updateStatus !== UpdateModel.Unchecked)
             } else {
-                if (UpdateModel.updateStatus === _updateStatusOnDismissal)
+                if (UpdateModel.updateStatus === UpdateModel.updateStatusOnAcknowledgment)
                     return false // already dismissed with the same status
 
                 switch (UpdateModel.updateStatus) {
@@ -844,7 +842,7 @@ FocusScope {
         function dismiss() {
             // This could be also be an assertion:
             if (updateModelIsAvailable) {
-                _updateStatusOnDismissal = UpdateModel.updateStatus
+                UpdateModel.updateStatusOnAcknowledgment = UpdateModel.updateStatus
                 UpdateModel.explicitCheck = undefined // Resets the property
             }
 
