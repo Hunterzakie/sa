@@ -91,3 +91,12 @@ function createElementLi(name, type, dir, ext) {
     var str = "<li class='system_icon ui-widget-content' " + open + " ><img src='images/" + icon + "' width='48px' height='48px' title='" + name + "' alt='" + name + "' style='border: none;background:none;'/><div style='font-size:10px;border:none;background:none;'>" + name + "</div></li>";
     return str;
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("img").forEach(function (img) {
+        img.onerror = function () {
+            this.onerror = null;
+            this.src = "images/vlc-48.png";
+        };
+    });
+});
