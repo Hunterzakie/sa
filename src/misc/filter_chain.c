@@ -217,11 +217,13 @@ static const struct filter_video_callbacks filter_chain_video_cbs =
 
 #undef filter_chain_NewVideo
 filter_chain_t *filter_chain_NewVideo( vlc_object_t *obj, bool allow_change,
-                                       const filter_owner_t *restrict owner )
+                                       const filter_owner_t *restrict owner,
+                                       bool is_static )
 {
     filter_chain_t *chain =
-        filter_chain_NewInner( obj, "video filter",
-                                  "video converter", allow_change, VIDEO_ES );
+        filter_chain_NewInner( obj,
+                               is_static ? "static video filter" : "video filter",
+                               "video converter", allow_change, VIDEO_ES );
     if (unlikely(chain == NULL))
         return NULL;
 

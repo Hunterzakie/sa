@@ -216,7 +216,7 @@ static int video_update_format_decoder( decoder_t *p_dec, vlc_video_context *vct
 
         if ( !id->p_final_conv_static )
             id->p_final_conv_static =
-               filter_chain_NewVideo( p_owner->p_stream, false, &chain_owner );
+               filter_chain_NewVideo( p_owner->p_stream, false, &chain_owner, false );
          filter_chain_Reset( id->p_final_conv_static,
                out_fmt,
                enc_vctx,
@@ -355,7 +355,7 @@ static int transcode_video_filters_init( sout_stream_t *p_stream,
         .video = &transcode_filter_video_cbs,
         .sys = id,
     };
-    id->p_f_chain = filter_chain_NewVideo( p_stream, false, &owner );
+    id->p_f_chain = filter_chain_NewVideo( p_stream, false, &owner, true );
     if( !id->p_f_chain )
         return VLC_EGENERIC;
     filter_chain_Reset( id->p_f_chain, p_src, src_ctx, p_src );
@@ -390,7 +390,7 @@ static int transcode_video_filters_init( sout_stream_t *p_stream,
     if( p_cfg->psz_filters )
     {
         msg_Dbg( p_stream, "adding user filters" );
-        id->p_uf_chain = filter_chain_NewVideo( p_stream, true, &owner );
+        id->p_uf_chain = filter_chain_NewVideo( p_stream, true, &owner, false );
         if(!id->p_uf_chain)
             return VLC_EGENERIC;
         filter_chain_Reset( id->p_uf_chain, p_src, src_ctx, p_dst );

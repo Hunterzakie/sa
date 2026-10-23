@@ -248,7 +248,7 @@ static int Activate( filter_t *p_filter )
         .sys = p_filter,
     };
 
-    p_sys->p_chain = filter_chain_NewVideo( p_filter, true, &owner );
+    p_sys->p_chain = filter_chain_NewVideo( p_filter, true, &owner, false );
     if( !p_sys->p_chain )
     {
         msg_Err( p_filter, "Could not allocate filter chain" );

@@ -525,7 +525,7 @@ filter_chain_t * VideoDecodedStream::VideoFilterCreate(const es_format_t *p_srcf
     memset(&owner, 0, sizeof(owner));
     owner.video = &transcode_filter_video_cbs;
 
-    p_chain = filter_chain_NewVideo(p_stream, false, &owner);
+    p_chain = filter_chain_NewVideo(p_stream, false, &owner, false);
     if(!p_chain)
         return NULL;
     filter_chain_Reset(p_chain, p_srcfmt, vctx, &requestedoutput);

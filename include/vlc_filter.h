@@ -152,7 +152,7 @@ typedef int (*vlc_filter_open)(filter_t *);
         (void) open__;                           \
         set_callback(activate)                   \
     }                                            \
-    set_capability( "video filter", 0 )          \
+    set_capability( "static video filter", 0 )  \
     add_shortcut( "deinterlace" )
 
 #define set_callback_video_filter( activate )              \
@@ -506,10 +506,11 @@ VLC_USED;
  * \return new filter chain, or NULL on error
  */
 VLC_API filter_chain_t * filter_chain_NewVideo( vlc_object_t *obj, bool change,
-                                                const filter_owner_t *owner )
+                                                const filter_owner_t *owner,
+                                                bool is_static )
 VLC_USED;
-#define filter_chain_NewVideo( a, b, c ) \
-        filter_chain_NewVideo( VLC_OBJECT( a ), b, c )
+#define filter_chain_NewVideo( a, b, c, d ) \
+        filter_chain_NewVideo( VLC_OBJECT( a ), b, c, d )
 
 /**
  * Delete filter chain will delete all filters in the chain and free all

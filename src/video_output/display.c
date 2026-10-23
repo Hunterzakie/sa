@@ -320,7 +320,7 @@ static struct pooled_filter_chain *VoutSetupConverter(vlc_object_t *o,
         return NULL;
     }
 
-    conv->filters = filter_chain_NewVideo(o, false, owner);
+    conv->filters = filter_chain_NewVideo(o, false, owner, false);
     if (unlikely(conv->filters == NULL))
     {
         msg_Err(o, "Failed to create converter filter chain");

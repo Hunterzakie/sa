@@ -49,6 +49,7 @@
 #include <vlc_vout_osd.h>
 #include <vlc_image.h>
 #include <vlc_plugin.h>
+#include <vlc_modules.h>
 #include <vlc_codec.h>
 #include <vlc_tracer.h>
 #include <vlc_atomic.h>
@@ -847,20 +848,8 @@ typedef struct {
     config_chain_t *cfg;
 } vout_filter_t;
 
-static int strcmp_void(const void *a, const void *b)
-{
-    const char *const *entry = b;
-    return strcmp(a, *entry);
-}
-
 static void ChangeFilters(vout_thread_sys_t *vout)
 {
-    /* bsearch: must be sorted alphabetically */
-    static const char *const static_filters[] = {
-        "amf_frc",
-        "fps",
-        "postproc",
-    };
     vout_thread_sys_t *sys = vout;
     FilterFlush(vout, true);
     DelAllFilterCallbacks(vout);
@@ -896,11 +885,14 @@ static void ChangeFilters(vout_thread_sys_t *vout)
             if (likely(e)) {
                 e->name = name;
                 e->cfg  = cfg;
-                bool is_static_filter =
-                    bsearch(e->name, static_filters, ARRAY_SIZE(static_filters),
-                            sizeof(const char *), strcmp_void) != NULL;
+                module_t **modules;
+                bool is_static_filter = vlc_module_match("static video filter", e->name,
+                                                         true, &modules, NULL) > 0;
                 if (is_static_filter)
+                {
+                    free(modules);
                     vlc_array_append_or_abort(&array_static, e);
+                }
                 else
                     vlc_array_append_or_abort(&array_interactive, e);
             }
@@ -1176,7 +1168,7 @@ static picture_t *ConvertRGBAAndBlend(vout_thread_sys_t *vout, picture_t *pic,
         .video = &vout_video_cbs,
         .sys = vout,
     };
-    filter_chain_t *filterc = filter_chain_NewVideo(&vout->obj, false, &owner);
+    filter_chain_t *filterc = filter_chain_NewVideo(&vout->obj, false, &owner, false);
     if (!filterc)
         return NULL;
 
@@ -1879,10 +1871,10 @@ static int vout_Start(vout_thread_sys_t *vout, vlc_video_context *vctx, const vo
         .sys = vout,
     };
 
-    cs = filter_chain_NewVideo(&vout->obj, true, &owner);
+    cs = filter_chain_NewVideo(&vout->obj, true, &owner, true);
 
     owner.video = &interactive_cbs;
-    ci = filter_chain_NewVideo(&vout->obj, true, &owner);
+    ci = filter_chain_NewVideo(&vout->obj, true, &owner, false);
 
     vlc_mutex_lock(&sys->filter.lock);
     sys->filter.chain_static = cs;

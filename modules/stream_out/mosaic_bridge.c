@@ -192,7 +192,7 @@ Add( sout_stream_t *p_stream, const es_format_t *p_fmt, const char *es_id )
         .sys = p_owner,
     };
 
-    p_owner->filters = filter_chain_NewVideo( p_stream, false, &owner );
+    p_owner->filters = filter_chain_NewVideo( p_stream, false, &owner, false );
     if( unlikely(p_owner->filters == NULL) )
     {
         ReleaseDecoder(&p_owner->dec);

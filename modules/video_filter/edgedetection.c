@@ -106,7 +106,7 @@ static int Open( filter_t *p_filter  )
         .sys = p_filter,
     };
     /* Store the filter chain in p_sys */
-    filter_chain_t *sys = filter_chain_NewVideo( p_filter, true, &owner );
+    filter_chain_t *sys = filter_chain_NewVideo( p_filter, true, &owner, false );
     if ( sys == NULL)
     {
         msg_Err( p_filter, "Could not allocate filter chain" );

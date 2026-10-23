@@ -130,7 +130,7 @@ static int Activate( filter_t *p_filter, int (*pf_build)(filter_t *) )
         .sys = p_filter,
     };
 
-    p_sys->p_chain = filter_chain_NewVideo( p_filter, p_filter->b_allow_fmt_out_change, &owner );
+    p_sys->p_chain = filter_chain_NewVideo( p_filter, p_filter->b_allow_fmt_out_change, &owner, false );
     if( !p_sys->p_chain )
     {
         free( p_sys );

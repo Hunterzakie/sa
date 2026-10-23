@@ -48,7 +48,8 @@ vlc_module_begin ()
 
     add_shortcut( "fps" )
     add_string( CFG_PREFIX "fps", NULL, FPS_TEXT, NULL )
-    set_callback_video_filter( Open )
+    set_capability("static video filter", 0)
+    set_callback(Open)
 vlc_module_end ()
 
 static const char *const ppsz_filter_options[] = {

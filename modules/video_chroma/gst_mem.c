@@ -91,7 +91,7 @@ static int Open(filter_t *p_filter)
     es_format_Copy(&fmt_intermediate, &p_filter->fmt_out);
     fmt_intermediate.video.i_chroma = fmt_intermediate.i_codec = VLC_CODEC_NV12;
 
-    filter_chain_t *p_chain = filter_chain_NewVideo(p_filter, false, &p_filter->owner);
+    filter_chain_t *p_chain = filter_chain_NewVideo(p_filter, false, &p_filter->owner, false);
     if (p_chain == NULL)
     {
         es_format_Clean(&fmt_intermediate);

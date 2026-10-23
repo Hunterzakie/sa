@@ -83,7 +83,8 @@ vlc_module_begin ()
     add_shortcut( "postprocess", "pp" ) /* name is "postproc" */
     set_subcategory( SUBCAT_VIDEO_VFILTER )
 
-    set_callback_video_filter( OpenPostproc )
+    set_capability("static video filter", 0)
+    set_callback(OpenPostproc)
 
     add_integer_with_range( FILTER_PREFIX "q", PP_QUALITY_MAX, 0,
                             PP_QUALITY_MAX, Q_TEXT, Q_LONGTEXT )

@@ -681,7 +681,7 @@ Open_chain_CVPX(filter_t *filter)
 
     /* We create a filter chain to encapsulate the two converters. */
     filter_chain_t *chain =
-        filter_chain_NewVideo(filter, false, &owner);
+        filter_chain_NewVideo(filter, false, &owner, false);
     if (chain == NULL)
         return VLC_ENOMEM;
 
