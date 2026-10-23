@@ -714,6 +714,35 @@ failed:
     return 1;
 }
 
+static int check_MP4_TrunLimit(vlc_object_t *obj)
+{
+    static const uint8_t trun[] = {
+        0x00, 0x00, 0x00, 0x20, 'm', 'o', 'o', 'f',
+        0x00, 0x00, 0x00, 0x18, 't', 'r', 'a', 'f',
+        0x00, 0x00, 0x00, 0x10, 't', 'r', 'u', 'n',
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x0f, 0x42, 0x41,
+    };
+    stream_t *stream = NULL;
+    MP4_Box_t *root = NULL;
+
+    stream = vlc_stream_MemoryNew(obj, (uint8_t *)trun, sizeof(trun), true);
+    EXPECT(stream);
+
+    root = MP4_BoxGetNextChunk(stream);
+    EXPECT(root);
+    EXPECT(MP4_BoxGet(root, "moof/traf/trun") == NULL);
+
+    MP4_BoxFree(root);
+    vlc_stream_Delete(stream);
+    return 0;
+
+failed:
+    MP4_BoxFree(root);
+    vlc_stream_Delete(stream);
+    return 1;
+}
+
 int main(void)
 {
     test_init();
@@ -733,6 +762,9 @@ int main(void)
 
     if( !ret )
       ret = check_MP4_Frag(&vlc->p_libvlc_int->obj);
+
+    if( !ret )
+      ret = check_MP4_TrunLimit(&vlc->p_libvlc_int->obj);
 
     libvlc_release(vlc);
     return ret;
