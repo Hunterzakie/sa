@@ -70,6 +70,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <assert.h>
+#include <limits.h>
 
 /*****************************************************************************
  * Module descriptor
@@ -168,6 +169,9 @@ static const char *const ppsz_protocols[] = {
 #define RTSP_PASS_TEXT N_("Password")
 #define RTSP_PASS_LONGTEXT N_("Password that will be " \
                               "requested to access the stream." )
+#define MAX_CLIENTS_TEXT N_("Maximum RTSP clients")
+#define MAX_CLIENTS_LONGTEXT N_("Maximum number of unicast RTSP sessions for " \
+                               "this stream (0 for unlimited).")
 
 static int  Open ( vlc_object_t * );
 static void Close( sout_stream_t * );
@@ -220,6 +224,9 @@ vlc_module_begin ()
     add_string( "sout-rtsp-user", "",
                 RTSP_USER_TEXT, RTSP_USER_LONGTEXT )
     add_password("sout-rtsp-pwd", "", RTSP_PASS_TEXT, RTSP_PASS_LONGTEXT)
+    add_integer( SOUT_CFG_PREFIX "max-clients", 0,
+                 MAX_CLIENTS_TEXT, MAX_CLIENTS_LONGTEXT )
+        change_integer_range( 0, INT_MAX )
 
 #ifdef HAVE_SRTP
     add_string( SOUT_CFG_PREFIX "key", "",
@@ -243,7 +250,7 @@ static const char *const ppsz_sout_options[] = {
 #ifdef HAVE_SRTP
     "key", "salt",
 #endif
-    "mp4a-latm", NULL
+    "mp4a-latm", "max-clients", NULL
 };
 
 static void *Add( sout_stream_t *, const es_format_t *, const char * );

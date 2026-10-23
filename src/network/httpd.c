@@ -628,6 +628,7 @@ struct httpd_stream_t
 {
     vlc_mutex_t lock;
     httpd_url_t *url;
+    unsigned max_clients;
 
     char    *psz_mime;
 
@@ -710,6 +711,24 @@ static int httpd_StreamCallBack(httpd_callback_sys_t *p_sys,
         answer->i_version= 0;
         answer->i_type   = HTTPD_MSG_ANSWER;
 
+        if (stream->max_clients > 0) {
+            unsigned clients = 0;
+            httpd_client_t *client;
+
+            /* The host lock is held by httpdLoop(). */
+            vlc_list_foreach(client, &stream->url->host->clients, node)
+                if (client->url == stream->url && client->b_stream_mode
+                 && client->answer.i_body_offset > 0
+                 && client->i_state != HTTPD_CLIENT_DEAD)
+                    clients++;
+
+            if (clients >= stream->max_clients) {
+                answer->i_status = 503;
+                httpd_MsgAdd(answer, "Content-Length", "0");
+                httpd_MsgAdd(answer, "Connection", "close");
+                return VLC_SUCCESS;
+            }
+        }
         answer->i_status = 200;
 
         bool b_has_content_type = false;
@@ -781,7 +800,8 @@ static int httpd_StreamCallBack(httpd_callback_sys_t *p_sys,
 
 httpd_stream_t *httpd_StreamNew(httpd_host_t *host,
                                  const char *psz_url, const char *psz_mime,
-                                 const char *psz_user, const char *psz_password)
+                                 const char *psz_user, const char *psz_password,
+                                 unsigned max_clients)
 {
     httpd_stream_t *stream = malloc(sizeof(*stream));
     if (!stream)
@@ -789,6 +809,7 @@ httpd_stream_t *httpd_StreamNew(httpd_host_t *host,
 
     stream->psz_mime = NULL;
     stream->p_buffer = NULL;
+    stream->max_clients = max_clients;
 
     stream->url = httpd_UrlNew(host, psz_url, psz_user, psz_password);
     if (!stream->url)
