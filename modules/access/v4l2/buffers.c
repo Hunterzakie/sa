@@ -46,9 +46,12 @@ vlc_tick_t GetBufferPTS(const struct v4l2_buffer *buf)
     switch (buf->flags & V4L2_BUF_FLAG_TIMESTAMP_MASK)
     {
         case V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC:
-            pts = vlc_tick_from_timeval(&buf->timestamp);
+            if(likely(buf->timestamp.tv_sec && buf->timestamp.tv_usec))
+                pts = VLC_TICK_0 + vlc_tick_from_timeval(&buf->timestamp);
+            else /* Ignore CLOCK_MONOTONIC 0 set during some acquisition start */
+                pts = VLC_TICK_INVALID;
             break;
-        case V4L2_BUF_FLAG_TIMESTAMP_UNKNOWN:
+        case V4L2_BUF_FLAG_TIMESTAMP_UNKNOWN: /* CLOCK_MONOTONIC or CLOCK_REALTIME */
         default:
             pts = vlc_tick_now();
             break;
@@ -182,12 +185,16 @@ block_t *GrabVideo(vlc_object_t *demux, struct vlc_v4l2_buffers *restrict pool)
     assert(buf_req.bytesused <= block->i_size);
     block->i_buffer = buf_req.bytesused;
     block->p_next = NULL;
+    block->i_flags = 0;
 
     if (atomic_fetch_sub(&pool->unused, 1) <= 2) {
         /* Running out of buffers! Memory copy forced. */
         block = block_Duplicate(block);
         block_Release(&buf->block);
     }
+
+    if(buf_req.flags & V4L2_BUF_FLAG_ERROR)
+        block->i_flags |= BLOCK_FLAG_CORRUPTED;
 
     block->i_pts = block->i_dts = GetBufferPTS(&buf_req);
     return block;

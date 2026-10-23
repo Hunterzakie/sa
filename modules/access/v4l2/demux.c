@@ -107,7 +107,8 @@ static void *MmapThread(void *data)
             if (block != NULL)
             {
                 block->i_flags |= sys->block_flags;
-                es_out_SetPCR(demux->out, block->i_pts);
+                if(block->i_pts != VLC_TICK_INVALID)
+                    es_out_SetPCR(demux->out, block->i_pts);
                 es_out_Send(demux->out, sys->es, block);
             }
             vlc_restorecancel(canc);
