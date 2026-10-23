@@ -126,13 +126,16 @@ int decoder_UpdateVideoOutput( decoder_t *dec, vlc_video_context *vctx_out )
         return -1;
     dec->fmt_out.video.i_chroma = dec->fmt_out.i_codec;
 
+    /* Broken acquisition cards from 200X or bogus H264.
+     * See Doom9/AVSforums for 1088/HDPatch */
     if( dec->fmt_out.video.i_visible_height == 1088 &&
-        var_CreateGetBool( dec, "hdtv-fix" ) )
+        var_CreateGetBool( dec, "hdtv-fix" ) &&
+        (dec->fmt_in->i_codec == VLC_CODEC_H264 || dec->fmt_in->i_codec == VLC_CODEC_MPGV) )
     {
         dec->fmt_out.video.i_visible_height = 1080;
         if( !(dec->fmt_out.video.i_sar_num % 136))
         {
-            dec->fmt_out.video.i_sar_num *= 135;
+            dec->fmt_out.video.i_sar_num *= dec->fmt_out.video.i_visible_width / 8;
             dec->fmt_out.video.i_sar_den *= 136;
         }
         msg_Warn( dec, "Fixing broken HDTV stream (display_height=1088)");
@@ -143,9 +146,13 @@ int decoder_UpdateVideoOutput( decoder_t *dec, vlc_video_context *vctx_out )
         dec->fmt_out.video.i_sar_num = 1;
         dec->fmt_out.video.i_sar_den = 1;
     }
-
-    vlc_ureduce( &dec->fmt_out.video.i_sar_num, &dec->fmt_out.video.i_sar_den,
-                    dec->fmt_out.video.i_sar_num, dec->fmt_out.video.i_sar_den, 50000 );
+    else
+    {
+        vlc_ureduce( &dec->fmt_out.video.i_sar_num,
+                     &dec->fmt_out.video.i_sar_den,
+                     dec->fmt_out.video.i_sar_num,
+                     dec->fmt_out.video.i_sar_den, 50000 );
+    }
 
     unsigned int v;
     if( vlc_fourcc_IsYUV( dec->fmt_out.video.i_chroma ) )
