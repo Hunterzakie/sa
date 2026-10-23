@@ -687,7 +687,7 @@ static void vlc_plugin_Unmap(vlc_plugin_t *plugin)
 void *vlc_plugin_Symbol(struct vlc_logger *log,
                         vlc_plugin_t *plugin, const char *name)
 {
-    if (plugin->abspath == NULL || vlc_plugin_Map(log, plugin))
+    if (plugin->path == NULL || vlc_plugin_Map(log, plugin))
         return NULL;
 
     void *handle = (void *)atomic_load_explicit(&plugin->handle,
