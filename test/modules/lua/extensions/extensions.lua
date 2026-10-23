@@ -9,6 +9,8 @@ function descriptor()
         "input-listener",
         "meta-listener",
         "playing-listener",
+        "trigger",
+        "menu"
      }
   }
 end
@@ -41,4 +43,8 @@ end
 
 function meta_changed()
   signal_test("meta-changed")
+end
+
+function trigger_menu()
+  signal_test("trigger-menu")
 end
