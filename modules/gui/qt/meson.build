@@ -738,7 +738,7 @@ qml_modules += {
        'player/qml/LyricsFlickable.qml',
        'player/qml/MiniPlayer.qml',
        'player/qml/PIPPlayer.qml',
-       'player/qml/Player.qml',
+       'player/qml/PlayerPage.qml',
        'player/qml/PlayerControlLayout.qml',
        'player/qml/PlayerPlaylistVisibilityFSM.qml',
        'player/qml/PlayerToolbarVisibilityFSM.qml',
@@ -830,8 +830,8 @@ qml_modules += {
     'target' : 'style',
     'outdir' : 'VLC/Style',
     'singletons': files(
-        'style/AcrylicController.qml',
-        'style/VLCStyle.qml',
+        'style/qml/AcrylicController.qml',
+        'style/qml/VLCStyle.qml',
     ),
 }
 
