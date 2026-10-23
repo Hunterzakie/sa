@@ -654,12 +654,18 @@ AC_ARG_WITH(contrib,
   AS_HELP_STRING([--with-contrib[=DIR]],
     [search for 3rd party libraries in DIR/include and DIR/lib])
 )
+
+CONTRIB_HOST=${host_alias}
+AS_IF([test -z "$CONTRIB_HOST"], [
+  CONTRIB_HOST="`$CC -dumpmachine`"
+])
+
 AC_MSG_CHECKING([for 3rd party libraries path])
 AS_IF([test -z "${with_contrib}" || test "${with_contrib}" = "yes"], [
   CONTRIB_DIR="${srcdir}/contrib/${host}"
   AS_IF([test ! -d "${CONTRIB_DIR}"], [
     echo "${CONTRIB_DIR} not found" >&AS_MESSAGE_LOG_FD
-    CONTRIB_DIR="${srcdir}/contrib/`$CC -dumpmachine`"
+    CONTRIB_DIR="${srcdir}/contrib/${CONTRIB_HOST}"
     AS_IF([test ! -d "${CONTRIB_DIR}"], [
       echo "${CONTRIB_DIR} not found" >&AS_MESSAGE_LOG_FD
       CONTRIB_DIR=""
@@ -705,8 +711,8 @@ AS_IF([test -n "${CONTRIB_DIR}"], [
 
   AS_IF([test -z "$LUAC"], [
     AC_MSG_CHECKING([if contribs provide luac])
-    AS_IF([test -x "${CONTRIB_DIR}/../bin/${host_alias}-luac${BUILDEXEEXT}"], [
-      LUAC="${CONTRIB_DIR}/../bin/${host_alias}-luac${BUILDEXEEXT}"
+    AS_IF([test -x "${CONTRIB_DIR}/../bin/${CONTRIB_HOST}-luac${BUILDEXEEXT}"], [
+      LUAC="${CONTRIB_DIR}/../bin/${CONTRIB_HOST}-luac${BUILDEXEEXT}"
       AC_MSG_RESULT([yes])
     ],[
       AC_MSG_RESULT([no])
