@@ -895,9 +895,6 @@ SPrefsPanel::SPrefsPanel( qt_intf_t *_p_intf, QWidget *_parent,
             {
                 configBool( "one-instance", ui.OneInterfaceMode );
                 configBool( "playlist-enqueue", ui.EnqueueOneInterfaceMode );
-                ui.EnqueueOneInterfaceMode->setEnabled( ui.OneInterfaceMode->isChecked() );
-                connect( ui.OneInterfaceMode, &QCheckBox::toggled,
-                         ui.EnqueueOneInterfaceMode, &QCheckBox::setEnabled );
                 configBool( "one-instance-when-started-from-file", ui.oneInstanceFromFile );
             }
 
