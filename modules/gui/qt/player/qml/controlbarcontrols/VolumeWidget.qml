@@ -98,7 +98,7 @@ T.Pane {
             id: volControl
 
             // FIXME: use VLCStyle
-            implicitWidth: VLCStyle.dp(100, VLCStyle.scale)
+            implicitWidth: VLCStyle.dp(64, VLCStyle.scale)
 
             // WARNING: Directly setting the insets break handle and background positioning.
             Binding on topInset {
@@ -129,20 +129,135 @@ T.Pane {
 
             from: 0
             to: root._maxvolpos
-            opacity: _player.muted ? 0.5 : 1
 
             enabled: !root.paintOnly // disables event handling depending on this
 
+            toolTipFollowsMouse: true
             toolTipTextProvider: function (value) {
-                // the real value i.e 'Player.volume' bounds can be different
-                // from bounds of this widget and we want to show the current
-                // volume here, so directly use Player.volume instead of "value"
-
-                return Math.round(Player.volume * 100) + "%"
+                return Math.round(value * 100) + "%"
             }
 
             Accessible.name: qsTr("Volume")
             AccessibleCompat.id: "volumeSlider"
+
+            handle: null
+
+            // TODO: Implement `PointingToolTipAttached::delay`.
+            Timer {
+                id: toolTipVisibilityTimer
+
+                interval: VLCStyle.delayToolTipAppear
+
+                onTriggered: {
+                    volControl.Widgets.PointingToolTipAttached.visible = true
+                }
+            }
+
+            readonly property bool _hovered: (hovered || sliderMouseArea.containsMouse)
+            on_HoveredChanged: {
+                if (_hovered) {
+                    if (!_pressed) {
+                        toolTipVisibilityTimer.restart()
+                    }
+                } else {
+                    toolTipVisibilityTimer.stop()
+                    Widgets.PointingToolTipAttached.visible = false
+                }
+            }
+
+            readonly property bool _pressed: (pressed || sliderMouseArea.pressed)
+            on_PressedChanged: {
+                if (_pressed) {
+                    toolTipVisibilityTimer.stop()
+                    Widgets.PointingToolTipAttached.visible = false
+                }
+            }
+
+            Widgets.PointingToolTipAttached.onTextChanged: {
+                if ((Widgets.PointingToolTipAttached.text !== volumeText.text) && !Widgets.PointingToolTipAttached.visible && _hovered && !_pressed)
+                    toolTipVisibilityTimer.restart()
+            }
+
+            Widgets.PointingToolTipAttached.visible: false
+
+            background: Image {
+                id: backgroundImage
+
+                x: volControl.leftPadding
+                y: volControl.topPadding + volControl.availableHeight / 2 - height / 2
+
+                width: volControl.availableWidth
+                height: volumeBtn.height * 0.85 // Using `Slider`'s height causes polish loop
+
+                cache: true
+                fillMode: Image.Pad
+                horizontalAlignment: Image.AlignLeft
+                sourceSize: Qt.size(width, height)
+
+                // WARNING: SVG does not support RGBA color.
+                readonly property color opaqueBorder: (volControl.colorContext.border.a < 1.0) ? (volControl.colorContext.palette.isDark ? "darkgray"
+                                                                                                                                         : "gray")
+                                                                                               : volControl.colorContext.border
+
+                source: SVGColorImage.colorize("qrc:///misc/volume-slider-outside.svg")
+                                     .color1(opaqueBorder).uri() // foreground
+
+                Widgets.AnimatedBackground {
+                    anchors.fill: parent
+                    anchors.margins: -VLCStyle.margin_xxsmall
+
+                    visible: (border.color.a > 0.0)
+                    enabled: volControl.colorContext.initialized
+
+                    color: "transparent"
+
+                    border.color: volControl.visualFocus ? volControl.colorContext.visualFocus
+                                                         : Qt.alpha(volControl.colorContext.visualFocus, 0.0)
+                }
+
+                Image {
+                    z: -1 // Gradient is below parent
+
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.left: parent.left
+
+                    width: (parent.width * volControl.position)
+
+                    clip: (volControl.position < volControl.to)
+
+                    cache: true
+                    fillMode: Image.Pad
+                    horizontalAlignment: Image.AlignLeft
+                    sourceSize: Qt.size(parent.width, height)
+
+                    source: Effects.url(Effects.VolumeSliderGradient, { "maximum": (volControl.to * 100),
+                                                                        "sliderColors": MainCtx.volumeSliderColors,
+                                                                        "muted": _player.muted })
+                }
+
+                Text {
+                    id: volumeText
+
+                    font.pixelSize: VLCStyle.fontSize_small
+                    textFormat: Text.PlainText
+
+                    x: 0
+                    y: -VLCStyle.margin_xxxsmall
+
+                    horizontalAlignment: Text.AlignRight
+
+                    text: {
+                        // the real value i.e 'Player.volume' bounds can be different
+                        // from bounds of this widget and we want to show the current
+                        // volume here, so directly use Player.volume instead of "value"
+
+                        return Math.round(Player.volume * 100) + "%"
+                    }
+
+                    color: backgroundImage.opaqueBorder // ###
+                }
+            }
 
             Keys.onPressed: (event) => {
                 if (KeyHelper.matchOk(event)) {
@@ -201,11 +316,6 @@ T.Pane {
                 function onVolumeChanged() { volControl._syncVolumeWithPlayer() }
             }
 
-            Binding on Widgets.PointingToolTipAttached.visible {
-                when: sliderMouseArea.pressed
-                value: true
-            }
-
             Navigation.leftItem: volumeBtn
             Navigation.parentItem: root
 
@@ -231,41 +341,6 @@ T.Pane {
                     } else {
                         volControl._adjustPlayerVolume()
                         filterEvents = true
-                    }
-                }
-            }
-
-            Rectangle{
-                id: tickmark
-
-                parent: volControl.background
-
-                x : parent.width * root._fullvolpos
-                width: VLCStyle.dp(1, VLCStyle.scale)
-                height: parent.height
-                radius: VLCStyle.dp(2, VLCStyle.scale)
-
-                // NOTE: This shouldn't be visible when the volume stops before a 100.
-                visible: (root._maxvol > 100)
-
-                // FIXME: tick mark is not visible when it's over slider
-                color: root.sliderColor
-
-                // NOTE: This is a helper to select the default volume when clicking on the
-                //       tickmark. We apply a higher clamp value to achieve that behavior on
-                //       the Slider.
-                MouseArea {
-                    anchors.fill: parent
-
-                    anchors.margins: -(VLCStyle.dp(4, VLCStyle.scale))
-
-                    onPressed: (mouse) => {
-                        mouse.accepted = false
-
-                        if (mouse.modifiers === Qt.ShiftModifier)
-                            return
-
-                        volControl._clamp = 0.1
                     }
                 }
             }
