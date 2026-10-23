@@ -3637,8 +3637,8 @@ static int TrackTimeToSampleChunk( demux_t *p_demux, mp4_track_t *p_track,
                     p_track->i_track_ID, p_entrydesc->roll.i_roll_distance );
             if( p_entrydesc->roll.i_roll_distance < 0 )
             {
-                if( i_sync_sample > (uint32_t)-p_entrydesc->roll.i_roll_distance )
-                    i_sync_sample += p_entrydesc->roll.i_roll_distance;
+                if (i_sample > (uint32_t)-p_entrydesc->roll.i_roll_distance)
+                    i_sync_sample = i_sample + p_entrydesc->roll.i_roll_distance;
                 else
                     i_sync_sample = 0;
             }
