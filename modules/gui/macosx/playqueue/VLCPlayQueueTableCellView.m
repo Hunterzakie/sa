@@ -164,7 +164,7 @@ NSString * const VLCDisplayTrackNumberPlayQueueSettingChanged = @"VLCDisplayTrac
         self.mediaImageView.hidden = NO;
     }
 
-    self.durationTextField.stringValue = [NSString stringWithTimeFromTicks:item.duration];
+    self.durationTextField.stringValue = [NSString stringWithTime:SEC_FROM_VLC_TICK(item.duration)];
 }
 
 @end
