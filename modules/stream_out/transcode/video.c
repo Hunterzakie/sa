@@ -61,6 +61,9 @@ static inline struct encoder_owner *enc_get_owner( encoder_t *p_enc )
 static vlc_decoder_device *video_get_encoder_device( encoder_t *enc )
 {
     struct encoder_owner *p_owner = enc_get_owner( enc );
+    if( !var_InheritBool( enc, "hw-dec" ) )
+        return NULL;
+
     if (p_owner->id->dec_dev == NULL)
         p_owner->id->dec_dev = vlc_decoder_device_Create( &enc->obj, NULL );
 
