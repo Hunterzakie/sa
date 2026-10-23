@@ -86,6 +86,7 @@ typedef struct
     int            i_refcount;
 
     /* */
+    vlc_object_t   *p_obj;
     ASS_Library    *p_library;
     ASS_Renderer   *p_renderer;
 
@@ -281,6 +282,7 @@ static int Create( vlc_object_t *p_this )
     ass_process_codec_private( p_track, p_dec->fmt_in->p_extra, p_dec->fmt_in->i_extra );
     OldEngineClunkyRollInfoPatch( p_dec, p_track );
 
+    p_sys->p_obj = VLC_OBJECT(p_dec);
     p_dec->fmt_out.i_codec = VLC_CODEC_RGBA;
 
     return VLC_SUCCESS;
@@ -306,6 +308,7 @@ static void DecSysRelease( decoder_sys_t *p_sys )
 {
     /* */
     vlc_mutex_lock( &p_sys->lock );
+    p_sys->p_obj = NULL;
     p_sys->i_refcount--;
     if( p_sys->i_refcount > 0 )
     {
@@ -448,6 +451,12 @@ static void SubpictureUpdate( subpicture_t *p_subpic,
 #else
         ass_set_aspect_ratio( p_sys->p_renderer, dst_ratio / src_ratio, 1 );
 #endif
+    }
+
+    if( p_sys->p_obj )
+    {
+        int scale = var_InheritInteger( p_sys->p_obj, "sub-text-scale" );
+        ass_set_font_scale( p_sys->p_renderer, scale / 100.0 );
     }
 
     /* */
