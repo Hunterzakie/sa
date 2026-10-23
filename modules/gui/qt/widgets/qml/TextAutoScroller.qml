@@ -17,10 +17,17 @@
  *****************************************************************************/
 import QtQuick
 
+import VLC.Widgets as Widgets
 import VLC.Style
 
 Item {
     id: root
+
+    // No need for additional clipping, when applicable:
+    Binding on clip {
+        when: !!fadingEdgeLoader.item?.implicitClipping
+        value: false
+    }
 
     readonly property alias scrolling: scrollAnimation.running
 
@@ -28,6 +35,12 @@ Item {
     property Text label: undefined
     property bool forceScroll: false
 
+    property bool enableFading: scrolling && visible
+    // Not required to provide, but if you can deduce opaque background
+    // color, it is beneficial to provide since it allows saving video
+    // memory and retains sub-pixel font rendering. Also see
+    // `FadingEdge::backgroundColor`:
+    property color backgroundColor: "transparent"
 
     readonly property real requiredTextWidth: label.implicitWidth
     readonly property bool _needsToScroll: (label.width < requiredTextWidth)
@@ -48,6 +61,38 @@ Item {
                                                                                                             : Item.AutoMutabilityGroup })
 
         label.Accessible.ignored = true
+    }
+
+    Loader {
+        id: fadingEdgeLoader
+
+        active: root.enableFading
+
+        // This breaks batch rendering if background color is not opaque,
+        // but it is already broken due to clipping. This is not really a
+        // concern, since in item view cases only one delegate instance
+        // should be using scrolling text at a time.
+        sourceComponent: Widgets.FadingEdge {
+            id: fadingEdge
+
+            y: mappedPos.y
+            width: root.width
+            height: root.height
+
+            visible: root.label && root.scrolling
+
+            readonly property point mappedPos: root.label ? root.mapFromItem(root.label.parent, root.label.x, root.label.y)
+                                                          : Qt.point(0.0, 0.0)
+
+            sourceItem: root.label
+            sourceX: -mappedPos.x
+
+            backgroundColor: root.backgroundColor
+
+            orientation: Qt.Horizontal
+
+            fadeSize: VLCStyle.margin_normal
+        }
     }
 
     SequentialAnimation {

@@ -348,6 +348,9 @@ T.ItemDelegate {
             visible: root.title !== ""
             clip: scrolling
 
+            backgroundColor: (root.background?.visible && root.background.color.a > (1.0 - Number.EPSILON)) ? root.background.color
+                                                                                                            : Qt.alpha(root.background.color, 0)
+
             Layout.preferredWidth: Math.min(titleLabel.implicitWidth, root.width)
             Layout.preferredHeight: titleLabel.height
             Layout.topMargin: root.titleTopMargin

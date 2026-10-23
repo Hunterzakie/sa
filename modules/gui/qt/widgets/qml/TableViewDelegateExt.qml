@@ -88,6 +88,9 @@ T.Control {
             forceScroll: defaultDelId.currentlyFocused
             clip: scrolling
 
+            backgroundColor: (delegate.background?.visible && delegate.background?.color.a > (1.0 - Number.EPSILON)) ? delegate.background.color
+                                                                                                                     : Qt.alpha(delegate.background.color, 0)
+
             Widgets.ListLabel {
                 id: text
 
