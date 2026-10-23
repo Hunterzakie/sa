@@ -513,7 +513,7 @@ int sout_access_out_sys_t::url_cb(httpd_client_t *cl, httpd_message_t *answer,
         {
             p_block = block_Alloc(i_total_size);
             if (p_block)
-                block_ChainExtract(p_first, p_block->p_buffer, p_block->i_buffer);
+                p_block->i_buffer = block_ChainExtract(p_first, p_block->p_buffer, i_total_size);
             block_ChainRelease(p_first);
         }
         else

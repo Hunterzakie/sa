@@ -515,7 +515,7 @@ static inline void vlc_frame_ChainRelease( vlc_frame_t *frame )
  *
  * @see vlc_frame_ChainGather()
  */
-static size_t vlc_frame_ChainExtract( vlc_frame_t *p_list, void *p_data, size_t i_max )
+VLC_USED static size_t vlc_frame_ChainExtract( vlc_frame_t *p_list, void *p_data, size_t i_max )
 {
     size_t  i_total = 0;
     uint8_t *p = (uint8_t*)p_data;
@@ -595,7 +595,13 @@ static inline vlc_frame_t *vlc_frame_ChainGather( vlc_frame_t *p_list )
     g = vlc_frame_Alloc( i_total );
     if( !g )
         return NULL;
-    vlc_frame_ChainExtract( p_list, g->p_buffer, g->i_buffer );
+    size_t chain_len = vlc_frame_ChainExtract( p_list, g->p_buffer, g->i_buffer );
+    if ( unlikely(chain_len != i_total) )
+    {
+        // something wrong between vlc_frame_ChainProperties and vlc_frame_ChainExtract
+        vlc_frame_Release( g );
+        return NULL;
+    }
 
     g->i_flags = p_list->i_flags;
     g->i_pts   = p_list->i_pts;

@@ -1787,7 +1787,15 @@ block_t *scan_GetM3U( scan_t *p_scan )
 
     free( pp_filtered_list );
 
-    return p_playlist ? block_ChainGather( p_playlist ) : NULL;
+    if ( p_playlist == NULL )
+        return NULL;
+    block_t *gathered = block_ChainGather( p_playlist );
+    if ( unlikely(gathered == NULL) )
+    {
+        block_ChainRelease( p_playlist );
+        return NULL;
+    }
+    return gathered;
 }
 
 #define dvbpsi_packet_push(a,b) dvbpsi_packet_push(a, (uint8_t *)b)
