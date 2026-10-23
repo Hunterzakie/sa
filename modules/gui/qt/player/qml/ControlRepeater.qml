@@ -64,15 +64,14 @@ Repeater {
 
         Layout.alignment: repeater.alignment
 
+        readonly property bool display: (loader.x + loader.Layout.minimumWidth <= repeater.availableWidth)
+
+        opacity: display ? 1.0 : 0.0
+
         Binding on visible {
             delayed: true // this is important
             when: condition
-            value: {
-                if (condition)
-                    return (loader.x + loader.Layout.minimumWidth <= repeater.availableWidth)
-                else
-                    return true;
-            }
+            value: loader.display
 
             property bool condition: false
 
