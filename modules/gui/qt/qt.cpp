@@ -1226,21 +1226,21 @@ static void *Thread( void *obj )
                 const auto globalThreadPool = QThreadPool::globalInstance();
                 assert(globalThreadPool);
 
-                if (graphicsApiValue.toInt() == QSGRendererInterface::OpenGL)
-                {
-                    // Due to asynchronous probing, we need to set the default
-                    // format before the main interface window's (`::create()`)
-                    // is called. Since previous probe result succeeded with
-                    // OpenGL and required version, we can assume that the there
-                    // will be again a compatible OpenGL format, rather than
-                    // storing and re-using the version (considering that it
-                    // takes negligible time to re-create the compatible format):
-                    if (const auto format = createCompatibleOpenGLFormat()) /* [[likely]] */
-                        QSurfaceFormat::setDefaultFormat(*format);
-                }
-
                 rhiProbeTask->start(*globalThreadPool, -1);
             }, Qt::QueuedConnection);
+
+            if (graphicsApiValue.toInt() == QSGRendererInterface::OpenGL)
+            {
+                // Due to asynchronous probing, we need to set the default
+                // format before the main interface window's (`::create()`)
+                // is called. Since previous probe result succeeded with
+                // OpenGL and required version, we can assume that the there
+                // will be again a compatible OpenGL format, rather than
+                // storing and re-using the version (considering that it
+                // takes negligible time to re-create the compatible format):
+                if (const auto format = createCompatibleOpenGLFormat()) /* [[likely]] */
+                    QSurfaceFormat::setDefaultFormat(*format);
+            }
         }
         else
         {
