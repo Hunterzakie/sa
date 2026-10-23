@@ -59,17 +59,54 @@ vlc_module_end ()
  * Local prototypes
  *****************************************************************************/
 
+/* size of the available data on a VCD sector */
+#define VCD_DATA_SIZE       CD_ROM_XA_MODE2_FORM2_DATA_SIZE
+
 /* how many blocks VCDRead will read in each loop */
 #define VCD_BLOCKS_ONCE 20
 #define VCD_DATA_ONCE   (VCD_BLOCKS_ONCE * VCD_DATA_SIZE)
 
+/* sector containing the entry points */
+#define VCD_ENTRIES_SECTOR  151
+
+#define VCD_SYSTEM_DATA_TRACK_COUNT 1
+#define VCD_DATA_TRACK_OFFSET VCD_SYSTEM_DATA_TRACK_COUNT
+
+typedef struct msf_s
+{
+    uint8_t minute;
+    uint8_t second;
+    uint8_t frame;
+} msf_t;
+
+typedef struct entries_sect_s
+{
+    char psz_id[8];                                 /* "ENTRYVCD" */
+    uint8_t i_version;                              /* 0x02 VCD2.0
+                                                       0x01 SVCD  */
+    uint8_t i_sys_prof_tag;                         /* 0x01 if VCD1.1
+                                                       0x00 else */
+    uint16_t i_entries_nb;                          /* entries number <= 500 */
+
+    struct
+    {
+        uint8_t i_track;                            /* track number */
+        msf_t   msf;                                /* msf location
+                                                       (in BCD format) */
+    } entry[500];
+    uint8_t zeros[36];                              /* should be 0x00 */
+} entries_sect_t;
+
+static_assert(sizeof(entries_sect_t) == (12 + 500 * 4 + 36),
+              "entries_sect_t is not packed");
+
 typedef struct
 {
-    vcddev_t    *vcddev;                            /* vcd device descriptor */
+    vlc_cd_t    *vlc_cd;                            /* vcd device descriptor */
     uint64_t    offset;
 
     /* Title infos */
-    vcddev_toc_t *p_toc;
+    vlc_cd_toc_t *p_toc;
 
     struct
     {
@@ -100,7 +137,7 @@ static int Open( vlc_object_t *p_this )
     char *psz;
     int i_title = 0;
     int i_chapter = 0;
-    vcddev_t *vcddev;
+    vlc_cd_t *vlc_cd;
 
     /* Command line: vcd://[dev_path][#title[,chapter]] */
     if( ( psz = strchr( psz_dup, '#' ) ) )
@@ -135,23 +172,23 @@ static int Open( vlc_object_t *p_this )
 #endif
 
     /* Open VCD */
-    vcddev = ioctl_Open( p_this, psz_dup );
+    vlc_cd = vlc_cd_Open( p_this, psz_dup );
     free( psz_dup );
-    if( !vcddev )
+    if( !vlc_cd )
         return VLC_EGENERIC;
 
     /* Set up p_access */
     p_access->p_sys = p_sys = calloc( 1, sizeof( access_sys_t ) );
     if( unlikely(!p_sys ))
         goto error;
-    p_sys->vcddev = vcddev;
+    p_sys->vlc_cd = vlc_cd;
     p_sys->offset = 0;
 
     for( size_t i = 0; i < ARRAY_SIZE(p_sys->titles); i++ )
         p_sys->titles[i].seekpoints = NULL;
 
     /* We read the Table Of Content information */
-    p_sys->p_toc = ioctl_GetTOC( VLC_OBJECT(p_access), p_sys->vcddev );
+    p_sys->p_toc = vlc_cd_GetTOC( p_sys->vlc_cd );
     if( p_sys->p_toc == NULL )
     {
         msg_Err( p_access, "unable to count tracks" );
@@ -159,20 +196,20 @@ static int Open( vlc_object_t *p_this )
     }
     else if( p_sys->p_toc->i_tracks <= 1 )
     {
-        vcddev_toc_Free( p_sys->p_toc );
+        vlc_cd_toc_Free( p_sys->p_toc );
         p_sys->p_toc = NULL;
         msg_Err( p_access, "no movie tracks found" );
         goto error;
     }
 
     /* The first title isn't usable */
-#define USABLE_TITLES(a) (a - 1)
+#define USABLE_TITLES(a) (a - VCD_SYSTEM_DATA_TRACK_COUNT)
     //p_sys->i_titles--;
 
     for( int i = 0; i < USABLE_TITLES(p_sys->p_toc->i_tracks); i++ )
     {
-        msg_Dbg( p_access, "title[%d] start=%d", i, p_sys->p_toc->p_sectors[i].i_lba );
-        msg_Dbg( p_access, "title[%d] end=%d", i, p_sys->p_toc->p_sectors[i+1].i_lba );
+        msg_Dbg( p_access, "title[%d] start=%d", i, p_sys->p_toc->p_sectors[VCD_DATA_TRACK_OFFSET+i].i_lba );
+        msg_Dbg( p_access, "title[%d] end=%d", i, p_sys->p_toc->p_sectors[VCD_DATA_TRACK_OFFSET+i+1].i_lba );
     }
 
     /* Map entry points into chapters */
@@ -182,12 +219,12 @@ static int Open( vlc_object_t *p_this )
     }
 
     /* Starting title/chapter and sector */
-    if( i_title > USABLE_TITLES(p_sys->p_toc->i_tracks) )
+    if( i_title >= USABLE_TITLES(p_sys->p_toc->i_tracks) )
         i_title = 0;
     if( (unsigned)i_chapter >= p_sys->titles[i_title].count )
         i_chapter = 0;
 
-    p_sys->i_sector = p_sys->p_toc->p_sectors[1+i_title].i_lba;
+    p_sys->i_sector = p_sys->p_toc->p_sectors[VCD_DATA_TRACK_OFFSET+i_title].i_lba;
     if( i_chapter > 0 )
         p_sys->i_sector += p_sys->titles[i_title].seekpoints[i_chapter]
                            / VCD_DATA_SIZE;
@@ -200,13 +237,13 @@ static int Open( vlc_object_t *p_this )
 
     p_sys->i_current_title = i_title;
     p_sys->i_current_seekpoint = i_chapter;
-    p_sys->offset = (uint64_t)(p_sys->i_sector - p_sys->p_toc->p_sectors[1+i_title].i_lba) *
+    p_sys->offset = (uint64_t)(p_sys->i_sector - p_sys->p_toc->p_sectors[VCD_DATA_TRACK_OFFSET+i_title].i_lba) *
                                VCD_DATA_SIZE;
 
     return VLC_SUCCESS;
 
 error:
-    ioctl_Close( VLC_OBJECT(p_access), vcddev );
+    vlc_cd_Close( vlc_cd );
     free( p_sys );
     return VLC_EGENERIC;
 }
@@ -222,9 +259,9 @@ static void Close( vlc_object_t *p_this )
     for( size_t i = 0; i < ARRAY_SIZE(p_sys->titles); i++ )
         free( p_sys->titles[i].seekpoints );
 
-    vcddev_toc_Free( p_sys->p_toc );
+    vlc_cd_toc_Free( p_sys->p_toc );
 
-    ioctl_Close( p_this, p_sys->vcddev );
+    vlc_cd_Close( p_sys->vlc_cd );
     free( p_sys );
 }
 
@@ -251,8 +288,8 @@ static int Control( stream_t *p_access, int i_query, va_list args )
             int i = p_sys->i_current_title;
 
             *va_arg( args, uint64_t * ) =
-                (p_sys->p_toc->p_sectors[i + 2].i_lba -
-                 p_sys->p_toc->p_sectors[i + 1].i_lba) * (uint64_t)VCD_DATA_SIZE;
+                (p_sys->p_toc->p_sectors[VCD_DATA_TRACK_OFFSET + i + 1].i_lba -
+                 p_sys->p_toc->p_sectors[VCD_DATA_TRACK_OFFSET + i].i_lba) * (uint64_t)VCD_DATA_SIZE;
             break;
         }
 
@@ -301,7 +338,7 @@ static int Control( stream_t *p_access, int i_query, va_list args )
                 p_sys->i_current_seekpoint = 0;
 
                 /* Next sector to read */
-                p_sys->i_sector = p_sys->p_toc->p_sectors[1+i].i_lba;
+                p_sys->i_sector = p_sys->p_toc->p_sectors[VCD_DATA_TRACK_OFFSET+i].i_lba;
             }
             break;
         }
@@ -315,11 +352,11 @@ static int Control( stream_t *p_access, int i_query, va_list args )
             {
                 p_sys->i_current_seekpoint = i;
 
-                p_sys->i_sector = p_sys->p_toc->p_sectors[1 + i_title].i_lba +
+                p_sys->i_sector = p_sys->p_toc->p_sectors[VCD_DATA_TRACK_OFFSET + i_title].i_lba +
                     p_sys->titles[i_title].seekpoints[i] / VCD_DATA_SIZE;
 
                 p_sys->offset = (uint64_t)(p_sys->i_sector -
-                    p_sys->p_toc->p_sectors[1 + i_title].i_lba) * VCD_DATA_SIZE;
+                    p_sys->p_toc->p_sectors[VCD_DATA_TRACK_OFFSET + i_title].i_lba) * VCD_DATA_SIZE;
             }
             break;
         }
@@ -336,14 +373,14 @@ static int Control( stream_t *p_access, int i_query, va_list args )
 static block_t *Block( stream_t *p_access, bool *restrict eof )
 {
     access_sys_t *p_sys = p_access->p_sys;
-    const vcddev_toc_t *p_toc = p_sys->p_toc;
+    const vlc_cd_toc_t *p_toc = p_sys->p_toc;
     int i_blocks = VCD_BLOCKS_ONCE;
     block_t *p_block;
 
     /* Check end of title */
-    while( p_sys->i_sector >= p_toc->p_sectors[p_sys->i_current_title + 2].i_lba )
+    while( p_sys->i_sector >= p_toc->p_sectors[VCD_DATA_TRACK_OFFSET + p_sys->i_current_title + 1].i_lba )
     {
-        if( p_sys->i_current_title + 2 > USABLE_TITLES(p_toc->i_tracks) )
+        if( p_sys->i_current_title + 1 >= USABLE_TITLES(p_toc->i_tracks) )
         {
             *eof = true;
             return NULL;
@@ -356,20 +393,20 @@ static block_t *Block( stream_t *p_access, bool *restrict eof )
 
     /* Don't read after the end of a title */
     if( p_sys->i_sector + i_blocks >=
-        p_toc->p_sectors[p_sys->i_current_title + 2].i_lba )
+        p_toc->p_sectors[VCD_DATA_TRACK_OFFSET + p_sys->i_current_title + 1].i_lba )
     {
-        i_blocks = p_toc->p_sectors[p_sys->i_current_title + 2 ].i_lba - p_sys->i_sector;
+        i_blocks = p_toc->p_sectors[VCD_DATA_TRACK_OFFSET + p_sys->i_current_title + 1].i_lba - p_sys->i_sector;
     }
 
     /* Do the actual reading */
-    if( i_blocks < 0 || !( p_block = block_Alloc( i_blocks * VCD_DATA_SIZE ) ) )
+    if( i_blocks < 0 || !( p_block = block_Alloc( i_blocks * CD_RAW_SECTOR_SIZE ) ) )
     {
         msg_Err( p_access, "cannot get a new block of size: %i",
-                 i_blocks * VCD_DATA_SIZE );
+                 i_blocks * CD_RAW_SECTOR_SIZE );
         return NULL;
     }
 
-    int i_ret = ioctl_ReadSectors( VLC_OBJECT(p_access), p_sys->vcddev,
+    int i_ret = vlc_cd_ReadSectors( p_sys->vlc_cd,
                                    p_sys->i_sector, p_block->p_buffer, i_blocks, VCD_TYPE );
     if( i_ret < 0 )
     {
@@ -388,6 +425,16 @@ static block_t *Block( stream_t *p_access, bool *restrict eof )
         p_sys->i_sector++;
         return NULL;
     }
+
+    /* For VCDs, we don't want to keep the header and footer of the
+     * sectors read */
+    for( int i = 0; i < i_blocks; i++ )
+    {
+        memmove( &p_block->p_buffer[i * CD_ROM_XA_MODE2_FORM2_DATA_SIZE],
+                 &p_block->p_buffer[i * CD_RAW_SECTOR_SIZE + CD_ROM_XA_SECTOR_HEADER_SIZE],
+                 CD_ROM_XA_MODE2_FORM2_DATA_SIZE );
+    }
+    p_block->i_buffer = i_blocks * CD_ROM_XA_MODE2_FORM2_DATA_SIZE;
 
     /* Update seekpoints */
     for( int i_read = 0; i_read < i_blocks; i_read++ )
@@ -417,13 +464,13 @@ static block_t *Block( stream_t *p_access, bool *restrict eof )
 static int Seek( stream_t *p_access, uint64_t i_pos )
 {
     access_sys_t *p_sys = p_access->p_sys;
-    const vcddev_toc_t *p_toc = p_sys->p_toc;
+    const vlc_cd_toc_t *p_toc = p_sys->p_toc;
     int i_title = p_sys->i_current_title;
     unsigned i_seekpoint;
 
     /* Next sector to read */
     p_sys->offset = i_pos;
-    p_sys->i_sector = i_pos / VCD_DATA_SIZE + p_toc->p_sectors[i_title + 1].i_lba;
+    p_sys->i_sector = i_pos / VCD_DATA_SIZE + p_toc->p_sectors[VCD_DATA_TRACK_OFFSET + i_title].i_lba;
 
     /* Update current seekpoint */
     for( i_seekpoint = 0; i_seekpoint < p_sys->titles[i_title].count; i_seekpoint++ )
@@ -448,20 +495,20 @@ static int Seek( stream_t *p_access, uint64_t i_pos )
 static int EntryPoints( stream_t *p_access )
 {
     access_sys_t *p_sys = p_access->p_sys;
-    const vcddev_toc_t *p_toc = p_sys->p_toc;
-    uint8_t      sector[VCD_DATA_SIZE];
+    const vlc_cd_toc_t *p_toc = p_sys->p_toc;
+    uint8_t      sector[CD_RAW_SECTOR_SIZE];
 
     entries_sect_t entries;
     int i_nb;
 
     /* Read the entry point sector */
-    if( ioctl_ReadSectors( VLC_OBJECT(p_access), p_sys->vcddev,
+    if( vlc_cd_ReadSectors( p_sys->vlc_cd,
         VCD_ENTRIES_SECTOR, sector, 1, VCD_TYPE ) < 0 )
     {
         msg_Err( p_access, "could not read entry points sector" );
         return VLC_EGENERIC;
     }
-    memcpy( &entries, sector, CD_SECTOR_SIZE );
+    memcpy( &entries, &sector[CD_ROM_XA_SECTOR_HEADER_SIZE], CD_ROM_MODE1_DATA_SIZE );
 
     i_nb = GetWBE( &entries.i_entries_nb );
     if( i_nb == 0 || i_nb > 500 /* See 6.3.2 */ )
@@ -490,12 +537,18 @@ static int EntryPoints( stream_t *p_access )
         msg_Dbg( p_access, "Entry[%d] title=%d sector=%d",
                  i, i_title, i_sector );
 
-        p_sys->titles[i_title].seekpoints = xrealloc(
-            p_sys->titles[i_title].seekpoints,
-            sizeof( uint64_t ) * (p_sys->titles[i_title].count + 1) );
+        if( p_sys->titles[i_title].count % 25 == 0 )
+        {
+            uint64_t *alloc = realloc( p_sys->titles[i_title].seekpoints,
+                                       sizeof( uint64_t ) * (p_sys->titles[i_title].count + 25) );
+            if( !alloc )
+                break;
+            p_sys->titles[i_title].seekpoints = alloc;
+        }
         p_sys->titles[i_title].seekpoints[p_sys->titles[i_title].count++] =
             (i_sector - p_toc->p_sectors[i_title+1].i_lba) * VCD_DATA_SIZE;
     }
 
     return VLC_SUCCESS;
 }
+

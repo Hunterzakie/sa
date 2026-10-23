@@ -31,141 +31,101 @@ enum {
     VCD_TYPE  = 1,
 };
 
-/* size of a CD sector */
-#define CD_RAW_SECTOR_SIZE  2352
+/* size of a CD sector / Red Book IEC-60908 */
+#define CD_RAW_PHYSICAL_BLOCK_SIZE   2448
+#define CD_RAW_SUBCHANNELS_DATA_SIZE 96
+#define CD_RAW_SECTOR_SIZE (CD_RAW_PHYSICAL_BLOCK_SIZE-CD_RAW_SUBCHANNELS_DATA_SIZE) // 2352
+
+#define CD_RAW_FRAMES_PER_SECOND 75
+#define CD_RAW_PREGAP_SECONDS    2
+
+/* Subchannels control flag */
+#define CD_CHANNEL_Q_CTRL_MASK_PRE_EMPHASIS   0x01
+#define CD_CHANNEL_Q_CTRL_MASK_COPY_PERMITTED 0x02
+#define CD_CHANNEL_Q_CTRL_MASK_DATA           0x04
+#define CD_CHANNEL_Q_CTRL_MASK_4CH            0x08
+
+/* CDROM ISO/IEC 10149 Yellow Book */
+#define CD_ROM_SYNC_PATTERN_SIZE 12
+#define CD_ROM_MODE_HEADER_SIZE  4
+#define CD_ROM_SECTOR_HEADER_SIZE (CD_ROM_SYNC_PATTERN_SIZE+CD_ROM_MODE_HEADER_SIZE)
 #define CD_ROM_MODE1_DATA_SIZE 2048
 #define CD_ROM_MODE2_DATA_SIZE 2336
 
-#define CD_ROM_XA_MODE2_F1_DATA_SIZE 2048
-#define CD_ROM_XA_MODE2_F2_DATA_SIZE 2324
+/* CDROM-XA ISO/IEC 10149 Yellow Book Annex */
+#define CD_ROM_XA_SECTOR_SUBHEADER_SIZE 8
+#define CD_ROM_XA_SECTOR_HEADER_SIZE (CD_ROM_SECTOR_HEADER_SIZE+CD_ROM_XA_SECTOR_SUBHEADER_SIZE)
+#define CD_ROM_XA_MODE2_FORM1_DATA_SIZE 2048
+#define CD_ROM_XA_MODE2_FORM2_DATA_SIZE 2324
 
-#define CD_ROM_XA_FRAMES   75
-#define CD_ROM_XA_INTERVAL ((60 + 90 + 2) * CD_ROM_XA_FRAMES)
+/* Orange Book / ECMA-394 ECMA-395 */
+#define CD_MULTISESSION_LEADOUT_SECS 60   // Secondary session Lead-Out
+#define CD_MULTISESSION_LEADIN_SECS  90   // Secondary session Lead-In
 
-/* Subcode control flag */
-#define CD_ROM_SUBCODE_NONE           0x00
-#define CD_ROM_SUBCODE_PRE_EMPHASIS   0x01
-#define CD_ROM_SUBCODE_COPY_PERMITTED 0x02
-#define CD_ROM_SUBCODE_DATA           0x04
-#define CD_ROM_SUBCODE_4CH            0x08
-#define CD_ROM_SUBCODE_SCMS           0x10
-
-/* size of a CD sector */
-#define CD_SECTOR_SIZE      CD_ROM_MODE1_DATA_SIZE
-
-/* where the data start on a VCD sector */
-#define VCD_DATA_START      24
-/* size of the available data on a VCD sector */
-#define VCD_DATA_SIZE       CD_ROM_XA_MODE2_F2_DATA_SIZE
-/* size of a VCD sector, header and tail included */
-#define VCD_SECTOR_SIZE     CD_RAW_SECTOR_SIZE
-/* sector containing the entry points */
-#define VCD_ENTRIES_SECTOR  151
-
-/* size of the available data on a CDDA sector */
-#define CDDA_DATA_SIZE      CD_RAW_SECTOR_SIZE
-/* size of a CDDA sector, header and tail included */
-#define CDDA_SECTOR_SIZE    CD_RAW_SECTOR_SIZE
-/* number of audio frames per second */
-#define CD_ROM_CDDA_FRAMES  ((44100 * 4) / CDDA_DATA_SIZE)
 
 /*****************************************************************************
  * Misc. Macros
  *****************************************************************************/
 static inline int MSF_TO_LBA(uint8_t min, uint8_t sec, uint8_t frame)
 {
-    static_assert(((44100 * 4) % CDDA_DATA_SIZE) == 0, "bogus CDDA_DATA_SIZE");
-    return (int)(frame + CD_ROM_CDDA_FRAMES * (sec + 60 * min));
+    return (int)(frame + CD_RAW_FRAMES_PER_SECOND * (sec + 60 * min));
 }
 static inline int MSF_TO_LBA2(uint8_t min, uint8_t sec, uint8_t frame)
 {
-    return (int)(frame + CD_ROM_CDDA_FRAMES * (sec -2 + 60 * min));
+    return (int)(frame + CD_RAW_FRAMES_PER_SECOND * (sec -CD_RAW_PREGAP_SECONDS + 60 * min));
 }
 
 /* Converts BCD to Binary data */
 #define BCD_TO_BIN(i) \
     (uint8_t)((uint8_t)(0xf & (uint8_t)i)+((uint8_t)10*((uint8_t)i >> 4)))
 
-typedef struct vcddev_s vcddev_t;
+typedef struct vlc_cd_s vlc_cd_t;
 typedef struct
 {
     int i_lba;
     int i_control;
-} vcddev_sector_t;
+} vlc_cd_sector_t;
 
 typedef struct
 {
     int i_tracks;
-    vcddev_sector_t *p_sectors;
+    vlc_cd_sector_t *p_sectors;
     int i_first_track;
     int i_last_track;
-} vcddev_toc_t;
+} vlc_cd_toc_t;
 
-static inline vcddev_toc_t * vcddev_toc_New( void )
+static inline vlc_cd_toc_t * vlc_cd_toc_New( void )
 {
-    return calloc(1, sizeof(vcddev_toc_t));
+    return calloc(1, sizeof(vlc_cd_toc_t));
 }
 
-static inline void vcddev_toc_Reset( vcddev_toc_t *toc )
+static inline void vlc_cd_toc_Reset( vlc_cd_toc_t *toc )
 {
     free(toc->p_sectors);
     memset(toc, 0, sizeof(*toc));
 }
 
-static inline void vcddev_toc_Free( vcddev_toc_t *toc )
+static inline void vlc_cd_toc_Free( vlc_cd_toc_t *toc )
 {
     free(toc->p_sectors);
     free(toc);
 }
 
 /*****************************************************************************
- * structure to store minute/second/frame locations
- *****************************************************************************/
-typedef struct msf_s
-{
-    uint8_t minute;
-    uint8_t second;
-    uint8_t frame;
-} msf_t;
-
-/*****************************************************************************
- * entries_sect structure: the sector containing entry points
- *****************************************************************************/
-typedef struct entries_sect_s
-{
-    char psz_id[8];                                 /* "ENTRYVCD" */
-    uint8_t i_version;                              /* 0x02 VCD2.0
-                                                       0x01 SVCD  */
-    uint8_t i_sys_prof_tag;                         /* 0x01 if VCD1.1
-                                                       0x00 else */
-    uint16_t i_entries_nb;                          /* entries number <= 500 */
-
-    struct
-    {
-        uint8_t i_track;                            /* track number */
-        msf_t   msf;                                /* msf location
-                                                       (in BCD format) */
-    } entry[500];
-    uint8_t zeros[36];                              /* should be 0x00 */
-} entries_sect_t;
-
-/*****************************************************************************
  * Prototypes
  *****************************************************************************/
-vcddev_t *ioctl_Open         ( vlc_object_t *, const char * );
-void      ioctl_Close        ( vlc_object_t *, vcddev_t * );
-vcddev_toc_t * ioctl_GetTOC  ( vlc_object_t *, const vcddev_t * );
+vlc_cd_t *vlc_cd_Open         ( vlc_object_t *, const char * );
+void      vlc_cd_Close        ( vlc_cd_t * );
+vlc_cd_toc_t * vlc_cd_GetTOC  ( vlc_cd_t * );
 
 /* Returns:
  *    0  success
  *   -1  recoverable failure, or at least not known not to be (ex: a scratch)
  *   -2  irrecoverable failure (ex: disc ejected, device unplugged) */
-int       ioctl_ReadSectors  ( vlc_object_t *, const vcddev_t *,
-                               int, uint8_t *, int, int );
+int       vlc_cd_ReadSectors  ( vlc_cd_t *, int, uint8_t *, int, int );
 
 /* CDDA only
  * The track 0 is for album meta data */
-int       ioctl_GetCdText( vlc_object_t *, const vcddev_t *,
-                           vlc_meta_t ***ppp_tracks, int *pi_tracks );
+int       vlc_cd_GetCdText( vlc_cd_t *, vlc_meta_t ***ppp_tracks, int *pi_tracks );
 
 #endif /* VLC_CDROM_H */
