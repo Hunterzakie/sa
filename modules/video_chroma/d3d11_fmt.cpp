@@ -168,11 +168,16 @@ static LARGE_INTEGER D3D11_GetSystemDriver(vlc_object_t *obj, d3d11_device_t *d3
     BSTR bRootNamespace = SysAllocString(L"ROOT\\CIMV2");
     BSTR bWQL = SysAllocString(L"WQL");
 
-    WCHAR lookup[256];
-    _snwprintf(lookup, ARRAY_SIZE(lookup),
+    WCHAR lookup[256+1] = {};
+    if(_snwprintf(lookup, ARRAY_SIZE(lookup)-1,
                L"SELECT * FROM Win32_VideoController WHERE PNPDeviceID LIKE 'PCI\\\\VEN_%04X&DEV_%04X&SUBSYS_%08X&REV_%02X%%'",
                d3d_dev->adapterDesc.VendorId, d3d_dev->adapterDesc.DeviceId,
-               d3d_dev->adapterDesc.SubSysId, d3d_dev->adapterDesc.Revision);
+               d3d_dev->adapterDesc.SubSysId, d3d_dev->adapterDesc.Revision) < 0)
+    {
+        SysFreeString(bRootNamespace);
+        SysFreeString(bWQL);
+        return {};
+    }
     BSTR bVideoController = SysAllocString(lookup);
 
     hr = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
