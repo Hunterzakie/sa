@@ -41,6 +41,8 @@
  *****************************************************************************/
 static int  OpenH264 ( vlc_object_t * );
 static int  OpenHEVC ( vlc_object_t * );
+static int  OpenH264Scan ( vlc_object_t * );
+static int  OpenHEVCScan ( vlc_object_t * );
 static void Close( vlc_object_t * );
 
 #define FPS_TEXT N_("Frames per Second")
@@ -67,6 +69,20 @@ vlc_module_begin ()
         set_callbacks( OpenHEVC, Close )
         add_shortcut( "hevc", "h265" )
 
+    add_submodule()
+        set_shortname( "H264 scan")
+        set_subcategory( SUBCAT_INPUT_DEMUX )
+        set_description( N_("H264 video content scan" ) )
+        set_capability( "demux", 1 )
+        set_callbacks( OpenH264Scan, Close )
+
+    add_submodule()
+        set_shortname( "HEVC scan")
+        set_subcategory( SUBCAT_INPUT_DEMUX )
+        set_description( N_("HEVC/H.265 video content scan" ) )
+        set_capability( "demux", 1 )
+        set_callbacks( OpenHEVCScan, Close )
+
 vlc_module_end ()
 
 /*****************************************************************************
@@ -92,27 +108,40 @@ static int Control( demux_t *, int, va_list );
 #define H26X_MIN_PEEK    (4 + 7 + 10)
 #define H26X_MAX_PEEK    (H26X_PEEK_CHUNK * 8) /* max data to check */
 #define H26X_NAL_COUNT   8 /* max # or NAL to check */
+#define H26X_SCAN_MAX_PEEK (1024 * 1024)
 
 /*****************************************************************************
  * Probing
  *****************************************************************************/
-typedef struct
+typedef struct hxxx_probe_ctx_t hxxx_probe_ctx_t;
+struct hxxx_probe_ctx_t
 {
+    int(*pf_probe)(const uint8_t *, size_t, hxxx_probe_ctx_t *);
+    bool(*pf_is_valid_nal)(const uint8_t *, hxxx_probe_ctx_t *);
     bool b_sps;
     bool b_pps;
     bool b_vps;
-} hevc_probe_ctx_t;
+};
 
-typedef struct
+static bool IsValidH264NAL( const uint8_t *p, hxxx_probe_ctx_t *p_ctx )
 {
-    bool b_sps;
-    bool b_pps;
-} h264_probe_ctx_t;
+    (void) p_ctx;
+    if( p[0] & 0x80 )
+        return false;
+    enum h264_nal_unit_type_e i_type = h264_getNALType( p );
+    return i_type >= H264_NAL_SLICE && i_type <= H264_NAL_SUBSET_SPS;
+}
 
-static int ProbeHEVC( const uint8_t *p_peek, size_t i_peek, void *p_priv )
+static bool IsValidHEVCNAL( const uint8_t *p, hxxx_probe_ctx_t *p_ctx )
 {
-    hevc_probe_ctx_t *p_ctx = (hevc_probe_ctx_t *) p_priv;
+    (void) p_ctx;
+    if( p[0] & 0x80 )
+        return false;
+    return hevc_getNALType( p ) <= HEVC_NAL_SUFF_SEI;
+}
 
+static int ProbeHEVC( const uint8_t *p_peek, size_t i_peek, hxxx_probe_ctx_t *p_ctx )
+{
     if( i_peek < 2 )
         return -1;
 
@@ -168,10 +197,8 @@ static int ProbeHEVC( const uint8_t *p_peek, size_t i_peek, void *p_priv )
     return 0; /* Probe more */
 }
 
-static int ProbeH264( const uint8_t *p_peek, size_t i_peek, void *p_priv )
+static int ProbeH264( const uint8_t *p_peek, size_t i_peek, hxxx_probe_ctx_t *p_ctx )
 {
-    h264_probe_ctx_t *p_ctx = (h264_probe_ctx_t *) p_priv;
-
     if( i_peek < 1 )
         return -1;
     const uint8_t i_nal_type = p_peek[0] & 0x1F;
@@ -230,6 +257,52 @@ static int ProbeH264( const uint8_t *p_peek, size_t i_peek, void *p_priv )
     return 0;
 }
 
+static int ScanAnnexB( demux_t *p_demux, hxxx_probe_ctx_t *p_ctx )
+{
+    static const uint8_t annexb_startcode3[] = { 0, 0, 1 };
+    const uint8_t *p_peek;
+    size_t i_scanned = 0;
+
+    /* Peek H26X_MAX_PEEK, search for a valid NAL sequence order (via
+     * pb_probe). If not found but some valid nal was found, peek for double
+     * amount and scan again. Repeat until H26X_SCAN_MAX_PEEK. */
+    bool b_found_nal = false;
+    for( size_t i_target = H26X_MAX_PEEK;
+         i_target <= H26X_SCAN_MAX_PEEK;
+         i_target *= 2 )
+    {
+        ssize_t i_peek = vlc_stream_Peek( p_demux->s, &p_peek, i_target );
+        if( i_peek < 3 )
+            break;
+
+        for( size_t i = i_scanned; i + 3 < (size_t)i_peek; i++ )
+        {
+            if( memcmp( &p_peek[i], annexb_startcode3, 3 ) )
+                continue;
+
+            int i_ret = p_ctx->pf_probe( &p_peek[i + 3], i_peek - i - 3, p_ctx );
+            if( i_ret == 1 )
+                return 1;
+            else if( i_ret == -1 )
+            {
+                /* Reset state, sps/pps/vps must follow each others */
+                p_ctx->b_sps = p_ctx->b_pps = p_ctx->b_vps = false;
+            }
+
+            if( !b_found_nal && p_ctx->pf_is_valid_nal( &p_peek[i + 3], p_ctx ) )
+                b_found_nal = true; /* continue the scan until H26X_SCAN_MAX_PEEK */
+        }
+
+        assert( i_peek >= 2 );
+        i_scanned = (size_t)i_peek - 2;
+
+        if( !b_found_nal )
+            break;
+    }
+
+    return 0;
+}
+
 /*****************************************************************************
  * Shared Open code
  *****************************************************************************/
@@ -247,8 +320,7 @@ static inline bool check_Property( demux_t *p_demux, const char **pp_psz,
 
 static int GenericOpen( demux_t *p_demux, const char *psz_module,
                         vlc_fourcc_t i_codec,
-                        int(*pf_probe)(const uint8_t *, size_t, void *),
-                        void *p_ctx,
+                        hxxx_probe_ctx_t *p_ctx,
                         const char **pp_psz_exts,
                         const char **pp_psz_mimes )
 {
@@ -257,6 +329,15 @@ static int GenericOpen( demux_t *p_demux, const char *psz_module,
     es_format_t fmt;
     uint8_t annexb_startcode[] = {0,0,0,1};
     int i_ret = 0;
+
+    if( pp_psz_exts == NULL )
+    {
+        /* Extensive annex-b scan if no extensions (low priority demux) */
+        i_ret = ScanAnnexB( p_demux, p_ctx );
+        if( i_ret < 1 )
+            return VLC_EGENERIC;
+        goto success;
+    }
 
     /* Restrict by type first */
     if( !p_demux->obj.force &&
@@ -303,7 +384,7 @@ static int GenericOpen( demux_t *p_demux, const char *psz_module,
             if( b_synced )
             {
                 p_probe = &p_peek[i_probe_offset];
-                i_ret = pf_probe( p_probe, (size_t)(i_peek - i_probe_offset), p_ctx );
+                i_ret = p_ctx->pf_probe( p_probe, (size_t)(i_peek - i_probe_offset), p_ctx );
             }
 
             if( i_ret != 0 )
@@ -326,6 +407,7 @@ static int GenericOpen( demux_t *p_demux, const char *psz_module,
                  "continuing anyway", psz_module );
     }
 
+success:
     p_demux->pf_demux  = Demux;
     p_demux->pf_control= Control;
     p_demux->p_sys     = p_sys = malloc( sizeof( demux_sys_t ) );
@@ -375,22 +457,36 @@ static int GenericOpen( demux_t *p_demux, const char *psz_module,
  *****************************************************************************/
 static int OpenH264( vlc_object_t * p_this )
 {
-    h264_probe_ctx_t ctx = { 0, 0 };
+    hxxx_probe_ctx_t ctx = { ProbeH264, IsValidH264NAL, false, false, false };
     const char *rgi_psz_ext[] = { ".h264", ".264", ".bin", ".bit", ".raw", NULL };
     const char *rgi_psz_mime[] = { "video/H264", "video/h264", "video/avc", NULL };
 
-    return GenericOpen( (demux_t*)p_this, "h264", VLC_CODEC_H264, ProbeH264,
+    return GenericOpen( (demux_t*)p_this, "h264", VLC_CODEC_H264,
                         &ctx, rgi_psz_ext, rgi_psz_mime );
 }
 
 static int OpenHEVC( vlc_object_t * p_this )
 {
-    hevc_probe_ctx_t ctx = { 0, 0, 0 };
+    hxxx_probe_ctx_t ctx = { ProbeHEVC, IsValidHEVCNAL, false, false, false };
     const char *rgi_psz_ext[] = { ".h265", ".265", ".hevc", ".bin", ".bit", ".raw", NULL };
     const char *rgi_psz_mime[] = { "video/h265", "video/hevc", "video/HEVC", NULL };
 
-    return GenericOpen( (demux_t*)p_this, "hevc", VLC_CODEC_HEVC, ProbeHEVC,
+    return GenericOpen( (demux_t*)p_this, "hevc", VLC_CODEC_HEVC,
                         &ctx, rgi_psz_ext, rgi_psz_mime );
+}
+
+static int OpenH264Scan( vlc_object_t * p_this )
+{
+    hxxx_probe_ctx_t ctx = { ProbeH264, IsValidH264NAL, false, false, false };
+    return GenericOpen( (demux_t*)p_this, "h264", VLC_CODEC_H264,
+                        &ctx, NULL, NULL );
+}
+
+static int OpenHEVCScan( vlc_object_t * p_this )
+{
+    hxxx_probe_ctx_t ctx = { ProbeHEVC, IsValidHEVCNAL, false, false, false };
+    return GenericOpen( (demux_t*)p_this, "hevc", VLC_CODEC_HEVC,
+                        &ctx, NULL, NULL );
 }
 
 /*****************************************************************************
