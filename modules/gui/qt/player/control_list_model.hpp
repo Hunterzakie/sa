@@ -61,6 +61,8 @@ public:
         LANG_BUTTON,
         MENU_BUTTON, // deprecated
         BACK_BUTTON, // deprecated
+        TITLE_PREVIOUS_BUTTON,
+        TITLE_NEXT_BUTTON,
         CHAPTER_PREVIOUS_BUTTON,
         CHAPTER_NEXT_BUTTON,
         BUTTON_MAX,

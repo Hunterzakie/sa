@@ -1207,6 +1207,8 @@ libqml_module_playercontrols_a_QML = \
 	player/qml/controlbarcontrols/AtoBButton.qml \
 	player/qml/controlbarcontrols/BackButton.qml \
 	player/qml/controlbarcontrols/BookmarkButton.qml \
+	player/qml/controlbarcontrols/TitleNextButton.qml \
+	player/qml/controlbarcontrols/TitlePreviousButton.qml \
 	player/qml/controlbarcontrols/ChapterNextButton.qml \
 	player/qml/controlbarcontrols/ChapterPreviousButton.qml \
 	player/qml/controlbarcontrols/DvdMenuButton.qml \
