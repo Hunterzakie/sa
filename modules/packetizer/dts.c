@@ -210,7 +210,7 @@ static block_t *PacketizeBlock( decoder_t *p_dec, block_t **pp_block )
             /* Check if frame is valid and get frame info */
             if( vlc_dts_header_Parse( &p_sys->first, p_header,
                                       VLC_DTS_HEADER_SIZE ) != VLC_SUCCESS
-             || p_sys->first.i_frame_size == 0 )
+             || p_sys->first.i_frame_size < VLC_DTS_HEADER_SIZE )
             {
                 msg_Dbg( p_dec, "emulated sync word" );
                 block_SkipByte( &p_sys->bytestream );
