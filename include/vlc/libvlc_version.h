@@ -21,7 +21,7 @@
 /**
  * \file
  * This file defines version macros for LibVLC.
- * Those macros are primilarly intended for conditional (pre)compilation.
+ * Those macros are primarily intended for conditional (pre)compilation.
  * To get the run-time LibVLC version, use libvlc_get_version() instead
  * (the run-time version may be more recent than build-time one, thanks to
  * backward binary compatibility).

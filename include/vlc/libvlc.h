@@ -315,7 +315,7 @@ LIBVLC_API void libvlc_log_get_context(const libvlc_log_t *ctx,
  * This function retrieves meta-information about a log message:
  * - the type name of the VLC object emitting the message,
  * - the object header if any, and
- * - a temporaly-unique object identifier.
+ * - a temporally-unique object identifier.
  *
  * This information is mainly meant for <b>manual</b> troubleshooting.
  *
@@ -328,7 +328,7 @@ LIBVLC_API void libvlc_log_get_context(const libvlc_log_t *ctx,
  * \param ctx message context (as passed to the @ref libvlc_log_cb callback)
  * \param name object name storage (or NULL) [OUT]
  * \param header object header (or NULL) [OUT]
- * \param id temporarily-unique object identifier (or 0) [OUT]
+ * \param id temporally-unique object identifier (or 0) [OUT]
  * \warning The returned module name and source code file name, if non-NULL,
  * are only valid until the logging callback returns.
  *
@@ -373,6 +373,7 @@ LIBVLC_API void libvlc_log_unset( libvlc_instance_t *p_instance );
  * This function is thread-safe: it will wait for any pending callbacks
  * invocation to complete.
  *
+ * \param p_instance libvlc instance
  * \param cb callback function pointer
  * \param data opaque data pointer for the callback function
  *
@@ -381,7 +382,6 @@ LIBVLC_API void libvlc_log_unset( libvlc_instance_t *p_instance );
  *
  * \warning A deadlock may occur if this function is called from the callback.
  *
- * \param p_instance libvlc instance
  * \version LibVLC 2.1.0 or later
  */
 LIBVLC_API void libvlc_log_set( libvlc_instance_t *p_instance,
