@@ -158,6 +158,54 @@ vlc_media_source_Delete(vlc_media_source_t *ms)
     free(priv);
 }
 
+/* Entry configuration callbacks. */
+
+const vlc_sd_field_desc_t *
+vlc_media_source_ConfigDescribe(vlc_media_source_t *ms, size_t *count)
+{
+    services_discovery_t *sd = ms_priv(ms)->sd;
+
+    if (sd->config_ops == NULL)
+    {
+        *count = 0;
+        return NULL;
+    }
+    return sd->config_ops->describe(sd, count);
+}
+
+vlc_sd_input_t *
+vlc_media_source_ConfigList(vlc_media_source_t *ms, size_t *count)
+{
+    services_discovery_t *sd = ms_priv(ms)->sd;
+
+    if (sd->config_ops == NULL)
+    {
+        *count = 0;
+        return NULL;
+    }
+    return sd->config_ops->list(sd, count);
+}
+
+int
+vlc_media_source_ConfigAdd(vlc_media_source_t *ms, const vlc_sd_input_t *entry)
+{
+    services_discovery_t *sd = ms_priv(ms)->sd;
+
+    if (sd->config_ops == NULL)
+        return VLC_EGENERIC;
+    return sd->config_ops->add(sd, entry);
+}
+
+int
+vlc_media_source_ConfigRemove(vlc_media_source_t *ms, int id)
+{
+    services_discovery_t *sd = ms_priv(ms)->sd;
+
+    if (sd->config_ops == NULL)
+        return VLC_EGENERIC;
+    return sd->config_ops->remove(sd, id);
+}
+
 void
 vlc_media_source_Hold(vlc_media_source_t *ms)
 {
@@ -293,7 +341,9 @@ vlc_media_source_provider_List(vlc_media_source_provider_t *provider,
 {
     char **longnames;
     int *categories;
-    char **names = vlc_sd_GetNames(provider, &longnames, &categories);
+    int *capabilities;
+    char **names = vlc_sd_GetNames(provider, &longnames, &categories,
+                                   &capabilities);
     if (!names)
         /* vlc_sd_GetNames() returns NULL both on error or no result */
         return NULL;
@@ -317,6 +367,7 @@ vlc_media_source_provider_List(vlc_media_source_provider_t *provider,
             .name = names[i],
             .longname = longnames[i],
             .category = categories[i],
+            .capabilities = capabilities[i],
         };
         bool ok = vlc_vector_push(&list->vec, meta);
         if (unlikely(!ok)) {
@@ -335,6 +386,7 @@ vlc_media_source_provider_List(vlc_media_source_provider_t *provider,
     free(names);
     free(longnames);
     free(categories);
+    free(capabilities);
 
     return list;
 }

@@ -84,7 +84,7 @@ class AboutDialog;
 class MediaInfoDialog;
 class PlaylistsDialog;
 class BookmarksDialog;
-class PodcastConfigDialog;
+class SDConfigDialog;
 class PluginDialog;
 class EpgDialog;
 class UpdateDialog;
@@ -115,7 +115,6 @@ public:
     Q_PROPERTY(bool aboutDialogVisible READ aboutDialogVisible NOTIFY aboutDialogVisibleChanged FINAL)
     Q_PROPERTY(bool mediaInfoDialogVisible READ mediaInfoDialogVisible NOTIFY mediaInfoDialogVisibleChanged FINAL)
     Q_PROPERTY(bool bookmarkDialogVisible READ bookmarkDialogVisible NOTIFY bookmarkDialogVisibleChanged FINAL)
-    Q_PROPERTY(bool podcastDialogVisible READ podcastDialogVisible NOTIFY podcastDialogVisibleChanged FINAL)
     Q_PROPERTY(bool pluginDialogVisible READ pluginDialogVisible NOTIFY pluginDialogVisibleChanged FINAL)
     Q_PROPERTY(bool egpDialogVisible READ egpDialogVisible NOTIFY egpDialogVisibleChanged FINAL)
     Q_PROPERTY(bool prefsDialogVisible READ prefsDialogVisible NOTIFY prefsDialogVisibleChanged FINAL)
@@ -182,7 +181,7 @@ private:
     std::unique_ptr<AboutDialog> m_aboutDialog;
     std::unique_ptr<MediaInfoDialog> m_mediaInfoDialog;
     std::unique_ptr<BookmarksDialog> m_bookmarkDialog;
-    std::unique_ptr<PodcastConfigDialog> m_podcastDialog;
+    std::map<QString, std::unique_ptr<SDConfigDialog>> m_sdConfigDialogs;
     std::unique_ptr<PluginDialog> m_pluginDialog;
     std::unique_ptr<EpgDialog> m_egpDialog;
 #ifdef UPDATE_CHECK
@@ -230,7 +229,7 @@ public slots:
 #endif
     void aboutDialog();
     void gotoTimeDialog();
-    void podcastConfigureDialog();
+    void serviceConfigureDialog( const QString& name, const QString& title );
     void pluginDialog();
     void epgDialog();
     void setPopupMenu();
@@ -277,7 +276,6 @@ public:
     bool aboutDialogVisible() const;
     bool mediaInfoDialogVisible() const;
     bool bookmarkDialogVisible() const;
-    bool podcastDialogVisible() const;
     bool pluginDialogVisible() const;
     bool egpDialogVisible() const;
     bool prefsDialogVisible() const;
@@ -300,7 +298,6 @@ signals:
     void aboutDialogVisibleChanged();
     void mediaInfoDialogVisibleChanged();
     void bookmarkDialogVisibleChanged();
-    void podcastDialogVisibleChanged();
     void pluginDialogVisibleChanged();
     void egpDialogVisibleChanged();
     void prefsDialogVisibleChanged();

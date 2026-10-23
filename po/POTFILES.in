@@ -713,8 +713,6 @@ modules/gui/qt/dialogs/playlists/playlists.cpp
 modules/gui/qt/dialogs/playlists/playlists.hpp
 modules/gui/qt/dialogs/plugins/plugins.cpp
 modules/gui/qt/dialogs/plugins/plugins.hpp
-modules/gui/qt/dialogs/podcast/podcast_configuration.cpp
-modules/gui/qt/dialogs/podcast/podcast_configuration.hpp
 modules/gui/qt/dialogs/preferences/complete_preferences.cpp
 modules/gui/qt/dialogs/preferences/complete_preferences.hpp
 modules/gui/qt/dialogs/preferences/expert_model.cpp
@@ -727,6 +725,8 @@ modules/gui/qt/dialogs/preferences/preferences_widgets.cpp
 modules/gui/qt/dialogs/preferences/preferences_widgets.hpp
 modules/gui/qt/dialogs/preferences/simple_preferences.cpp
 modules/gui/qt/dialogs/preferences/simple_preferences.hpp
+modules/gui/qt/dialogs/services/sd_configuration.cpp
+modules/gui/qt/dialogs/services/sd_configuration.hpp
 modules/gui/qt/dialogs/sout/convert.cpp
 modules/gui/qt/dialogs/sout/convert.hpp
 modules/gui/qt/dialogs/sout/profile_selector.cpp
@@ -1411,7 +1411,6 @@ share/org.videolan.vlc.appdata.xml.in.in
 #modules/gui/qt/dialogs/open/ui_open_disk.h
 #modules/gui/qt/dialogs/open/ui_open_file.h
 #modules/gui/qt/dialogs/open/ui_open_net.h
-#modules/gui/qt/dialogs/podcast/ui_podcast_configuration.h
 #modules/gui/qt/dialogs/sout/ui_profiles.h
 #modules/gui/qt/dialogs/sout/ui_sout.h
 #modules/gui/qt/dialogs/preferences/ui_sprefs_audio.h

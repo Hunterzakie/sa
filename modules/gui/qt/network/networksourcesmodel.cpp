@@ -45,6 +45,7 @@ struct SourceItem
         : isDummy(false)
         , name(qfu(meta->name))
         , longName(qfu(meta->longname))
+        , capabilities(meta->capabilities)
     {
         if ( name.startsWith( "podcast" ) )
         {
@@ -68,6 +69,7 @@ struct SourceItem
     QString name;
     QString longName;
     QUrl artworkUrl;
+    int capabilities = 0;
 };
 
 using SourceItemPtr = std::shared_ptr<SourceItem>;
@@ -212,6 +214,8 @@ QVariant NetworkSourcesModel::data( const QModelIndex& index, int role ) const
         return item->isDummy ? TYPE_DUMMY : TYPE_SOURCE;
     case SOURCE_ARTWORK:
         return item->artworkUrl;
+    case SOURCE_CAPABILITIES:
+        return item->capabilities;
     default:
         return {};
     }
@@ -223,7 +227,8 @@ QHash<int, QByteArray> NetworkSourcesModel::roleNames() const
         { SOURCE_NAME, QByteArrayLiteral("name") },
         { SOURCE_LONGNAME, QByteArrayLiteral("long_name") },
         { SOURCE_TYPE, QByteArrayLiteral("type") },
-        { SOURCE_ARTWORK, QByteArrayLiteral("artwork") }
+        { SOURCE_ARTWORK, QByteArrayLiteral("artwork") },
+        { SOURCE_CAPABILITIES, QByteArrayLiteral("capabilities") }
     };
 }
 

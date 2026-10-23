@@ -259,6 +259,48 @@ typedef struct vlc_media_source_t
 } vlc_media_source_t;
 
 /**
+ * Entry configuration of the configurable services discovery.
+ */
+
+/**
+ * Describe what one entry of this media source is made of.
+ *
+ * \param count [out] number of fields in the returned schema, 0 when the media
+ *              source is not configurable
+ * \return the schema of an entry, owned by the SD, or NULL when it is not
+ *         configurable
+ */
+VLC_API const vlc_sd_field_desc_t *
+vlc_media_source_ConfigDescribe(vlc_media_source_t *, size_t *count);
+
+/**
+ * List the entries currently configured.
+ *
+ * \param count [out] number of entries returned/
+ * \return the entries, to be released with vlc_sd_input_ListFree(), or NULL when
+ *         the list is empty, on error, or when the SD is not configurable
+ */
+VLC_API vlc_sd_input_t *
+vlc_media_source_ConfigList(vlc_media_source_t *, size_t *count);
+
+/**
+ * Add an entry.
+ *
+ * \return the id assigned to the new entry, which is strictly positive, or a
+ *         negative error code
+ */
+VLC_API int
+vlc_media_source_ConfigAdd(vlc_media_source_t *, const vlc_sd_input_t *entry);
+
+/**
+ * Remove the entry designated by \p id.
+ */
+VLC_API int
+vlc_media_source_ConfigRemove(vlc_media_source_t *, int id);
+
+/** @} */
+
+/**
  * Increase the media source reference count.
  */
 VLC_API void
@@ -301,6 +343,7 @@ struct vlc_media_source_meta
     char *name;
     char *longname;
     enum services_discovery_category_e category;
+    int capabilities; // bitmask of services_discovery_capability_e
 };
 
 /** List of media source metadata (opaque). */

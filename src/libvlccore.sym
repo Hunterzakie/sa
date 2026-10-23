@@ -719,6 +719,7 @@ vlc_sd_Create
 vlc_sd_Destroy
 vlc_sd_GetNames
 vlc_sd_probe_Add
+vlc_sd_probe_AddCap
 vlc_testcancel
 vlc_thread_id
 vlc_threadvar_create
@@ -1020,6 +1021,10 @@ vlc_playlist_Export
 vlc_playlist_SetMediaStoppedAction
 vlc_replay_gain_CopyFromMeta
 vlc_intf_GetMainPlaylist
+vlc_media_source_ConfigAdd
+vlc_media_source_ConfigDescribe
+vlc_media_source_ConfigList
+vlc_media_source_ConfigRemove
 vlc_media_source_Hold
 vlc_media_source_Release
 vlc_media_source_provider_Get

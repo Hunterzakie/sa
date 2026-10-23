@@ -9,7 +9,6 @@ open/ui_open_capture.h
 open/ui_open_disk.h
 open/ui_open_file.h
 open/ui_open_net.h
-podcast/ui_podcast_configuration.h
 messages/ui_messages_panel.h
 preferences/ui_sprefs_audio.h
 preferences/ui_sprefs_input.h

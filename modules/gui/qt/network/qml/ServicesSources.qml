@@ -54,13 +54,20 @@ Widgets.PageExt {
         basePictureHeight: VLCStyle.gridCover_network_height
         subtitleHeight: 0
 
-        model: sourcesModel
+    model: sourcesModel
 
-        delegate: Widgets.GridItem {
-            property var model: ({})
-            property int index: -1
-            readonly property bool is_dummy: model.type === NetworkSourcesModel.TYPE_DUMMY
-            readonly property bool is_podcast: !is_dummy && model.name && model.name.startsWith("podcast")
+    headerDelegate: Widgets.ViewHeader {
+        view: root
+
+        text: qsTr("Services")
+    }
+
+    delegate: Widgets.GridItem {
+
+        property var model: ({})
+        property int index: -1
+        readonly property bool is_dummy: model.type === NetworkSourcesModel.TYPE_DUMMY
+        readonly property bool is_configurable_service: !is_dummy && (model.capabilities & NetworkSourcesModel.SD_CAP_CONFIGURABLE)
 
             width: grid.cellWidth;
             height: grid.cellHeight;
@@ -114,12 +121,14 @@ Widgets.PageExt {
                 grid.currentItem.forceActiveFocus(Qt.MouseFocusReason)
             }
 
-            onContextMenuButtonClicked: (menuParent, globalMousePos) => {
-                if (is_podcast) {
-                    serviceContextMenu.popup(globalMousePos, [qsTr("Configure...")])
-                }
+        onContextMenuButtonClicked: (menuParent, globalMousePos) => {
+            if (is_configurable_service) {
+                serviceContextMenu.sourceName = model.name
+                serviceContextMenu.sourceTitle = model.long_name
+                serviceContextMenu.popup(globalMousePos, [qsTr("Configure...")])
             }
         }
+    }
 
         onActionAtIndex: (index) => {
             const itemData = sourcesModel.getDataAt(index);
@@ -148,12 +157,14 @@ Widgets.PageExt {
     StringListMenu {
         id: serviceContextMenu
 
+        property string sourceName: ""
+        property string sourceTitle: ""
+
         ctx: MainCtx
 
         onSelected: (index, modelData) => {
-            if (index === 0) {
-                DialogsProvider.podcastConfigureDialog()
-            }
+            if (index === 0)
+                DialogsProvider.serviceConfigureDialog(sourceName, sourceTitle)
         }
     }
 }
