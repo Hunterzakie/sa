@@ -38,6 +38,7 @@
 
 #include <time.h>
 #include <stdlib.h>
+#include <stdckdint.h>
 
 char *vlc_tick_to_str( char *psz_buffer, vlc_tick_t ticks )
 {
@@ -80,7 +81,7 @@ void date_Change( date_t *p_date, uint32_t i_divider_n, uint32_t i_divider_d )
 {
     assert( p_date->i_divider_num != 0 );
     /* change time scale of remainder */
-    p_date->i_remainder = p_date->i_remainder * i_divider_n / p_date->i_divider_num;
+    p_date->i_remainder = (uint64_t)p_date->i_remainder * i_divider_n / p_date->i_divider_num;
     p_date->i_divider_num = i_divider_n;
     p_date->i_divider_den = i_divider_d;
 }
@@ -90,17 +91,27 @@ vlc_tick_t date_Increment( date_t *p_date, uint32_t i_nb_samples )
     if(unlikely(p_date->date == VLC_TICK_INVALID))
         return VLC_TICK_INVALID;
     assert( p_date->i_divider_num != 0 );
-    vlc_tick_t i_dividend = i_nb_samples * CLOCK_FREQ * p_date->i_divider_den;
+    vlc_tick_t i_dividend;
+    if( ckd_mul( &i_dividend, i_nb_samples, CLOCK_FREQ ) ||
+        ckd_mul( &i_dividend, i_dividend, p_date->i_divider_den ) )
+        i_dividend = VLC_TICK_MAX;
     lldiv_t d = lldiv( i_dividend, p_date->i_divider_num );
 
-    p_date->date += d.quot;
-    p_date->i_remainder += (int)d.rem;
+    vlc_tick_t newdate;
+    if( ckd_add( &newdate, p_date->date, d.quot ) )
+        newdate = VLC_TICK_MAX;
+    p_date->date = newdate;
+    if( newdate != VLC_TICK_MAX )
+        p_date->i_remainder += (int)d.rem;
+    else
+        p_date->i_remainder = 0;
 
     if( p_date->i_remainder >= p_date->i_divider_num )
     {
         /* This is Bresenham algorithm. */
         assert( p_date->i_remainder < UINT64_C(2)*p_date->i_divider_num);
-        p_date->date += 1;
+        if( p_date->date != VLC_TICK_MAX )
+            p_date->date += 1;
         p_date->i_remainder -= p_date->i_divider_num;
     }
 
@@ -111,7 +122,10 @@ vlc_tick_t date_Decrement( date_t *p_date, uint32_t i_nb_samples )
 {
     if(unlikely(p_date->date == VLC_TICK_INVALID))
         return VLC_TICK_INVALID;
-    vlc_tick_t i_dividend = (vlc_tick_t)i_nb_samples * CLOCK_FREQ * p_date->i_divider_den;
+    vlc_tick_t i_dividend;
+    if( ckd_mul( &i_dividend, i_nb_samples, CLOCK_FREQ ) ||
+        ckd_mul( &i_dividend, i_dividend, p_date->i_divider_den ) )
+        i_dividend = VLC_TICK_MAX;
     p_date->date -= i_dividend / p_date->i_divider_num;
     unsigned i_rem_adjust = i_dividend % p_date->i_divider_num;
 
