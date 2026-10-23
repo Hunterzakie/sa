@@ -23,7 +23,7 @@
  * Refer to EN 800 486 annex A.
  * @return a heap-allocation nul-terminated UTF-8 string or NULL on error.
  */
-static char *vlc_from_EIT (const void *buf, size_t length)
+static char *vlc_from_EIT (const void *buf, size_t length, const char *default_charset)
 {
     if (unlikely(length == 0))
         return NULL;
@@ -38,7 +38,7 @@ static char *vlc_from_EIT (const void *buf, size_t length)
     if (c >= 0x20)
     {
         offset = 0;
-        encoding = "ISO_6937";
+        encoding = default_charset ? default_charset : "ISO_6937";
     }
     else if ((1 << c) & 0x0EFE) /* 1-7, 9-11 -> ISO 8859-(c+4) */
     {

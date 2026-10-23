@@ -1070,10 +1070,10 @@ static void ParseSDT( vlc_object_t *p_obj, scan_t *p_scan, const dvbpsi_sdt_t *p
             {
                 if( !s->psz_name )
                     s->psz_name = vlc_from_EIT( pD->i_service_name,
-                                                pD->i_service_name_length );
+                                                pD->i_service_name_length, NULL );
                 free( s->psz_provider );
                 s->psz_provider = vlc_from_EIT( pD->i_service_provider_name,
-                                                pD->i_service_provider_name_length );
+                                                pD->i_service_provider_name_length, NULL );
 
                 s->type = pD->i_service_type;
             }

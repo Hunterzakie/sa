@@ -1681,7 +1681,7 @@ static char *MMIGetText( cam_t *p_cam, uint8_t **pp_apdu, int *pi_size )
     *pp_apdu += l + 4;
     *pi_size -= l + 4;
 
-    return vlc_from_EIT(d,l);
+    return vlc_from_EIT(d,l, NULL);
 }
 
 /*****************************************************************************

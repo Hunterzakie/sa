@@ -128,6 +128,9 @@ static void Close ( vlc_object_t * );
 #define PCR_TEXT N_("Trust in-stream PCR")
 #define PCR_LONGTEXT N_("Use the stream PCR as a reference.")
 
+#define FORCED_CHARSET_TEXT N_("Force TS charset")
+#define FORCED_CHARSET_LONGTEXT N_("Force a different charset as the default for TS (e.g. ISO_8859-1 rather than ISO_6937)")
+
 static const char *const ts_standards_list[] =
     { "auto", "mpeg", "dvb", "arib", "atsc", "tdmb" };
 static const char *const ts_standards_list_text[] =
@@ -165,6 +168,8 @@ vlc_module_begin ()
     add_bool( "ts-pcr-offsetfix", true, TS_OFFSETFIX_TEXT, NULL )
     add_integer_with_range( "ts-generated-pcr-offset", 120, 0, 500,
                             TS_GENERATED_PCR_OFFSET_TEXT, NULL )
+    add_string( "ts-force-charset", NULL, FORCED_CHARSET_TEXT, FORCED_CHARSET_LONGTEXT )
+        change_volatile()
 
     set_capability( "demux", 10 )
     set_callbacks( Open, Close )
@@ -389,7 +394,7 @@ static int Open( vlc_object_t *p_this )
 
     p_sys->stream = p_demux->s;
 
-    p_sys->b_broken_charset = false;
+    p_sys->forced_charset = var_InheritString(p_this, "ts-force-charset");
 
     ts_pid_list_Init( &p_sys->pids );
 
@@ -590,6 +595,7 @@ static void Close( vlc_object_t *p_this )
     /* Clear up attachments */
     vlc_dictionary_clear( &p_sys->attachments, FreeDictAttachment, NULL );
 
+    free( p_sys->forced_charset );
     free( p_sys->record_dir_path );
     free( p_sys );
 }

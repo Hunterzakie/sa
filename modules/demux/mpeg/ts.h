@@ -110,7 +110,7 @@ struct demux_sys_t
     /* */
     time_t      i_network_time;
     time_t      i_network_time_update; /* for network time interpolation */
-    bool        b_broken_charset; /* True if broken encoding is used in EPG/SDT */
+    char        *forced_charset; /* Forced if broken encoding is used in EPG/SDT */
 
     /* Selected programs */
     enum
