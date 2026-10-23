@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Script to generate builder_data.hpp, with the definitions given in
 # builder_data.def
