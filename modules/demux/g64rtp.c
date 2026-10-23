@@ -124,12 +124,16 @@ Epoch + sub 10⁷ with Offset 0x2B61082F0 ?
 
 */
 
-static vlc_tick_t make_vlc_timestamp( uint64_t ts )
+static vlc_tick_t make_vlc_timestamp( uint64_t ts /* FILETIME */ )
 {
     if( ts == 0xFFFFFFFFFFFFFFFFU ) /* This is All 0xFF */
         return VLC_TICK_INVALID;
-    ts = (ts % 10000000) + ((ts / 10000000) - 0x2B61082F0) * 10000000;
-    return VLC_TICK_0 + ts / 10;
+
+    const vlc_tick_t EPOCH_DIFF = VLC_TICK_FROM_SEC(UINT64_C(11644473600));
+    ts = VLC_TICK_FROM_MSFTIME(ts);
+    if(ts < EPOCH_DIFF)
+        return VLC_TICK_INVALID;
+    return VLC_TICK_0 + ts - EPOCH_DIFF;
 }
 
 /*
