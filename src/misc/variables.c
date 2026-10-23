@@ -546,29 +546,45 @@ int (var_Change)(vlc_object_t *p_this, const char *psz_name, int i_action, ...)
             break;
         case VLC_VAR_GETCHOICES:
         {
-            size_t *count = va_arg(ap, size_t *);
-            vlc_value_t **values = va_arg(ap, vlc_value_t **);
-            char ***texts = va_arg(ap, char ***);
+            size_t *p_count = va_arg(ap, size_t *);
+            vlc_value_t **pp_values = va_arg(ap, vlc_value_t **);
+            char ***ppp_texts = va_arg(ap, char ***);
 
-            *count = p_var->choices_count;
-            *values = xmalloc(p_var->choices_count * sizeof (**values));
+            vlc_value_t *values = vlc_alloc(p_var->choices_count, sizeof (*pp_values));
+            if(unlikely(!values))
+            {
+                ret = VLC_ENOMEM;
+                break;
+            }
 
             for (size_t i = 0; i < p_var->choices_count; i++)
             {
-                vlc_value_t *val = (*values) + i;
+                vlc_value_t *val = &values[i];
                 *val = p_var->choices[i];
                 p_var->ops->pf_dup(val);
             }
 
-            if( texts != NULL )
+            if( ppp_texts != NULL )
             {
-                char **tab = xmalloc(p_var->choices_count * sizeof (*tab));
-                *texts = tab;
+                char **tab = vlc_alloc(p_var->choices_count, sizeof (*tab));
+                if(unlikely(!tab))
+                {
+                    for (size_t i = 0; i < p_var->choices_count; i++)
+                        p_var->ops->pf_free(&values[i]);
+                    free(values);
+                    ret = VLC_ENOMEM;
+                    break;
+                }
 
                 for (size_t i = 0; i < p_var->choices_count; i++)
                     tab[i] = (p_var->choices_text[i] != NULL)
                         ? strdup(p_var->choices_text[i]) : NULL;
+
+                *ppp_texts = tab;
             }
+
+            *pp_values = values;
+            *p_count = p_var->choices_count;
             break;
         }
         case VLC_VAR_SETTEXT:
