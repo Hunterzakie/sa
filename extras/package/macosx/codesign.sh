@@ -142,7 +142,9 @@ do
     sign "$i"
 done
 
-for i in $(find VLC.app/Contents/Frameworks/lua -type f -exec echo {} \;)
+info "Signing lua scripts"
+
+for i in $(find VLC.app/Contents/MacOS/lua -type f -exec echo {} \;)
 do
     sign "$i"
 done
