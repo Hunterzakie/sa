@@ -253,14 +253,26 @@ Item {
         }
 
         DropArea {
+            id: dropArea
+
             anchors.fill: parent
             z: -1
+
+            function isDataFormat(format : string) : bool {
+                // These mime data formats indicate that the drag itself
+                // contains the media data, unlike more commonly used
+                // `text/uri-list`:
+                return (format.startsWith("application/octet-stream") ||
+                        format.startsWith("image") ||
+                        format.startsWith("audio") ||
+                        format.startsWith("video"))
+            }
 
             onEntered: (drag) => {
                 // Do not handle internal drag here:
                 if (!drag.source) {
                     // Foreign drag, check if valid:
-                    if (drag.hasUrls || drag.hasText) {
+                    if (drag.hasUrls || drag.hasText || drag.formats.some(dropArea.isDataFormat)) {
                         drag.accepted = true
                         return
                     }
@@ -287,6 +299,14 @@ Item {
                     } else {
                         urls.push(drop.text)
                     }
+                } else {
+                    // If data is directly provided, craft an URL consisting
+                    // of Base64 encoded content:
+                    drop.formats.forEach(format => {
+                        if (dropArea.isDataFormat(format)) {
+                            urls.push(MainPlaylistController.mediaFromData(drop.getDataAsArrayBuffer(format)))
+                        }
+                    })
                 }
 
                 if (urls.length > 0) {
