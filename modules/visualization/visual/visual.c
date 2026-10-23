@@ -27,6 +27,9 @@
 # include "config.h"
 #endif
 
+// fft.c is GPL-licensed
+#define VLC_MODULE_LICENSE VLC_LICENSE_GPL_2_PLUS
+
 #include <assert.h>
 #include <limits.h>
 
