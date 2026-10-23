@@ -1,0 +1,22 @@
+diff --git a/modules/gui/qt/maininterface/mainui.cpp b/modules/gui/qt/maininterface/mainui.cpp
+index eff89fe036..f14be833ef 100644
+--- a/modules/gui/qt/maininterface/mainui.cpp
++++ b/modules/gui/qt/maininterface/mainui.cpp
+@@ -185,7 +185,7 @@ void MainUI::registerQMLTypes()
+         qmlRegisterUncreatableType<VLCVarChoiceModel>(uri, versionMajor, versionMinor, "VLCVarChoiceModel", "generic variable with choice model" );
+         qmlRegisterUncreatableType<CSDButton>(uri, versionMajor, versionMinor, "CSDButton", "");
+         qmlRegisterUncreatableType<CSDButtonModel>(uri, versionMajor, versionMinor, "CSDButtonModel", "has CSD buttons and provides for communicating CSD events between UI and backend");
+-        qmlRegisterTypesAndRevisions<CSDMenu>( uri, versionMajor);
++        qmlRegisterType<CSDMenu>(uri, versionMajor, versionMinor, "CSDMenu");
+         qmlRegisterUncreatableType<NavigationAttached>( uri, versionMajor, versionMinor, "Navigation", "Navigation is only available via attached properties");
+         qmlRegisterModule(uri, versionMajor, versionMinor);
+         qmlProtectModule(uri, versionMajor);
+@@ -333,7 +333,7 @@ void MainUI::registerQMLTypes()
+         qmlRegisterSingletonInstance<SVGColorImage>(uri, versionMajor, versionMinor, "SVGColorImage", new SVGColorImage(this));
+         qmlRegisterSingletonInstance<VLCAccessImage>(uri, versionMajor, versionMinor, "VLCAccessImage", new VLCAccessImage(this));
+         qmlRegisterType<DelayEstimator>( uri, versionMajor, versionMinor, "DelayEstimator" );
+-        qmlRegisterTypesAndRevisions<WheelToVLCConverter>( uri, versionMajor );
++        qmlRegisterType<WheelToVLCConverter>(uri, versionMajor, versionMinor, "WheelToVLCConverter");
+ 
+         qmlRegisterType<ImageLuminanceExtractor>( uri, versionMajor, versionMinor, "ImageLuminanceExtractor");
+
