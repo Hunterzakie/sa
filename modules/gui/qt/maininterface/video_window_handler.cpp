@@ -17,6 +17,7 @@
  *****************************************************************************/
 #include "video_window_handler.hpp"
 #include "mainctx.hpp"
+#include "player/player_controller.hpp"
 
 #include <QApplication>
 #include <QScreen>
@@ -40,6 +41,16 @@ VideoWindowHandler::VideoWindowHandler(qt_intf_t* intf, QObject *parent)
              this, &VideoWindowHandler::setVideoFullScreen, Qt::QueuedConnection );
     connect( this, &VideoWindowHandler::askVideoOnTop,
              this, &VideoWindowHandler::setVideoOnTop, Qt::QueuedConnection );
+    connect( m_intf->p_mainPlayerController, &PlayerController::hasVideoOutputChanged, this, [this](bool hasVideo) {
+        if (!m_intf->p_mainPlayerController->isFullscreen())
+            return;
+        // set video fullscreen before clearing interface fullscreen
+        // or else the window leaves fullscreen in between
+        if (hasVideo)
+            setVideoFullScreen(true);
+        if (m_intf->p_mi)
+            emit m_intf->p_mi->setInterfaceFullScreen(!hasVideo);
+    });
 }
 
 void VideoWindowHandler::setWindow(QWindow* window)
@@ -188,6 +199,10 @@ void VideoWindowHandler::setVideoSize(unsigned int w, unsigned int h, Qt::Window
 void VideoWindowHandler::setVideoFullScreen( bool fs )
 {
     if (!m_window)
+        return;
+    // after a video is opened, its vout is kept cached by the core, so toggling
+    // fullscreen during audio would otherwise also set video fullscreen here
+    if (fs && !m_intf->p_mainPlayerController->hasVideoOutput())
         return;
     m_videoFullScreen = fs;
     if( fs )

@@ -370,6 +370,25 @@ FocusScope {
                         lyricsLoader.item.lyricsSyncToPlayback = true
                 }
 
+                HoverHandler {
+                    property point _lastPosition
+
+                    onPointChanged: {
+                        // ignore hover events without real movement or the toolbars never hide
+                        const position = point.scenePosition
+                        if (position.x === _lastPosition.x && position.y === _lastPosition.y)
+                            return
+                        _lastPosition = position
+                        playerToolbarVisibilityFSM.mouseMove()
+                    }
+
+                    Binding on cursorShape {
+                        when: playerToolbarVisibilityFSM.started
+                            && !playerToolbarVisibilityFSM.isVisible
+                        value: Qt.BlankCursor
+                    }
+                }
+
                 // background image
                 Widgets.DualKawaseBlur {
                     id: blurredBackground
@@ -463,13 +482,29 @@ FocusScope {
                         colorSet: ColorContext.View
                     }
 
+                    property real _toolbarSpace: (!playerToolbarVisibilityFSM.started
+                                                  || playerToolbarVisibilityFSM.isVisible) ? 1 : 0
+
                     anchors.fill: parent
-                    anchors.topMargin: VLCStyle.margin_xsmall + audioFocusScope.topPadding
-                    anchors.bottomMargin: VLCStyle.margin_xsmall + audioFocusScope.bottomPadding
+                    anchors.topMargin: VLCStyle.margin_xsmall + audioFocusScope.topPadding * _toolbarSpace
+                    anchors.bottomMargin: VLCStyle.margin_xsmall + audioFocusScope.bottomPadding * _toolbarSpace
+
+                    Behavior on _toolbarSpace {
+                        NumberAnimation {
+                            duration: VLCStyle.duration_long
+                            easing.type: Easing.InOutSine
+                        }
+                    }
 
                     onWheel: (wheel) => {
                         wheel.accepted = true
                         wheelToVlc.qmlWheelEvent(wheel)
+                    }
+
+                    onDoubleClicked: (mouse) => {
+                        if (mouse.button !== Qt.LeftButton)
+                            return
+                        Player.fullscreen = !Player.fullscreen
                     }
 
                     TouchDragHandler {
