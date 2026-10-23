@@ -46,9 +46,6 @@ static_assert(MC_API_NO_QUIRKS == OMXCODEC_NO_QUIRKS
     && MC_API_AUDIO_QUIRKS_NEED_CHANNELS == OMXCODEC_AUDIO_QUIRKS_NEED_CHANNELS,
     "mediacodec.h/omx_utils.h mismatch");
 
-char* MediaCodec_GetName(vlc_object_t *p_obj, vlc_fourcc_t codec,
-                         const char *psz_mime, int profile, int *p_quirks);
-
 #define THREAD_NAME "mediacodec_ndk"
 
 /* Not in NdkMedia API but we need it since we send config data via input
@@ -479,13 +476,13 @@ static void Clean(mc_api *api)
 /*****************************************************************************
  * Prepare
  *****************************************************************************/
-static int Prepare(mc_api * api, int i_profile)
+static int Prepare(mc_api * api, int i_profile, bool b_hardware_only)
 {
     free(api->psz_name);
 
     api->i_quirks = 0;
     api->psz_name = MediaCodec_GetName(api->p_obj, api->i_codec, api->psz_mime,
-                                       i_profile, &api->i_quirks);
+                                       i_profile, b_hardware_only, &api->i_quirks);
     if (!api->psz_name)
         return MC_API_ERROR;
     api->i_quirks |= OMXCodec_GetQuirks(api->i_cat, api->i_codec, api->psz_name,

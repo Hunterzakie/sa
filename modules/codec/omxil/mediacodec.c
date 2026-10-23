@@ -41,7 +41,8 @@
 #include <vlc_bits.h>
 
 #include "mediacodec.h"
-#include "../codec/hxxx_helper.h"
+#include "../hxxx_helper.h"
+#include "../../packetizer/av1_obu.h"
 #include <OMX_Core.h>
 #include <OMX_Component.h>
 #include "omxil_utils.h"
@@ -159,6 +160,7 @@ typedef struct decoder_sys_t
  * Local prototypes
  *****************************************************************************/
 static int  OpenDecoderNdk(vlc_object_t *);
+static int  OpenDecoderHwNdk(vlc_object_t *);
 static void CleanDecoder(decoder_sys_t *);
 static void CloseDecoder(vlc_object_t *);
 
@@ -217,6 +219,11 @@ vlc_module_begin ()
         set_capability("audio decoder", 0)
         set_callbacks(OpenDecoderNdk, CloseDecoder)
         add_shortcut("mediacodec_ndk")
+    add_submodule ()
+        set_description("Video decoder using Android MediaCodec hardware")
+        set_capability("video decoder", 10001)
+        set_callbacks(OpenDecoderHwNdk, CloseDecoder)
+        add_shortcut("mediacodec_ndk_hw")
 vlc_module_end ()
 
 static void CSDFree(decoder_sys_t *p_sys)
@@ -1145,7 +1152,7 @@ static void CleanInputVideo(decoder_t *p_dec)
 /*****************************************************************************
  * OpenDecoder: Create the decoder instance
  *****************************************************************************/
-static int OpenDecoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
+static int OpenDecoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init, bool b_hardware_only)
 {
     decoder_t *p_dec = (decoder_t *)p_this;
 
@@ -1192,6 +1199,28 @@ static int OpenDecoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
                     i_profile = i_h264_profile;
             }
             mime = "video/avc";
+            break;
+        case VLC_CODEC_AV1:
+            if (i_profile == -1)
+            {
+                av1_OBU_sequence_header_t *sequence_hdr = NULL;
+
+                if (p_dec->fmt_in->i_extra > 4)
+                {
+                    // in ISOBMFF/WebM/Matroska the first 4 bytes are from the AV1CodecConfigurationRecord
+                    // and then one or more OBU
+                    const uint8_t *obu_start = ((const uint8_t*) p_dec->fmt_in->p_extra) + 4;
+                    int obu_size = p_dec->fmt_in->i_extra - 4;
+                    if (AV1_OBUIsValid(obu_start, obu_size) && AV1_OBUGetType(obu_start) == AV1_OBU_SEQUENCE_HEADER)
+                        sequence_hdr = AV1_OBU_parse_sequence_header(obu_start, obu_size);
+                }
+                if (sequence_hdr)
+                {
+                    int level, tier;
+                    AV1_get_profile_level(sequence_hdr, &i_profile, &level, &tier);
+                }
+            }
+            mime = "video/av01";
             break;
         case VLC_CODEC_H263: mime = "video/3gpp"; break;
         case VLC_CODEC_MP4V: mime = "video/mp4v-es"; break;
@@ -1262,14 +1291,14 @@ static int OpenDecoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
         free(p_sys);
         return VLC_EGENERIC;
     }
-    if (p_sys->api.prepare(&p_sys->api, i_profile) != 0)
+    if (p_sys->api.prepare(&p_sys->api, i_profile, b_hardware_only) != 0)
     {
         /* If the device can't handle video/wvc1,
          * it can probably handle video/x-ms-wmv */
         if (!strcmp(mime, "video/wvc1") && p_dec->fmt_in->i_codec == VLC_CODEC_VC1)
         {
             p_sys->api.psz_mime = "video/x-ms-wmv";
-            if (p_sys->api.prepare(&p_sys->api, i_profile) != 0)
+            if (p_sys->api.prepare(&p_sys->api, i_profile, b_hardware_only) != 0)
             {
                 p_sys->api.clean(&p_sys->api);
                 free(p_sys);
@@ -1432,7 +1461,12 @@ bailout:
 
 static int OpenDecoderNdk(vlc_object_t *p_this)
 {
-    return OpenDecoder(p_this, MediaCodecNdk_Init);
+    return OpenDecoder(p_this, MediaCodecNdk_Init, false);
+}
+
+static int OpenDecoderHwNdk(vlc_object_t *p_this)
+{
+    return OpenDecoder(p_this, MediaCodecNdk_Init, true);
 }
 
 static void AbortDecoderLocked(decoder_sys_t *p_sys)
