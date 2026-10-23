@@ -12,8 +12,7 @@ qt_cppargs = []
 qt_link_args = [gc_sections_linkargs]
 
 qt6_dep = dependency('qt6',
-    # Note that Qt < 6.2.5 does not provide pc files!
-    version: '>=6.2',
+    version: '>=6.8',
     modules: [
         'Core', 'Gui', 'Widgets', 'Qml',
         'Quick', 'QuickControls2'
@@ -536,7 +535,6 @@ qt_plugin_sources = files(
     'widgets/native/searchlineedit.hpp',
     'widgets/native/viewblockingrectangle.cpp',
     'widgets/native/viewblockingrectangle.hpp',
-    'widgets/native/doubleclickignoringitem.hpp',
 )
 
 if host_system == 'windows'
@@ -1168,23 +1166,21 @@ if qt6_dep.found()
 
         qt_wayland_cargs = ['-DQT_HAS_WAYLAND_PROTOCOLS']
 
-        if qt6_dep.version().version_compare('>= 6.5')
-            qt_wayland_cargs += '-DQT_HAS_WAYLAND_FRACTIONAL_SCALING'
-            qt_wl_viewporter_xml = wayland_protocols_dir / 'stable/viewporter/viewporter.xml'
-            qt_wl_viewporter_hdr = custom_target(
-                'qt-wayland-viewporter-client-header',
-                output: 'viewporter-client-protocol.h',
-                input: qt_wl_viewporter_xml,
-                command: [wayland_scanner, 'client-header', '@INPUT@', '@OUTPUT@'],
-            )
-            qt_wl_viewporter_code = custom_target(
-                'qt-wayland-viewporter-code',
-                output: 'viewporter-protocol.c',
-                input: qt_wl_viewporter_xml,
-                command: [wayland_scanner, 'private-code', '@INPUT@', '@OUTPUT@'],
-            )
-            qt_wayland_sources += [qt_wl_viewporter_hdr, qt_wl_viewporter_code]
-        endif
+        qt_wayland_cargs += '-DQT_HAS_WAYLAND_FRACTIONAL_SCALING'
+        qt_wl_viewporter_xml = wayland_protocols_dir / 'stable/viewporter/viewporter.xml'
+        qt_wl_viewporter_hdr = custom_target(
+            'qt-wayland-viewporter-client-header',
+            output: 'viewporter-client-protocol.h',
+            input: qt_wl_viewporter_xml,
+            command: [wayland_scanner, 'client-header', '@INPUT@', '@OUTPUT@'],
+        )
+        qt_wl_viewporter_code = custom_target(
+            'qt-wayland-viewporter-code',
+            output: 'viewporter-protocol.c',
+            input: qt_wl_viewporter_xml,
+            command: [wayland_scanner, 'private-code', '@INPUT@', '@OUTPUT@'],
+        )
+        qt_wayland_sources += [qt_wl_viewporter_hdr, qt_wl_viewporter_code]
 
         vlc_modules += {
             'name': 'qt_wayland',
