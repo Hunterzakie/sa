@@ -493,6 +493,7 @@ modules/gui/macosx/library/video-library/VLCLibraryVideoDataSource.h
 modules/gui/macosx/library/video-library/VLCLibraryVideoDataSource.m
 modules/gui/macosx/library/VLCLibraryWindow.h
 modules/gui/macosx/library/VLCLibraryWindow.m
+modules/gui/macosx/library/VLCLibraryWindowPlayQueueSidebarViewController.m
 modules/gui/macosx/main/CompatibilityFixes.h
 modules/gui/macosx/main/CompatibilityFixes.m
 modules/gui/macosx/main/VLCApplication.h

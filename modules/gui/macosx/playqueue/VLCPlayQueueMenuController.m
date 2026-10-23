@@ -33,6 +33,7 @@
 #import "library/VLCInputItem.h"
 #import "main/VLCMain.h"
 #import "playqueue/VLCPlayQueueController.h"
+#import "playqueue/VLCPlayQueueDataSource.h"
 #import "playqueue/VLCPlayQueueModel.h"
 #import "playqueue/VLCPlayQueueItem.h"
 #import "playqueue/VLCPlayQueueSortingMenuController.h"
@@ -60,6 +61,9 @@
 @property (readwrite, atomic) NSArray<NSMenuItem *> *items;
 @property (readwrite, atomic) NSArray<NSMenuItem *> *multipleSelectionItems;
 @property (readwrite, atomic) NSArray<NSMenuItem *> *backgroundItems;
+
+- (VLCPlayQueueDataSource *)playQueueDataSource;
+- (NSIndexSet *)selectedPlayQueueModelIndexes;
 
 @end
 
@@ -165,7 +169,7 @@
 
 - (NSArray<VLCMediaLibraryMediaItem *> *)selectedMediaLibraryItems
 {
-    NSIndexSet * const selectedIndexes = self.playQueueTableView.selectedRowIndexes;
+    NSIndexSet * const selectedIndexes = [self selectedPlayQueueModelIndexes];
     NSMutableArray<VLCMediaLibraryMediaItem *> * const mediaItems =
         [NSMutableArray arrayWithCapacity:selectedIndexes.count];
 
@@ -190,7 +194,7 @@
 
 - (void)updateStreamSpecificMenuItems
 {
-    NSIndexSet * const selectedIndexes = self.playQueueTableView.selectedRowIndexes;
+    NSIndexSet * const selectedIndexes = [self selectedPlayQueueModelIndexes];
     __block BOOL hasStream = NO;
 
     [selectedIndexes enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
@@ -224,8 +228,12 @@
 - (void)play:(id)sender
 {
     NSInteger selectedRow = self.playQueueTableView.selectedRow;
+    VLCPlayQueueDataSource * const dataSource = [self playQueueDataSource];
 
     if (selectedRow != -1) {
+        if (dataSource != nil) {
+            selectedRow = [dataSource modelIndexForRow:selectedRow];
+        }
         [_playQueueController playItemAtIndex:selectedRow];
     } else {
         [_playQueueController startPlayQueue];
@@ -234,7 +242,7 @@
 
 - (void)remove:(id)sender
 {
-    [_playQueueController removeItemsAtIndexes:self.playQueueTableView.selectedRowIndexes];
+    [_playQueueController removeItemsAtIndexes:[self selectedPlayQueueModelIndexes]];
 }
 
 - (void)showInformationPanel:(id)sender
@@ -244,7 +252,7 @@
     }
 
     NSMutableArray * const inputItems = NSMutableArray.array;
-    NSIndexSet * const selectedIndices = self.playQueueTableView.selectedRowIndexes;
+    NSIndexSet * const selectedIndices = [self selectedPlayQueueModelIndexes];
 
     [selectedIndices enumerateIndexesUsingBlock:^(const NSUInteger idx, BOOL * const __unused stop) {
         VLCPlayQueueItem * const item =
@@ -262,9 +270,14 @@
 - (void)revealInFinder:(id)sender
 {
     NSInteger selectedRow = self.playQueueTableView.selectedRow;
+    VLCPlayQueueDataSource * const dataSource = [self playQueueDataSource];
 
     if (selectedRow == -1)
         return;
+
+    if (dataSource != nil) {
+        selectedRow = [dataSource modelIndexForRow:selectedRow];
+    }
 
     VLCPlayQueueItem *item = [_playQueueController.playQueueModel playQueueItemAtIndex:selectedRow];
     if (item == nil)
@@ -277,6 +290,10 @@
 - (void)addFilesToPlayQueue:(id)sender
 {
     NSInteger selectedRow = self.playQueueTableView.selectedRow;
+    VLCPlayQueueDataSource * const dataSource = [self playQueueDataSource];
+    if (dataSource != nil) {
+        selectedRow = [dataSource modelIndexForRow:selectedRow];
+    }
 
     [[VLCMain.sharedInstance open] openFileWithAction:^(NSArray *files) {
         [self->_playQueueController addPlayQueueItems:files
@@ -295,16 +312,29 @@
     [VLCMain.sharedInstance.libraryController showCreatePlaylistDialogForPlayQueueItems:_playQueueController.playQueueModel.playQueueItems];
 }
 
+- (VLCPlayQueueDataSource *)playQueueDataSource
+{
+    id const dataSource = self.playQueueTableView.dataSource;
+    return [dataSource isKindOfClass:VLCPlayQueueDataSource.class] ? (VLCPlayQueueDataSource *)dataSource : nil;
+}
+
+- (NSIndexSet *)selectedPlayQueueModelIndexes
+{
+    NSIndexSet * const selectedRowIndexes = self.playQueueTableView.selectedRowIndexes;
+    VLCPlayQueueDataSource * const dataSource = [self playQueueDataSource];
+    return dataSource != nil ? [dataSource modelIndexSetForRowIndexes:selectedRowIndexes] : selectedRowIndexes;
+}
+
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
 {
     if (menuItem == _addFilesToPlayQueueMenuItem) {
         return YES;
 
     } else if (menuItem == _clearPlayQueueMenuItem) {
-        return (self.playQueueTableView.numberOfRows > 0);
+        return _playQueueController.playQueueModel.numberOfPlayQueueItems > 0;
 
     } else if (menuItem == _createPlaylistMenuItem) {
-        return (self.playQueueTableView.numberOfRows > 0);
+        return _playQueueController.playQueueModel.numberOfPlayQueueItems > 0;
 
     } else if (menuItem == _addToPlaylistMenuItem) {
         return _addToPlaylistMenuController.representedMediaItems.count > 0;

@@ -537,7 +537,8 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
 - (int)startPlayQueue
 {
     const NSInteger selectedIndex = [_playQueueDataSource.tableView selectedRow];
-    return [self playItemAtIndex:selectedIndex];
+    const NSInteger modelIndex = [_playQueueDataSource modelIndexForRow:selectedIndex];
+    return [self playItemAtIndex:modelIndex];
 }
 
 - (int)playPreviousItem

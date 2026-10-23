@@ -120,10 +120,11 @@
 - (IBAction)toggleMultifunctionSidebar:(id)sender
 {
     const BOOL sidebarCollapsed = self.multifunctionSidebarItem.isCollapsed;
-    self.multifunctionSidebarItem.animator.collapsed = !sidebarCollapsed;
+    const BOOL targetCollapsedState = !sidebarCollapsed;
+    self.multifunctionSidebarItem.animator.collapsed = targetCollapsedState;
 
     const NSControlStateValue controlState =
-        self.multifunctionSidebarItem.isCollapsed ? NSControlStateValueOff : NSControlStateValueOn;
+        targetCollapsedState ? NSControlStateValueOff : NSControlStateValueOn;
     self.libraryWindow.playQueueToggle.state = controlState;
     self.libraryWindow.videoViewController.playQueueButton.state = controlState;
 }

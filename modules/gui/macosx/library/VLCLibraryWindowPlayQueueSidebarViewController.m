@@ -41,7 +41,6 @@
 #import "playqueue/VLCPlayQueueSortingMenuController.h"
 
 #import "views/VLCDragDropView.h"
-#import "views/VLCRoundedCornerTextField.h"
 #import "views/VLCUIUnits.h"
 
 #import "windows/VLCOpenWindowController.h"
@@ -49,6 +48,7 @@
 @implementation VLCLibraryWindowPlayQueueSidebarViewController
 {
     CAGradientLayer *_scrollViewGradientMask;
+    CGFloat _scrollViewBottomContentInset;
 }
 
 @synthesize counterLabel = _counterLabel;
@@ -80,6 +80,13 @@
     self.tableView.rowHeight = VLCUIUnits.mediumTableViewRowHeight;
     [self.tableView reloadData];
 
+    self.filterField.delegate = self;
+    self.filterField.placeholderString = _NS("Filter play queue");
+    self.filterField.recentsAutosaveName = nil;
+    self.filterField.recentSearches = @[];
+    self.filterField.maximumRecents = 0;
+    ((NSSearchFieldCell *)self.filterField.cell).searchMenuTemplate = nil;
+
     self.openMediaButton.title = _NS("Open media...");
 
     // Allow the drop zone image to shrink when the sidebar is contracted
@@ -107,9 +114,11 @@
     self.repeatButton.toolTip = _NS("Repeat");
     self.sortButton.toolTip = _NS("Sort Play Queue");
     self.clearButton.toolTip = _NS("Clear Play Queue");
+    self.filterButton.toolTip = _NS("Filter play queue");
 
     [self repeatStateUpdated:nil];
     [self shuffleStateUpdated:nil];
+    [self filterStateUpdated:nil];
 
     NSNotificationCenter * const notificationCenter = NSNotificationCenter.defaultCenter;
     [notificationCenter addObserver:self
@@ -122,6 +131,24 @@
                              object:nil];
 
     [self setupBlurredHeaderFooter];
+}
+
+- (void)setScrollViewBottomContentInset:(CGFloat)scrollViewBottomContentInset
+{
+    _scrollViewBottomContentInset = scrollViewBottomContentInset;
+    [self updateScrollViewContentInsets];
+}
+
+- (void)updateScrollViewContentInsets
+{
+    NSEdgeInsets contentInsets = self.scrollView.contentInsets;
+    contentInsets.bottom = _scrollViewBottomContentInset;
+
+    if (!self.filterField.hidden) {
+        contentInsets.bottom += self.filterField.frame.size.height + VLCUIUnits.smallSpacing;
+    }
+
+    self.scrollView.contentInsets = contentInsets;
 }
 
 - (void)setupScrollViewGradientMask
@@ -199,7 +226,7 @@
         ]];
 
         self.scrollView.automaticallyAdjustsContentInsets = NO;
-        self.scrollView.contentInsets = NSEdgeInsetsMake(0, 0, footerTopLine, 0);
+        [self setScrollViewBottomContentInset:footerTopLine];
     } else 
 #endif
     if (@available(macOS 10.14, *)) {
@@ -235,7 +262,7 @@
         ]];
 
         self.scrollView.automaticallyAdjustsContentInsets = NO;
-        self.scrollView.contentInsets = NSEdgeInsetsMake(0, 0, footerHeight, 0);
+        [self setScrollViewBottomContentInset:footerHeight];
     }
 }
 
@@ -281,7 +308,49 @@
     if (selectedRow == -1) {
         return;
     }
-    [VLCMain.sharedInstance.playQueueController playItemAtIndex:selectedRow];
+    [VLCMain.sharedInstance.playQueueController playItemAtIndex:[self.dataSource modelIndexForRow:selectedRow]];
+}
+
+- (IBAction)toggleFilterField:(id)sender
+{
+    const BOOL showFilterField = self.filterField.hidden;
+    self.filterField.hidden = !showFilterField;
+    [self filterStateUpdated:nil];
+
+    [self updateScrollViewContentInsets];
+
+    if (showFilterField) {
+        [self.filterField becomeFirstResponder];
+    } else {
+        [self.filterField resignFirstResponder];
+        self.filterField.stringValue = @"";
+        self.dataSource.filterString = @"";
+    }
+}
+
+- (void)filterStateUpdated:(NSNotification *)aNotification
+{
+    const BOOL showFilterField = !self.filterField.hidden;
+
+    if (@available(macOS 11.0, *)) {
+        self.filterButton.image = [NSImage imageWithSystemSymbolName:@"magnifyingglass"
+                                           accessibilityDescription:@"Filter"];
+        self.filterButton.contentTintColor = showFilterField ? NSColor.VLCAccentColor : nil;
+    } else {
+        self.filterButton.image =
+            showFilterField ?
+                [NSImage.VLCFilterOnImage imageTintedWithColor:NSColor.VLCAccentColor] :
+                NSImage.VLCFilterOffImage;
+    }
+}
+
+- (void)controlTextDidChange:(NSNotification *)notification
+{
+    if (notification.object != self.filterField) {
+        return;
+    }
+
+    self.dataSource.filterString = self.filterField.stringValue;
 }
 
 #pragma mark - open media handling
@@ -386,6 +455,11 @@
 - (IBAction)clearPlayQueue:(id)sender
 {
     [self.playQueueController clearPlayQueue];
+}
+
+- (void)dealloc
+{
+    [NSNotificationCenter.defaultCenter removeObserver:self];
 }
 
 @end

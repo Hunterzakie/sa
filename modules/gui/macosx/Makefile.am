@@ -732,6 +732,10 @@ libmacosx_plugin_la_RES = \
 	gui/macosx/Resources/librarywindow/shuffleOff@2x.png \
 	gui/macosx/Resources/librarywindow/shuffleOn.png \
 	gui/macosx/Resources/librarywindow/shuffleOn@2x.png \
+	gui/macosx/Resources/librarywindow/filterOff.png \
+	gui/macosx/Resources/librarywindow/filterOff@2x.png \
+	gui/macosx/Resources/librarywindow/filterOn.png \
+	gui/macosx/Resources/librarywindow/filterOn@2x.png \
 	gui/macosx/Resources/mainwindow/album.png \
 	gui/macosx/Resources/mainwindow/album@2x.png \
 	gui/macosx/Resources/mainwindow/artist.png \

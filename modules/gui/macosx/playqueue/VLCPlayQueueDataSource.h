@@ -33,12 +33,15 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readwrite, assign) NSTableView *tableView;
 @property (readwrite, assign) VLCDragDropView *dragDropView;
 @property (readwrite, nonatomic) NSTextField *counterTextField;
+@property (readwrite, copy, nonatomic) NSString *filterString;
 
 - (void)prepareForUse;
 - (void)playQueueItemsInsertedAtIndex:(NSUInteger)index count:(NSUInteger)count;
 - (void)playQueueItemsUpdatedAtIndex:(NSUInteger)index count:(NSUInteger)count;
 - (void)playQueueUpdated;
 - (void)scrollToCurrentPlayQueueItem;
+- (NSInteger)modelIndexForRow:(NSInteger)row;
+- (NSIndexSet *)modelIndexSetForRowIndexes:(NSIndexSet *)rowIndexes;
 
 @end
 
