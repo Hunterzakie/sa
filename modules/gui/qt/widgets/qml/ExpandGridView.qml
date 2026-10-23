@@ -910,6 +910,8 @@ FocusScope {
                 // JS ownership:
                 return implicitFlickableScrollHandler.createObject(null, { target: flickable })
             } else {
+                // Make sure the JS engine destroys the scroll handler right after:
+                Qt.callLater(gc) // `QJSEngine::GarbageCollectionExtension` is installed by default
                 return null
             }
         }
