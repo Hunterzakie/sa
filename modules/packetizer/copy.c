@@ -59,13 +59,10 @@ vlc_module_end ()
  *****************************************************************************/
 typedef struct
 {
-    block_t *p_block;
     void (*pf_parse)( decoder_t *, block_t * );
 } decoder_sys_t;
 
 static block_t *Packetize   ( decoder_t *, block_t ** );
-static block_t *PacketizeSub( decoder_t *, block_t ** );
-static void Flush( decoder_t * );
 
 static void ParseWMV3( decoder_t *, block_t * );
 
@@ -92,7 +89,6 @@ static int Open( vlc_object_t *p_this )
     if (unlikely(p_sys == NULL))
         return VLC_ENOMEM;
 
-    p_sys->p_block    = NULL;
     switch( p_dec->fmt_in->i_codec )
     {
     case VLC_CODEC_WMV3:
@@ -120,11 +116,8 @@ static int Open( vlc_object_t *p_this )
     /* Create the output format */
     es_format_Copy( &p_dec->fmt_out, p_dec->fmt_in );
     p_dec->fmt_out.i_codec = fcc;
-    if( p_dec->fmt_in->i_cat == SPU_ES )
-        p_dec->pf_packetize = PacketizeSub;
-    else
-        p_dec->pf_packetize = Packetize;
-    p_dec->pf_flush = Flush;
+    p_dec->pf_packetize = Packetize;
+    p_dec->pf_flush = NULL;
     p_dec->pf_get_cc = NULL;
 
     return VLC_SUCCESS;
@@ -136,25 +129,7 @@ static int Open( vlc_object_t *p_this )
 static void Close( vlc_object_t *p_this )
 {
     decoder_t     *p_dec = (decoder_t*)p_this;
-    decoder_sys_t *p_sys = p_dec->p_sys;
-
-    if( p_sys->p_block )
-    {
-        block_ChainRelease( p_sys->p_block );
-    }
-
     free( p_dec->p_sys );
-}
-
-static void Flush( decoder_t *p_dec )
-{
-    decoder_sys_t *p_sys = p_dec->p_sys;
-    block_t *p_ret = p_sys->p_block;
-    if ( p_ret )
-    {
-        block_Release( p_ret );
-        p_sys->p_block = NULL;
-    }
 }
 
 /*****************************************************************************
@@ -162,20 +137,19 @@ static void Flush( decoder_t *p_dec )
  *****************************************************************************/
 static block_t *Packetize ( decoder_t *p_dec, block_t **pp_block )
 {
-    block_t *p_block;
     decoder_sys_t *p_sys = p_dec->p_sys;
-    block_t *p_ret = p_sys->p_block;
 
     if( pp_block == NULL || *pp_block == NULL )
         return NULL;
-    if( (*pp_block)->i_flags&(BLOCK_FLAG_CORRUPTED) )
+
+    block_t *p_block = *pp_block;
+    *pp_block = NULL;
+
+    if( p_block->i_flags&(BLOCK_FLAG_CORRUPTED) )
     {
-        block_Release( *pp_block );
+        block_Release( p_block );
         return NULL;
     }
-
-    p_block = *pp_block;
-    *pp_block = NULL;
 
     if( p_block->i_dts == VLC_TICK_INVALID )
     {
@@ -189,47 +163,8 @@ static block_t *Packetize ( decoder_t *p_dec, block_t **pp_block )
         return NULL;
     }
 
-    if( p_ret != NULL && p_block->i_pts > p_ret->i_pts )
-    {
-        if (p_dec->fmt_in->i_codec != VLC_CODEC_OPUS)
-            p_ret->i_length = p_block->i_pts - p_ret->i_pts;
-    }
-    p_sys->p_block = p_block;
-
-    if( p_ret && p_sys->pf_parse )
-        p_sys->pf_parse( p_dec, p_ret );
-    return p_ret;
-}
-
-/*****************************************************************************
- * PacketizeSub: packetize an unit (here copy a complete block )
- *****************************************************************************/
-static block_t *PacketizeSub( decoder_t *p_dec, block_t **pp_block )
-{
-    block_t *p_block;
-
-    if( pp_block == NULL || *pp_block == NULL )
-        return NULL;
-    if( (*pp_block)->i_flags&(BLOCK_FLAG_CORRUPTED) )
-    {
-        block_Release( *pp_block );
-        return NULL;
-    }
-
-    p_block = *pp_block;
-    *pp_block = NULL;
-
-    if( p_block->i_dts == VLC_TICK_INVALID )
-    {
-        p_block->i_dts = p_block->i_pts;
-    }
-
-    if( p_block->i_dts == VLC_TICK_INVALID )
-    {
-        msg_Dbg( p_dec, "need valid dts" );
-        block_Release( p_block );
-        return NULL;
-    }
+    if( p_block && p_sys->pf_parse )
+        p_sys->pf_parse( p_dec, p_block );
 
     return p_block;
 }
