@@ -1344,25 +1344,29 @@ static int MP4_ReadBox_tkhd(  stream_t *p_stream, MP4_Box_t *p_box )
     double rotation = 0;//angle in degrees to be rotated clockwise
     double scale[2];    // scale factor; sx = scale[0] , sy = scale[1]
     int32_t *matrix = p_box->data.p_tkhd->i_matrix;
+    double conv_fx_matrix[ARRAY_SIZE(p_box->data.p_tkhd->i_matrix)];
+
+    for (size_t i = 0; i < ARRAY_SIZE(conv_fx_matrix); i++)
+        conv_fx_matrix[i] = conv_fx(matrix[i]);
 
     int64_t det = (int64_t)matrix[0] * matrix[4] - (int64_t)matrix[1] * matrix[3];
     if (det < 0) {
         /* If determinant is negative copy the matrix and flip it horizontally. */
-        const int flip[] = { -1, 1, 1 };
-        for (int j = 0; j < 9; j++)
-            matrix[j] *= flip[j % 3];
+        conv_fx_matrix[0] = -conv_fx_matrix[0];
+        conv_fx_matrix[3] = -conv_fx_matrix[3];
+        conv_fx_matrix[6] = -conv_fx_matrix[6];
         p_box->data.p_tkhd->i_flip = 1;
     }
 
-    scale[0] = sqrt(conv_fx(matrix[0]) * conv_fx(matrix[0]) +
-                    conv_fx(matrix[3]) * conv_fx(matrix[3]));
-    scale[1] = sqrt(conv_fx(matrix[1]) * conv_fx(matrix[1]) +
-                    conv_fx(matrix[4]) * conv_fx(matrix[4]));
+    scale[0] = sqrt(conv_fx_matrix[0] * conv_fx_matrix[0]) +
+                    conv_fx_matrix[3] * conv_fx_matrix[3];
+    scale[1] = sqrt(conv_fx_matrix[1] * conv_fx_matrix[1]) +
+                    conv_fx_matrix[4] * conv_fx_matrix[4];
 
     if( likely(scale[0] > 0 && scale[1] > 0) )
     {
-        rotation = atan2(conv_fx(matrix[1]) / scale[1],
-                         conv_fx(matrix[0]) / scale[0]) * 180 / M_PI;
+        rotation = atan2(conv_fx_matrix[1] / scale[1],
+                         conv_fx_matrix[0] / scale[0]) * 180 / M_PI;
         if (rotation < 0)
             rotation += 360.;
     }
@@ -1372,8 +1376,8 @@ static int MP4_ReadBox_tkhd(  stream_t *p_stream, MP4_Box_t *p_box )
 #ifdef MP4_VERBOSE
     double translate[2];// amount to translate; tx = translate[0] , ty = translate[1]
 
-    translate[0] = conv_fx(matrix[6]);
-    translate[1] = conv_fx(matrix[7]);
+    translate[0] = conv_fx_matrix[6];
+    translate[1] = conv_fx_matrix[7];
 
     msg_Dbg( p_stream, "read box: \"tkhd\" track #%"PRIu32" duration %"PRIu64" layer %d "
                        "volume %3.1f rotation %3.1f scale %.2fx%.2f translate +%.2f+%.2f size %ux%u. "
