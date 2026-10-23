@@ -1106,15 +1106,16 @@ int SetupAudioES( demux_t *p_demux, const mp4_track_t *p_track,
         }
 
         case VLC_FOURCC( 't', 'w', 'o', 's' ):
-            p_fmt->i_codec = VLC_CODEC_S16B;
-            p_fmt->i_original_fourcc = i_sample_type;
-            p_fmt->audio.i_bitspersample = 16;
-            break;
-
         case VLC_FOURCC( 's', 'o', 'w', 't' ):
-            p_fmt->i_codec = VLC_CODEC_S16L;
-            p_fmt->i_original_fourcc = i_sample_type;
-            p_fmt->audio.i_bitspersample = 16;
+            /* We can't trust people to follow spec as they have put
+               any raw audio, especially S8, into these :/ #27154 */
+            p_fmt->i_codec = vlc_fourcc_GetCodecAudio( i_sample_type,
+                                                       p_soun->i_samplesize );
+            if( p_fmt->i_codec )
+            {
+                p_fmt->i_original_fourcc = i_sample_type;
+                p_fmt->audio.i_bitspersample = p_soun->i_samplesize;
+            }
             break;
 
         case 0x0000000:
