@@ -426,6 +426,11 @@ static bool vlc_uri_component_validate(const char *str, const char *extras)
 
 static bool vlc_uri_host_validate(const char *str)
 {
+    // Only link-Local IPv6 addresses can have a zone identifier
+    if (!strncasecmp(str, "fe80:", 5)) {
+        return vlc_uri_component_validate(str, ":%");
+    }
+
     return vlc_uri_component_validate(str, ":");
 }
 
@@ -528,7 +533,7 @@ static int vlc_UrlParseInner(vlc_url_t *restrict url, const char *str)
         if (*cur == '[' && (next = strrchr(cur, ']')) != NULL)
         {   /* Try IPv6 numeral within brackets */
             *(next++) = '\0';
-            url->psz_host = strdup(cur + 1);
+            url->psz_host = vlc_uri_decode_duplicate(cur + 1);
 
             if (*next == ':')
                 next++;

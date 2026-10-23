@@ -277,6 +277,8 @@ int main (void)
                    "/", NULL);
     test_url_parse("http://[2001:db8::1]", "http", NULL, NULL, "2001:db8::1",
                    0, NULL, NULL);
+    test_url_parse("http://[fe80::1%25eth0]", "http", NULL, NULL, "fe80::1%eth0",
+                   0, NULL, NULL);
     test_url_parse("http://example.com:", "http", NULL, NULL, "example.com", 0,
                     NULL, NULL);
     test_url_parse("protocol://john:doe@1.2.3.4:567", "protocol", "john", "doe", "1.2.3.4", 567, NULL, NULL);
@@ -321,6 +323,7 @@ int main (void)
     test_url_parse("http://example.com:-18446744073709551615", NULL, NULL, NULL, NULL, 0, NULL, NULL );
     test_url_parse("http://user%/Oath", "http", NULL, NULL, NULL, 0, "/Oath",
                    NULL);
+    test_url_parse("http://[2001::1%25eth0]", NULL, NULL, NULL, NULL, 0, NULL, NULL);
 
     /* URIs to fixup */
     test_url_parse("smb://SERVER:445/SHARE/My file.mp3", "smb", NULL, NULL, "SERVER", 445, NULL, NULL);
