@@ -19,7 +19,7 @@
 #ifndef __STDC_VERSION_STDCKDINT_H__
 # define __STDC_VERSION_STDCKDINT_H__ 202311L
 
-# if defined(__GNUC__) || defined(__clang__)
+# if (defined(__GNUC__) || defined(__clang__)) && defined(__SIZEOF_INT128__)
 #  define ckd_add(r, a, b) __builtin_add_overflow(a, b, r)
 #  define ckd_sub(r, a, b) __builtin_sub_overflow(a, b, r)
 #  define ckd_mul(r, a, b) __builtin_mul_overflow(a, b, r)
