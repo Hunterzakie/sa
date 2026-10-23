@@ -357,7 +357,7 @@ void vout_CreateVars( vout_thread_t *p_vout )
     var_Create( p_vout, "viewpoint-changeable", VLC_VAR_BOOL );
 
     /* SPU in full window */
-    var_Create( p_vout, "spu-fill", VLC_VAR_BOOL | VLC_VAR_DOINHERIT
+    var_Create( p_vout, "spu-fill", VLC_VAR_INTEGER | VLC_VAR_DOINHERIT
                 | VLC_VAR_ISCOMMAND );
 
     var_Create(p_vout, "override-projection", VLC_VAR_BOOL);

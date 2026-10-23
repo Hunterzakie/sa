@@ -744,7 +744,7 @@ static void VoutGetDisplayCfg(vout_thread_sys_t *p_vout, const video_format_t *f
     const int display_height = var_GetInteger(vout, "height");
     cfg->display.width   = display_width > 0  ? display_width  : 0;
     cfg->display.height  = display_height > 0 ? display_height : 0;
-    cfg->display.full_fill = var_GetBool(vout, "spu-fill");
+    cfg->display.full_fill = var_GetInteger(vout, "spu-fill");
     cfg->display.fitting = var_GetBool(vout, "autoscale")
         ? var_InheritFit(VLC_OBJECT(vout)) : VLC_VIDEO_FIT_NONE;
     unsigned msar_num, msar_den;
@@ -1277,7 +1277,7 @@ static int PrerenderPicture(vout_thread_sys_t *sys, picture_t *filtered,
     const bool vd_does_blending = !do_snapshot &&
                                    vd->info.subpicture_chromas &&
                                    *vd->info.subpicture_chromas != 0;
-    const bool spu_in_full_window = vd->cfg->display.full_fill &&
+    const bool spu_in_full_window = vd->cfg->display.full_fill == VLC_SUBPICTURE_AREA_WINDOW &&
                                     vd_does_blending;
 
     //FIXME: Denying blending_before_converter if vd->source->orientation != ORIENT_NORMAL
