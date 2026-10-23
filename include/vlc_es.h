@@ -27,6 +27,7 @@
 #include <vlc_fourcc.h>
 #include <vlc_viewpoint.h>
 #include <vlc_replay_gain.h>
+#include <vlc_sylt.h>
 
 /**
  * \file
@@ -643,6 +644,7 @@ struct es_format_t
         struct {
             audio_format_t  audio;    /**< description of audio format */
             audio_replay_gain_t audio_replay_gain; /**< audio replay gain information */
+            vlc_sylt_t      sylt;     /**< synchronized lyrics (audio only) */
         };
         video_format_t video;     /**< description of video format */
         subs_format_t  subs;      /**< description of subtitle format */

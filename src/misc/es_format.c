@@ -354,6 +354,12 @@ int es_format_Copy(es_format_t *restrict dst, const es_format_t *src)
     if (src->i_cat == VIDEO_ES)
         ret = video_format_Copy( &dst->video, &src->video );
 
+    if (src->i_cat == AUDIO_ES && src->sylt.i_count > 0)
+    {
+        if (vlc_sylt_Copy( &dst->sylt, &src->sylt ) != VLC_SUCCESS)
+            ret = VLC_ENOMEM;
+    }
+
     if (src->i_cat == SPU_ES)
     {
         if (src->subs.psz_encoding != NULL)
@@ -398,6 +404,8 @@ void es_format_Clean(es_format_t *fmt)
 
     if (fmt->i_cat == VIDEO_ES)
         video_format_Clean( &fmt->video );
+    if (fmt->i_cat == AUDIO_ES)
+        vlc_sylt_Clean( &fmt->sylt );
     if (fmt->i_cat == SPU_ES)
         free(fmt->subs.psz_encoding);
 

@@ -688,6 +688,7 @@ static int ModuleThread_UpdateAudioFormat( decoder_t *p_dec )
                 .clock = p_owner->p_clock,
                 .str_id = p_owner->psz_id,
                 .replay_gain = &p_dec->fmt_out.audio_replay_gain,
+                .sylt = &p_dec->fmt_in->sylt,
             };
             p_astream = vlc_aout_stream_New( p_aout, &cfg );
             if( p_astream == NULL )

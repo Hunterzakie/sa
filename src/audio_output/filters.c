@@ -369,6 +369,7 @@ struct aout_filters
     struct aout_filter resampler; /**< The resampler */
     int resampling; /**< Current resampling (Hz) */
     vlc_clock_t *clock_source;
+    const vlc_sylt_t *sylt; /**< Synchronized lyrics for the visualizer, or NULL */
 
     unsigned count; /**< Number of filters */
     struct aout_filter tab[AOUT_MAX_FILTERS]; /**< Configured user filters
@@ -410,6 +411,7 @@ struct filter_owner_sys
     vlc_clock_t *clock_source;
     vlc_clock_t *clock;
     vout_thread_t *vout;
+    const vlc_sylt_t *sylt;
 };
 
 vout_thread_t *aout_filter_GetVout(filter_t *filter, const video_format_t *fmt)
@@ -450,6 +452,12 @@ vout_thread_t *aout_filter_GetVout(filter_t *filter, const video_format_t *fmt)
     return vout;
 }
 
+const vlc_sylt_t *aout_filter_GetSylt(filter_t *filter)
+{
+    struct filter_owner_sys *owner_sys = filter->owner.sys;
+    return owner_sys->sylt;
+}
+
 static int AppendFilter(vlc_object_t *obj, const char *type, const char *name,
                         aout_filters_t *restrict filters,
                         audio_sample_format_t *restrict infmt,
@@ -467,6 +475,7 @@ static int AppendFilter(vlc_object_t *obj, const char *type, const char *name,
         .clock_source = filters->clock_source,
         .clock = NULL,
         .vout = NULL,
+        .sylt = filters->sylt,
     };
     const filter_owner_t owner = { .sys = &owner_sys };
     filter_t *filter = aout_filter_Create(obj, &owner, type, name,
@@ -559,6 +568,7 @@ aout_filters_t *aout_FiltersNewWithClock(vlc_object_t *obj, vlc_clock_t *clock,
     filters->resampling = 0;
     filters->count = 0;
     filters->clock_source = clock;
+    filters->sylt = (cfg != NULL) ? cfg->sylt : NULL;
 
     /* Prepare format structure */
     aout_FormatPrint (obj, "input", infmt);

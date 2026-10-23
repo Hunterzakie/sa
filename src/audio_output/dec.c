@@ -47,6 +47,7 @@ struct vlc_aout_stream
     aout_volume_t *volume;
     aout_filters_t *filters;
     aout_filters_cfg_t filters_cfg;
+    const vlc_sylt_t *sylt;
 
     atomic_bool drained;
     _Atomic vlc_tick_t drain_deadline;
@@ -385,6 +386,7 @@ vlc_aout_stream * vlc_aout_stream_New(audio_output_t *p_aout,
     stream->sync.clock = cfg->clock;
     stream->sync.clock_id = 0;
     stream->str_id = cfg->str_id;
+    stream->sylt = cfg->sylt;
 
     stream->timing.rate_audio_ts = VLC_TICK_INVALID;
     stream->timing.rate = 1.f;
@@ -407,6 +409,7 @@ vlc_aout_stream * vlc_aout_stream_New(audio_output_t *p_aout,
 
     stream->filters = NULL;
     stream->filters_cfg = AOUT_FILTERS_CFG_INIT;
+    stream->filters_cfg.sylt = stream->sylt;
     if (aout_OutputNew(p_aout, stream, &stream->mixer_format, stream->input_profile,
                        &stream->filter_format, &stream->filters_cfg))
         goto error;
@@ -495,6 +498,7 @@ static int stream_CheckReady (vlc_aout_stream *stream)
                 aout_OutputDelete (aout);
             stream->filter_format = stream->mixer_format = stream->input_format;
             stream->filters_cfg = AOUT_FILTERS_CFG_INIT;
+            stream->filters_cfg.sylt = stream->sylt;
 
             stream_Reset(stream);
 

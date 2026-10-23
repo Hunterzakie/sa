@@ -105,6 +105,7 @@ install_headers(
     'vlc_sout.h',
     'vlc_spawn.h',
     'vlc_spu.h',
+    'vlc_sylt.h',
     'vlc_stream.h',
     'vlc_stream_extractor.h',
     'vlc_strings.h',
