@@ -191,8 +191,20 @@ static void ParsePXCTLI( decoder_t *p_dec, const subpicture_data_t *p_spu_data,
 static void UpdateDvdSpu(subpicture_t * p_spu,
                          const struct vlc_spu_updater_configuration * cfg)
 {
-    p_spu->i_original_picture_width  = cfg->current.video_src->i_visible_width;
-    p_spu->i_original_picture_height = cfg->current.video_src->i_visible_height;
+    const subpicture_region_t *p_region = vlc_spu_regions_first_or_null(&p_spu->regions);
+    if (p_region == NULL)
+        return;
+
+    if (p_region->b_in_window)
+    {
+        p_spu->i_original_picture_width  = cfg->current.display_width;
+        p_spu->i_original_picture_height = cfg->current.display_height;
+    }
+    else
+    {
+        p_spu->i_original_picture_width  = cfg->current.video_src->i_visible_width;
+        p_spu->i_original_picture_height = cfg->current.video_src->i_visible_height;
+    }
 }
 
 /*****************************************************************************
@@ -911,9 +923,21 @@ static int Render( decoder_t *p_dec, subpicture_t *p_spu,
         return VLC_EGENERIC;
     }
 
-    p_region->b_absolute = true; p_region->b_in_window = false;
-    p_region->i_x = p_spu_properties->i_x;
-    p_region->i_y = p_spu_properties->i_y + p_spu_data->i_y_top_offset;
+    const bool position_in_video = p_dec->fmt_in->psz_language == NULL || // menu ?
+                                   var_InheritBool(p_dec, "spu-strict-placement");
+    p_region->b_absolute = position_in_video;
+    p_region->b_in_window = !position_in_video;
+    if (position_in_video)
+    {
+        p_region->i_x = p_spu_properties->i_x;
+        p_region->i_y = p_spu_properties->i_y + p_spu_data->i_y_top_offset;
+    }
+    else
+    {
+        p_region->i_x = 0;
+        p_region->i_y = 0;
+        p_region->i_align = SUBPICTURE_ALIGN_BOTTOM;
+    }
     p_p = p_region->p_picture->p->p_pixels;
     i_pitch = p_region->p_picture->p->i_pitch;
 
