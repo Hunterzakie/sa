@@ -124,6 +124,9 @@ vlc_module_begin ()
         add_integer( "rtsp-http-port", 80,
                   N_("HTTP tunnel port"),
                   N_("Port to use for tunneling the RTSP/RTP over HTTP.") )
+        add_string("rtsp-user-agent", NULL, N_("User agent"),
+               N_("Override the User-Agent provided to the RTSP server."))
+            change_safe()
         add_bool(   "rtsp-kasenna", false, KASENNA_TEXT,
                     KASENNA_LONGTEXT )
             change_safe()
@@ -647,6 +650,7 @@ static int Connect( demux_t *p_demux )
     int  i_http_port  = 0;
     int  i_ret;
     const int i_timeout = var_InheritInteger( p_demux, "ipv4-timeout" );
+    char *ua;
 
     vlc_credential_init( &credential, &p_sys->url );
 
@@ -696,6 +700,13 @@ createnew:
     if( var_InheritBool( p_demux, "rtsp-kasenna" ))
     {
         p_sys->rtsp->setUserAgentString( "VLC_MEDIA_PLAYER_KA" );
+    }
+
+    // override User-Agent
+    if ( (ua = var_InheritString(p_demux, "rtsp-user-agent")) )
+    {
+        p_sys->rtsp->setUserAgentString(ua);
+        free(ua);
     }
 
 describe:
