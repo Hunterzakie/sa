@@ -189,7 +189,8 @@ static HINSTANCE Direct3D9LoadShaderLibrary(void)
     HINSTANCE instance = NULL;
     for (int i = 43; i > 23; --i) {
         char filename[16];
-        _snprintf(filename, ARRAY_SIZE(filename), "D3dx9_%d.dll", i);
+        if(_snprintf(filename, ARRAY_SIZE(filename), "D3dx9_%d.dll", i) < 0)
+            continue;
         instance = LoadLibraryExA(filename, NULL, LOAD_LIBRARY_SEARCH_SYSTEM32);
         if (instance)
             break;
