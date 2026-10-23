@@ -33,7 +33,8 @@
 #include "instance.h"
 #include "utils.h"
 
-static int InitInstance(vlc_placebo_t *pl, const vout_display_cfg_t *cfg);
+static int InitInstance(vlc_placebo_t *pl, const vout_display_cfg_t *cfg,
+                        const struct vlc_placebo_create_params *params);
 static void CloseInstance(vlc_placebo_t *pl);
 static int MakeCurrent(vlc_placebo_t *pl);
 static void ReleaseCurrent(vlc_placebo_t *pl);
@@ -98,8 +99,11 @@ static pl_voidfunc_t get_proc_addr_wrapper(void *ctx, const char *procname)
 }
 #endif
 
-static int InitInstance(vlc_placebo_t *pl, const vout_display_cfg_t *cfg)
+static int InitInstance(vlc_placebo_t *pl, const vout_display_cfg_t *cfg,
+                        const struct vlc_placebo_create_params *params)
 {
+    (void) params;
+
     vlc_placebo_system_t *sys = pl->sys =
         vlc_obj_calloc(VLC_OBJECT(pl), 1, sizeof (*sys));
     if (unlikely(sys == NULL))

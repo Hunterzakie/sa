@@ -1,6 +1,22 @@
 
 ### Vulkan ###
 
+libvulkan_device_la_SOURCES = \
+	video_output/vulkan/common.h \
+	video_output/vulkan/common.c \
+	video_output/vulkan/device.h \
+	video_output/vulkan/device.c \
+	video_output/vulkan/device_utils.h \
+	video_output/vulkan/device_utils.c \
+	video_output/vulkan/interop.h \
+	video_output/vulkan/vk_funcs.h
+libvulkan_device_la_CFLAGS = $(AM_CFLAGS) $(VULKAN_CFLAGS)
+libvulkan_device_la_LDFLAGS = -static -undefined
+
+if HAVE_VULKAN
+noinst_LTLIBRARIES += libvulkan_device.la
+endif
+
 VULKAN_COMMONSOURCES = video_output/vulkan/platform.c \
 	video_output/vulkan/instance.h \
 	video_output/vulkan/platform.h
