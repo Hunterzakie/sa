@@ -1181,12 +1181,14 @@ static picture_t *ConvertRGBAAndBlend(vout_thread_sys_t *vout, picture_t *pic,
         return NULL;
 
     es_format_t src = sys->spu_blend->fmt_out;
+    /* The blend filter's fmt_out has no sample aspect ratio, which the
+     * snapshot export treats as square pixels: take the picture's. */
+    src.video.i_sar_num = pic->format.i_sar_num;
+    src.video.i_sar_den = pic->format.i_sar_den;
     es_format_t dst = src;
-    dst.video.i_chroma = VLC_CODEC_RGBA;
+    dst.i_codec = dst.video.i_chroma = VLC_CODEC_RGBA;
 
-    filter_chain_Reset(filterc, &src,
-                       NULL /* TODO output video context of blender */,
-                       &dst);
+    filter_chain_Reset(filterc, &src, picture_GetVideoContext(pic), &dst);
 
     if (filter_chain_AppendConverter(filterc, &dst) != VLC_SUCCESS)
     {
