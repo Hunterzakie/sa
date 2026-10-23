@@ -1695,6 +1695,18 @@ static int SubSourceDelProxyCallbacks(filter_t *filter, void *opaque)
     return VLC_SUCCESS;
 }
 
+/* The updaters lay subpictures out with square pixels, but the video place is
+ * in fmt_dst pixels, which aren't square when blending into a picture with a
+ * non-square SAR: give them the place's width in square pixels. */
+static unsigned spu_SquarePlaceWidth(const vout_display_place_t *place,
+                                     const video_format_t *fmt_dst)
+{
+    /* an unset SAR means square pixels */
+    if (fmt_dst->i_sar_num == 0 || fmt_dst->i_sar_den == 0)
+        return place->width;
+    return (uint64_t)place->width * fmt_dst->i_sar_num / fmt_dst->i_sar_den;
+}
+
 static void spu_PrerenderWake(spu_private_t *sys,
                               const video_format_t *fmt_dst,
                               const video_format_t *fmt_src,
@@ -1831,12 +1843,14 @@ static void * spu_PrerenderThread(void *priv)
         fmtsrc = sys->prerender.fmtsrc;
 
         unsigned display_width, display_height;
-        fmtdst.i_width  = fmtdst.i_visible_width  = sys->prerender.video_position.width;
+        const unsigned place_width =
+            spu_SquarePlaceWidth(&sys->prerender.video_position, &fmtdst);
+        fmtdst.i_width  = fmtdst.i_visible_width  = place_width;
         fmtdst.i_height = fmtdst.i_visible_height = sys->prerender.video_position.height;
         fmtdst.i_sar_num = fmtdst.i_sar_den = 1;
         if (!sys->prerender.spu_in_full_window)
         {
-            display_width  = sys->prerender.video_position.width;
+            display_width  = place_width;
             display_height = sys->prerender.video_position.height;
         }
         else
@@ -2351,12 +2365,13 @@ vlc_render_subpicture *spu_Render(spu_t *spu,
 
         unsigned display_width, display_height;
         video_format_t fmtdst = *fmt_dst;
-        fmtdst.i_width  = fmtdst.i_visible_width  = video_position->width;
+        const unsigned place_width = spu_SquarePlaceWidth(video_position, fmt_dst);
+        fmtdst.i_width  = fmtdst.i_visible_width  = place_width;
         fmtdst.i_height = fmtdst.i_visible_height = video_position->height;
         fmtdst.i_sar_num = fmtdst.i_sar_den = 1;
         if (!spu_in_full_window)
         {
-            display_width  = video_position->width;
+            display_width  = place_width;
             display_height = video_position->height;
         }
         else
