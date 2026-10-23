@@ -28,7 +28,23 @@ T.ToolTip {
     id: control
 
     x: 0
-    y: -implicitHeight - VLCStyle.margin_xxxsmall
+    y: {
+        if (!parent || !parent.Window.window)
+            return -implicitHeight - VLCStyle.margin_xxxsmall
+
+        const aboveGlobalY = parent.mapToGlobal(0, 0).y - implicitHeight - VLCStyle.margin_xxxsmall
+        const screen = parent.Screen
+
+        if (!screen)
+            return -implicitHeight - VLCStyle.margin_xxxsmall
+        const topLimit = (screen.height && screen.desktopAvailableHeight)
+            ? screen.virtualY + (screen.height - screen.desktopAvailableHeight)
+            : screen.virtualY
+
+        return (aboveGlobalY < topLimit)
+            ? parent.height + VLCStyle.margin_xxxsmall
+            : -implicitHeight - VLCStyle.margin_xxxsmall
+    }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
                             implicitContentWidth + leftPadding + rightPadding)
