@@ -52,6 +52,8 @@
 
 #define IDM_TOGGLE_ON_TOP  (WM_USER + 1)
 
+#define CLASS_MAIN_MAX_CHARS 256
+
 typedef struct vout_window_sys_t
 {
     vlc_thread_t thread;
@@ -60,7 +62,7 @@ typedef struct vout_window_sys_t
     HWND hwnd;
 
     HMONITOR monitor; /* last monitor associated with window */
-    WCHAR class_main[256];
+    WCHAR class_main[CLASS_MAIN_MAX_CHARS+1];
     HICON vlc_icon;
 
     /* icc profile */
@@ -807,8 +809,9 @@ static int Open(vlc_window_t *wnd)
     if (unlikely(sys == NULL))
         return VLC_ENOMEM;
 
-    _snwprintf( sys->class_main, ARRAY_SIZE(sys->class_main),
-               TEXT("VLC standalone window %p"), (void *)sys );
+    if( _snwprintf( sys->class_main, CLASS_MAIN_MAX_CHARS,
+               TEXT("VLC standalone window %p"), (void *)sys ) < 0 )
+        sys->class_main[0] = 0;
 
     HINSTANCE hInstance = GetModuleHandle(NULL);
 
