@@ -232,7 +232,7 @@ static block_t *DoWork( filter_t *p_filter, block_t *p_in_buf )
     float *p_out = (float*)p_in_buf->p_buffer;
     float *p_in =  (float*)p_in_buf->p_buffer;
 
-    float *p_ptr, f_temp = 0;/* f_diff = 0, f_frac = 0;*/
+    float *p_ptr, f_temp = 0, f_frac = 0;
 
     /* Process each sample */
     for( unsigned i = 0; i < i_samples ; i++ )
@@ -269,17 +269,14 @@ static block_t *DoWork( filter_t *p_filter, block_t *p_in_buf )
         {
             p_ptr -= p_sys->i_bufferLength - p_sys->i_channels;
         }
-        /* For interpolation */
-/*        f_frac = ( p_sys->f_offset - (int)p_sys->f_offset );*/
+        /* Linear interpolation between adjacent delay buffer samples */
+        f_frac = fabsf( p_sys->f_offset - floorf( p_sys->f_offset ) );
         for( i_chan = 0; i_chan < p_sys->i_channels; i_chan++ )
         {
-/*            if( p_ptr <= p_sys->p_delayLineStart + p_sys->i_channels )
-                f_diff = *(p_sys->p_delayLineEnd + i_chan) - p_ptr[i_chan];
-            else
-                f_diff = *( p_ptr - p_sys->i_channels + i_chan )
-                            - p_ptr[i_chan];*/
-            f_temp = ( *( p_ptr + i_chan ) );//+ f_diff * f_frac;
-            /*Linear Interpolation. FIXME. This creates LOTS of noise */
+            float *p_next = p_ptr + p_sys->i_channels;
+            if( p_next >= p_sys->p_delayLineEnd )
+                p_next = p_sys->p_delayLineStart;
+            f_temp = p_ptr[i_chan] + f_frac * ( p_next[i_chan] - p_ptr[i_chan] );
             sanitize(&f_temp);
             p_out[i_chan] = p_sys->f_dryLevel * p_in[i_chan] +
                 p_sys->f_wetLevel * f_temp;
