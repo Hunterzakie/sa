@@ -225,8 +225,25 @@ static void *Thread( void *p_data )
                 HANDLE( MEDIA_NEXT_TRACK );
 
                 default:
-                    i_vk = toupper( (uint8_t)(i_key & ~KEY_MODIFIER) );
+                {
+                    uint_fast32_t key = i_key & ~KEY_MODIFIER;
+                    /* VK_0-VK_9 and VK_A-VK_Z exist on every layout */
+                    if( key < 0x80 && isalnum( key ) )
+                    {
+                        i_vk = toupper( key );
+                        break;
+                    }
+                    if( key == KEY_UNSET || key > 0xffff )
+                        continue;
+                    SHORT vk = VkKeyScanW( key );
+                    if( vk == -1 )
+                        continue;
+                    i_vk = LOBYTE( vk );
+                    if( HIBYTE( vk ) & 1 ) i_keyMod |= MOD_SHIFT;
+                    if( HIBYTE( vk ) & 2 ) i_keyMod |= MOD_CONTROL;
+                    if( HIBYTE( vk ) & 4 ) i_keyMod |= MOD_ALT;
                     break;
+                }
             }
             if( !i_vk ) continue;
 
