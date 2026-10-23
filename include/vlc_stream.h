@@ -27,6 +27,8 @@
 #include <vlc_block.h>
 #include <vlc_input.h>
 
+#include <stdint.h>
+
 # ifdef __cplusplus
 extern "C" {
 # endif
@@ -576,14 +578,14 @@ VLC_USED static inline int vlc_stream_SetPrivateIdCa(stream_t *s, void *ca)
     return vlc_stream_Control(s, STREAM_SET_PRIVATE_ID_CA, ca);
 }
 
-static inline int64_t stream_Size( stream_t *s )
+static inline uint64_t stream_Size( stream_t *s )
 {
     uint64_t i_pos;
 
     if( vlc_stream_GetSize( s, &i_pos ) )
         return 0;
     if( i_pos >> 62 )
-        return (int64_t)1 << 62;
+        return UINT64_C(1) << 62;
     return i_pos;
 }
 

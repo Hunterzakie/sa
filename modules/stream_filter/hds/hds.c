@@ -809,7 +809,7 @@ static uint8_t* download_chunk( stream_t *s,
     }
     free( fragment_url );
 
-    int64_t size = stream_Size( download_stream );
+    uint64_t size = stream_Size( download_stream );
     if( size > MAX_REQUEST_SIZE )
     {
         msg_Err(s, "Strangely-large chunk of %"PRIi64" Bytes", size );
@@ -1147,7 +1147,7 @@ static void* live_thread( void* p )
         }
         else
         {
-            int64_t size = stream_Size( download_stream );
+            uint64_t size = stream_Size( download_stream );
             if( size == 0 )
             {
                 msg_Err( s, "Unknown stream size for %s", abst_url );

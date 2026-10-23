@@ -447,7 +447,7 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
 {
     demux_sys_t *p_sys  = p_demux->p_sys;
     double *pf;
-    int64_t i64;
+    uint64_t i64;
 
     switch( i_query )
     {
@@ -466,7 +466,7 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
             else
             {
                 i64 = stream_Size( p_demux->s );
-                if( i64 > 0 )
+                if( i64 != 0 )
                 {
                     const double f_current = vlc_stream_Tell( p_demux->s );
                     *pf = f_current / (double)i64;
@@ -1119,4 +1119,3 @@ static uint64_t demux_IndexFindOffset(demux_index_t *p_idx, uint64_t i_offset)
     else
         return p_idx->idx[i_max].i_offset;
 }
-

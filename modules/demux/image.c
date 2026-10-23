@@ -576,7 +576,7 @@ static bool IsTarga(stream_t *s)
     if (header[8 + 9] & 0xc0)               /* Reserved bits */
         return false;
 
-    const int64_t size = stream_Size(s);
+    const uint64_t size = stream_Size(s);
     if (size <= 18 + 26)
         return false;
     bool can_seek;

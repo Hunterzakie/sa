@@ -181,7 +181,7 @@ static int64_t get_data( demux_t *p_demux, int64_t i_bytes_to_read )
     char *buf;
     int64_t i_result;
 
-    if ( p_sys->i_total_bytes > 0 )
+    if ( p_sys->i_total_bytes != 0 )
     {
         if ( p_sys->i_input_position + i_bytes_to_read > p_sys->i_total_bytes )
         {
@@ -217,7 +217,7 @@ void Oggseek_ProbeEnd( demux_t *p_demux )
     int64_t i_pos, i_startpos, i_result, i_granule, i_lowerbound;
     int64_t i_length = 0;
     int64_t i_backup_pos = vlc_stream_Tell( p_demux->s );
-    int64_t i_upperbound = stream_Size( p_demux->s );
+    uint64_t i_upperbound = stream_Size( p_demux->s );
     unsigned int i_backoffset = OGGSEEK_BYTES_TO_READ;
     assert( OGGSEEK_BYTES_TO_READ < UINT_MAX );
 
@@ -842,7 +842,7 @@ int Oggseek_BlindSeektoPosition( demux_t *p_demux, logical_stream_t *p_stream,
 {
     demux_sys_t *p_sys = p_demux->p_sys;
     OggDebug( msg_Dbg( p_demux, "=================== Seeking To Blind Pos" ) );
-    int64_t i_size = stream_Size( p_demux->s );
+    uint64_t i_size = stream_Size( p_demux->s );
     uint64_t i_startpos = vlc_stream_Tell( p_demux->s );
     int64_t i_granule;
     int64_t i_pagepos;
@@ -1013,4 +1013,3 @@ int64_t oggseek_read_page( demux_t *p_demux )
 
     return i_result + PAGE_HEADER_BYTES + i_nsegs;
 }
-

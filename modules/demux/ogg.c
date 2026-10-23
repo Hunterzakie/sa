@@ -1670,7 +1670,7 @@ static int Ogg_FindLogicalStreams( demux_t *p_demux )
     demux_sys_t *p_ogg = p_demux->p_sys;
 
     p_ogg->i_total_bytes = stream_Size ( p_demux->s );
-    msg_Dbg( p_demux, "File length is %"PRId64" bytes", p_ogg->i_total_bytes );
+    msg_Dbg( p_demux, "File length is %"PRIu64" bytes", p_ogg->i_total_bytes );
 
     while( Ogg_ReadPage( p_demux, &p_ogg->current_page ) == VLC_SUCCESS )
     {

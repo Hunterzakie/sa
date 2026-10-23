@@ -350,7 +350,7 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
     demux_sys_t *p_sys = p_demux->p_sys;
     double f, *pf;
     bool b_bool, *pb_bool;
-    int64_t i64;
+    uint64_t i64;
 
     switch( i_query )
     {
@@ -360,7 +360,7 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
         case DEMUX_GET_POSITION:
             pf = va_arg( args, double * );
             i64 = stream_Size( p_demux->s );
-            if( i64 > 0 )
+            if( i64 != 0 )
             {
                 double current = vlc_stream_Tell( p_demux->s );
                 *pf = current / (double)i64;
@@ -375,7 +375,7 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
             f = va_arg( args, double );
             i64 = stream_Size( p_demux->s );
 
-            if( vlc_stream_Seek( p_demux->s, (int64_t)(i64 * f) ) || ReSynch( p_demux ) )
+            if( vlc_stream_Seek( p_demux->s, (uint64_t)(i64 * f) ) || ReSynch( p_demux ) )
                 return VLC_EGENERIC;
 
             p_sys->i_time = -1; /* Invalidate time display */

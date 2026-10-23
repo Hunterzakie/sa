@@ -114,7 +114,7 @@ typedef struct
     date_t      pts;
     vlc_tick_t  i_length;
 
-    int         i_data;
+    size_t      i_data;
     uint8_t     *p_data;
     ModPlugFile *f;
 } demux_sys_t;
@@ -152,8 +152,8 @@ static int Open( vlc_object_t *p_this )
         }
     }
 
-    const int64_t i_size = stream_Size( p_demux->s );
-    if( i_size <= 0 || i_size >= MOD_MAX_FILE_SIZE )
+    const uint64_t i_size = stream_Size( p_demux->s );
+    if( i_size == 0 || i_size >= MOD_MAX_FILE_SIZE )
         return VLC_EGENERIC;
 
     p_sys = vlc_obj_malloc( p_this, sizeof (*p_sys) );
@@ -161,14 +161,13 @@ static int Open( vlc_object_t *p_this )
         return VLC_ENOMEM;
 
     msg_Dbg( p_demux, "loading complete file (could be long)" );
-    p_sys->i_data = i_size;
+    p_sys->i_data = (size_t)i_size;
     p_sys->p_data = vlc_obj_malloc( p_this, p_sys->i_data );
     if( unlikely(p_sys->p_data == NULL) )
         return VLC_ENOMEM;
 
-    p_sys->i_data = vlc_stream_Read( p_demux->s, p_sys->p_data,
-                                     p_sys->i_data );
-    if( p_sys->i_data <= 0 )
+    if( vlc_stream_Read( p_demux->s, p_sys->p_data,
+                                     p_sys->i_data ) < 0 )
     {
         msg_Err( p_demux, "failed to read the complete file" );
         return VLC_EGENERIC;

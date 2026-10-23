@@ -629,8 +629,8 @@ int vlclua_dofile( vlc_object_t *p_this, lua_State *L, const char *curi )
         free( uri );
         return 1;
     }
-    int64_t i_size = stream_Size( s );
-    char *p_buffer = ( i_size > 0 ) ? malloc( i_size ) : NULL;
+    uint64_t i_size = stream_Size( s );
+    char *p_buffer = ( i_size != 0 ) ? malloc( i_size ) : NULL;
     if( !p_buffer )
     {
         // FIXME: read the whole stream until we reach the end (if no size)

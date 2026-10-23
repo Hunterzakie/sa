@@ -200,8 +200,8 @@ static uint64_t TotalNumFrames( demux_t *p_demux )
         }
         else
         {
-            int64_t i_stream_size = stream_Size( p_demux->s );
-            if(i_stream_size >= 0 && (uint64_t)i_stream_size >= p_sys->i_data_offset)
+            uint64_t i_stream_size = stream_Size( p_demux->s );
+            if(i_stream_size >= p_sys->i_data_offset)
                 i_data_size = i_stream_size - p_sys->i_data_offset;
             else
                 i_data_size = 0;
