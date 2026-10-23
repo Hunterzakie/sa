@@ -21,6 +21,18 @@
 #include "maininterface/mainctx.hpp"
 #include "medialibrary/mlthreadpool.hpp"
 
+extern "C" {
+
+static void 
+on_state_changed(vlc_media_source_t *, vlc_media_source_state state, void *userdata)
+{
+    MediaSourceModel *model = static_cast<MediaSourceModel *>(userdata);
+    QMetaObject::invokeMethod(model,
+        [model, state]() { model->setState(state); });
+}
+
+}
+
 //handle discovery events from the media source provider
 struct MediaSourceModel::ListenerCb : public MediaTreeListener::MediaTreeListenerCb {
     ListenerCb(MediaSourceModel* model, MediaSourcePtr& mediaSource)
@@ -93,8 +105,8 @@ MediaSourceModel::MediaSourceModel(MediaSourcePtr& mediaSource)
 
 MediaSourceModel::~MediaSourceModel()
 {
-    //reset the listenner before the source
-    m_listenner.reset();
+    //reset the listener before the source
+    m_listener.reset();
 
     for (const SharedInputItem & media : m_medias)
         emit mediaRemoved(media);
@@ -107,13 +119,24 @@ void MediaSourceModel::init()
 {
     assert(m_mediaSource);
 
-    if (m_listenner)
+    if (m_listener)
         return;
 
-    m_listenner = std::make_unique<MediaTreeListener>(
+    m_listener = std::make_unique<MediaTreeListener>(
         MediaTreePtr{ m_mediaSource->tree },
         std::make_unique<MediaSourceModel::ListenerCb>(this, m_mediaSource)
         );
+
+    static const vlc_media_source_callbacks callbacks = {
+        .on_state_changed = on_state_changed,
+    };
+
+    m_sourceStateListener = MediaSourceModel::SourceStateListenerPtr{
+        vlc_media_source_AddListener(m_mediaSource.get(), &callbacks, this, true),
+        [mediaSource = m_mediaSource](vlc_media_source_listener_id* listener) {
+            vlc_media_source_RemoveListener(mediaSource.get(), listener);
+        }
+    };
 }
 
 const std::vector<SharedInputItem>& MediaSourceModel::getMedias() const
@@ -129,6 +152,15 @@ QString MediaSourceModel::getDescription() const
 MediaTreePtr MediaSourceModel::getTree() const
 {
     return MediaTreePtr(m_mediaSource->tree);
+}
+
+void MediaSourceModel::setState(vlc_media_source_state state)
+{
+    if (m_state == state)
+        return;
+
+    m_state = state;
+    emit stateChanged(m_state);
 }
 
 void MediaSourceModel::addItems(const std::vector<SharedInputItem> &inputList,

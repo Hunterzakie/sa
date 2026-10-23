@@ -124,6 +124,8 @@ services_discovery_t *vlc_sd_Create(vlc_object_t *parent, const char *cfg,
         vlc_sd_Destroy(sd);
         sd = NULL;
     }
+    else
+        services_discovery_SetState(sd, SD_STATE_PENDING);
 
     return sd;
 }

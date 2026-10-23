@@ -35,6 +35,13 @@
 #define vlc_module_name "test"
 #endif /* TEST_MEDIA_SOURCE */
 
+struct vlc_media_source_listener_id
+{
+    const struct vlc_media_source_callbacks *callbacks;
+    void *userdata;
+    struct vlc_list node;
+};
+
 typedef struct
 {
     vlc_media_source_t public_data;
@@ -42,6 +49,9 @@ typedef struct
     services_discovery_t *sd;
     size_t rc;
     vlc_media_source_provider_t *owner;
+    vlc_mutex_t lock;
+    struct vlc_list listeners;
+    enum vlc_media_source_state state;
     struct vlc_list node;
     char name[];
 } media_source_private_t;
@@ -54,6 +64,47 @@ struct vlc_media_source_provider_t
     vlc_mutex_t lock;
     struct vlc_list media_sources;
 };
+
+static enum vlc_media_source_state
+vlc_media_source_state_FromSdState(enum services_discovery_state_e state)
+{
+    switch (state)
+    {
+        case SD_STATE_PENDING:
+            return VLC_MEDIA_SOURCE_STATE_PENDING;
+        case SD_STATE_DONE:
+            return VLC_MEDIA_SOURCE_STATE_DONE;
+        case SD_STATE_ERROR:
+            return VLC_MEDIA_SOURCE_STATE_ERROR;
+    }
+    vlc_assert_unreachable();
+}
+
+static void
+vlc_media_source_NotifyStateLocked(vlc_media_source_t *ms,
+                                   enum vlc_media_source_state state)
+{
+    media_source_private_t *priv = ms_priv(ms);
+    vlc_media_source_listener_id *listener;
+    vlc_list_foreach(listener, &priv->listeners, node)
+        if (listener->callbacks->on_state_changed)
+            listener->callbacks->on_state_changed(ms, state, listener->userdata);
+}
+
+static void
+vlc_media_source_SetState(vlc_media_source_t *ms,
+                          enum vlc_media_source_state state)
+{
+    media_source_private_t *priv = ms_priv(ms);
+
+    vlc_mutex_lock(&priv->lock);
+    if (priv->state != state)
+    {
+        priv->state = state;
+        vlc_media_source_NotifyStateLocked(ms, state);
+    }
+    vlc_mutex_unlock(&priv->lock);
+}
 
 /* A new item has been added to a certain services discovery */
 static void
@@ -99,9 +150,18 @@ services_discovery_item_removed(services_discovery_t *sd, input_item_t *media)
     }
 }
 
+static void
+services_discovery_state_changed(services_discovery_t *sd,
+                                 enum services_discovery_state_e state)
+{
+    vlc_media_source_t *ms = sd->owner.sys;
+    vlc_media_source_SetState(ms, vlc_media_source_state_FromSdState(state));
+}
+
 static const struct services_discovery_callbacks sd_cbs = {
     .item_added = services_discovery_item_added,
     .item_removed = services_discovery_item_removed,
+    .state_changed = services_discovery_state_changed,
 };
 
 static vlc_media_source_t *
@@ -112,6 +172,9 @@ vlc_media_source_New(vlc_media_source_provider_t *provider, const char *name)
         return NULL;
 
     priv->rc = 1;
+    vlc_mutex_init(&priv->lock);
+    vlc_list_init(&priv->listeners);
+    priv->state = VLC_MEDIA_SOURCE_STATE_PENDING;
 
     vlc_media_source_t *ms = &priv->public_data;
 
@@ -153,6 +216,15 @@ vlc_media_source_Delete(vlc_media_source_t *ms)
 {
     media_source_private_t *priv = ms_priv(ms);
 
+    vlc_mutex_lock(&priv->lock);
+    vlc_media_source_listener_id *listener;
+    vlc_list_foreach(listener, &priv->listeners, node)
+    {
+        vlc_list_remove(&listener->node);
+        free(listener);
+    }
+    vlc_mutex_unlock(&priv->lock);
+
     vlc_sd_Destroy(priv->sd);
     vlc_media_tree_Release(ms->tree);
     free(priv);
@@ -187,6 +259,54 @@ vlc_media_source_Release(vlc_media_source_t *ms)
     vlc_mutex_unlock(&provider->lock);
 
     vlc_media_source_Delete(ms);
+}
+
+enum vlc_media_source_state
+vlc_media_source_GetState(vlc_media_source_t *ms)
+{
+    media_source_private_t *priv = ms_priv(ms);
+
+    vlc_mutex_lock(&priv->lock);
+    enum vlc_media_source_state state = priv->state;
+    vlc_mutex_unlock(&priv->lock);
+
+    return state;
+}
+
+vlc_media_source_listener_id *
+vlc_media_source_AddListener(vlc_media_source_t *ms,
+                             const struct vlc_media_source_callbacks *callbacks,
+                             void *userdata, bool notify_current_state)
+{
+    media_source_private_t *priv = ms_priv(ms);
+
+    vlc_media_source_listener_id *listener = malloc(sizeof(*listener));
+    if (unlikely(!listener))
+        return NULL;
+
+    listener->callbacks = callbacks;
+    listener->userdata = userdata;
+
+    vlc_mutex_lock(&priv->lock);
+    vlc_list_append(&listener->node, &priv->listeners);
+    if (notify_current_state && callbacks->on_state_changed)
+        callbacks->on_state_changed(ms, priv->state, userdata);
+    vlc_mutex_unlock(&priv->lock);
+
+    return listener;
+}
+
+void
+vlc_media_source_RemoveListener(vlc_media_source_t *ms,
+                                vlc_media_source_listener_id *listener)
+{
+    media_source_private_t *priv = ms_priv(ms);
+
+    vlc_mutex_lock(&priv->lock);
+    vlc_list_remove(&listener->node);
+    vlc_mutex_unlock(&priv->lock);
+
+    free(listener);
 }
 
 static vlc_media_source_t *

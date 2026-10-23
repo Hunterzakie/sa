@@ -242,6 +242,8 @@ public:
             return false;
 
         m_items.clear();
+        m_hasItems = false;
+        m_initialPopulationPending = false;
 
         if (m_sourcesProvider)
             m_sourcesProvider.reset();
@@ -249,15 +251,29 @@ public:
         m_name = QString {};
         emit q->nameChanged();
 
+        auto updateLoading = [this, q]() { updateLoadingState(q); };
+
+        if (m_countChangedConnection)
+            QObject::disconnect(m_countChangedConnection);
+
+        m_countChangedConnection = QObject::connect(q, &BaseModel::countChanged, q, updateLoading);
+
+        if (!m_loading)
+        {
+            m_loading = true;
+            emit q->loadingChanged();
+        }
+
         m_sourcesProvider = std::make_unique<DeviceSourceProvider>( m_sdSource, m_sourceName, m_ctx );
 
         QObject::connect(m_sourcesProvider.get(), &DeviceSourceProvider::failed, q,
-                [this]()
+                [this, updateLoading]()
         {
             m_items.clear();
 
             m_revision += 1;
             invalidateCache();
+            updateLoading();
         });
 
         QObject::connect(m_sourcesProvider.get(), &DeviceSourceProvider::nameUpdated, q,
@@ -273,7 +289,7 @@ public:
 
         //itemsUpdated is called only once after init.
         QObject::connect(m_sourcesProvider.get(), &DeviceSourceProvider::itemsUpdated, q,
-                [this]()
+            [this, updateLoading]()
         {
             for (const auto& source: m_sourcesProvider->getMediaSources())
             {
@@ -305,17 +321,20 @@ public:
                     });
 
                 m_sourceUpdateConnections.push_back(conn);
+
+                conn = QObject::connect(
+                    source.get(), &MediaSourceModel::stateChanged,
+                    q_ptr, updateLoading);
+
+                m_sourceUpdateConnections.push_back(conn);
             }
 
             m_revision += 1;
             invalidateCache();
+            updateLoading();
         });
 
         m_sourcesProvider->init();
-
-        //service discovery don't notify preparse end
-        m_loading = false;
-        emit q->loadingChanged();
 
         return true;
     }
@@ -330,6 +349,12 @@ public:
 
     void onMediaAdded(const QSharedPointer<MediaSourceModel>& mediaSource, SharedInputItem media)
     {
+        Q_Q(NetworkDeviceModel);
+
+        if (!m_hasItems)
+            m_initialPopulationPending = true;
+        m_hasItems = true;
+
         std::size_t hash = qHash(media);
         auto it = std::find_if(
             m_items.begin(), m_items.end(),
@@ -346,10 +371,13 @@ public:
             m_revision += 1;
             invalidateCache();
         }
+
+        updateLoadingState(q);
     }
 
     void onMediaRemoved(const QSharedPointer<MediaSourceModel>& mediaSource, SharedInputItem media)
     {
+
         std::size_t hash = qHash(media);
         auto it = std::find_if(
             m_items.begin(), m_items.end(),
@@ -401,6 +429,42 @@ public:
     QString m_name; // source long name
 
     std::vector<QMetaObject::Connection> m_sourceUpdateConnections;
+    QMetaObject::Connection m_countChangedConnection;
+    bool m_hasItems = false;
+    bool m_initialPopulationPending = false;
+
+    void updateLoadingState(NetworkDeviceModel* q)
+    {
+        bool loading = false;
+        if (m_sourcesProvider)
+        {
+            if (m_initialPopulationPending)
+            {
+                if (q->getCount() > 0 || m_items.empty())
+                    m_initialPopulationPending = false;
+                else
+                    loading = true;
+            }
+
+            if (!loading && !m_hasItems)
+            {
+                for (const auto& source : m_sourcesProvider->getMediaSources())
+                {
+                    if (source->isPending())
+                    {
+                        loading = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (m_loading != loading)
+        {
+            m_loading = loading;
+            emit q->loadingChanged();
+        }
+    }
 };
 
 NetworkDeviceModel::NetworkDeviceModel( QObject* parent )
