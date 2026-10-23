@@ -295,7 +295,7 @@ static const muxer_properties_t p_muxers[] = {
                                 VLC_CODEC_SUBT, VLC_CODEC_QTXT, VLC_CODEC_TX3G ),
 
     M( "ps", "mpg", 16/* FIXME*/, VLC_CODEC_MPGV, VLC_CODEC_MP2V, VLC_CODEC_MP1V,
-                                VLC_CODEC_MPGA, VLC_CODEC_DVD_LPCM, VLC_CODEC_A52,
+                                VLC_CODEC_MPGA, VLC_CODEC_MP2, VLC_CODEC_MP3, VLC_CODEC_DVD_LPCM, VLC_CODEC_A52,
                                 VLC_CODEC_DTS,
                                 VLC_CODEC_SPU ),
 
