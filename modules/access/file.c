@@ -66,6 +66,7 @@ typedef struct
     int fd;
 
     bool b_pace_control;
+    bool is_remote;
 } access_sys_t;
 
 #if !defined (_WIN32) && !defined (__OS2__)
@@ -257,6 +258,7 @@ int FileOpen( vlc_object_t *p_this )
     {
         p_access->pf_seek = FileSeek;
         p_sys->b_pace_control = true;
+        p_sys->is_remote = IsRemote(fd, p_access->psz_filepath);
 
         /* Demuxers will need the beginning of the file for probing. */
         posix_fadvise (fd, 0, 4096, POSIX_FADV_WILLNEED);
@@ -266,7 +268,7 @@ int FileOpen( vlc_object_t *p_this )
         fcntl (fd, F_NOCACHE, 0);
 #endif
 #ifdef F_RDAHEAD
-        if (IsRemote(fd, p_access->psz_filepath))
+        if (p_sys->is_remote)
             fcntl (fd, F_RDAHEAD, 0);
         else
             fcntl (fd, F_RDAHEAD, 1);
@@ -350,9 +352,13 @@ static int FileControl( stream_t *p_access, int i_query, va_list args )
     switch( i_query )
     {
         case STREAM_CAN_SEEK:
-        case STREAM_CAN_FASTSEEK:
             pb_bool = va_arg( args, bool * );
             *pb_bool = (p_access->pf_seek != NULL);
+            break;
+
+        case STREAM_CAN_FASTSEEK:
+            pb_bool = va_arg( args, bool * );
+            *pb_bool = (!p_sys->is_remote && (p_access->pf_seek != NULL));
             break;
 
         case STREAM_CAN_PAUSE:
@@ -381,7 +387,7 @@ static int FileControl( stream_t *p_access, int i_query, va_list args )
 
         case STREAM_GET_PTS_DELAY:
             pi_64 = va_arg( args, vlc_tick_t * );
-            if (IsRemote (p_sys->fd, p_access->psz_filepath))
+            if (p_sys->is_remote)
                 *pi_64 = VLC_TICK_FROM_MS(
                         var_InheritInteger (p_access, "network-caching") );
             else
