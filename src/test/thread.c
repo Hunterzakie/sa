@@ -31,6 +31,17 @@
 #include <vlc_common.h>
 #include <vlc_threads.h>
 
+
+/* ASAN won't intercept longjump calls that are used in pthread cancellation
+ * handlers, when using pthread_cleanup_push/pop. These calls are breaking
+ * the ASAN checks when it's using sigaltstack, so disable it. */
+#if defined(__SANITIZE_ADDRESS__)
+VLC_EXPORT const char *__asan_default_options();
+VLC_EXPORT const char *__asan_default_options() {
+  return "use_sigaltstack=0";
+}
+#endif
+
 static int thread_data_magic = 0x1234;
 static int thread_return_magic = 0x4321;
 
