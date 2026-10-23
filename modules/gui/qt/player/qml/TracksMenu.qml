@@ -31,6 +31,8 @@ T.Popup {
     id: root
 
     // Settings
+    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
     property var preferredWidth : stackView.currentItem.preferredWidth
 
     width: Math.min((typeof preferredWidth !== "undefined")
