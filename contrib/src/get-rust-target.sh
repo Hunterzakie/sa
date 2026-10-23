@@ -208,7 +208,7 @@ case $OS in
     esac
     ;;
 
-  gnu)
+  gnu|linux)
     case $ARCH in
       riscv64)
         return_triplet riscv64gc-unknown-linux-gnu
