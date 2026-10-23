@@ -1208,7 +1208,8 @@ AC_SUBST([LIBRT])
 dnl Check for libatomic
 have_libatomic="no"
 VLC_SAVE_FLAGS
-AC_SEARCH_LIBS([__atomic_load], [atomic], [have_libatomic="yes"])
+LIBS="$LIBS -latomic"
+AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])], [have_libatomic="yes"])
 VLC_RESTORE_FLAGS
 AM_CONDITIONAL([HAVE_LIBATOMIC], [test "${have_libatomic}" = "yes"])
 
