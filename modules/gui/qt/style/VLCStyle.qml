@@ -60,6 +60,7 @@ QtObject {
     readonly property double margin_xxlarge: MainCtx.dp(36, scale);
 
     readonly property real resizeHandleWidth: (scrollBarInteractingSize / 2)
+    readonly property int resizeHandleBorder: border * 4
 
     readonly property real touchHandlerMargin: margin_large
 
