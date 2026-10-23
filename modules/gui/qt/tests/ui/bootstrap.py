@@ -1,0 +1,40 @@
+# Copyright © 2026 VideoLabs, VLC authors and VideoLAN
+#
+# Authors: Wassim Lalaoui <wassim@videolabs.io>
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation; either version 2.1 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
+
+import subprocess
+from pathlib import Path
+
+def clone_media_samples(commit_hash=None):
+    repo_dir = Path("media_samples")
+
+    if (repo_dir / ".git").is_dir():
+        return
+
+    subprocess.run(["git", "clone", 
+                    "https://code.videolan.org/videolan/medialibrary-test-samples.git", repo_dir],
+                    check=True
+    )
+
+    if commit_hash:
+        subprocess.run(["git", "checkout", commit_hash], cwd=repo_dir, check=True)
+
+def main():
+    clone_media_samples(commit_hash="3f541039fa6566bf90a61c204938704aa1e4b597")
+
+if __name__ == "__main__":
+    main()

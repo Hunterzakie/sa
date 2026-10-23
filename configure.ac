@@ -5223,6 +5223,17 @@ AS_VAR_IF(with_libfuzzer, no, [], [
 ])
 
 dnl
+dnl Compilation flag for medialib generation module
+dnl 
+AC_ARG_ENABLE([medialib-gen],
+    AS_HELP_STRING([--enable-medialib-gen], [Build the medialib generation module (default: no)]),
+    [enable_medialib_gen="$enableval"],
+    [enable_medialib_gen="no"])
+
+AM_CONDITIONAL([ENABLE_MEDIALIB_GEN], [test "$enable_medialib_gen" = "yes"])
+
+
+dnl
 dnl  Stuff used by the program
 dnl
 VERSION_MESSAGE="${VERSION} ${CODENAME}"

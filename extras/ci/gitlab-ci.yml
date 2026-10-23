@@ -1,5 +1,6 @@
 stages:
     - build
+    - test
 
 default:
     before_script:
@@ -327,6 +328,55 @@ debian:
         make -j$NCPU distcheck AM_DISTCHECK_CONFIGURE_FLAGS="--enable-fast-install --enable-extra-checks" || ./test/dump_stacktraces.sh
     variables:
         <<: *variables-debian
+
+nightly-debian:
+    extends: .base-template
+    image:
+        name: $VLC_DEBIAN_IMAGE
+    rules:
+        - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    script: |
+        export NCPU=$(getconf _NPROCESSORS_ONLN)
+        export CI_PROJECT_DIR=$(pwd)
+        
+        # Build tools
+        ( cd extras/tools && ./bootstrap && make -j$NCPU --output-sync=recurse )
+        export PATH="$(pwd)/extras/tools/build/bin:$PATH"
+
+        # Build contribs
+        mkdir -p contrib/contrib-$TRIPLET && cd contrib/contrib-$TRIPLET
+        ../bootstrap --enable-x262
+        if [ -n "$VLC_PREBUILT_CONTRIBS_URL" ]; then
+            make prebuilt PREBUILT_URL="${VLC_PREBUILT_CONTRIBS_URL}" || PREBUILT_FAILED=yes
+        else
+            PREBUILT_FAILED=yes
+        fi
+        if [ -n "$PREBUILT_FAILED" ]; then
+            make -j$NCPU fetch
+            make -j$NCPU --output-sync=recurse
+        fi
+        cd ../../
+
+        mkdir -p build
+        cd build
+        
+        if [ ! -f Makefile ]; then
+            # Configure and build VLC
+            ../bootstrap
+            ../configure --enable-medialib-gen
+        fi
+        
+        make -j$NCPU --output-sync=recurse
+        
+        # Package VLC
+        make install -j$NCPU DESTDIR=$CI_PROJECT_DIR/install
+        tar czf ../vlc-full-build.tar.gz -C $CI_PROJECT_DIR/install .
+    artifacts:
+        paths:
+            - vlc-full-build.tar.gz
+    variables:
+        <<: *variables-debian
+
 
 #
 # Linux Meson build
@@ -683,6 +733,69 @@ wasm32-emscripten-build :
 
 wasm32-emscripten-build-shared :
     extends: .wasm32-emscripten-common
+
+#
+# Tests
+#
+nightly-test_ui_windows:
+    extends: .base-template
+    stage: test
+    rules:
+        - if: '$CI_PIPELINE_SOURCE == "schedule"'
+          changes:
+            - modules/gui/qt/**
+    needs:
+        - job: nightly-win64-llvm
+          artifacts: true
+    before_script: []
+    script: |
+        Expand-Archive -Path nightlies/vlc-4.0.0-dev-win64-$env:CI_COMMIT_SHORT_SHA.zip -DestinationPath C:\Users\vagrant\vlc -Force
+        New-NetFirewallRule -DisplayName "VLC" -Direction Inbound -Program "C:\Users\vagrant\vlc\vlc-4.0.0-dev\vlc.exe" -Action Allow
+        cd modules/gui/qt/tests/ui 
+        python bootstrap.py
+        python -m venv .venv
+        .venv\Scripts\pip.exe install .
+        .venv\Scripts\python.exe main.py -p C:\Users\vagrant\vlc\vlc-4.0.0-dev\vlc.exe
+    after_script: []
+    artifacts:
+        when: always
+        paths:
+            - modules/gui/qt/tests/ui/testing.log
+            - modules/gui/qt/tests/ui/vlc.log
+            - modules/gui/qt/tests/ui/screenshots/
+    tags:
+        - windows
+
+nightly-test_ui_debian:
+    extends: .base-template
+    stage: test
+    image: $VLC_DEBIAN_IMAGE
+    rules:
+        - if: '$CI_PIPELINE_SOURCE == "schedule"'
+          changes:
+            - modules/gui/qt/**
+    script: |
+        mkdir vlc_build
+
+        tar xzf vlc-full-build.tar.gz -C ./vlc_build
+        export LD_LIBRARY_PATH=$(pwd)/vlc_build/usr/local/lib:$(pwd)/vlc_build/usr/local/lib/vlc:$LD_LIBRARY_PATH
+
+        cd modules/gui/qt/tests/ui
+        python3 -m venv .venv --system-site-packages
+        source .venv/bin/activate
+        pip install .
+        python3 bootstrap.py
+        xvfb-run python3 main.py -p $CI_PROJECT_DIR/vlc_build/usr/local/bin/vlc
+    needs:
+        - job: nightly-debian
+          artifacts: true
+    artifacts:
+        when: always
+        paths:
+            - modules/gui/qt/tests/ui/testing.log
+            - modules/gui/qt/tests/ui/vlc.log
+            - modules/gui/qt/tests/ui/screenshots/
+
 
 #
 # VLC Documentation

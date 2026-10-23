@@ -825,6 +825,10 @@ option('ndi',
        type: 'feature',
        value: 'auto',
        description: 'Build with NDI module (requires libnoidea)')
+option('enable_medialib_gen',
+    type: 'boolean',
+    value: false,
+    description: 'Medialibrary generation module option')
 
 option('v4l2',
        type: 'feature',
