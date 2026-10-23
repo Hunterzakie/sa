@@ -247,7 +247,6 @@ static void vlc_h2_stream_wake_up(void *data)
 
 static void vlc_h2_stream_lock(struct vlc_h2_stream *s)
 {
-    s->interrupted = false;
     /* When using interrupts, there shall be only one waiter per stream.
      * Otherwise, there would be no ways to map the interrupt to a thread. */
     vlc_interrupt_register(vlc_h2_stream_wake_up, s);
@@ -257,7 +256,10 @@ static void vlc_h2_stream_lock(struct vlc_h2_stream *s)
 static int vlc_h2_stream_unlock(struct vlc_h2_stream *s)
 {
     vlc_mutex_unlock(&s->conn->lock);
-    return vlc_interrupt_unregister();
+    int ret = vlc_interrupt_unregister();
+    if (ret != 0)
+        s->interrupted = true;
+    return ret;
 }
 
 static struct vlc_http_msg *vlc_h2_stream_wait(struct vlc_http_stream *stream)
@@ -517,6 +519,7 @@ static struct vlc_http_stream *vlc_h2_stream_open(struct vlc_http_conn *c,
     s->stream.cbs = &vlc_h2_stream_callbacks;
     s->conn = conn;
     s->newer = NULL;
+    s->interrupted = false;
     s->recv_end = false;
     s->recv_err = 0;
     s->recv_hdr = NULL;

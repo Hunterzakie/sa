@@ -398,7 +398,6 @@ static int get_address( stream_t *p_access )
     /* We have an IP address, let's find the NETBIOS name */
     const char *psz_nbt = netbios_ns_inverse( p_ns, p_sys->addr.s_addr );
 
-    netbios_ns_interrupt_unregister();
     if (netbios_ns_interrupt_unregister() == EINTR)
     {
         netbios_ns_destroy( p_ns );
@@ -503,7 +502,8 @@ static int login( stream_t *p_access )
         smb_session_interrupt_register( p_sys );
         int ret = smb_fopen( context->session, context->tid,
                              p_sys->psz_path, SMB_MOD_RO, &p_sys->i_fd );
-        smb_session_interrupt_unregister();
+        if( smb_session_interrupt_unregister() != 0 )
+            ret = DSM_ERROR_GENERIC;
 
         if( ret == DSM_SUCCESS )
         {
@@ -565,7 +565,8 @@ static int login( stream_t *p_access )
 
             smb_session_interrupt_register( p_sys );
             connect_err = smb_connect( p_access, psz_login, psz_password, psz_domain );
-            smb_session_interrupt_unregister();
+            if (smb_session_interrupt_unregister() != 0)
+                connect_err = EINTR;
         }
 
         if( connect_err != 0 )
@@ -689,7 +690,8 @@ static int Seek( stream_t *p_access, uint64_t i_pos )
 
     smb_session_interrupt_register( p_sys );
     int ret = smb_fseek(p_sys->p_session, p_sys->i_fd, i_pos, SMB_SEEK_SET);
-    smb_session_interrupt_unregister();
+    if (smb_session_interrupt_unregister() != 0)
+        return VLC_EGENERIC;
 
     if (ret == -1)
         return VLC_EGENERIC;
@@ -708,7 +710,10 @@ static ssize_t Read( stream_t *p_access, void *p_buffer, size_t i_len )
     smb_session_interrupt_register( p_sys );
     i_read = smb_fread( p_sys->p_session, p_sys->i_fd, p_buffer, i_len );
     if (smb_session_interrupt_unregister() == EINTR)
+    {
         errno = EINTR;
+        i_read = -1;
+    }
 
     if( i_read < 0 )
     {
@@ -798,7 +803,7 @@ static int BrowseShare( stream_t *p_access, input_item_node_t *p_node )
     access_sys_t *p_sys = p_access->p_sys;
     smb_share_list  shares;
     const char     *psz_name;
-    size_t          share_count;
+    size_t          share_count = 0;
     int             i_ret = VLC_SUCCESS;
 
     smb_session_interrupt_register( p_sys );
@@ -810,7 +815,12 @@ static int BrowseShare( stream_t *p_access, input_item_node_t *p_node )
         return VLC_EGENERIC;
     }
 
-    smb_session_interrupt_unregister();
+    if (smb_session_interrupt_unregister() != 0)
+    {
+        if (share_count > 0)
+            smb_share_list_destroy( shares );
+        return VLC_EGENERIC;
+    }
 
     struct vlc_readdir_helper rdh;
     vlc_readdir_helper_init( &rdh, p_access, p_node );
@@ -840,6 +850,7 @@ static int BrowseDirectory( stream_t *p_access, input_item_node_t *p_node )
     const char     *psz_name;
     size_t          files_count;
     int             i_ret = VLC_SUCCESS;
+    bool interrupted;
 
     if( p_sys->psz_path != NULL )
     {
@@ -848,14 +859,21 @@ static int BrowseDirectory( stream_t *p_access, input_item_node_t *p_node )
 
         smb_session_interrupt_register( p_sys );
         files = smb_find( p_sys->p_session, p_sys->i_tid, psz_query );
-        smb_session_interrupt_unregister();
+        interrupted = smb_session_interrupt_unregister() != 0;
         free( psz_query );
     }
     else
     {
         smb_session_interrupt_register( p_sys );
         files = smb_find( p_sys->p_session, p_sys->i_tid, "\\*" );
-        smb_session_interrupt_unregister();
+        interrupted = smb_session_interrupt_unregister() != 0;
+    }
+
+    if( interrupted )
+    {
+        if( files )
+            smb_stat_list_destroy( files );
+        return VLC_EGENERIC;
     }
 
     if( files == NULL )

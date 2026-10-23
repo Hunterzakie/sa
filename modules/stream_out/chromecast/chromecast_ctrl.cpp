@@ -155,6 +155,7 @@ intf_sys_t::intf_sys_t(vlc_object_t * const p_this, int port, std::string device
  , m_input_eof( false )
  , m_cc_eof( false )
  , m_pace( false )
+ , m_interrupted( false )
  , m_meta( NULL )
  , m_httpd( httpd_host, port )
  , m_httpd_file(NULL)
@@ -532,7 +533,6 @@ int intf_sys_t::pace()
 {
     vlc::threads::mutex_locker locker( m_lock );
 
-    m_interrupted = false;
     vlc_interrupt_register( interrupt_wake_up_cb, this );
     int ret = 0;
     vlc_tick_t deadline = vlc_tick_now() + VLC_TICK_FROM_MS(500);
@@ -543,7 +543,8 @@ int intf_sys_t::pace()
     while( !isFinishedPlaying() && ( m_pace || m_input_eof ) && !m_interrupted && ret == 0 )
         ret = m_pace_cond.timedwait( m_lock, deadline );
 
-    vlc_interrupt_unregister();
+    if( vlc_interrupt_unregister() != 0 )
+        m_interrupted = true;
 
     if( m_cc_eof )
         return CC_PACE_OK_ENDED;

@@ -146,7 +146,12 @@ VLC_API int vlc_accept_i11e(int fd, struct sockaddr *, socklen_t *, bool);
  */
 VLC_API void vlc_interrupt_register(void (*cb)(void *), void *opaque);
 
-VLC_API int vlc_interrupt_unregister(void);
+/**
+ * Unregister the custom interrupt handler
+ *
+ * @return 0 if no interrupt was raised, EINTR if an interrupt was raised
+ */
+VLC_API int vlc_interrupt_unregister(void) VLC_USED;
 
 /**
  * @}

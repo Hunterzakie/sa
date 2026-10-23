@@ -351,7 +351,8 @@ static ssize_t Write( sout_access_out_t *p_access, block_t *p_buffer )
 
 out:
     block_BytestreamEmpty( &p_sys->block_stream );
-    vlc_interrupt_unregister();
+    if (vlc_interrupt_unregister() != 0)
+        p_sys->b_interrupted = true;
 
     /* Re-add the socket to the poll if we were interrupted */
     vlc_mutex_lock( &p_sys->lock );

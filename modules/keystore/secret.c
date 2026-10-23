@@ -82,13 +82,15 @@ static GCancellable *cancellable_register(void)
     return p_canc;
 }
 
-static void cancellable_unregister(GCancellable *p_canc)
+static int cancellable_unregister(GCancellable *p_canc)
 {
+    int ret = 0;
     if (p_canc != NULL)
     {
-        vlc_interrupt_unregister();
+        ret = vlc_interrupt_unregister();
         g_object_unref(p_canc);
     }
+    return ret;
 }
 
 static GHashTable *
@@ -156,7 +158,8 @@ Store(vlc_keystore *p_keystore, const char *const ppsz_values[KEY_MAX],
     gboolean b_ret = secret_service_store_sync(p_ss, NULL, p_hash,
                                                SECRET_COLLECTION_DEFAULT,
                                                psz_label, p_sv, p_canc, NULL);
-    cancellable_unregister(p_canc);
+    if (cancellable_unregister(p_canc) != 0)
+        b_ret = FALSE;
 
     secret_value_unref(p_sv);
     g_hash_table_unref(p_hash);
@@ -169,7 +172,7 @@ items_search(SecretService *p_ss, const char *const ppsz_values[KEY_MAX],
 {
     GHashTable *p_hash = values_to_ghashtable(ppsz_values);
     if (!p_hash)
-        return 0;
+        return NULL;
 
     /* If true, do not allow to remove non VLC entries */
     if (b_safe)
@@ -181,7 +184,11 @@ items_search(SecretService *p_ss, const char *const ppsz_values[KEY_MAX],
                                                | SECRET_SEARCH_UNLOCK
                                                | SECRET_SEARCH_LOAD_SECRETS,
                                                p_canc, NULL);
-    cancellable_unregister(p_canc);
+    if (cancellable_unregister(p_canc) != 0 && p_list)
+    {
+        g_list_free_full(p_list, g_object_unref);
+        p_list = NULL;
+    }
     g_hash_table_unref(p_hash);
     return p_list;
 }
@@ -341,7 +348,8 @@ check_service_running(void)
 
     g_main_loop_run(loop);
 
-    vlc_interrupt_unregister();
+    if (vlc_interrupt_unregister() != 0)
+        watch_data.b_running = false;
 
     g_bus_unwatch_name(i_id);
 
@@ -369,7 +377,12 @@ Open(vlc_object_t *p_this)
     GCancellable *p_canc = cancellable_register();
     SecretService *p_ss = secret_service_get_sync(SECRET_SERVICE_NONE,
                                                   p_canc, NULL);
-    cancellable_unregister(p_canc);
+    if (cancellable_unregister(p_canc) != 0 && p_ss)
+    {
+        g_object_unref(p_ss);
+        p_ss = NULL;
+    }
+
     if (!p_ss)
         return VLC_EGENERIC;
 

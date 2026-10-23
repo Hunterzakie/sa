@@ -345,7 +345,8 @@ dialog_wait(vlc_dialog_provider *p_provider, vlc_dialog_id *p_id,
     }
 
     vlc_mutex_unlock(&p_id->lock);
-    vlc_interrupt_unregister();
+    if (vlc_interrupt_unregister() != 0)
+        i_ret = 0;
 
     vlc_mutex_lock(&p_provider->lock);
     dialog_remove_locked(p_provider, p_id);

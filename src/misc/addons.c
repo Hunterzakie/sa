@@ -349,8 +349,8 @@ static void *FinderThread( void *p_data )
             vlc_cond_wait( &p_manager->p_priv->finder.waitcond,
                            &p_manager->p_priv->finder.lock );
         }
-        vlc_interrupt_unregister();
-        if( !p_manager->p_priv->finder.b_live )
+        int i_ret = vlc_interrupt_unregister();
+        if( !p_manager->p_priv->finder.b_live || i_ret != 0 )
             break;
         psz_uri = p_manager->p_priv->finder.uris.p_elems[0];
         ARRAY_REMOVE( p_manager->p_priv->finder.uris, 0 );
@@ -477,8 +477,8 @@ static void *InstallerThread( void *p_data )
             vlc_cond_wait( &p_manager->p_priv->installer.waitcond,
                            &p_manager->p_priv->installer.lock );
         }
-        vlc_interrupt_unregister();
-        if( !p_manager->p_priv->installer.b_live )
+        i_ret = vlc_interrupt_unregister();
+        if( !p_manager->p_priv->installer.b_live || i_ret != 0 )
             break;
 
         addon_entry_t *p_entry = p_manager->p_priv->installer.entries.p_elems[0];
