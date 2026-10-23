@@ -582,6 +582,8 @@ FocusScope {
 
             useAcrylic: (VLCStyle.isScreenSmall ? (sidebar.state === "") : true) // See `694d51a7` for the reasoning.
 
+            view.fadingEdge.uniformBackdrop: useAcrylic
+
             NavigationBarContextMenu {
                 id: navigationBarContextMenu
 
@@ -762,6 +764,7 @@ FocusScope {
                 useAcrylic: !VLCStyle.isScreenSmall
 
                 view.fadingEdge.pixelAlignedForDPR: !miniPlayer.visible
+                view.fadingEdge.uniformBackdrop: useAcrylic
 
                 Navigation.parentItem: g_mainDisplay
                 Navigation.upItem: localTopbar

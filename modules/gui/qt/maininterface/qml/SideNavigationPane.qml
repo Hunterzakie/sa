@@ -44,6 +44,8 @@ T.Pane {
 
     property alias model: navigationModel
 
+    property alias view: listView
+
     readonly property int minimumWidth: VLCStyle.expandNavigationPaneWidth + safeAreaLeftMargin + safeAreaRightMargin
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
@@ -122,8 +124,8 @@ T.Pane {
 
                 colorContext.colorSet: ColorContext.Window
 
-                fadingEdge.backgroundColor:  (root.background && (root.background.color.a >= 1.0)) ? root.background.color
-                                                                                                   : "transparent"
+                fadingEdge.backgroundColor:  (root.background && (root.background.color.a >= 1.0 || fadingEdge.uniformBackdrop)) ? root.background.color
+                                                                                                                                 : "transparent"
 
                 component DelegateAnimation : NumberAnimation {
                     easing.type: Easing.InOutSine

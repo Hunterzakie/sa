@@ -37,17 +37,27 @@ layout(std140, binding = 0) uniform buf {
     float beginningFadeSize;
     float endFadePos;
 };
+#ifndef NONSAMPLING
 layout(binding = 1) uniform sampler2D source;
+#endif
 layout(location = 1) in float pos;
 
 void main() {
+#ifdef NONSAMPLING
+  vec4 texel = vec4(1.0, 1.0, 1.0, 1.0);
+#else
   vec4 texel = texture(source, coord);
+#endif
 
   // Note that the whole texel is multiplied instead
   // of only the alpha component because it must be
   // in premultiplied alpha format.
   texel *= (1.0 - smoothstep(endFadePos, 1.0, pos));
   texel *= (smoothstep(0.0, beginningFadeSize, pos));
+
+#ifdef NONSAMPLING
+  texel = (1.0 - texel);
+#endif
 
   // We still need to respect the accumulated scene graph opacity:
   fragColor = texel * qt_Opacity;

@@ -6,6 +6,7 @@ env.append('PATH', contrib_dir + '/bin')
 
 shader_sources = [
     'FadingEdge.frag',
+    'FadingEdge_nonsampling.frag',
     'FadingEdgeX.vert',
     'FadingEdgeY.vert',
     'Noise.frag',
