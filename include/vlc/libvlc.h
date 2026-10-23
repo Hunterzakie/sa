@@ -462,7 +462,9 @@ libvlc_module_description_t *libvlc_video_filter_list_get( libvlc_instance_t *p_
  * The origin is arbitrary but consistent across the whole system
  * (e.g. the system uptime, the time since the system was booted).
  * \note On systems that support it, the POSIX monotonic clock is used.
- */
+ *
+ * \note The value returned does not count time when the system is suspended.
+*/
 LIBVLC_API
 libvlc_time_t libvlc_clock(void);
 

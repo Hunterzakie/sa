@@ -788,6 +788,8 @@ VLC_API unsigned long vlc_thread_id(void) VLC_USED;
  * typically the time the kernel started, but this is platform-dependent.
  * If you need wall clock time, use the standard timespec_get() instead.
  *
+ * \warning The value returned does not count time when the system is suspended.
+ *
  * \return a timestamp in microseconds.
  */
 VLC_API vlc_tick_t vlc_tick_now(void);
