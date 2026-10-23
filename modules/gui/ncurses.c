@@ -1895,6 +1895,12 @@ static bool HandleBrowseKey(intf_thread_t *intf, int key)
                      dir_entry->path) == -1)
             return true;
 
+        char *real_path = realpath(path, NULL);
+        if (real_path) {
+            free(path);
+            path = real_path;
+        }
+
         if (!dir_entry->file && key != ' ') {
             free(sys->current_dir);
             sys->current_dir = path;
