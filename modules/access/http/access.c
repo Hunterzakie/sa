@@ -32,7 +32,9 @@
 
 #include <vlc_common.h>
 #include <vlc_access.h>
+#include <vlc_input_item.h>
 #include <vlc_keystore.h>
+#include <vlc_meta.h>
 #include <vlc_plugin.h>
 #include <vlc_url.h>
 
@@ -46,6 +48,19 @@ typedef struct
     struct vlc_http_mgr *manager;
     struct vlc_http_resource *resource;
 } access_sys_t;
+
+/* Returns the current ICY now-playing title and the playback time at which it
+ * takes effect (for STREAM_GET_TIMED_META). The title is latched by the ICY
+ * stream filter during reads, on the same single-reader thread that issues this
+ * control, so no lock is needed here. Caller frees *title on success. */
+static int TimedMeta(stream_t *access, char **title, vlc_tick_t *pts)
+{
+    access_sys_t *sys = access->p_sys;
+
+    if (!vlc_http_res_get_timed_now_playing(sys->resource, title, pts))
+        return VLC_EGENERIC;
+    return VLC_SUCCESS;
+}
 
 static block_t *FileRead(stream_t *access, bool *restrict eof)
 {
@@ -105,6 +120,10 @@ static int FileControl(stream_t *access, int query, va_list args)
             *va_arg(args, char **) = vlc_http_file_get_type(sys->resource);
             break;
 
+        case STREAM_GET_TIMED_META:
+            return TimedMeta(access, va_arg(args, char **),
+                             va_arg(args, vlc_tick_t *));
+
         case STREAM_SET_PAUSE_STATE:
             break;
 
@@ -145,6 +164,10 @@ static int LiveControl(stream_t *access, int query, va_list args)
         case STREAM_GET_CONTENT_TYPE:
             *va_arg(args, char **) = vlc_http_live_get_type(sys->resource);
             break;
+
+        case STREAM_GET_TIMED_META:
+            return TimedMeta(access, va_arg(args, char **),
+                             va_arg(args, vlc_tick_t *));
 
         default:
             return VLC_EGENERIC;
@@ -190,6 +213,8 @@ static int Open(vlc_object_t *obj)
 
     if (sys->resource == NULL)
         goto error;
+
+    vlc_http_res_set_icy(sys->resource, true);
 
     ret = vlc_credential_get(&crd, obj, NULL, NULL, NULL, NULL);
     if (ret == 0)
@@ -245,6 +270,17 @@ static int Open(vlc_object_t *obj)
     free(psz_realm);
     vlc_credential_clean(&crd);
     vlc_UrlClean(&crd_url);
+
+    if (access->p_input_item != NULL)
+    {
+        const char *name = vlc_http_res_get_icy_name(sys->resource);
+        const char *genre = vlc_http_res_get_icy_genre(sys->resource);
+
+        if (name != NULL)
+            input_item_SetMeta(access->p_input_item, vlc_meta_Title, name);
+        if (genre != NULL)
+            input_item_SetMeta(access->p_input_item, vlc_meta_Genre, genre);
+    }
 
     access->pf_read = NULL;
     if (live)

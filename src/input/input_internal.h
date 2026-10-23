@@ -576,6 +576,9 @@ typedef struct input_thread_private_t
     } prev_frame;
 
     bool next_frame_need_data;
+
+    /* Last in-band (ICY) now-playing surfaced by UpdateTimedMeta */
+    char *psz_meta_now_playing;
 } input_thread_private_t;
 
 static inline input_thread_private_t *input_priv(input_thread_t *input)

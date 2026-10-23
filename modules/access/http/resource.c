@@ -35,6 +35,7 @@
 #include "message.h"
 #include "connmgr.h"
 #include "resource.h"
+#include "icymeta.h"
 
 static struct vlc_http_msg *
 vlc_http_res_req(const struct vlc_http_resource *res, void *opaque)
@@ -48,6 +49,9 @@ vlc_http_res_req(const struct vlc_http_resource *res, void *opaque)
 
     /* Content negotiation */
     vlc_http_msg_add_header(req, "Accept", "*/*");
+
+    if (res->want_icy)
+        vlc_http_msg_add_header(req, "Icy-MetaData", "1");
 
     if (res->negotiate)
     {
@@ -122,6 +126,30 @@ retry:
     if (res->cbs->response_validate(res, resp, opaque))
         goto fail;
 
+    if (res->want_icy && (status / 100) == 2)
+    {
+        const char *val = vlc_http_msg_get_header(resp, "icy-metaint");
+        char *end;
+        unsigned long interval = (val != NULL) ? strtoul(val, &end, 10) : 0;
+
+        if (val != NULL && end != val && *end == '\0' && interval > 0)
+        {
+            struct vlc_http_stream *body = vlc_http_msg_get_payload(resp);
+            struct vlc_http_stream *icy = vlc_icy_open(body, interval);
+
+            if (likely(icy != NULL))
+            {
+                vlc_http_msg_set_payload(resp, icy);
+                res->icy_stream = icy;
+
+                const char *br = vlc_http_msg_get_header(resp, "icy-br");
+                unsigned long kbps = (br != NULL) ? strtoul(br, &end, 10) : 0;
+                if (br != NULL && end != br && kbps > 0)
+                    res->icy_bitrate = kbps * 1000;
+            }
+        }
+    }
+
     return resp;
 fail:
     vlc_http_msg_destroy(resp);
@@ -157,6 +185,7 @@ static void vlc_http_res_deinit(struct vlc_http_resource *res)
 
     if (res->response != NULL)
         vlc_http_msg_destroy(res->response);
+    res->icy_stream = NULL;
 }
 
 void vlc_http_res_destroy(struct vlc_http_resource *res)
@@ -193,9 +222,12 @@ int vlc_http_res_init(struct vlc_http_resource *restrict res,
 
     res->cbs = cbs;
     res->response = NULL;
+    res->icy_stream = NULL;
+    res->icy_bitrate = 0;
     res->secure = secure;
     res->negotiate = true;
     res->failure = false;
+    res->want_icy = false;
     res->host = strdup(url.psz_host);
     res->port = url.i_port;
     res->authority = vlc_http_authority(url.psz_host, url.i_port);
@@ -249,8 +281,10 @@ char *vlc_http_res_get_redirect(struct vlc_http_resource *restrict res)
          && asprintf(&url, "mmsh://%s%s", res->authority, res->path) >= 0)
             return url;
 
-        /* HACK: Seems like an ICY server. Redirect to ICYX scheme. */
-        if ((vlc_http_msg_get_header(res->response, "Icy-Name") != NULL
+        /* HACK: Seems like an ICY server. Redirect to ICYX scheme, unless the
+         * in-band metadata is decoded natively (want_icy). */
+        if (!res->want_icy
+         && (vlc_http_msg_get_header(res->response, "Icy-Name") != NULL
           || vlc_http_msg_get_header(res->response, "Icy-Genre") != NULL)
          && asprintf(&url, "icyx://%s%s", res->authority, res->path) >= 0)
             return url;
@@ -295,6 +329,40 @@ char *vlc_http_res_get_redirect(struct vlc_http_resource *restrict res)
         abs[len] = '\0';
     }
     return abs;
+}
+
+void vlc_http_res_set_icy(struct vlc_http_resource *res, bool enabled)
+{
+    res->want_icy = enabled;
+}
+
+const char *vlc_http_res_get_icy_name(struct vlc_http_resource *res)
+{
+    if (res->response == NULL)
+        return NULL;
+    return vlc_http_msg_get_header(res->response, "Icy-Name");
+}
+
+const char *vlc_http_res_get_icy_genre(struct vlc_http_resource *res)
+{
+    if (res->response == NULL)
+        return NULL;
+    return vlc_http_msg_get_header(res->response, "Icy-Genre");
+}
+
+bool vlc_http_res_get_timed_now_playing(struct vlc_http_resource *res,
+                                        char **restrict titlep,
+                                        vlc_tick_t *restrict ptsp)
+{
+    if (res->icy_stream == NULL)
+        return false;
+
+    uint64_t offset;
+    if (!vlc_icy_stream_get_timed_title(res->icy_stream, titlep, &offset))
+        return false;
+
+    *ptsp = vlc_icy_meta_OffsetToPts(offset, res->icy_bitrate);
+    return true;
 }
 
 char *vlc_http_res_get_type(struct vlc_http_resource *res)
@@ -345,6 +413,7 @@ int vlc_http_res_set_login(struct vlc_http_resource *res,
     {
         vlc_http_msg_destroy(res->response);
         res->response = NULL;
+        res->icy_stream = NULL;
     }
 
     return 0;

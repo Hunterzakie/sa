@@ -198,11 +198,16 @@ bool vlc_http_file_can_seek(struct vlc_http_resource *res)
     int status = vlc_http_res_get_status(res);
     if (status < 0)
         return false;
+    if (res->icy_stream != NULL) /* ICY metadata is interleaved: not seekable */
+        return false;
     return vlc_http_msg_can_seek(res->response);
 }
 
 int vlc_http_file_seek(struct vlc_http_resource *res, uintmax_t offset)
 {
+    if (res->icy_stream != NULL)
+        return -1;
+
     struct vlc_http_msg *resp = vlc_http_res_open(res, &offset);
     if (resp == NULL)
         return -1;

@@ -271,6 +271,10 @@ enum stream_query_e
     STREAM_GET_SIGNAL,                      /**< arg1=(double *pf_quality), arg2=(double *pf_strength) res=can fail */
     STREAM_GET_TAGS,                        /**< arg1=(const block_t **) res=can fail */
     STREAM_GET_TYPE,                        /**< arg1=(int*) res=can fail */
+    /* arg1=(char **title) arg2=(vlc_tick_t *pts) res=can fail.
+     * The latest in-band now-playing title and the playback time at which it
+     * takes effect (*pts = VLC_TICK_INVALID if unknown). */
+    STREAM_GET_TIMED_META,
 
     STREAM_SET_PAUSE_STATE = 0x200,         /**< arg1=(bool) res=can fail */
     STREAM_SET_TITLE,                       /**< arg1=(int) res=can fail */

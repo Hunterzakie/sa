@@ -80,6 +80,7 @@ static void       ControlPause(input_thread_t *, vlc_tick_t, bool);
 static int  UpdateTitleSeekpointFromDemux( input_thread_t * );
 static void UpdateGenericFromDemux( input_thread_t * );
 static void UpdateTitleListfromDemux( input_thread_t * );
+static void UpdateTimedMeta( input_thread_t *, demux_t * );
 
 static void MRLSections( const char *, int *, int *, int *, int *);
 
@@ -396,6 +397,8 @@ static void Destroy(input_thread_t *input)
         ControlRelease(ctrl->i_type, &ctrl->param);
     }
 
+    free(priv->psz_meta_now_playing);
+
     vlc_object_delete(VLC_OBJECT(input));
 }
 
@@ -495,6 +498,60 @@ static void ResetPosition( input_thread_t *p_input )
  * Main loop: Fill buffers from access, and demux
  *****************************************************************************/
 
+/* Surface in-band (ICY) now-playing metadata timed to playback: hold the title
+ * until the demuxer's clock reaches the position it takes effect (works for any
+ * demuxer via DEMUX_GET_TIME; falls back to surfacing on change when the time is
+ * unknown). STREAM_GET_TIMED_META is answered from prefetch's worker-populated
+ * cache under its lock, so this never races the prefetch read thread. */
+static void UpdateTimedMeta( input_thread_t *p_input, demux_t *p_demux )
+{
+    input_thread_private_t *p_priv = input_priv(p_input);
+    stream_t *s = p_demux->s;
+    if( s == NULL )
+        return;
+
+    char *psz_np;
+    vlc_tick_t i_pts;
+    if( vlc_stream_Control( s, STREAM_GET_TIMED_META, &psz_np,
+                            &i_pts ) != VLC_SUCCESS )
+        return;
+
+    /* An empty StreamTitle is reported as-is (it clears the now-playing) so the
+     * shown value keeps matching the stream. */
+
+    if( i_pts != VLC_TICK_INVALID )
+    {
+        vlc_tick_t i_time;
+        if( demux_Control( p_demux, DEMUX_GET_TIME, &i_time ) == VLC_SUCCESS
+         && i_time < i_pts )
+        {
+            free( psz_np );
+            return; /* not yet at the playback position for this title */
+        }
+    }
+
+    if( p_priv->psz_meta_now_playing == NULL
+     || strcmp( p_priv->psz_meta_now_playing, psz_np ) != 0 )
+    {
+        char *psz_dup = strdup( psz_np );
+        if( psz_dup != NULL )
+        {
+            free( p_priv->psz_meta_now_playing );
+            p_priv->psz_meta_now_playing = psz_dup;
+
+            msg_Dbg( p_input, "in-band now playing: \"%s\"", psz_np );
+            vlc_meta_t *p_meta = vlc_meta_New();
+            if( p_meta != NULL )
+            {
+                vlc_meta_Set( p_meta, vlc_meta_NowPlaying, psz_np );
+                es_out_ControlSetMeta( &p_priv->p_es_out->out, p_meta );
+                vlc_meta_Delete( p_meta );
+            }
+        }
+    }
+    free( psz_np );
+}
+
 /**
  * MainLoopDemux
  * It asks the demuxer to demux some data
@@ -543,6 +600,7 @@ static void MainLoopDemux( input_thread_t *p_input, bool *pb_changed )
         }
 
         UpdateGenericFromDemux( p_input );
+        UpdateTimedMeta( p_input, p_demux );
     }
 
     /* If the input is stopped, we don't signal anything to the es_out and
@@ -1388,6 +1446,20 @@ static int Init( input_thread_t * p_input )
                 InputSourceMeta( p_input, priv->slave[i], p_meta );
 
             es_out_ControlSetMeta(&priv->p_es_out->out, p_meta);
+            vlc_meta_Delete( p_meta );
+        }
+    }
+
+    /* Push the initial in-band ICY meta (station name, first now-playing) the
+     * access exposed at open time, so the player shows it before MainLoop polls. */
+    if( master->p_demux->s != NULL )
+    {
+        vlc_meta_t *p_meta = vlc_meta_New();
+        if( p_meta != NULL )
+        {
+            if( vlc_stream_Control( master->p_demux->s, STREAM_GET_META,
+                                    p_meta ) == VLC_SUCCESS )
+                es_out_ControlSetMeta( &priv->p_es_out->out, p_meta );
             vlc_meta_Delete( p_meta );
         }
     }

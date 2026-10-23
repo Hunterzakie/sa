@@ -28,10 +28,12 @@
 #include <vlc_common.h>
 #include <vlc_configuration.h>
 #include <vlc_plugin.h>
+#include <vlc_access.h>
 #include <vlc_aout.h>
 #include <vlc_picture.h>
 #include <vlc_demux.h>
 #include <vlc_input.h>
+#include <vlc_meta.h>
 #include <vlc_vector.h>
 
 enum
@@ -1284,6 +1286,25 @@ Demux(demux_t *demux)
     if (sys->error)
         return VLC_DEMUXER_EGENERIC;
 
+    /* When forced on top of a byte stream that carries in-band (ICY) metadata,
+     * advance it so the input core's UpdateTimedMeta surfaces the now-playing
+     * once its offset is consumed, as a real demuxer reading a prefetched
+     * stream does. Gated on STREAM_GET_TIMED_META so any other mock-on-stream
+     * use is left untouched. */
+    if (demux->s != NULL)
+    {
+        char *title;
+        vlc_tick_t pts;
+        if (vlc_stream_Control(demux->s, STREAM_GET_TIMED_META,
+                               &title, &pts) == VLC_SUCCESS)
+        {
+            free(title);
+            block_t *skip = vlc_stream_Block(demux->s, 1024);
+            if (skip != NULL)
+                block_Release(skip);
+        }
+    }
+
     /* Add late tracks if any */
     bool created;
     ret = CheckAndCreateTracksEs(demux, sys->clock, &created);
@@ -1804,6 +1825,121 @@ error:
     return ret;
 }
 
+/* Mock byte-stream access: unlike the mock access-demux above, it produces a
+ * raw stream (demux->s != NULL) and flips a now-playing title over
+ * STREAM_GET_TIMED_META once now_playing_update_after bytes are read, to
+ * exercise live ICY updates. The updated title takes effect at now_playing_pts. */
+struct access_sys
+{
+    char *now_playing;
+    char *now_playing_updated;
+    uint64_t update_after;
+    uint64_t read;
+    vlc_tick_t now_playing_pts;
+    int update_empty;
+};
+
+static block_t *
+AccessBlock(stream_t *access, bool *restrict eof)
+{
+    struct access_sys *sys = access->p_sys;
+
+    block_t *block = block_Alloc(1024);
+    if (unlikely(block == NULL))
+        return NULL;
+    memset(block->p_buffer, 0, block->i_buffer);
+
+    sys->read += block->i_buffer;
+    *eof = false;
+    return block;
+}
+
+static int
+AccessControl(stream_t *access, int query, va_list args)
+{
+    struct access_sys *sys = access->p_sys;
+
+    switch (query)
+    {
+        case STREAM_CAN_SEEK:
+        case STREAM_CAN_FASTSEEK:
+        case STREAM_CAN_PAUSE:
+        case STREAM_CAN_CONTROL_PACE:
+            *va_arg(args, bool *) = false;
+            return VLC_SUCCESS;
+        case STREAM_GET_PTS_DELAY:
+            *va_arg(args, vlc_tick_t *) = DEFAULT_PTS_DELAY;
+            return VLC_SUCCESS;
+        case STREAM_GET_TIMED_META:
+        {
+            char **titlep = va_arg(args, char **);
+            vlc_tick_t *ptsp = va_arg(args, vlc_tick_t *);
+            const char *np;
+            vlc_tick_t pts;
+
+            if (sys->read >= sys->update_after
+             && (sys->update_empty || sys->now_playing_updated != NULL))
+            {
+                np = sys->update_empty ? "" : sys->now_playing_updated;
+                pts = sys->now_playing_pts;
+            }
+            else if (sys->now_playing != NULL)
+            {
+                np = sys->now_playing;
+                pts = VLC_TICK_0;
+            }
+            else
+                return VLC_EGENERIC;
+
+            char *dup = strdup(np);
+            if (dup == NULL)
+                return VLC_ENOMEM;
+            *titlep = dup;
+            *ptsp = pts;
+            return VLC_SUCCESS;
+        }
+        default:
+            return VLC_EGENERIC;
+    }
+}
+
+static int
+AccessOpen(vlc_object_t *obj)
+{
+    stream_t *access = (stream_t *)obj;
+
+    struct access_sys *sys = vlc_obj_malloc(obj, sizeof(*sys));
+    if (unlikely(sys == NULL))
+        return VLC_ENOMEM;
+
+    if (var_LocationParse(obj, access->psz_location, "mock-") != VLC_SUCCESS)
+        return VLC_ENOMEM;
+
+    sys->now_playing = var_InheritString(obj, "mock-now_playing");
+    sys->now_playing_updated = var_InheritString(obj, "mock-now_playing_updated");
+    sys->update_after = var_InheritInteger(obj, "mock-now_playing_update_after");
+    int64_t pts_ms = var_InheritInteger(obj, "mock-now_playing_pts");
+    sys->now_playing_pts = (pts_ms > 0) ? VLC_TICK_FROM_MS(pts_ms)
+                                        : VLC_TICK_INVALID;
+    sys->update_empty = var_InheritInteger(obj, "mock-now_playing_update_empty");
+    sys->read = 0;
+
+    access->p_sys = sys;
+    access->pf_block = AccessBlock;
+    access->pf_control = AccessControl;
+    return VLC_SUCCESS;
+}
+
+static void
+AccessClose(vlc_object_t *obj)
+{
+    stream_t *access = (stream_t *)obj;
+    struct access_sys *sys = access->p_sys;
+
+    free(sys->now_playing);
+    free(sys->now_playing_updated);
+}
+
 vlc_module_begin()
     set_description("mock access demux")
     set_capability("access", 0)
@@ -1814,6 +1950,38 @@ vlc_module_begin()
     OPTIONS_VIDEO(DECLARE_MODULE_SUBOPTIONS)
     OPTIONS_SUB(DECLARE_MODULE_SUBOPTIONS)
     add_shortcut("mock")
+
+    /* Mock byte-stream access, paired with a forced "mock" demux, used to
+     * exercise the live in-band (ICY) now-playing propagation path. */
+    add_submodule()
+        set_description("mock byte-stream access")
+        set_capability("access", 0)
+        set_callbacks(AccessOpen, AccessClose)
+        add_string("mock-now_playing", NULL, NULL, NULL)
+            change_volatile()
+            change_safe()
+        add_string("mock-now_playing_updated", NULL, NULL, NULL)
+            change_volatile()
+            change_safe()
+        add_integer("mock-now_playing_update_after", 0, NULL, NULL)
+            change_volatile()
+            change_safe()
+        add_integer("mock-now_playing_pts", 0, NULL, NULL)
+            change_volatile()
+            change_safe()
+        add_integer("mock-now_playing_update_empty", 0, NULL, NULL)
+            change_volatile()
+            change_safe()
+        add_shortcut("mockstream")
+
+    /* Mock stream demuxer: the existing access-demux Open() works verbatim on
+     * top of a real stream since it never reads demux->s. Registering it as a
+     * "demux" lets it be forced over the mock byte-stream access above. */
+    add_submodule()
+        set_description("mock stream demux")
+        set_capability("demux", 0)
+        set_callbacks(Open, Close)
+        add_shortcut("mock")
 vlc_module_end()
 
 #undef X

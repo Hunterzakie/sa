@@ -362,6 +362,23 @@ struct vlc_http_stream;
 extern void *const vlc_http_error;
 
 void vlc_http_msg_attach(struct vlc_http_msg *m, struct vlc_http_stream *s);
+
+/**
+ * Gets the message payload stream.
+ *
+ * @return the current payload stream, or NULL if none is attached
+ */
+struct vlc_http_stream *vlc_http_msg_get_payload(struct vlc_http_msg *m);
+
+/**
+ * Sets the message payload stream.
+ *
+ * Replaces the payload stream, e.g. to insert a decoding filter. The caller is
+ * responsible for chaining the previous payload as the filter parent.
+ */
+void vlc_http_msg_set_payload(struct vlc_http_msg *m,
+                              struct vlc_http_stream *s);
+
 struct vlc_http_msg *vlc_http_msg_get_initial(struct vlc_http_stream *s)
 VLC_USED;
 
