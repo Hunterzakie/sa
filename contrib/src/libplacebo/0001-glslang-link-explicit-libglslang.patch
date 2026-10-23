@@ -1,0 +1,11 @@
+diff --git a/src/glsl/meson.build b/src/glsl/meson.build
+--- a/src/glsl/meson.build
++++ b/src/glsl/meson.build
+@@ -19,3 +19,6 @@
+   glslang_deps = [
+-    cxx.find_library('glslang-default-resource-limits', required: false)
++    cxx.find_library('glslang-default-resource-limits', required: false),
++    # glslang >= 14 provides a single libglslang; link it explicitly since it
++    # may not be pulled in transitively (e.g. built with --as-needed).
++    cxx.find_library('glslang', required: false)
+   ]
