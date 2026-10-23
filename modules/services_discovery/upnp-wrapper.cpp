@@ -61,8 +61,16 @@ UpnpInstanceWrapper *UpnpInstanceWrapper::get(vlc_object_t *p_obj)
         if ( net_iface == NULL )
         {
             // No forced multicast network interface, select one by default.
-            net_iface = getPreferedAdapter();
+            net_iface = getPreferedAdapter(p_obj);
         }
+
+        if ( net_iface == NULL )
+        {
+            // we didn't find a suitable default interface, no upnp this time
+            delete instance;
+            return NULL;
+        }
+
         msg_Info( p_obj, "Initializing libupnp on '%s' interface",
                   net_iface ? net_iface : "default" );
         int i_res = UpnpInit2( net_iface, 0 );
